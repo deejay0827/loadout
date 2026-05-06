@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["7265YL85SB.com.johnsondigital.loadout"],
+        "components": [
+          { "/": "/auth/*", "comment": "Email-link sign-in" }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.johnsondigital.loadout",
+      "sha256_cert_fingerprints": [
+        "FF:63:0F:14:23:58:C4:9D:99:24:01:F8:83:2B:EB:1E:18:37:1B:2B:29:8C:30:BA:BF:48:2A:BA:81:BF:81:50"
+      ]
+    }
+  }
+]

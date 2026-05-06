@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1050892389392",
+    "project_id": "loadout-precision-reloading",
+    "storage_bucket": "loadout-precision-reloading.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050892389392:android:7a78dfd09b356771d4ce95",
+        "android_client_info": {
+          "package_name": "com.johnsondigital.loadout"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1050892389392-ilu3faaa8nu9od3io70g0fanp0qs0ks5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.johnsondigital.loadout",
+            "certificate_hash": "6d7da3d2822ec9dce7f809880a005efba13a6f3c"
+          }
+        },
+        {
+          "client_id": "1050892389392-1csl5qj8oqt6gv0btde4cehoivptknsn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBR2YppV0YR6VZ3eKgi1py1audpCLMmDu4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1050892389392-1csl5qj8oqt6gv0btde4cehoivptknsn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1050892389392-r4625bpimt7lvm1fp5g42dsv4je018d1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.johnsondigital.loadout"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

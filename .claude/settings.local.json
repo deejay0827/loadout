@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze *)",
+      "Bash(firebase --version)",
+      "Bash(flutterfire --version)",
+      "Bash(dart pub *)",
+      "Bash(firebase login:list)"
+    ]
+  }
+}
