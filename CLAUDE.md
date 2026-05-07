@@ -342,24 +342,37 @@ Pattern that has worked for Microsoft, Yahoo, Apple:
 
 ## 13. Privacy posture
 
-The app's marketing claim and in-app privacy dialog (see
-`HomeScreen._showPrivacyDialog` in `lib/screens/home/home_screen.dart`) say:
+The app's marketing claim and in-app privacy copy say, in plain English:
 
-> Your reloading data — loads, firearms, custom components, and inventory —
-> is stored only on this device.
+> We don't track you, we don't run a backend that stores your reloading
+> data, and any cloud backup is encrypted on your device with your own
+> passphrase and uploaded to your own iCloud Drive or Google Drive.
 
 Concretely:
 
 - All user reloading data lives in the on-device SQLite database opened by
-  `AppDatabase`. There is no network sync.
+  `AppDatabase`. There is no LoadOut-side network sync.
 - Firebase Auth (Google) processes email addresses and OAuth tokens during
   sign-in. That is the only personal data leaving the device.
-- Uninstalling the app or wiping the device deletes the data. There is no
-  cloud backup.
+- Local JSON export is always free. The export is written to the device's
+  Files / Downloads area and never touches LoadOut infrastructure.
+- Optional Pro feature: end-to-end encrypted backup to the user's own
+  iCloud Drive (iOS) or Google Drive (Android, also iOS for cross-platform
+  users). The blob is encrypted on device with a user-chosen passphrase
+  before upload. **LoadOut never sees the encrypted blob, and we never
+  operate any backend that receives reloading data.** Lost passphrases are
+  unrecoverable; this is by design.
+- Uninstalling the app or wiping the device deletes the on-device data. If
+  the user enabled cloud backup, restoring requires re-authenticating to
+  their cloud provider and entering the passphrase.
 
-**Do not add cloud-backed storage of user reloading data without revisiting
-this claim** (the in-app dialog text, the App Store / Play Store privacy
-disclosures, and any landing page copy).
+**Cloud backup is an approved opt-in feature, but only under the strict
+client-side encryption model described above.** Do not add any code path
+that uploads user reloading data to a LoadOut-operated backend, sends
+plaintext (or server-decryptable) backups anywhere, or weakens the
+passphrase-only key derivation. Any change to the storage / sync model has
+to revisit the in-app disclaimer copy, the privacy screen, the App Store /
+Play Store privacy disclosures, and any landing page copy.
 
 ## 14. Open items / where to track work
 

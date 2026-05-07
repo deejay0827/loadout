@@ -11,5 +11,31 @@
 		<string>applinks:loadout-precision-reloading.web.app</string>
 		<string>applinks:loadout-precision-reloading.firebaseapp.com</string>
 	</array>
+	<!--
+	  iCloud capability for the Pro cloud-backup feature (#5).
+
+	  These keys assume the "iCloud" capability is enabled on the App ID at
+	  developer.apple.com → Identifiers → com.johnsondigital.loadout, with the
+	  "iCloud Documents" service and the matching ubiquity container
+	  (`iCloud.com.johnsondigital.loadout`) provisioned. Until that's done,
+	  code signing will reject these entries — comment them out for local
+	  builds, or strip them at release time, until the portal is in sync.
+
+	  Runtime falls back gracefully via `ICloudBackupService.isAvailable()`,
+	  so users without iCloud Drive (or with the capability not yet enabled)
+	  see a "Sign in to iCloud in Settings" message instead of a crash.
+	-->
+	<key>com.apple.developer.icloud-container-identifiers</key>
+	<array>
+		<string>iCloud.com.johnsondigital.loadout</string>
+	</array>
+	<key>com.apple.developer.icloud-services</key>
+	<array>
+		<string>CloudDocuments</string>
+	</array>
+	<key>com.apple.developer.ubiquity-container-identifiers</key>
+	<array>
+		<string>iCloud.com.johnsondigital.loadout</string>
+	</array>
 </dict>
 </plist>

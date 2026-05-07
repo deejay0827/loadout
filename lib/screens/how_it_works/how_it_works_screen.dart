@@ -596,7 +596,9 @@ class _TopicDetailScreen extends StatelessWidget {
         _popToHomeAndSwitchTab(context, 1);
         break;
       case _TopicId.saami:
-        _popToHomeAndSwitchTab(context, 2);
+        // SAAMI moved to index 4 when Batches/Ballistics joined the
+        // bottom nav. Keep this in sync with HomeScreenState._pages.
+        _popToHomeAndSwitchTab(context, 4);
         break;
       case _TopicId.glossary:
         _popToHomeAndPush(

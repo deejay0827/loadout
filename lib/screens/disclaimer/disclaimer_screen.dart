@@ -260,6 +260,17 @@ class _DisclaimerBody extends StatelessWidget {
             'chambers vary, and conditions vary.',
           ),
           const SizedBox(height: 16),
+          Text('Your data stays yours.', style: subheading),
+          const SizedBox(height: 4),
+          const Text(
+            'Your reloading data — recipes, firearms, custom components, and '
+            'inventory — is stored on this device by default. LoadOut does '
+            'not run a backend that receives or stores it. With Pro, you can '
+            'optionally back up an end-to-end encrypted copy to your own '
+            'iCloud Drive or Google Drive, using a passphrase only you know. '
+            'LoadOut never sees the encrypted backup.',
+          ),
+          const SizedBox(height: 16),
           Text('Your responsibility.', style: subheading),
           const SizedBox(height: 4),
           const Text('By using this app you agree that you:'),

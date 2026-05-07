@@ -7,8 +7,12 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'database/database.dart';
+import 'repositories/batch_repository.dart';
+import 'repositories/brass_lot_repository.dart';
 import 'repositories/component_repository.dart';
 import 'repositories/firearm_repository.dart';
+import 'repositories/load_development_repository.dart';
+import 'repositories/process_step_repository.dart';
 import 'repositories/recipe_repository.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/disclaimer/disclaimer_screen.dart';
@@ -45,6 +49,16 @@ class LoadOutApp extends StatelessWidget {
         Provider<FirearmRepository>(create: (_) => FirearmRepository(database)),
         Provider<ComponentRepository>(
           create: (_) => ComponentRepository(database),
+        ),
+        Provider<BrassLotRepository>(
+          create: (_) => BrassLotRepository(database),
+        ),
+        Provider<BatchRepository>(create: (_) => BatchRepository(database)),
+        Provider<ProcessStepRepository>(
+          create: (_) => ProcessStepRepository(database),
+        ),
+        Provider<LoadDevelopmentRepository>(
+          create: (_) => LoadDevelopmentRepository(database),
         ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),

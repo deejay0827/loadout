@@ -31,6 +31,34 @@ const List<String> _primerPocketOptions = <String>[
   'Other',
 ];
 
+/// Allowed values for the recipe Status dropdown.
+const List<({String value, String label})> _statusOptions = [
+  (value: 'active', label: 'Active'),
+  (value: 'testing', label: 'Testing'),
+  (value: 'retired', label: 'Retired'),
+];
+
+/// Allowed values for the Use Case dropdown.
+const List<({String value, String label})> _useCaseOptions = [
+  (value: 'match', label: 'Match'),
+  (value: 'practice', label: 'Practice'),
+  (value: 'hunting', label: 'Hunting'),
+  (value: 'plinking', label: 'Plinking'),
+];
+
+/// Allowed values for the Bolt Lift dropdown.
+const List<({String value, String label})> _boltLiftOptions = [
+  (value: 'normal', label: 'Normal'),
+  (value: 'sticky', label: 'Sticky'),
+];
+
+/// Allowed values for the Bore State dropdown.
+const List<({String value, String label})> _boreStateOptions = [
+  (value: 'clean', label: 'Clean'),
+  (value: 'seasoned', label: 'Seasoned'),
+  (value: 'fouled', label: 'Fouled'),
+];
+
 /// Maps the seed-data primer-size keys (e.g. `"large-rifle"`) onto the
 /// human-readable primer-size labels used in the dropdown.
 String? _primerSizeLabelForSeedKey(String? seedKey) {
@@ -55,9 +83,10 @@ String? _primerSizeLabelForSeedKey(String? seedKey) {
 /// * [basic] — only the most-used fields (Recipe Name, Caliber, Powder,
 ///   Charge, Bullet, Bullet Weight, Primer, Brass, COAL).
 /// * [detailed] — adds CBTO, Seating Depth, Primer Size, Primer Depth,
-///   Primer Pocket Size, Shoulder Bump, Mandrel Size.
-/// * [all] — every field. Identical to [detailed] for now; a future pass
-///   will introduce 80+ fields that live exclusively under this level.
+///   Primer Pocket Size, Shoulder Bump, Mandrel Size, Status, Use Case,
+///   and the four lot pickers.
+/// * [all] — every field including pressure indicators, process/equipment
+///   provenance, advanced bullet sorting, runout, distance to lands, etc.
 enum DetailLevel {
   basic,
   detailed,
@@ -102,22 +131,71 @@ enum DetailLevel {
 /// "section → field IDs" mapping refactor-safe and lets the analyzer
 /// catch missing wiring when new fields are added.
 enum _FieldId {
+  // Load identification
   recipeName,
   caliber,
+  status,
+  useCase,
+  // Powder
   powder,
   powderCharge,
+  powderLot,
+  chargeTolerance,
+  // Primer
   primer,
   primerSize,
   primerDepth,
+  primerLot,
+  primerSeatingForce,
+  // Bullet
   bullet,
   bulletWeight,
+  bulletLot,
+  bulletLength,
+  bulletBaseToOgive,
+  bulletBearingSurface,
+  bulletMeplatTrimmed,
+  bulletPointed,
+  bulletWeightSorted,
+  bulletWeightTolerance,
+  bulletBtoSorted,
+  bulletBtoTolerance,
+  bulletDiameterSorted,
   seatingDepth,
   cbto,
+  // Brass
   brass,
+  brassLot,
   primerPocketSize,
   shoulderBump,
   mandrelSize,
+  bushingSize,
+  // Loaded round dimensions
   coal,
+  distanceToLands,
+  jumpToLands,
+  loadedNeckDiameter,
+  bulletRunout,
+  // Pressure indicators
+  pressureNotes,
+  boltLift,
+  ejectorMarks,
+  crateredPrimers,
+  webExpansion,
+  primerFlatness,
+  // Process / equipment / provenance
+  loadingDate,
+  roundsLoadedInBatch,
+  pressUsed,
+  sizingDieUsed,
+  seatingDieUsed,
+  scaleUsed,
+  scaleCalibrationDate,
+  comparatorInsertUsed,
+  chronographUsed,
+  boreState,
+  loadedBy,
+  // Notes
   notes,
 }
 
@@ -176,6 +254,11 @@ class _Section {
   final List<_FieldId> fieldIds;
 }
 
+/// Identifier used in the `_Section.id` to distinguish the special
+/// custom-fields section, which is rendered with bespoke logic instead of
+/// driving off the FieldDef map.
+const String _customFieldsSectionId = 'custom_fields';
+
 class RecipeFormScreen extends StatefulWidget {
   const RecipeFormScreen({super.key, this.existing});
 
@@ -188,6 +271,8 @@ class RecipeFormScreen extends StatefulWidget {
 class _RecipeFormScreenState extends State<RecipeFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _searchController = TextEditingController();
+
+  // ─────────────────────── Text controllers ───────────────────────
 
   late final TextEditingController _name;
   late final TextEditingController _caliber;
@@ -205,9 +290,75 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   late final TextEditingController _mandrelSize;
   late final TextEditingController _notes;
 
+  // New v4 numeric / text controllers.
+  late final TextEditingController _chargeTolerance;
+  late final TextEditingController _primerSeatingForce;
+  late final TextEditingController _bulletLength;
+  late final TextEditingController _bulletBaseToOgive;
+  late final TextEditingController _bulletBearingSurface;
+  late final TextEditingController _bulletWeightTolerance;
+  late final TextEditingController _bulletBtoTolerance;
+  late final TextEditingController _bushingSize;
+  late final TextEditingController _distanceToLands;
+  late final TextEditingController _jumpToLands;
+  late final TextEditingController _loadedNeckDiameter;
+  late final TextEditingController _bulletRunout;
+  late final TextEditingController _pressureNotes;
+  late final TextEditingController _webExpansion;
+  late final TextEditingController _roundsLoadedInBatch;
+  late final TextEditingController _pressUsed;
+  late final TextEditingController _sizingDieUsed;
+  late final TextEditingController _seatingDieUsed;
+  late final TextEditingController _scaleUsed;
+  late final TextEditingController _comparatorInsertUsed;
+  late final TextEditingController _chronographUsed;
+  late final TextEditingController _loadedBy;
+
+  // ─────────────────────── Discrete-state values ───────────────────────
+
   /// Picked from the dropdown; `null` means user hasn't selected one yet.
   String? _primerSize;
   String? _primerPocketSize;
+  String? _status;
+  String? _useCase;
+  String? _boltLift;
+  String? _boreState;
+
+  bool _bulletMeplatTrimmed = false;
+  bool _bulletPointed = false;
+  bool _bulletWeightSorted = false;
+  bool _bulletBtoSorted = false;
+  bool _bulletDiameterSorted = false;
+  bool _ejectorMarks = false;
+  bool _crateredPrimers = false;
+
+  /// 1-5 scale; null when unset. Stored as int.
+  int? _primerFlatness;
+
+  DateTime? _loadingDate;
+  DateTime? _scaleCalibrationDate;
+
+  // Lot picker state. Each holds the currently-selected lot id (or null).
+  int? _powderLotId;
+  int? _primerLotId;
+  int? _bulletLotId;
+  int? _brassLotId;
+
+  /// Caches loaded from the DB on first build. Each future is kicked off
+  /// in `initState` so the dropdowns can render synchronously the first
+  /// time they're shown.
+  late Future<List<PowderLotRow>> _powderLotsFuture;
+  late Future<List<PrimerLotRow>> _primerLotsFuture;
+  late Future<List<BulletLotRow>> _bulletLotsFuture;
+  late Future<List<BrassLotRow>> _brassLotsFuture;
+
+  // Custom fields state.
+  late Future<List<UserCustomFieldRow>> _customFieldsFuture;
+  /// fieldId -> in-memory mutable string value. Boolean fields use 'true'
+  /// / 'false', date fields use ISO-8601, number fields use the raw text.
+  final Map<int, String?> _customValues = {};
+  /// fieldId -> per-field controller for text/number editors.
+  final Map<int, TextEditingController> _customControllers = {};
 
   /// Active detail level. Loaded from SharedPreferences in [initState];
   /// defaults to [DetailLevel.basic] until the load completes.
@@ -251,10 +402,99 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     );
     _notes = TextEditingController(text: e?.notes ?? '');
 
+    // ── New v4 controllers ──
+    _chargeTolerance = TextEditingController(
+      text: e?.chargeToleranceGr?.toString() ?? '',
+    );
+    _primerSeatingForce = TextEditingController(
+      text: e?.primerSeatingForceLbs?.toString() ?? '',
+    );
+    _bulletLength = TextEditingController(
+      text: e?.bulletLengthIn?.toString() ?? '',
+    );
+    _bulletBaseToOgive = TextEditingController(
+      text: e?.bulletBaseToOgiveIn?.toString() ?? '',
+    );
+    _bulletBearingSurface = TextEditingController(
+      text: e?.bulletBearingSurfaceIn?.toString() ?? '',
+    );
+    _bulletWeightTolerance = TextEditingController(
+      text: e?.bulletWeightToleranceGr?.toString() ?? '',
+    );
+    _bulletBtoTolerance = TextEditingController(
+      text: e?.bulletBtoToleranceIn?.toString() ?? '',
+    );
+    _bushingSize = TextEditingController(
+      text: e?.bushingSizeIn?.toString() ?? '',
+    );
+    _distanceToLands = TextEditingController(
+      text: e?.distanceToLandsIn?.toString() ?? '',
+    );
+    _jumpToLands = TextEditingController(
+      text: e?.jumpToLandsIn?.toString() ?? '',
+    );
+    _loadedNeckDiameter = TextEditingController(
+      text: e?.loadedNeckDiameterIn?.toString() ?? '',
+    );
+    _bulletRunout = TextEditingController(
+      text: e?.bulletRunoutTirIn?.toString() ?? '',
+    );
+    _pressureNotes = TextEditingController(text: e?.pressureNotes ?? '');
+    _webExpansion = TextEditingController(
+      text: e?.webExpansion200In?.toString() ?? '',
+    );
+    _roundsLoadedInBatch = TextEditingController(
+      text: e?.roundsLoadedInBatch?.toString() ?? '',
+    );
+    _pressUsed = TextEditingController(text: e?.pressUsed ?? '');
+    _sizingDieUsed = TextEditingController(text: e?.sizingDieUsed ?? '');
+    _seatingDieUsed = TextEditingController(text: e?.seatingDieUsed ?? '');
+    _scaleUsed = TextEditingController(text: e?.scaleUsed ?? '');
+    _comparatorInsertUsed =
+        TextEditingController(text: e?.comparatorInsertUsed ?? '');
+    _chronographUsed = TextEditingController(text: e?.chronographUsed ?? '');
+    _loadedBy = TextEditingController(text: e?.loadedBy ?? '');
+
+    // Discrete state.
+    _primerSize = null; // populated below from existing primer text
+    _primerPocketSize = null;
+    _status = e?.status;
+    _useCase = e?.useCase;
+    _boltLift = e?.boltLift;
+    _boreState = e?.boreState;
+    _bulletMeplatTrimmed = e?.bulletMeplatTrimmed ?? false;
+    _bulletPointed = e?.bulletPointed ?? false;
+    _bulletWeightSorted = e?.bulletWeightSorted ?? false;
+    _bulletBtoSorted = e?.bulletBtoSorted ?? false;
+    _bulletDiameterSorted = e?.bulletDiameterSorted ?? false;
+    _ejectorMarks = e?.ejectorMarks ?? false;
+    _crateredPrimers = e?.crateredPrimers ?? false;
+    _primerFlatness = e?.primerFlatness;
+    _loadingDate = e?.loadingDate;
+    _scaleCalibrationDate = e?.scaleCalibrationDate;
+    _powderLotId = e?.powderLotId;
+    _primerLotId = e?.primerLotId;
+    _bulletLotId = e?.bulletLotId;
+    _brassLotId = e?.brassLotId;
+
+    // Kick off DB queries immediately.
+    final repo = context.read<RecipeRepository>();
+    _powderLotsFuture = repo.allPowderLots();
+    _primerLotsFuture = repo.allPrimerLots();
+    _bulletLotsFuture = repo.allBulletLots();
+    _brassLotsFuture = repo.allBrassLots();
+    _customFieldsFuture = repo.customFieldsForEntity('recipe');
+
     // Hydrate the user's saved detail-level preference. Done lazily so the
     // first frame doesn't block on disk I/O.
     // ignore: discarded_futures
     _loadDetailLevel();
+
+    // Hydrate any existing custom-field values for an edit.
+    if (e != null) {
+      // ignore: discarded_futures
+      _loadCustomValues(repo, e.id);
+    }
   }
 
   @override
@@ -276,7 +516,32 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       _shoulderBump,
       _mandrelSize,
       _notes,
+      _chargeTolerance,
+      _primerSeatingForce,
+      _bulletLength,
+      _bulletBaseToOgive,
+      _bulletBearingSurface,
+      _bulletWeightTolerance,
+      _bulletBtoTolerance,
+      _bushingSize,
+      _distanceToLands,
+      _jumpToLands,
+      _loadedNeckDiameter,
+      _bulletRunout,
+      _pressureNotes,
+      _webExpansion,
+      _roundsLoadedInBatch,
+      _pressUsed,
+      _sizingDieUsed,
+      _seatingDieUsed,
+      _scaleUsed,
+      _comparatorInsertUsed,
+      _chronographUsed,
+      _loadedBy,
     ]) {
+      c.dispose();
+    }
+    for (final c in _customControllers.values) {
       c.dispose();
     }
     super.dispose();
@@ -294,10 +559,31 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     await prefs.setString(DetailLevel._prefsKey, level.prefsValue);
   }
 
+  Future<void> _loadCustomValues(RecipeRepository repo, int entityId) async {
+    final values = await repo.customFieldValuesForEntity('recipe', entityId);
+    if (!mounted) return;
+    setState(() {
+      _customValues
+        ..clear()
+        ..addAll(values);
+    });
+  }
+
   double? _parseDouble(TextEditingController c) {
     final t = c.text.trim();
     if (t.isEmpty) return null;
     return double.tryParse(t);
+  }
+
+  int? _parseInt(TextEditingController c) {
+    final t = c.text.trim();
+    if (t.isEmpty) return null;
+    return int.tryParse(t);
+  }
+
+  String? _trimToNull(TextEditingController c) {
+    final t = c.text.trim();
+    return t.isEmpty ? null : t;
   }
 
   /// When the user picks a bullet from the catalog, parse the trailing
@@ -352,34 +638,87 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
 
     final entry = UserLoadsCompanion(
       name: drift.Value(_name.text.trim()),
-      caliber: drift.Value(
-          _caliber.text.trim().isEmpty ? null : _caliber.text.trim()),
-      powder: drift.Value(
-          _powder.text.trim().isEmpty ? null : _powder.text.trim()),
+      caliber: drift.Value(_trimToNull(_caliber)),
+      powder: drift.Value(_trimToNull(_powder)),
       powderChargeGr: drift.Value(_parseDouble(_powderCharge)),
-      bullet: drift.Value(
-          _bullet.text.trim().isEmpty ? null : _bullet.text.trim()),
+      bullet: drift.Value(_trimToNull(_bullet)),
       bulletWeightGr: drift.Value(_parseDouble(_bulletWeight)),
-      primer: drift.Value(
-          _primer.text.trim().isEmpty ? null : _primer.text.trim()),
-      brass: drift.Value(
-          _brass.text.trim().isEmpty ? null : _brass.text.trim()),
+      primer: drift.Value(_trimToNull(_primer)),
+      brass: drift.Value(_trimToNull(_brass)),
       coalIn: drift.Value(_parseDouble(_coal)),
       cbtoIn: drift.Value(_parseDouble(_cbto)),
       seatingDepthIn: drift.Value(_parseDouble(_seatingDepth)),
       primerDepthCps: drift.Value(_parseDouble(_primerDepth)),
       shoulderBumpIn: drift.Value(_parseDouble(_shoulderBump)),
       mandrelSizeIn: drift.Value(_parseDouble(_mandrelSize)),
-      notes: drift.Value(
-          _notes.text.trim().isEmpty ? null : _notes.text.trim()),
+      notes: drift.Value(_trimToNull(_notes)),
+      // Phase 1 expansion fields.
+      status: drift.Value(_status),
+      useCase: drift.Value(_useCase),
+      powderLotId: drift.Value(_powderLotId),
+      chargeToleranceGr: drift.Value(_parseDouble(_chargeTolerance)),
+      primerLotId: drift.Value(_primerLotId),
+      primerSeatingForceLbs: drift.Value(_parseDouble(_primerSeatingForce)),
+      bulletLotId: drift.Value(_bulletLotId),
+      bulletLengthIn: drift.Value(_parseDouble(_bulletLength)),
+      bulletBaseToOgiveIn: drift.Value(_parseDouble(_bulletBaseToOgive)),
+      bulletBearingSurfaceIn: drift.Value(_parseDouble(_bulletBearingSurface)),
+      bulletMeplatTrimmed: drift.Value(_bulletMeplatTrimmed),
+      bulletPointed: drift.Value(_bulletPointed),
+      bulletWeightSorted: drift.Value(_bulletWeightSorted),
+      bulletWeightToleranceGr:
+          drift.Value(_parseDouble(_bulletWeightTolerance)),
+      bulletBtoSorted: drift.Value(_bulletBtoSorted),
+      bulletBtoToleranceIn: drift.Value(_parseDouble(_bulletBtoTolerance)),
+      bulletDiameterSorted: drift.Value(_bulletDiameterSorted),
+      brassLotId: drift.Value(_brassLotId),
+      distanceToLandsIn: drift.Value(_parseDouble(_distanceToLands)),
+      jumpToLandsIn: drift.Value(_parseDouble(_jumpToLands)),
+      loadedNeckDiameterIn: drift.Value(_parseDouble(_loadedNeckDiameter)),
+      bulletRunoutTirIn: drift.Value(_parseDouble(_bulletRunout)),
+      bushingSizeIn: drift.Value(_parseDouble(_bushingSize)),
+      pressureNotes: drift.Value(_trimToNull(_pressureNotes)),
+      boltLift: drift.Value(_boltLift),
+      ejectorMarks: drift.Value(_ejectorMarks),
+      crateredPrimers: drift.Value(_crateredPrimers),
+      webExpansion200In: drift.Value(_parseDouble(_webExpansion)),
+      primerFlatness: drift.Value(_primerFlatness),
+      loadingDate: drift.Value(_loadingDate),
+      roundsLoadedInBatch: drift.Value(_parseInt(_roundsLoadedInBatch)),
+      pressUsed: drift.Value(_trimToNull(_pressUsed)),
+      sizingDieUsed: drift.Value(_trimToNull(_sizingDieUsed)),
+      seatingDieUsed: drift.Value(_trimToNull(_seatingDieUsed)),
+      scaleUsed: drift.Value(_trimToNull(_scaleUsed)),
+      scaleCalibrationDate: drift.Value(_scaleCalibrationDate),
+      comparatorInsertUsed: drift.Value(_trimToNull(_comparatorInsertUsed)),
+      chronographUsed: drift.Value(_trimToNull(_chronographUsed)),
+      boreState: drift.Value(_boreState),
+      loadedBy: drift.Value(_trimToNull(_loadedBy)),
     );
 
+    int recipeId;
     if (widget.existing == null) {
-      await repo.insert(entry);
-      messenger.showSnackBar(const SnackBar(content: Text('Recipe saved.')));
+      recipeId = await repo.insert(entry);
+      messenger.showSnackBar(const SnackBar(content: Text('Recipe Saved.')));
     } else {
-      await repo.update(widget.existing!.id, entry);
-      messenger.showSnackBar(const SnackBar(content: Text('Recipe updated.')));
+      recipeId = widget.existing!.id;
+      await repo.update(recipeId, entry);
+      messenger.showSnackBar(const SnackBar(content: Text('Recipe Updated.')));
+    }
+
+    // Persist custom-field values. We sync controller text into the
+    // _customValues map for text/number fields before writing.
+    for (final entry in _customControllers.entries) {
+      final fieldId = entry.key;
+      final text = entry.value.text.trim();
+      _customValues[fieldId] = text.isEmpty ? null : text;
+    }
+    for (final entry in _customValues.entries) {
+      await repo.setCustomFieldValue(
+        fieldId: entry.key,
+        entityId: recipeId,
+        value: entry.value,
+      );
     }
 
     if (mounted) navigator.pop();
@@ -395,6 +734,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   /// record of metadata plus a closure.
   Map<_FieldId, _FieldDef> _buildFieldDefs() {
     return {
+      // ─────── Load Identification ───────
       _FieldId.recipeName: _FieldDef(
         id: _FieldId.recipeName,
         label: 'Recipe Name',
@@ -418,6 +758,40 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           controller: _caliber,
         ),
       ),
+      _FieldId.status: _FieldDef(
+        id: _FieldId.status,
+        label: 'Status',
+        level: DetailLevel.detailed,
+        aliases: const ['active', 'testing', 'retired', 'state'],
+        builder: (ctx) => DropdownButtonFormField<String>(
+          initialValue: _status,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Status'),
+          items: [
+            for (final s in _statusOptions)
+              DropdownMenuItem(value: s.value, child: Text(s.label)),
+          ],
+          onChanged: (v) => setState(() => _status = v),
+        ),
+      ),
+      _FieldId.useCase: _FieldDef(
+        id: _FieldId.useCase,
+        label: 'Use Case',
+        level: DetailLevel.detailed,
+        aliases: const ['match', 'practice', 'hunting', 'plinking', 'purpose'],
+        builder: (ctx) => DropdownButtonFormField<String>(
+          initialValue: _useCase,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Use Case'),
+          items: [
+            for (final s in _useCaseOptions)
+              DropdownMenuItem(value: s.value, child: Text(s.label)),
+          ],
+          onChanged: (v) => setState(() => _useCase = v),
+        ),
+      ),
+
+      // ─────── Powder ───────
       _FieldId.powder: _FieldDef(
         id: _FieldId.powder,
         label: 'Powder',
@@ -443,6 +817,57 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ),
+      _FieldId.powderLot: _FieldDef(
+        id: _FieldId.powderLot,
+        label: 'Powder Lot',
+        level: DetailLevel.detailed,
+        aliases: const ['jug', 'can', 'batch', 'lot'],
+        builder: (ctx) => _LotPickerField<PowderLotRow>(
+          label: 'Powder Lot',
+          future: _powderLotsFuture,
+          selectedId: _powderLotId,
+          itemLabel: (row) => _composeLotLabel(
+            row.manufacturer,
+            row.name,
+            row.lotNumber,
+          ),
+          itemId: (row) => row.id,
+          onChanged: (v) => setState(() => _powderLotId = v),
+          onCreate: () => _showCreateLotDialog(
+            type: 'powder',
+            onCreate: (m, n, lot) async {
+              final repo = context.read<RecipeRepository>();
+              final id = await repo.createPowderLot(
+                manufacturer: m,
+                name: n,
+                lotNumber: lot,
+              );
+              if (!mounted) return;
+              setState(() {
+                _powderLotsFuture = repo.allPowderLots();
+                _powderLotId = id;
+              });
+            },
+          ),
+        ),
+      ),
+      _FieldId.chargeTolerance: _FieldDef(
+        id: _FieldId.chargeTolerance,
+        label: 'Charge Tolerance',
+        level: DetailLevel.all,
+        aliases: const ['tolerance', 'plus', 'minus', 'spread', 'scale'],
+        builder: (ctx) => TextFormField(
+          controller: _chargeTolerance,
+          decoration: const InputDecoration(
+            labelText: 'Charge Tolerance (gr)',
+            suffixText: 'gr',
+            helperText: '± grain spread / scale resolution',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+
+      // ─────── Primer ───────
       _FieldId.primer: _FieldDef(
         id: _FieldId.primer,
         label: 'Primer',
@@ -496,6 +921,56 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ),
+      _FieldId.primerLot: _FieldDef(
+        id: _FieldId.primerLot,
+        label: 'Primer Lot',
+        level: DetailLevel.detailed,
+        aliases: const ['box', 'tray', 'lot', 'batch'],
+        builder: (ctx) => _LotPickerField<PrimerLotRow>(
+          label: 'Primer Lot',
+          future: _primerLotsFuture,
+          selectedId: _primerLotId,
+          itemLabel: (row) => _composeLotLabel(
+            row.manufacturer,
+            row.name,
+            row.lotNumber,
+          ),
+          itemId: (row) => row.id,
+          onChanged: (v) => setState(() => _primerLotId = v),
+          onCreate: () => _showCreateLotDialog(
+            type: 'primer',
+            onCreate: (m, n, lot) async {
+              final repo = context.read<RecipeRepository>();
+              final id = await repo.createPrimerLot(
+                manufacturer: m,
+                name: n,
+                lotNumber: lot,
+              );
+              if (!mounted) return;
+              setState(() {
+                _primerLotsFuture = repo.allPrimerLots();
+                _primerLotId = id;
+              });
+            },
+          ),
+        ),
+      ),
+      _FieldId.primerSeatingForce: _FieldDef(
+        id: _FieldId.primerSeatingForce,
+        label: 'Primer Seating Force',
+        level: DetailLevel.all,
+        aliases: const ['force', 'seating', 'gauge', 'lbs'],
+        builder: (ctx) => TextFormField(
+          controller: _primerSeatingForce,
+          decoration: const InputDecoration(
+            labelText: 'Primer Seating Force (lbs)',
+            suffixText: 'lbs',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+
+      // ─────── Bullet ───────
       _FieldId.bullet: _FieldDef(
         id: _FieldId.bullet,
         label: 'Bullet',
@@ -520,6 +995,172 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             suffixText: 'gr',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.bulletLot: _FieldDef(
+        id: _FieldId.bulletLot,
+        label: 'Bullet Lot',
+        level: DetailLevel.detailed,
+        aliases: const ['box', 'lot', 'batch'],
+        builder: (ctx) => _LotPickerField<BulletLotRow>(
+          label: 'Bullet Lot',
+          future: _bulletLotsFuture,
+          selectedId: _bulletLotId,
+          itemLabel: (row) => _composeLotLabel(
+            row.manufacturer,
+            row.name,
+            row.lotNumber,
+          ),
+          itemId: (row) => row.id,
+          onChanged: (v) => setState(() => _bulletLotId = v),
+          onCreate: () => _showCreateLotDialog(
+            type: 'bullet',
+            onCreate: (m, n, lot) async {
+              final repo = context.read<RecipeRepository>();
+              final id = await repo.createBulletLot(
+                manufacturer: m,
+                name: n,
+                lotNumber: lot,
+              );
+              if (!mounted) return;
+              setState(() {
+                _bulletLotsFuture = repo.allBulletLots();
+                _bulletLotId = id;
+              });
+            },
+          ),
+        ),
+      ),
+      _FieldId.bulletLength: _FieldDef(
+        id: _FieldId.bulletLength,
+        label: 'Bullet Length',
+        level: DetailLevel.all,
+        aliases: const ['length', 'overall', 'projectile'],
+        builder: (ctx) => TextFormField(
+          controller: _bulletLength,
+          decoration: const InputDecoration(
+            labelText: 'Bullet Length (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.bulletBaseToOgive: _FieldDef(
+        id: _FieldId.bulletBaseToOgive,
+        label: 'Bullet Base-to-Ogive',
+        level: DetailLevel.all,
+        aliases: const ['bto', 'base', 'ogive', 'comparator'],
+        builder: (ctx) => TextFormField(
+          controller: _bulletBaseToOgive,
+          decoration: const InputDecoration(
+            labelText: 'Bullet Base-to-Ogive (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.bulletBearingSurface: _FieldDef(
+        id: _FieldId.bulletBearingSurface,
+        label: 'Bearing Surface Length',
+        level: DetailLevel.all,
+        aliases: const ['bearing', 'shank', 'bullet', 'surface'],
+        builder: (ctx) => TextFormField(
+          controller: _bulletBearingSurface,
+          decoration: const InputDecoration(
+            labelText: 'Bearing Surface Length (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.bulletMeplatTrimmed: _FieldDef(
+        id: _FieldId.bulletMeplatTrimmed,
+        label: 'Meplat Trimmed',
+        level: DetailLevel.all,
+        aliases: const ['meplat', 'tip', 'uniform', 'trim'],
+        builder: (ctx) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Meplat Trimmed'),
+          value: _bulletMeplatTrimmed,
+          onChanged: (v) => setState(() => _bulletMeplatTrimmed = v),
+        ),
+      ),
+      _FieldId.bulletPointed: _FieldDef(
+        id: _FieldId.bulletPointed,
+        label: 'Pointed',
+        level: DetailLevel.all,
+        aliases: const ['pointed', 'tip', 'uniform', 'meplat'],
+        builder: (ctx) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Pointed'),
+          value: _bulletPointed,
+          onChanged: (v) => setState(() => _bulletPointed = v),
+        ),
+      ),
+      _FieldId.bulletWeightSorted: _FieldDef(
+        id: _FieldId.bulletWeightSorted,
+        label: 'Weight Sorted',
+        level: DetailLevel.all,
+        aliases: const ['weighed', 'sorted', 'graded', 'consistency'],
+        builder: (ctx) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Weight Sorted'),
+          value: _bulletWeightSorted,
+          onChanged: (v) => setState(() => _bulletWeightSorted = v),
+        ),
+      ),
+      _FieldId.bulletWeightTolerance: _FieldDef(
+        id: _FieldId.bulletWeightTolerance,
+        label: 'Weight Sort Tolerance',
+        level: DetailLevel.all,
+        aliases: const ['tolerance', 'sort', 'spread', 'weight'],
+        builder: (ctx) => TextFormField(
+          controller: _bulletWeightTolerance,
+          decoration: const InputDecoration(
+            labelText: 'Weight Sort Tolerance (gr)',
+            suffixText: 'gr',
+            helperText: '± gr from nominal',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.bulletBtoSorted: _FieldDef(
+        id: _FieldId.bulletBtoSorted,
+        label: 'BTO Sorted',
+        level: DetailLevel.all,
+        aliases: const ['bto', 'sorted', 'ogive', 'comparator'],
+        builder: (ctx) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('BTO Sorted'),
+          value: _bulletBtoSorted,
+          onChanged: (v) => setState(() => _bulletBtoSorted = v),
+        ),
+      ),
+      _FieldId.bulletBtoTolerance: _FieldDef(
+        id: _FieldId.bulletBtoTolerance,
+        label: 'BTO Sort Tolerance',
+        level: DetailLevel.all,
+        aliases: const ['bto', 'tolerance', 'spread', 'ogive'],
+        builder: (ctx) => TextFormField(
+          controller: _bulletBtoTolerance,
+          decoration: const InputDecoration(
+            labelText: 'BTO Sort Tolerance (in)',
+            suffixText: 'in',
+            helperText: '± in from nominal',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.bulletDiameterSorted: _FieldDef(
+        id: _FieldId.bulletDiameterSorted,
+        label: 'Diameter Sorted',
+        level: DetailLevel.all,
+        aliases: const ['diameter', 'sorted', 'mic'],
+        builder: (ctx) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Diameter Sorted'),
+          value: _bulletDiameterSorted,
+          onChanged: (v) => setState(() => _bulletDiameterSorted = v),
         ),
       ),
       _FieldId.seatingDepth: _FieldDef(
@@ -557,6 +1198,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ),
+
+      // ─────── Brass ───────
       _FieldId.brass: _FieldDef(
         id: _FieldId.brass,
         label: 'Brass',
@@ -566,6 +1209,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           kind: 'brass',
           label: 'Brass',
           controller: _brass,
+        ),
+      ),
+      _FieldId.brassLot: _FieldDef(
+        id: _FieldId.brassLot,
+        label: 'Brass Lot',
+        level: DetailLevel.detailed,
+        aliases: const ['lot', 'headstamp', 'batch', 'case'],
+        builder: (ctx) => _LotPickerField<BrassLotRow>(
+          label: 'Brass Lot',
+          future: _brassLotsFuture,
+          selectedId: _brassLotId,
+          itemLabel: (row) => _composeBrassLotLabel(row),
+          itemId: (row) => row.id,
+          onChanged: (v) => setState(() => _brassLotId = v),
+          onCreate: () => _showCreateBrassLotDialog(),
         ),
       ),
       _FieldId.primerPocketSize: _FieldDef(
@@ -612,6 +1270,22 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ),
+      _FieldId.bushingSize: _FieldDef(
+        id: _FieldId.bushingSize,
+        label: 'Bushing Size',
+        level: DetailLevel.all,
+        aliases: const ['bushing', 'die', 'neck'],
+        builder: (ctx) => TextFormField(
+          controller: _bushingSize,
+          decoration: const InputDecoration(
+            labelText: 'Bushing Size (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+
+      // ─────── Loaded Round Dimensions ───────
       _FieldId.coal: _FieldDef(
         id: _FieldId.coal,
         label: 'COAL',
@@ -626,6 +1300,274 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ),
+      _FieldId.distanceToLands: _FieldDef(
+        id: _FieldId.distanceToLands,
+        label: 'Distance to Lands',
+        level: DetailLevel.all,
+        aliases: const ['lands', 'jam', 'distance', 'touch'],
+        builder: (ctx) => TextFormField(
+          controller: _distanceToLands,
+          decoration: const InputDecoration(
+            labelText: 'Distance to Lands (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.jumpToLands: _FieldDef(
+        id: _FieldId.jumpToLands,
+        label: 'Jump to Lands',
+        level: DetailLevel.all,
+        aliases: const ['jump', 'lands', 'freebore'],
+        builder: (ctx) => TextFormField(
+          controller: _jumpToLands,
+          decoration: const InputDecoration(
+            labelText: 'Jump to Lands (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.loadedNeckDiameter: _FieldDef(
+        id: _FieldId.loadedNeckDiameter,
+        label: 'Loaded Neck Diameter',
+        level: DetailLevel.all,
+        aliases: const ['neck', 'diameter', 'tension', 'loaded'],
+        builder: (ctx) => TextFormField(
+          controller: _loadedNeckDiameter,
+          decoration: const InputDecoration(
+            labelText: 'Loaded Neck Diameter (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.bulletRunout: _FieldDef(
+        id: _FieldId.bulletRunout,
+        label: 'Bullet Runout / TIR',
+        level: DetailLevel.all,
+        aliases: const ['runout', 'tir', 'concentricity', 'bullet'],
+        builder: (ctx) => TextFormField(
+          controller: _bulletRunout,
+          decoration: const InputDecoration(
+            labelText: 'Bullet Runout / TIR (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+
+      // ─────── Pressure Indicators ───────
+      _FieldId.pressureNotes: _FieldDef(
+        id: _FieldId.pressureNotes,
+        label: 'Pressure Notes',
+        level: DetailLevel.all,
+        aliases: const ['pressure', 'notes', 'observations'],
+        builder: (ctx) => TextFormField(
+          controller: _pressureNotes,
+          decoration: const InputDecoration(
+            labelText: 'Pressure Notes',
+            helperText: 'Free-form pressure-sign observations',
+          ),
+          maxLines: 3,
+        ),
+      ),
+      _FieldId.boltLift: _FieldDef(
+        id: _FieldId.boltLift,
+        label: 'Bolt Lift',
+        level: DetailLevel.all,
+        aliases: const ['bolt', 'lift', 'pressure', 'sticky', 'normal'],
+        builder: (ctx) => DropdownButtonFormField<String>(
+          initialValue: _boltLift,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Bolt Lift'),
+          items: [
+            for (final s in _boltLiftOptions)
+              DropdownMenuItem(value: s.value, child: Text(s.label)),
+          ],
+          onChanged: (v) => setState(() => _boltLift = v),
+        ),
+      ),
+      _FieldId.ejectorMarks: _FieldDef(
+        id: _FieldId.ejectorMarks,
+        label: 'Ejector Marks',
+        level: DetailLevel.all,
+        aliases: const ['ejector', 'marks', 'pressure', 'overpressure'],
+        builder: (ctx) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Ejector Marks'),
+          value: _ejectorMarks,
+          onChanged: (v) => setState(() => _ejectorMarks = v),
+        ),
+      ),
+      _FieldId.crateredPrimers: _FieldDef(
+        id: _FieldId.crateredPrimers,
+        label: 'Cratered Primers',
+        level: DetailLevel.all,
+        aliases: const [
+          'cratered',
+          'primer',
+          'pressure',
+          'marks',
+          'overpressure',
+        ],
+        builder: (ctx) => SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Cratered Primers'),
+          value: _crateredPrimers,
+          onChanged: (v) => setState(() => _crateredPrimers = v),
+        ),
+      ),
+      _FieldId.webExpansion: _FieldDef(
+        id: _FieldId.webExpansion,
+        label: 'Web Expansion at .200"',
+        level: DetailLevel.all,
+        aliases: const ['web', 'expansion', 'pressure', 'case'],
+        builder: (ctx) => TextFormField(
+          controller: _webExpansion,
+          decoration: const InputDecoration(
+            labelText: 'Web Expansion at .200" (in)',
+            suffixText: 'in',
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+      ),
+      _FieldId.primerFlatness: _FieldDef(
+        id: _FieldId.primerFlatness,
+        label: 'Primer Flatness',
+        level: DetailLevel.all,
+        aliases: const ['primer', 'flatness', 'pressure', 'flat'],
+        builder: (ctx) => _PrimerFlatnessField(
+          value: _primerFlatness,
+          onChanged: (v) => setState(() => _primerFlatness = v),
+        ),
+      ),
+
+      // ─────── Process / Equipment / Provenance ───────
+      _FieldId.loadingDate: _FieldDef(
+        id: _FieldId.loadingDate,
+        label: 'Loading Date',
+        level: DetailLevel.all,
+        aliases: const ['date', 'loaded', 'when'],
+        builder: (ctx) => _DateField(
+          label: 'Loading Date',
+          value: _loadingDate,
+          onChanged: (v) => setState(() => _loadingDate = v),
+        ),
+      ),
+      _FieldId.roundsLoadedInBatch: _FieldDef(
+        id: _FieldId.roundsLoadedInBatch,
+        label: 'Rounds Loaded in Batch',
+        level: DetailLevel.all,
+        aliases: const ['rounds', 'count', 'batch', 'quantity'],
+        builder: (ctx) => TextFormField(
+          controller: _roundsLoadedInBatch,
+          decoration: const InputDecoration(
+            labelText: 'Rounds Loaded in Batch',
+          ),
+          keyboardType: TextInputType.number,
+        ),
+      ),
+      _FieldId.pressUsed: _FieldDef(
+        id: _FieldId.pressUsed,
+        label: 'Press Used',
+        level: DetailLevel.all,
+        aliases: const ['press', 'tool', 'equipment'],
+        builder: (ctx) => TextFormField(
+          controller: _pressUsed,
+          decoration: const InputDecoration(labelText: 'Press Used'),
+        ),
+      ),
+      _FieldId.sizingDieUsed: _FieldDef(
+        id: _FieldId.sizingDieUsed,
+        label: 'Sizing Die Used',
+        level: DetailLevel.all,
+        aliases: const ['sizing', 'die', 'equipment'],
+        builder: (ctx) => TextFormField(
+          controller: _sizingDieUsed,
+          decoration: const InputDecoration(labelText: 'Sizing Die Used'),
+        ),
+      ),
+      _FieldId.seatingDieUsed: _FieldDef(
+        id: _FieldId.seatingDieUsed,
+        label: 'Seating Die Used',
+        level: DetailLevel.all,
+        aliases: const ['seating', 'die', 'equipment'],
+        builder: (ctx) => TextFormField(
+          controller: _seatingDieUsed,
+          decoration: const InputDecoration(labelText: 'Seating Die Used'),
+        ),
+      ),
+      _FieldId.scaleUsed: _FieldDef(
+        id: _FieldId.scaleUsed,
+        label: 'Scale Used',
+        level: DetailLevel.all,
+        aliases: const ['scale', 'balance', 'equipment'],
+        builder: (ctx) => TextFormField(
+          controller: _scaleUsed,
+          decoration: const InputDecoration(labelText: 'Scale Used'),
+        ),
+      ),
+      _FieldId.scaleCalibrationDate: _FieldDef(
+        id: _FieldId.scaleCalibrationDate,
+        label: 'Scale Calibration Date',
+        level: DetailLevel.all,
+        aliases: const ['calibration', 'scale', 'date', 'check'],
+        builder: (ctx) => _DateField(
+          label: 'Scale Calibration Date',
+          value: _scaleCalibrationDate,
+          onChanged: (v) => setState(() => _scaleCalibrationDate = v),
+        ),
+      ),
+      _FieldId.comparatorInsertUsed: _FieldDef(
+        id: _FieldId.comparatorInsertUsed,
+        label: 'Comparator Insert Used',
+        level: DetailLevel.all,
+        aliases: const ['comparator', 'insert', 'measurement'],
+        builder: (ctx) => TextFormField(
+          controller: _comparatorInsertUsed,
+          decoration:
+              const InputDecoration(labelText: 'Comparator Insert Used'),
+        ),
+      ),
+      _FieldId.chronographUsed: _FieldDef(
+        id: _FieldId.chronographUsed,
+        label: 'Chronograph Used',
+        level: DetailLevel.all,
+        aliases: const ['chronograph', 'velocity', 'equipment'],
+        builder: (ctx) => TextFormField(
+          controller: _chronographUsed,
+          decoration: const InputDecoration(labelText: 'Chronograph Used'),
+        ),
+      ),
+      _FieldId.boreState: _FieldDef(
+        id: _FieldId.boreState,
+        label: 'Bore State',
+        level: DetailLevel.all,
+        aliases: const ['bore', 'clean', 'fouled', 'seasoned', 'state'],
+        builder: (ctx) => DropdownButtonFormField<String>(
+          initialValue: _boreState,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Bore State'),
+          items: [
+            for (final s in _boreStateOptions)
+              DropdownMenuItem(value: s.value, child: Text(s.label)),
+          ],
+          onChanged: (v) => setState(() => _boreState = v),
+        ),
+      ),
+      _FieldId.loadedBy: _FieldDef(
+        id: _FieldId.loadedBy,
+        label: 'Loaded By',
+        level: DetailLevel.all,
+        aliases: const ['loaded', 'by', 'reloader', 'who'],
+        builder: (ctx) => TextFormField(
+          controller: _loadedBy,
+          decoration: const InputDecoration(labelText: 'Loaded By'),
+        ),
+      ),
+
+      // ─────── Notes ───────
       _FieldId.notes: _FieldDef(
         id: _FieldId.notes,
         label: 'Notes',
@@ -646,12 +1588,22 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _Section(
       id: 'load_id',
       title: 'Load Identification',
-      fieldIds: [_FieldId.recipeName, _FieldId.caliber],
+      fieldIds: [
+        _FieldId.recipeName,
+        _FieldId.caliber,
+        _FieldId.status,
+        _FieldId.useCase,
+      ],
     ),
     _Section(
       id: 'powder',
       title: 'Powder',
-      fieldIds: [_FieldId.powder, _FieldId.powderCharge],
+      fieldIds: [
+        _FieldId.powder,
+        _FieldId.powderCharge,
+        _FieldId.powderLot,
+        _FieldId.chargeTolerance,
+      ],
     ),
     _Section(
       id: 'primer',
@@ -660,6 +1612,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         _FieldId.primer,
         _FieldId.primerSize,
         _FieldId.primerDepth,
+        _FieldId.primerLot,
+        _FieldId.primerSeatingForce,
       ],
     ),
     _Section(
@@ -668,6 +1622,17 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       fieldIds: [
         _FieldId.bullet,
         _FieldId.bulletWeight,
+        _FieldId.bulletLot,
+        _FieldId.bulletLength,
+        _FieldId.bulletBaseToOgive,
+        _FieldId.bulletBearingSurface,
+        _FieldId.bulletMeplatTrimmed,
+        _FieldId.bulletPointed,
+        _FieldId.bulletWeightSorted,
+        _FieldId.bulletWeightTolerance,
+        _FieldId.bulletBtoSorted,
+        _FieldId.bulletBtoTolerance,
+        _FieldId.bulletDiameterSorted,
         _FieldId.seatingDepth,
         _FieldId.cbto,
       ],
@@ -677,15 +1642,57 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       title: 'Brass',
       fieldIds: [
         _FieldId.brass,
+        _FieldId.brassLot,
         _FieldId.primerPocketSize,
         _FieldId.shoulderBump,
         _FieldId.mandrelSize,
+        _FieldId.bushingSize,
       ],
     ),
     _Section(
       id: 'dimensions',
       title: 'Loaded Round Dimensions',
-      fieldIds: [_FieldId.coal],
+      fieldIds: [
+        _FieldId.coal,
+        _FieldId.distanceToLands,
+        _FieldId.jumpToLands,
+        _FieldId.loadedNeckDiameter,
+        _FieldId.bulletRunout,
+      ],
+    ),
+    _Section(
+      id: 'pressure',
+      title: 'Pressure Indicators',
+      fieldIds: [
+        _FieldId.pressureNotes,
+        _FieldId.boltLift,
+        _FieldId.ejectorMarks,
+        _FieldId.crateredPrimers,
+        _FieldId.webExpansion,
+        _FieldId.primerFlatness,
+      ],
+    ),
+    _Section(
+      id: 'process',
+      title: 'Process / Equipment / Provenance',
+      fieldIds: [
+        _FieldId.loadingDate,
+        _FieldId.roundsLoadedInBatch,
+        _FieldId.pressUsed,
+        _FieldId.sizingDieUsed,
+        _FieldId.seatingDieUsed,
+        _FieldId.scaleUsed,
+        _FieldId.scaleCalibrationDate,
+        _FieldId.comparatorInsertUsed,
+        _FieldId.chronographUsed,
+        _FieldId.boreState,
+        _FieldId.loadedBy,
+      ],
+    ),
+    _Section(
+      id: _customFieldsSectionId,
+      title: 'Custom Fields',
+      fieldIds: [],
     ),
     _Section(
       id: 'notes',
@@ -857,6 +1864,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     List<String> tokens,
   ) {
     for (final s in _sections) {
+      if (s.id == _customFieldsSectionId) continue;
       for (final fid in s.fieldIds) {
         final def = defs[fid];
         if (def == null) continue;
@@ -873,6 +1881,14 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     required List<String> tokens,
     required bool isSearching,
   }) {
+    if (section.id == _customFieldsSectionId) {
+      return _buildCustomFieldsSection(
+        context: context,
+        tokens: tokens,
+        isSearching: isSearching,
+      );
+    }
+
     final theme = Theme.of(context);
     final visibleFields = <_FieldDef>[];
     for (final fid in section.fieldIds) {
@@ -936,6 +1952,514 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       ),
     );
   }
+
+  /// Builds the Custom Fields section, which is driven by a future-loaded
+  /// list of [UserCustomFieldRow]s rather than the static FieldDef map.
+  Widget _buildCustomFieldsSection({
+    required BuildContext context,
+    required List<String> tokens,
+    required bool isSearching,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: FutureBuilder<List<UserCustomFieldRow>>(
+          future: _customFieldsFuture,
+          builder: (context, snap) {
+            final fields = snap.data ?? const <UserCustomFieldRow>[];
+            // While searching, only render fields whose name matches the
+            // query tokens.
+            final visible = <UserCustomFieldRow>[];
+            for (final f in fields) {
+              if (tokens.isEmpty) {
+                visible.add(f);
+              } else {
+                final name = f.fieldName.toLowerCase();
+                if (tokens.every(name.contains)) visible.add(f);
+              }
+            }
+
+            // Hide entire section when searching with no matches and no
+            // hint text. The "+ Add" affordance still shows when not
+            // searching (so a user can always add their first field).
+            if (isSearching && visible.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            final initiallyExpanded =
+                isSearching ? visible.isNotEmpty : true;
+            final tileKey = PageStorageKey<String>(
+              'recipe_section_custom_fields_search_$isSearching',
+            );
+
+            return ExpansionTile(
+              key: tileKey,
+              initiallyExpanded: initiallyExpanded,
+              tilePadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              title: _SectionHeader(
+                title: 'Custom Fields',
+                count: visible.length,
+              ),
+              children: [
+                for (int i = 0; i < visible.length; i++) ...[
+                  if (i > 0) const SizedBox(height: 12),
+                  KeyedSubtree(
+                    key: ValueKey('custom_field_${visible[i].id}'),
+                    child: _buildCustomFieldEditor(visible[i]),
+                  ),
+                ],
+                if (visible.isEmpty && !isSearching)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'Add your own fields — anything not covered by the '
+                      'standard sections above.',
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                    ),
+                  ),
+                if (!isSearching) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Custom Field'),
+                      onPressed: _showAddCustomFieldDialog,
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Renders the right editor for a single custom field row.
+  Widget _buildCustomFieldEditor(UserCustomFieldRow field) {
+    switch (field.fieldType) {
+      case 'text':
+        final ctrl = _customControllers.putIfAbsent(
+          field.id,
+          () => TextEditingController(text: _customValues[field.id] ?? ''),
+        );
+        return TextFormField(
+          controller: ctrl,
+          decoration: InputDecoration(
+            labelText: field.fieldName,
+            suffixText: field.unitSuffix,
+          ),
+        );
+      case 'number':
+        final ctrl = _customControllers.putIfAbsent(
+          field.id,
+          () => TextEditingController(text: _customValues[field.id] ?? ''),
+        );
+        return TextFormField(
+          controller: ctrl,
+          decoration: InputDecoration(
+            labelText: field.fieldName,
+            suffixText: field.unitSuffix,
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        );
+      case 'boolean':
+        final v = _customValues[field.id] == 'true';
+        return SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(field.fieldName),
+          value: v,
+          onChanged: (newV) => setState(() {
+            _customValues[field.id] = newV ? 'true' : 'false';
+          }),
+        );
+      case 'date':
+        DateTime? parsed;
+        final raw = _customValues[field.id];
+        if (raw != null && raw.isNotEmpty) {
+          parsed = DateTime.tryParse(raw);
+        }
+        return _DateField(
+          label: field.fieldName,
+          value: parsed,
+          onChanged: (newDate) => setState(() {
+            _customValues[field.id] = newDate?.toIso8601String();
+          }),
+        );
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  // ─────────────────────── Lot helpers ───────────────────────
+
+  String _composeLotLabel(
+    String? manufacturer,
+    String name,
+    String? lotNumber,
+  ) {
+    final parts = <String>[
+      if (manufacturer != null && manufacturer.isNotEmpty) manufacturer,
+      name,
+      if (lotNumber != null && lotNumber.isNotEmpty) '(Lot $lotNumber)',
+    ];
+    return parts.join(' ');
+  }
+
+  String _composeBrassLotLabel(BrassLotRow row) {
+    final parts = <String>[
+      row.name,
+      if (row.caliber.isNotEmpty) '— ${row.caliber}',
+    ];
+    return parts.join(' ');
+  }
+
+  /// Pops a small two-or-three field dialog used for inline lot creation
+  /// from any of the powder/primer/bullet pickers. Brass lots use
+  /// [_showCreateBrassLotDialog] instead because they require a caliber.
+  Future<void> _showCreateLotDialog({
+    required String type,
+    required Future<void> Function(String? mfg, String name, String? lot)
+        onCreate,
+  }) async {
+    final mfgCtrl = TextEditingController();
+    final nameCtrl = TextEditingController();
+    final lotCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final theme = Theme.of(context);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('New ${_typeLabel(type)} Lot'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: mfgCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Manufacturer'),
+                    autocorrect: false,
+                  ),
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Name *'),
+                    autocorrect: false,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Required'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: lotCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Lot Number'),
+                    autocorrect: false,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                Navigator.of(ctx).pop();
+                await onCreate(
+                  mfgCtrl.text.trim().isEmpty ? null : mfgCtrl.text.trim(),
+                  nameCtrl.text.trim(),
+                  lotCtrl.text.trim().isEmpty ? null : lotCtrl.text.trim(),
+                );
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+              ),
+              child: const Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
+
+    mfgCtrl.dispose();
+    nameCtrl.dispose();
+    lotCtrl.dispose();
+  }
+
+  Future<void> _showCreateBrassLotDialog() async {
+    final nameCtrl = TextEditingController();
+    final mfgCtrl = TextEditingController();
+    final caliberCtrl = TextEditingController(text: _caliber.text.trim());
+    final headstampCtrl = TextEditingController();
+    final countCtrl = TextEditingController(text: '0');
+    final formKey = GlobalKey<FormState>();
+    final theme = Theme.of(context);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('New Brass Lot'),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Lot Name *'),
+                    autocorrect: false,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Required'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: mfgCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Manufacturer'),
+                    autocorrect: false,
+                  ),
+                  TextFormField(
+                    controller: caliberCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Caliber *'),
+                    autocorrect: false,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? 'Required'
+                        : null,
+                  ),
+                  TextFormField(
+                    controller: headstampCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Headstamp / Lot Marking',
+                    ),
+                    autocorrect: false,
+                  ),
+                  TextFormField(
+                    controller: countCtrl,
+                    decoration:
+                        const InputDecoration(labelText: 'Count'),
+                    keyboardType: TextInputType.number,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                if (!formKey.currentState!.validate()) return;
+                Navigator.of(ctx).pop();
+                final repo = context.read<RecipeRepository>();
+                final id = await repo.createBrassLot(
+                  name: nameCtrl.text.trim(),
+                  manufacturer: mfgCtrl.text.trim().isEmpty
+                      ? null
+                      : mfgCtrl.text.trim(),
+                  caliber: caliberCtrl.text.trim(),
+                  headstampLot: headstampCtrl.text.trim().isEmpty
+                      ? null
+                      : headstampCtrl.text.trim(),
+                  count: int.tryParse(countCtrl.text.trim()) ?? 0,
+                );
+                if (!mounted) return;
+                setState(() {
+                  _brassLotsFuture = repo.allBrassLots();
+                  _brassLotId = id;
+                });
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+              ),
+              child: const Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
+
+    nameCtrl.dispose();
+    mfgCtrl.dispose();
+    caliberCtrl.dispose();
+    headstampCtrl.dispose();
+    countCtrl.dispose();
+  }
+
+  String _typeLabel(String type) {
+    switch (type) {
+      case 'powder':
+        return 'Powder';
+      case 'primer':
+        return 'Primer';
+      case 'bullet':
+        return 'Bullet';
+      case 'brass':
+        return 'Brass';
+      default:
+        return type;
+    }
+  }
+
+  // ─────────────────────── Custom field dialog ───────────────────────
+
+  Future<void> _showAddCustomFieldDialog() async {
+    final nameCtrl = TextEditingController();
+    final unitCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    String fieldType = 'text';
+    final theme = Theme.of(context);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setLocal) {
+            return AlertDialog(
+              title: const Text('New Custom Field'),
+              content: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: nameCtrl,
+                        decoration:
+                            const InputDecoration(labelText: 'Field Name *'),
+                        autocorrect: false,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Required'
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Field Type',
+                        style: theme.textTheme.labelLarge,
+                      ),
+                      RadioListTile<String>(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: const Text('Text'),
+                        value: 'text',
+                        // ignore: deprecated_member_use
+                        groupValue: fieldType,
+                        // ignore: deprecated_member_use
+                        onChanged: (v) =>
+                            setLocal(() => fieldType = v ?? 'text'),
+                      ),
+                      RadioListTile<String>(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: const Text('Number'),
+                        value: 'number',
+                        // ignore: deprecated_member_use
+                        groupValue: fieldType,
+                        // ignore: deprecated_member_use
+                        onChanged: (v) =>
+                            setLocal(() => fieldType = v ?? 'text'),
+                      ),
+                      RadioListTile<String>(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: const Text('Boolean (Yes/No)'),
+                        value: 'boolean',
+                        // ignore: deprecated_member_use
+                        groupValue: fieldType,
+                        // ignore: deprecated_member_use
+                        onChanged: (v) =>
+                            setLocal(() => fieldType = v ?? 'text'),
+                      ),
+                      RadioListTile<String>(
+                        contentPadding: EdgeInsets.zero,
+                        dense: true,
+                        title: const Text('Date'),
+                        value: 'date',
+                        // ignore: deprecated_member_use
+                        groupValue: fieldType,
+                        // ignore: deprecated_member_use
+                        onChanged: (v) =>
+                            setLocal(() => fieldType = v ?? 'text'),
+                      ),
+                      if (fieldType == 'number') ...[
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: unitCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Unit Suffix',
+                            helperText: 'e.g. gr, fps, in',
+                          ),
+                          autocorrect: false,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    if (!formKey.currentState!.validate()) return;
+                    Navigator.of(ctx).pop();
+                    final repo = context.read<RecipeRepository>();
+                    await repo.createCustomField(
+                      entityType: 'recipe',
+                      name: nameCtrl.text.trim(),
+                      type: fieldType,
+                      unitSuffix: fieldType == 'number' &&
+                              unitCtrl.text.trim().isNotEmpty
+                          ? unitCtrl.text.trim()
+                          : null,
+                    );
+                    if (!mounted) return;
+                    setState(() {
+                      _customFieldsFuture =
+                          repo.customFieldsForEntity('recipe');
+                    });
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: theme.colorScheme.primary,
+                  ),
+                  child: const Text('Add'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    nameCtrl.dispose();
+    unitCtrl.dispose();
+  }
 }
 
 /// Brass-tinted chip used inside an [ExpansionTile.title]. Mirrors the
@@ -980,6 +2504,238 @@ class _SectionHeader extends StatelessWidget {
               ),
             ),
           ),
+      ],
+    );
+  }
+}
+
+/// Shared dropdown widget used by the four lot pickers (powder, primer,
+/// bullet, brass). Loads its option list from a Future and shows a
+/// "+ Create New" tile at the bottom that delegates to a caller-supplied
+/// dialog. Picking the create item does not change the dropdown value
+/// directly — the caller is expected to update [selectedId] via [onChanged]
+/// after the new lot lands in the DB.
+class _LotPickerField<T> extends StatelessWidget {
+  const _LotPickerField({
+    required this.label,
+    required this.future,
+    required this.selectedId,
+    required this.itemLabel,
+    required this.itemId,
+    required this.onChanged,
+    required this.onCreate,
+  });
+
+  final String label;
+  final Future<List<T>> future;
+  final int? selectedId;
+  final String Function(T) itemLabel;
+  final int Function(T) itemId;
+  final ValueChanged<int?> onChanged;
+  final Future<void> Function() onCreate;
+
+  static const int _createNewSentinel = -1;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FutureBuilder<List<T>>(
+      future: future,
+      builder: (context, snap) {
+        final rows = snap.data ?? const [];
+        final hasLots = rows.isNotEmpty;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DropdownButtonFormField<int>(
+              initialValue: selectedId,
+              isExpanded: true,
+              decoration: InputDecoration(
+                labelText: label,
+                helperText: hasLots
+                    ? null
+                    : 'No lots yet — tap + to add one',
+              ),
+              items: [
+                const DropdownMenuItem<int>(
+                  value: null,
+                  child: Text('— None —'),
+                ),
+                for (final row in rows)
+                  DropdownMenuItem<int>(
+                    value: itemId(row),
+                    child: Text(
+                      itemLabel(row),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                DropdownMenuItem<int>(
+                  value: _createNewSentinel,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.add, color: theme.colorScheme.primary),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Create New',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              onChanged: (v) async {
+                if (v == _createNewSentinel) {
+                  await onCreate();
+                  return;
+                }
+                onChanged(v);
+              },
+            ),
+            if (!hasLots)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Lot'),
+                    onPressed: () async => onCreate(),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Compact tile-style date picker. Tapping the field opens a date picker
+/// limited to a sensible reload-tracking window.
+class _DateField extends StatelessWidget {
+  const _DateField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final DateTime? value;
+  final ValueChanged<DateTime?> onChanged;
+
+  static String _format(DateTime d) {
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$day';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: () async {
+        final now = DateTime.now();
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: value ?? now,
+          firstDate: DateTime(2000),
+          lastDate: DateTime(now.year + 5),
+        );
+        if (picked != null) onChanged(picked);
+      },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: value == null
+              ? const Icon(Icons.calendar_today, size: 18)
+              : IconButton(
+                  icon: const Icon(Icons.close, size: 18),
+                  tooltip: 'Clear',
+                  onPressed: () => onChanged(null),
+                ),
+        ),
+        child: Text(
+          value == null ? 'Tap to pick a date' : _format(value!),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: value == null
+                ? theme.colorScheme.onSurfaceVariant
+                : theme.colorScheme.onSurface,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 1-5 stepper for the Primer Flatness pressure indicator. Renders as a
+/// labelled slider with a numeric value chip — easier to dial in on a
+/// touch screen than typing 1-5 by hand.
+class _PrimerFlatnessField extends StatelessWidget {
+  const _PrimerFlatnessField({required this.value, required this.onChanged});
+
+  final int? value;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final v = value ?? 0; // 0 = unset; slider starts at 1
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Primer Flatness',
+              style: theme.textTheme.labelLarge,
+            ),
+            const Spacer(),
+            if (value != null)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '$value / 5',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            else
+              TextButton(
+                onPressed: () => onChanged(3),
+                child: const Text('Set'),
+              ),
+          ],
+        ),
+        Slider(
+          value: v.toDouble().clamp(0, 5),
+          min: 0,
+          max: 5,
+          divisions: 5,
+          label: value == null ? '—' : '$value',
+          onChanged: (newV) {
+            final i = newV.round();
+            onChanged(i == 0 ? null : i);
+          },
+        ),
+        Text(
+          '1 = Rounded edges, 5 = Flat / Cratered',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
       ],
     );
   }

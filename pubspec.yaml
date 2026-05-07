@@ -48,6 +48,22 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.1
   purchases_flutter: ^9.4.0
+  http: ^1.1.0
+
+  # Backup & export (feature #5).
+  # share_plus  — system share sheet for the local JSON export.
+  # cryptography — pure-Dart AES-256-GCM + PBKDF2 used to encrypt the
+  #                cloud-backup blob entirely on-device.
+  # icloud_storage — iOS-only iCloud Drive backup target. Falls back to
+  #                  unavailable when the iCloud capability isn't enabled
+  #                  on the App ID, so dev/CI builds don't break.
+  # googleapis / googleapis_auth — Drive API client for the cross-platform
+  #                                Google Drive (appDataFolder) backup target.
+  share_plus: ^10.1.4
+  cryptography: ^2.7.0
+  icloud_storage: ^2.2.0
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
 
 dev_dependencies:
   flutter_test:

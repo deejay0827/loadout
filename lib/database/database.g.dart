@@ -5066,6 +5066,2606 @@ class CustomComponentsCompanion extends UpdateCompanion<CustomComponentRow> {
   }
 }
 
+class $PowderLotsTable extends PowderLots
+    with TableInfo<$PowderLotsTable, PowderLotRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PowderLotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lotNumberMeta = const VerificationMeta(
+    'lotNumber',
+  );
+  @override
+  late final GeneratedColumn<String> lotNumber = GeneratedColumn<String>(
+    'lot_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dateOpenedMeta = const VerificationMeta(
+    'dateOpened',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateOpened = GeneratedColumn<DateTime>(
+    'date_opened',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturer,
+    name,
+    lotNumber,
+    dateOpened,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'powder_lots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PowderLotRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('lot_number')) {
+      context.handle(
+        _lotNumberMeta,
+        lotNumber.isAcceptableOrUnknown(data['lot_number']!, _lotNumberMeta),
+      );
+    }
+    if (data.containsKey('date_opened')) {
+      context.handle(
+        _dateOpenedMeta,
+        dateOpened.isAcceptableOrUnknown(data['date_opened']!, _dateOpenedMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PowderLotRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PowderLotRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      lotNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_number'],
+      ),
+      dateOpened: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_opened'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PowderLotsTable createAlias(String alias) {
+    return $PowderLotsTable(attachedDatabase, alias);
+  }
+}
+
+class PowderLotRow extends DataClass implements Insertable<PowderLotRow> {
+  final int id;
+  final String? manufacturer;
+
+  /// Product / model name (e.g. "Varget", "H4350").
+  final String name;
+  final String? lotNumber;
+  final DateTime? dateOpened;
+  final String? notes;
+  final DateTime createdAt;
+  const PowderLotRow({
+    required this.id,
+    this.manufacturer,
+    required this.name,
+    this.lotNumber,
+    this.dateOpened,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || manufacturer != null) {
+      map['manufacturer'] = Variable<String>(manufacturer);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || lotNumber != null) {
+      map['lot_number'] = Variable<String>(lotNumber);
+    }
+    if (!nullToAbsent || dateOpened != null) {
+      map['date_opened'] = Variable<DateTime>(dateOpened);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PowderLotsCompanion toCompanion(bool nullToAbsent) {
+    return PowderLotsCompanion(
+      id: Value(id),
+      manufacturer: manufacturer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(manufacturer),
+      name: Value(name),
+      lotNumber: lotNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotNumber),
+      dateOpened: dateOpened == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateOpened),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PowderLotRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PowderLotRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturer: serializer.fromJson<String?>(json['manufacturer']),
+      name: serializer.fromJson<String>(json['name']),
+      lotNumber: serializer.fromJson<String?>(json['lotNumber']),
+      dateOpened: serializer.fromJson<DateTime?>(json['dateOpened']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturer': serializer.toJson<String?>(manufacturer),
+      'name': serializer.toJson<String>(name),
+      'lotNumber': serializer.toJson<String?>(lotNumber),
+      'dateOpened': serializer.toJson<DateTime?>(dateOpened),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PowderLotRow copyWith({
+    int? id,
+    Value<String?> manufacturer = const Value.absent(),
+    String? name,
+    Value<String?> lotNumber = const Value.absent(),
+    Value<DateTime?> dateOpened = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => PowderLotRow(
+    id: id ?? this.id,
+    manufacturer: manufacturer.present ? manufacturer.value : this.manufacturer,
+    name: name ?? this.name,
+    lotNumber: lotNumber.present ? lotNumber.value : this.lotNumber,
+    dateOpened: dateOpened.present ? dateOpened.value : this.dateOpened,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PowderLotRow copyWithCompanion(PowderLotsCompanion data) {
+    return PowderLotRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      name: data.name.present ? data.name.value : this.name,
+      lotNumber: data.lotNumber.present ? data.lotNumber.value : this.lotNumber,
+      dateOpened: data.dateOpened.present
+          ? data.dateOpened.value
+          : this.dateOpened,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PowderLotRow(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('name: $name, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('dateOpened: $dateOpened, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manufacturer,
+    name,
+    lotNumber,
+    dateOpened,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PowderLotRow &&
+          other.id == this.id &&
+          other.manufacturer == this.manufacturer &&
+          other.name == this.name &&
+          other.lotNumber == this.lotNumber &&
+          other.dateOpened == this.dateOpened &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class PowderLotsCompanion extends UpdateCompanion<PowderLotRow> {
+  final Value<int> id;
+  final Value<String?> manufacturer;
+  final Value<String> name;
+  final Value<String?> lotNumber;
+  final Value<DateTime?> dateOpened;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const PowderLotsCompanion({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.name = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.dateOpened = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PowderLotsCompanion.insert({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    required String name,
+    this.lotNumber = const Value.absent(),
+    this.dateOpened = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<PowderLotRow> custom({
+    Expression<int>? id,
+    Expression<String>? manufacturer,
+    Expression<String>? name,
+    Expression<String>? lotNumber,
+    Expression<DateTime>? dateOpened,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (name != null) 'name': name,
+      if (lotNumber != null) 'lot_number': lotNumber,
+      if (dateOpened != null) 'date_opened': dateOpened,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PowderLotsCompanion copyWith({
+    Value<int>? id,
+    Value<String?>? manufacturer,
+    Value<String>? name,
+    Value<String?>? lotNumber,
+    Value<DateTime?>? dateOpened,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return PowderLotsCompanion(
+      id: id ?? this.id,
+      manufacturer: manufacturer ?? this.manufacturer,
+      name: name ?? this.name,
+      lotNumber: lotNumber ?? this.lotNumber,
+      dateOpened: dateOpened ?? this.dateOpened,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (lotNumber.present) {
+      map['lot_number'] = Variable<String>(lotNumber.value);
+    }
+    if (dateOpened.present) {
+      map['date_opened'] = Variable<DateTime>(dateOpened.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PowderLotsCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('name: $name, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('dateOpened: $dateOpened, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PrimerLotsTable extends PrimerLots
+    with TableInfo<$PrimerLotsTable, PrimerLotRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PrimerLotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lotNumberMeta = const VerificationMeta(
+    'lotNumber',
+  );
+  @override
+  late final GeneratedColumn<String> lotNumber = GeneratedColumn<String>(
+    'lot_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dateOpenedMeta = const VerificationMeta(
+    'dateOpened',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateOpened = GeneratedColumn<DateTime>(
+    'date_opened',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturer,
+    name,
+    lotNumber,
+    dateOpened,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'primer_lots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PrimerLotRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('lot_number')) {
+      context.handle(
+        _lotNumberMeta,
+        lotNumber.isAcceptableOrUnknown(data['lot_number']!, _lotNumberMeta),
+      );
+    }
+    if (data.containsKey('date_opened')) {
+      context.handle(
+        _dateOpenedMeta,
+        dateOpened.isAcceptableOrUnknown(data['date_opened']!, _dateOpenedMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PrimerLotRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PrimerLotRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      lotNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_number'],
+      ),
+      dateOpened: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_opened'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PrimerLotsTable createAlias(String alias) {
+    return $PrimerLotsTable(attachedDatabase, alias);
+  }
+}
+
+class PrimerLotRow extends DataClass implements Insertable<PrimerLotRow> {
+  final int id;
+  final String? manufacturer;
+  final String name;
+  final String? lotNumber;
+  final DateTime? dateOpened;
+  final String? notes;
+  final DateTime createdAt;
+  const PrimerLotRow({
+    required this.id,
+    this.manufacturer,
+    required this.name,
+    this.lotNumber,
+    this.dateOpened,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || manufacturer != null) {
+      map['manufacturer'] = Variable<String>(manufacturer);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || lotNumber != null) {
+      map['lot_number'] = Variable<String>(lotNumber);
+    }
+    if (!nullToAbsent || dateOpened != null) {
+      map['date_opened'] = Variable<DateTime>(dateOpened);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PrimerLotsCompanion toCompanion(bool nullToAbsent) {
+    return PrimerLotsCompanion(
+      id: Value(id),
+      manufacturer: manufacturer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(manufacturer),
+      name: Value(name),
+      lotNumber: lotNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotNumber),
+      dateOpened: dateOpened == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateOpened),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PrimerLotRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PrimerLotRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturer: serializer.fromJson<String?>(json['manufacturer']),
+      name: serializer.fromJson<String>(json['name']),
+      lotNumber: serializer.fromJson<String?>(json['lotNumber']),
+      dateOpened: serializer.fromJson<DateTime?>(json['dateOpened']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturer': serializer.toJson<String?>(manufacturer),
+      'name': serializer.toJson<String>(name),
+      'lotNumber': serializer.toJson<String?>(lotNumber),
+      'dateOpened': serializer.toJson<DateTime?>(dateOpened),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PrimerLotRow copyWith({
+    int? id,
+    Value<String?> manufacturer = const Value.absent(),
+    String? name,
+    Value<String?> lotNumber = const Value.absent(),
+    Value<DateTime?> dateOpened = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => PrimerLotRow(
+    id: id ?? this.id,
+    manufacturer: manufacturer.present ? manufacturer.value : this.manufacturer,
+    name: name ?? this.name,
+    lotNumber: lotNumber.present ? lotNumber.value : this.lotNumber,
+    dateOpened: dateOpened.present ? dateOpened.value : this.dateOpened,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PrimerLotRow copyWithCompanion(PrimerLotsCompanion data) {
+    return PrimerLotRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      name: data.name.present ? data.name.value : this.name,
+      lotNumber: data.lotNumber.present ? data.lotNumber.value : this.lotNumber,
+      dateOpened: data.dateOpened.present
+          ? data.dateOpened.value
+          : this.dateOpened,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrimerLotRow(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('name: $name, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('dateOpened: $dateOpened, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manufacturer,
+    name,
+    lotNumber,
+    dateOpened,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PrimerLotRow &&
+          other.id == this.id &&
+          other.manufacturer == this.manufacturer &&
+          other.name == this.name &&
+          other.lotNumber == this.lotNumber &&
+          other.dateOpened == this.dateOpened &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class PrimerLotsCompanion extends UpdateCompanion<PrimerLotRow> {
+  final Value<int> id;
+  final Value<String?> manufacturer;
+  final Value<String> name;
+  final Value<String?> lotNumber;
+  final Value<DateTime?> dateOpened;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const PrimerLotsCompanion({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.name = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.dateOpened = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PrimerLotsCompanion.insert({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    required String name,
+    this.lotNumber = const Value.absent(),
+    this.dateOpened = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<PrimerLotRow> custom({
+    Expression<int>? id,
+    Expression<String>? manufacturer,
+    Expression<String>? name,
+    Expression<String>? lotNumber,
+    Expression<DateTime>? dateOpened,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (name != null) 'name': name,
+      if (lotNumber != null) 'lot_number': lotNumber,
+      if (dateOpened != null) 'date_opened': dateOpened,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PrimerLotsCompanion copyWith({
+    Value<int>? id,
+    Value<String?>? manufacturer,
+    Value<String>? name,
+    Value<String?>? lotNumber,
+    Value<DateTime?>? dateOpened,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return PrimerLotsCompanion(
+      id: id ?? this.id,
+      manufacturer: manufacturer ?? this.manufacturer,
+      name: name ?? this.name,
+      lotNumber: lotNumber ?? this.lotNumber,
+      dateOpened: dateOpened ?? this.dateOpened,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (lotNumber.present) {
+      map['lot_number'] = Variable<String>(lotNumber.value);
+    }
+    if (dateOpened.present) {
+      map['date_opened'] = Variable<DateTime>(dateOpened.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PrimerLotsCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('name: $name, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('dateOpened: $dateOpened, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BulletLotsTable extends BulletLots
+    with TableInfo<$BulletLotsTable, BulletLotRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BulletLotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lotNumberMeta = const VerificationMeta(
+    'lotNumber',
+  );
+  @override
+  late final GeneratedColumn<String> lotNumber = GeneratedColumn<String>(
+    'lot_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _dateOpenedMeta = const VerificationMeta(
+    'dateOpened',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dateOpened = GeneratedColumn<DateTime>(
+    'date_opened',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturer,
+    name,
+    lotNumber,
+    dateOpened,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'bullet_lots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BulletLotRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('lot_number')) {
+      context.handle(
+        _lotNumberMeta,
+        lotNumber.isAcceptableOrUnknown(data['lot_number']!, _lotNumberMeta),
+      );
+    }
+    if (data.containsKey('date_opened')) {
+      context.handle(
+        _dateOpenedMeta,
+        dateOpened.isAcceptableOrUnknown(data['date_opened']!, _dateOpenedMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BulletLotRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BulletLotRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      lotNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_number'],
+      ),
+      dateOpened: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}date_opened'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BulletLotsTable createAlias(String alias) {
+    return $BulletLotsTable(attachedDatabase, alias);
+  }
+}
+
+class BulletLotRow extends DataClass implements Insertable<BulletLotRow> {
+  final int id;
+  final String? manufacturer;
+  final String name;
+  final String? lotNumber;
+  final DateTime? dateOpened;
+  final String? notes;
+  final DateTime createdAt;
+  const BulletLotRow({
+    required this.id,
+    this.manufacturer,
+    required this.name,
+    this.lotNumber,
+    this.dateOpened,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || manufacturer != null) {
+      map['manufacturer'] = Variable<String>(manufacturer);
+    }
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || lotNumber != null) {
+      map['lot_number'] = Variable<String>(lotNumber);
+    }
+    if (!nullToAbsent || dateOpened != null) {
+      map['date_opened'] = Variable<DateTime>(dateOpened);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  BulletLotsCompanion toCompanion(bool nullToAbsent) {
+    return BulletLotsCompanion(
+      id: Value(id),
+      manufacturer: manufacturer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(manufacturer),
+      name: Value(name),
+      lotNumber: lotNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotNumber),
+      dateOpened: dateOpened == null && nullToAbsent
+          ? const Value.absent()
+          : Value(dateOpened),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory BulletLotRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BulletLotRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturer: serializer.fromJson<String?>(json['manufacturer']),
+      name: serializer.fromJson<String>(json['name']),
+      lotNumber: serializer.fromJson<String?>(json['lotNumber']),
+      dateOpened: serializer.fromJson<DateTime?>(json['dateOpened']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturer': serializer.toJson<String?>(manufacturer),
+      'name': serializer.toJson<String>(name),
+      'lotNumber': serializer.toJson<String?>(lotNumber),
+      'dateOpened': serializer.toJson<DateTime?>(dateOpened),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  BulletLotRow copyWith({
+    int? id,
+    Value<String?> manufacturer = const Value.absent(),
+    String? name,
+    Value<String?> lotNumber = const Value.absent(),
+    Value<DateTime?> dateOpened = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => BulletLotRow(
+    id: id ?? this.id,
+    manufacturer: manufacturer.present ? manufacturer.value : this.manufacturer,
+    name: name ?? this.name,
+    lotNumber: lotNumber.present ? lotNumber.value : this.lotNumber,
+    dateOpened: dateOpened.present ? dateOpened.value : this.dateOpened,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  BulletLotRow copyWithCompanion(BulletLotsCompanion data) {
+    return BulletLotRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      name: data.name.present ? data.name.value : this.name,
+      lotNumber: data.lotNumber.present ? data.lotNumber.value : this.lotNumber,
+      dateOpened: data.dateOpened.present
+          ? data.dateOpened.value
+          : this.dateOpened,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BulletLotRow(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('name: $name, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('dateOpened: $dateOpened, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manufacturer,
+    name,
+    lotNumber,
+    dateOpened,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BulletLotRow &&
+          other.id == this.id &&
+          other.manufacturer == this.manufacturer &&
+          other.name == this.name &&
+          other.lotNumber == this.lotNumber &&
+          other.dateOpened == this.dateOpened &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class BulletLotsCompanion extends UpdateCompanion<BulletLotRow> {
+  final Value<int> id;
+  final Value<String?> manufacturer;
+  final Value<String> name;
+  final Value<String?> lotNumber;
+  final Value<DateTime?> dateOpened;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const BulletLotsCompanion({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.name = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.dateOpened = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  BulletLotsCompanion.insert({
+    this.id = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    required String name,
+    this.lotNumber = const Value.absent(),
+    this.dateOpened = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<BulletLotRow> custom({
+    Expression<int>? id,
+    Expression<String>? manufacturer,
+    Expression<String>? name,
+    Expression<String>? lotNumber,
+    Expression<DateTime>? dateOpened,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (name != null) 'name': name,
+      if (lotNumber != null) 'lot_number': lotNumber,
+      if (dateOpened != null) 'date_opened': dateOpened,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  BulletLotsCompanion copyWith({
+    Value<int>? id,
+    Value<String?>? manufacturer,
+    Value<String>? name,
+    Value<String?>? lotNumber,
+    Value<DateTime?>? dateOpened,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return BulletLotsCompanion(
+      id: id ?? this.id,
+      manufacturer: manufacturer ?? this.manufacturer,
+      name: name ?? this.name,
+      lotNumber: lotNumber ?? this.lotNumber,
+      dateOpened: dateOpened ?? this.dateOpened,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (lotNumber.present) {
+      map['lot_number'] = Variable<String>(lotNumber.value);
+    }
+    if (dateOpened.present) {
+      map['date_opened'] = Variable<DateTime>(dateOpened.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BulletLotsCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('name: $name, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('dateOpened: $dateOpened, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BrassLotsTable extends BrassLots
+    with TableInfo<$BrassLotsTable, BrassLotRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BrassLotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caliberMeta = const VerificationMeta(
+    'caliber',
+  );
+  @override
+  late final GeneratedColumn<String> caliber = GeneratedColumn<String>(
+    'caliber',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _headstampLotMeta = const VerificationMeta(
+    'headstampLot',
+  );
+  @override
+  late final GeneratedColumn<String> headstampLot = GeneratedColumn<String>(
+    'headstamp_lot',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firingCountMeta = const VerificationMeta(
+    'firingCount',
+  );
+  @override
+  late final GeneratedColumn<int> firingCount = GeneratedColumn<int>(
+    'firing_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastAnnealedMeta = const VerificationMeta(
+    'lastAnnealed',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastAnnealed = GeneratedColumn<DateTime>(
+    'last_annealed',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _annealMethodMeta = const VerificationMeta(
+    'annealMethod',
+  );
+  @override
+  late final GeneratedColumn<String> annealMethod = GeneratedColumn<String>(
+    'anneal_method',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _avgWeightGrMeta = const VerificationMeta(
+    'avgWeightGr',
+  );
+  @override
+  late final GeneratedColumn<double> avgWeightGr = GeneratedColumn<double>(
+    'avg_weight_gr',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _caseCapacityGrH2oMeta = const VerificationMeta(
+    'caseCapacityGrH2o',
+  );
+  @override
+  late final GeneratedColumn<double> caseCapacityGrH2o =
+      GeneratedColumn<double>(
+        'case_capacity_gr_h2o',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _trimToLengthInMeta = const VerificationMeta(
+    'trimToLengthIn',
+  );
+  @override
+  late final GeneratedColumn<double> trimToLengthIn = GeneratedColumn<double>(
+    'trim_to_length_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastTrimLengthInMeta = const VerificationMeta(
+    'lastTrimLengthIn',
+  );
+  @override
+  late final GeneratedColumn<double> lastTrimLengthIn = GeneratedColumn<double>(
+    'last_trim_length_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _neckWallThicknessInMeta =
+      const VerificationMeta('neckWallThicknessIn');
+  @override
+  late final GeneratedColumn<double> neckWallThicknessIn =
+      GeneratedColumn<double>(
+        'neck_wall_thickness_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _neckTurnedMeta = const VerificationMeta(
+    'neckTurned',
+  );
+  @override
+  late final GeneratedColumn<bool> neckTurned = GeneratedColumn<bool>(
+    'neck_turned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("neck_turned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _neckTurnDepthInMeta = const VerificationMeta(
+    'neckTurnDepthIn',
+  );
+  @override
+  late final GeneratedColumn<double> neckTurnDepthIn = GeneratedColumn<double>(
+    'neck_turn_depth_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pocketUniformedMeta = const VerificationMeta(
+    'pocketUniformed',
+  );
+  @override
+  late final GeneratedColumn<bool> pocketUniformed = GeneratedColumn<bool>(
+    'pocket_uniformed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pocket_uniformed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _flashHoleDeburredMeta = const VerificationMeta(
+    'flashHoleDeburred',
+  );
+  @override
+  late final GeneratedColumn<bool> flashHoleDeburred = GeneratedColumn<bool>(
+    'flash_hole_deburred',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("flash_hole_deburred" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    manufacturer,
+    caliber,
+    headstampLot,
+    count,
+    firingCount,
+    lastAnnealed,
+    annealMethod,
+    avgWeightGr,
+    caseCapacityGrH2o,
+    trimToLengthIn,
+    lastTrimLengthIn,
+    neckWallThicknessIn,
+    neckTurned,
+    neckTurnDepthIn,
+    pocketUniformed,
+    flashHoleDeburred,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'brass_lots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BrassLotRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('caliber')) {
+      context.handle(
+        _caliberMeta,
+        caliber.isAcceptableOrUnknown(data['caliber']!, _caliberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_caliberMeta);
+    }
+    if (data.containsKey('headstamp_lot')) {
+      context.handle(
+        _headstampLotMeta,
+        headstampLot.isAcceptableOrUnknown(
+          data['headstamp_lot']!,
+          _headstampLotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_countMeta);
+    }
+    if (data.containsKey('firing_count')) {
+      context.handle(
+        _firingCountMeta,
+        firingCount.isAcceptableOrUnknown(
+          data['firing_count']!,
+          _firingCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_annealed')) {
+      context.handle(
+        _lastAnnealedMeta,
+        lastAnnealed.isAcceptableOrUnknown(
+          data['last_annealed']!,
+          _lastAnnealedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('anneal_method')) {
+      context.handle(
+        _annealMethodMeta,
+        annealMethod.isAcceptableOrUnknown(
+          data['anneal_method']!,
+          _annealMethodMeta,
+        ),
+      );
+    }
+    if (data.containsKey('avg_weight_gr')) {
+      context.handle(
+        _avgWeightGrMeta,
+        avgWeightGr.isAcceptableOrUnknown(
+          data['avg_weight_gr']!,
+          _avgWeightGrMeta,
+        ),
+      );
+    }
+    if (data.containsKey('case_capacity_gr_h2o')) {
+      context.handle(
+        _caseCapacityGrH2oMeta,
+        caseCapacityGrH2o.isAcceptableOrUnknown(
+          data['case_capacity_gr_h2o']!,
+          _caseCapacityGrH2oMeta,
+        ),
+      );
+    }
+    if (data.containsKey('trim_to_length_in')) {
+      context.handle(
+        _trimToLengthInMeta,
+        trimToLengthIn.isAcceptableOrUnknown(
+          data['trim_to_length_in']!,
+          _trimToLengthInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_trim_length_in')) {
+      context.handle(
+        _lastTrimLengthInMeta,
+        lastTrimLengthIn.isAcceptableOrUnknown(
+          data['last_trim_length_in']!,
+          _lastTrimLengthInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('neck_wall_thickness_in')) {
+      context.handle(
+        _neckWallThicknessInMeta,
+        neckWallThicknessIn.isAcceptableOrUnknown(
+          data['neck_wall_thickness_in']!,
+          _neckWallThicknessInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('neck_turned')) {
+      context.handle(
+        _neckTurnedMeta,
+        neckTurned.isAcceptableOrUnknown(data['neck_turned']!, _neckTurnedMeta),
+      );
+    }
+    if (data.containsKey('neck_turn_depth_in')) {
+      context.handle(
+        _neckTurnDepthInMeta,
+        neckTurnDepthIn.isAcceptableOrUnknown(
+          data['neck_turn_depth_in']!,
+          _neckTurnDepthInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pocket_uniformed')) {
+      context.handle(
+        _pocketUniformedMeta,
+        pocketUniformed.isAcceptableOrUnknown(
+          data['pocket_uniformed']!,
+          _pocketUniformedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('flash_hole_deburred')) {
+      context.handle(
+        _flashHoleDeburredMeta,
+        flashHoleDeburred.isAcceptableOrUnknown(
+          data['flash_hole_deburred']!,
+          _flashHoleDeburredMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BrassLotRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BrassLotRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      ),
+      caliber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}caliber'],
+      )!,
+      headstampLot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}headstamp_lot'],
+      ),
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+      firingCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firing_count'],
+      )!,
+      lastAnnealed: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_annealed'],
+      ),
+      annealMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}anneal_method'],
+      ),
+      avgWeightGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}avg_weight_gr'],
+      ),
+      caseCapacityGrH2o: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}case_capacity_gr_h2o'],
+      ),
+      trimToLengthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}trim_to_length_in'],
+      ),
+      lastTrimLengthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}last_trim_length_in'],
+      ),
+      neckWallThicknessIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}neck_wall_thickness_in'],
+      ),
+      neckTurned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}neck_turned'],
+      )!,
+      neckTurnDepthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}neck_turn_depth_in'],
+      ),
+      pocketUniformed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pocket_uniformed'],
+      )!,
+      flashHoleDeburred: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}flash_hole_deburred'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BrassLotsTable createAlias(String alias) {
+    return $BrassLotsTable(attachedDatabase, alias);
+  }
+}
+
+class BrassLotRow extends DataClass implements Insertable<BrassLotRow> {
+  final int id;
+
+  /// User-facing label (e.g. "Lapua 6.5CM lot A — purchased 2024-08").
+  final String name;
+  final String? manufacturer;
+  final String caliber;
+  final String? headstampLot;
+
+  /// Current count of cases remaining in this lot.
+  final int count;
+
+  /// How many times the cases in this lot have been fired.
+  final int firingCount;
+  final DateTime? lastAnnealed;
+
+  /// 'amp' | 'salt-bath' | 'flame'
+  final String? annealMethod;
+  final double? avgWeightGr;
+  final double? caseCapacityGrH2o;
+  final double? trimToLengthIn;
+  final double? lastTrimLengthIn;
+  final double? neckWallThicknessIn;
+  final bool neckTurned;
+  final double? neckTurnDepthIn;
+  final bool pocketUniformed;
+  final bool flashHoleDeburred;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const BrassLotRow({
+    required this.id,
+    required this.name,
+    this.manufacturer,
+    required this.caliber,
+    this.headstampLot,
+    required this.count,
+    required this.firingCount,
+    this.lastAnnealed,
+    this.annealMethod,
+    this.avgWeightGr,
+    this.caseCapacityGrH2o,
+    this.trimToLengthIn,
+    this.lastTrimLengthIn,
+    this.neckWallThicknessIn,
+    required this.neckTurned,
+    this.neckTurnDepthIn,
+    required this.pocketUniformed,
+    required this.flashHoleDeburred,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || manufacturer != null) {
+      map['manufacturer'] = Variable<String>(manufacturer);
+    }
+    map['caliber'] = Variable<String>(caliber);
+    if (!nullToAbsent || headstampLot != null) {
+      map['headstamp_lot'] = Variable<String>(headstampLot);
+    }
+    map['count'] = Variable<int>(count);
+    map['firing_count'] = Variable<int>(firingCount);
+    if (!nullToAbsent || lastAnnealed != null) {
+      map['last_annealed'] = Variable<DateTime>(lastAnnealed);
+    }
+    if (!nullToAbsent || annealMethod != null) {
+      map['anneal_method'] = Variable<String>(annealMethod);
+    }
+    if (!nullToAbsent || avgWeightGr != null) {
+      map['avg_weight_gr'] = Variable<double>(avgWeightGr);
+    }
+    if (!nullToAbsent || caseCapacityGrH2o != null) {
+      map['case_capacity_gr_h2o'] = Variable<double>(caseCapacityGrH2o);
+    }
+    if (!nullToAbsent || trimToLengthIn != null) {
+      map['trim_to_length_in'] = Variable<double>(trimToLengthIn);
+    }
+    if (!nullToAbsent || lastTrimLengthIn != null) {
+      map['last_trim_length_in'] = Variable<double>(lastTrimLengthIn);
+    }
+    if (!nullToAbsent || neckWallThicknessIn != null) {
+      map['neck_wall_thickness_in'] = Variable<double>(neckWallThicknessIn);
+    }
+    map['neck_turned'] = Variable<bool>(neckTurned);
+    if (!nullToAbsent || neckTurnDepthIn != null) {
+      map['neck_turn_depth_in'] = Variable<double>(neckTurnDepthIn);
+    }
+    map['pocket_uniformed'] = Variable<bool>(pocketUniformed);
+    map['flash_hole_deburred'] = Variable<bool>(flashHoleDeburred);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  BrassLotsCompanion toCompanion(bool nullToAbsent) {
+    return BrassLotsCompanion(
+      id: Value(id),
+      name: Value(name),
+      manufacturer: manufacturer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(manufacturer),
+      caliber: Value(caliber),
+      headstampLot: headstampLot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(headstampLot),
+      count: Value(count),
+      firingCount: Value(firingCount),
+      lastAnnealed: lastAnnealed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAnnealed),
+      annealMethod: annealMethod == null && nullToAbsent
+          ? const Value.absent()
+          : Value(annealMethod),
+      avgWeightGr: avgWeightGr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avgWeightGr),
+      caseCapacityGrH2o: caseCapacityGrH2o == null && nullToAbsent
+          ? const Value.absent()
+          : Value(caseCapacityGrH2o),
+      trimToLengthIn: trimToLengthIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(trimToLengthIn),
+      lastTrimLengthIn: lastTrimLengthIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastTrimLengthIn),
+      neckWallThicknessIn: neckWallThicknessIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(neckWallThicknessIn),
+      neckTurned: Value(neckTurned),
+      neckTurnDepthIn: neckTurnDepthIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(neckTurnDepthIn),
+      pocketUniformed: Value(pocketUniformed),
+      flashHoleDeburred: Value(flashHoleDeburred),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory BrassLotRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BrassLotRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      manufacturer: serializer.fromJson<String?>(json['manufacturer']),
+      caliber: serializer.fromJson<String>(json['caliber']),
+      headstampLot: serializer.fromJson<String?>(json['headstampLot']),
+      count: serializer.fromJson<int>(json['count']),
+      firingCount: serializer.fromJson<int>(json['firingCount']),
+      lastAnnealed: serializer.fromJson<DateTime?>(json['lastAnnealed']),
+      annealMethod: serializer.fromJson<String?>(json['annealMethod']),
+      avgWeightGr: serializer.fromJson<double?>(json['avgWeightGr']),
+      caseCapacityGrH2o: serializer.fromJson<double?>(
+        json['caseCapacityGrH2o'],
+      ),
+      trimToLengthIn: serializer.fromJson<double?>(json['trimToLengthIn']),
+      lastTrimLengthIn: serializer.fromJson<double?>(json['lastTrimLengthIn']),
+      neckWallThicknessIn: serializer.fromJson<double?>(
+        json['neckWallThicknessIn'],
+      ),
+      neckTurned: serializer.fromJson<bool>(json['neckTurned']),
+      neckTurnDepthIn: serializer.fromJson<double?>(json['neckTurnDepthIn']),
+      pocketUniformed: serializer.fromJson<bool>(json['pocketUniformed']),
+      flashHoleDeburred: serializer.fromJson<bool>(json['flashHoleDeburred']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'manufacturer': serializer.toJson<String?>(manufacturer),
+      'caliber': serializer.toJson<String>(caliber),
+      'headstampLot': serializer.toJson<String?>(headstampLot),
+      'count': serializer.toJson<int>(count),
+      'firingCount': serializer.toJson<int>(firingCount),
+      'lastAnnealed': serializer.toJson<DateTime?>(lastAnnealed),
+      'annealMethod': serializer.toJson<String?>(annealMethod),
+      'avgWeightGr': serializer.toJson<double?>(avgWeightGr),
+      'caseCapacityGrH2o': serializer.toJson<double?>(caseCapacityGrH2o),
+      'trimToLengthIn': serializer.toJson<double?>(trimToLengthIn),
+      'lastTrimLengthIn': serializer.toJson<double?>(lastTrimLengthIn),
+      'neckWallThicknessIn': serializer.toJson<double?>(neckWallThicknessIn),
+      'neckTurned': serializer.toJson<bool>(neckTurned),
+      'neckTurnDepthIn': serializer.toJson<double?>(neckTurnDepthIn),
+      'pocketUniformed': serializer.toJson<bool>(pocketUniformed),
+      'flashHoleDeburred': serializer.toJson<bool>(flashHoleDeburred),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  BrassLotRow copyWith({
+    int? id,
+    String? name,
+    Value<String?> manufacturer = const Value.absent(),
+    String? caliber,
+    Value<String?> headstampLot = const Value.absent(),
+    int? count,
+    int? firingCount,
+    Value<DateTime?> lastAnnealed = const Value.absent(),
+    Value<String?> annealMethod = const Value.absent(),
+    Value<double?> avgWeightGr = const Value.absent(),
+    Value<double?> caseCapacityGrH2o = const Value.absent(),
+    Value<double?> trimToLengthIn = const Value.absent(),
+    Value<double?> lastTrimLengthIn = const Value.absent(),
+    Value<double?> neckWallThicknessIn = const Value.absent(),
+    bool? neckTurned,
+    Value<double?> neckTurnDepthIn = const Value.absent(),
+    bool? pocketUniformed,
+    bool? flashHoleDeburred,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => BrassLotRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    manufacturer: manufacturer.present ? manufacturer.value : this.manufacturer,
+    caliber: caliber ?? this.caliber,
+    headstampLot: headstampLot.present ? headstampLot.value : this.headstampLot,
+    count: count ?? this.count,
+    firingCount: firingCount ?? this.firingCount,
+    lastAnnealed: lastAnnealed.present ? lastAnnealed.value : this.lastAnnealed,
+    annealMethod: annealMethod.present ? annealMethod.value : this.annealMethod,
+    avgWeightGr: avgWeightGr.present ? avgWeightGr.value : this.avgWeightGr,
+    caseCapacityGrH2o: caseCapacityGrH2o.present
+        ? caseCapacityGrH2o.value
+        : this.caseCapacityGrH2o,
+    trimToLengthIn: trimToLengthIn.present
+        ? trimToLengthIn.value
+        : this.trimToLengthIn,
+    lastTrimLengthIn: lastTrimLengthIn.present
+        ? lastTrimLengthIn.value
+        : this.lastTrimLengthIn,
+    neckWallThicknessIn: neckWallThicknessIn.present
+        ? neckWallThicknessIn.value
+        : this.neckWallThicknessIn,
+    neckTurned: neckTurned ?? this.neckTurned,
+    neckTurnDepthIn: neckTurnDepthIn.present
+        ? neckTurnDepthIn.value
+        : this.neckTurnDepthIn,
+    pocketUniformed: pocketUniformed ?? this.pocketUniformed,
+    flashHoleDeburred: flashHoleDeburred ?? this.flashHoleDeburred,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  BrassLotRow copyWithCompanion(BrassLotsCompanion data) {
+    return BrassLotRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      caliber: data.caliber.present ? data.caliber.value : this.caliber,
+      headstampLot: data.headstampLot.present
+          ? data.headstampLot.value
+          : this.headstampLot,
+      count: data.count.present ? data.count.value : this.count,
+      firingCount: data.firingCount.present
+          ? data.firingCount.value
+          : this.firingCount,
+      lastAnnealed: data.lastAnnealed.present
+          ? data.lastAnnealed.value
+          : this.lastAnnealed,
+      annealMethod: data.annealMethod.present
+          ? data.annealMethod.value
+          : this.annealMethod,
+      avgWeightGr: data.avgWeightGr.present
+          ? data.avgWeightGr.value
+          : this.avgWeightGr,
+      caseCapacityGrH2o: data.caseCapacityGrH2o.present
+          ? data.caseCapacityGrH2o.value
+          : this.caseCapacityGrH2o,
+      trimToLengthIn: data.trimToLengthIn.present
+          ? data.trimToLengthIn.value
+          : this.trimToLengthIn,
+      lastTrimLengthIn: data.lastTrimLengthIn.present
+          ? data.lastTrimLengthIn.value
+          : this.lastTrimLengthIn,
+      neckWallThicknessIn: data.neckWallThicknessIn.present
+          ? data.neckWallThicknessIn.value
+          : this.neckWallThicknessIn,
+      neckTurned: data.neckTurned.present
+          ? data.neckTurned.value
+          : this.neckTurned,
+      neckTurnDepthIn: data.neckTurnDepthIn.present
+          ? data.neckTurnDepthIn.value
+          : this.neckTurnDepthIn,
+      pocketUniformed: data.pocketUniformed.present
+          ? data.pocketUniformed.value
+          : this.pocketUniformed,
+      flashHoleDeburred: data.flashHoleDeburred.present
+          ? data.flashHoleDeburred.value
+          : this.flashHoleDeburred,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BrassLotRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('caliber: $caliber, ')
+          ..write('headstampLot: $headstampLot, ')
+          ..write('count: $count, ')
+          ..write('firingCount: $firingCount, ')
+          ..write('lastAnnealed: $lastAnnealed, ')
+          ..write('annealMethod: $annealMethod, ')
+          ..write('avgWeightGr: $avgWeightGr, ')
+          ..write('caseCapacityGrH2o: $caseCapacityGrH2o, ')
+          ..write('trimToLengthIn: $trimToLengthIn, ')
+          ..write('lastTrimLengthIn: $lastTrimLengthIn, ')
+          ..write('neckWallThicknessIn: $neckWallThicknessIn, ')
+          ..write('neckTurned: $neckTurned, ')
+          ..write('neckTurnDepthIn: $neckTurnDepthIn, ')
+          ..write('pocketUniformed: $pocketUniformed, ')
+          ..write('flashHoleDeburred: $flashHoleDeburred, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    name,
+    manufacturer,
+    caliber,
+    headstampLot,
+    count,
+    firingCount,
+    lastAnnealed,
+    annealMethod,
+    avgWeightGr,
+    caseCapacityGrH2o,
+    trimToLengthIn,
+    lastTrimLengthIn,
+    neckWallThicknessIn,
+    neckTurned,
+    neckTurnDepthIn,
+    pocketUniformed,
+    flashHoleDeburred,
+    notes,
+    createdAt,
+    updatedAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BrassLotRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.manufacturer == this.manufacturer &&
+          other.caliber == this.caliber &&
+          other.headstampLot == this.headstampLot &&
+          other.count == this.count &&
+          other.firingCount == this.firingCount &&
+          other.lastAnnealed == this.lastAnnealed &&
+          other.annealMethod == this.annealMethod &&
+          other.avgWeightGr == this.avgWeightGr &&
+          other.caseCapacityGrH2o == this.caseCapacityGrH2o &&
+          other.trimToLengthIn == this.trimToLengthIn &&
+          other.lastTrimLengthIn == this.lastTrimLengthIn &&
+          other.neckWallThicknessIn == this.neckWallThicknessIn &&
+          other.neckTurned == this.neckTurned &&
+          other.neckTurnDepthIn == this.neckTurnDepthIn &&
+          other.pocketUniformed == this.pocketUniformed &&
+          other.flashHoleDeburred == this.flashHoleDeburred &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class BrassLotsCompanion extends UpdateCompanion<BrassLotRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String?> manufacturer;
+  final Value<String> caliber;
+  final Value<String?> headstampLot;
+  final Value<int> count;
+  final Value<int> firingCount;
+  final Value<DateTime?> lastAnnealed;
+  final Value<String?> annealMethod;
+  final Value<double?> avgWeightGr;
+  final Value<double?> caseCapacityGrH2o;
+  final Value<double?> trimToLengthIn;
+  final Value<double?> lastTrimLengthIn;
+  final Value<double?> neckWallThicknessIn;
+  final Value<bool> neckTurned;
+  final Value<double?> neckTurnDepthIn;
+  final Value<bool> pocketUniformed;
+  final Value<bool> flashHoleDeburred;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const BrassLotsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.caliber = const Value.absent(),
+    this.headstampLot = const Value.absent(),
+    this.count = const Value.absent(),
+    this.firingCount = const Value.absent(),
+    this.lastAnnealed = const Value.absent(),
+    this.annealMethod = const Value.absent(),
+    this.avgWeightGr = const Value.absent(),
+    this.caseCapacityGrH2o = const Value.absent(),
+    this.trimToLengthIn = const Value.absent(),
+    this.lastTrimLengthIn = const Value.absent(),
+    this.neckWallThicknessIn = const Value.absent(),
+    this.neckTurned = const Value.absent(),
+    this.neckTurnDepthIn = const Value.absent(),
+    this.pocketUniformed = const Value.absent(),
+    this.flashHoleDeburred = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  BrassLotsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.manufacturer = const Value.absent(),
+    required String caliber,
+    this.headstampLot = const Value.absent(),
+    required int count,
+    this.firingCount = const Value.absent(),
+    this.lastAnnealed = const Value.absent(),
+    this.annealMethod = const Value.absent(),
+    this.avgWeightGr = const Value.absent(),
+    this.caseCapacityGrH2o = const Value.absent(),
+    this.trimToLengthIn = const Value.absent(),
+    this.lastTrimLengthIn = const Value.absent(),
+    this.neckWallThicknessIn = const Value.absent(),
+    this.neckTurned = const Value.absent(),
+    this.neckTurnDepthIn = const Value.absent(),
+    this.pocketUniformed = const Value.absent(),
+    this.flashHoleDeburred = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : name = Value(name),
+       caliber = Value(caliber),
+       count = Value(count);
+  static Insertable<BrassLotRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? manufacturer,
+    Expression<String>? caliber,
+    Expression<String>? headstampLot,
+    Expression<int>? count,
+    Expression<int>? firingCount,
+    Expression<DateTime>? lastAnnealed,
+    Expression<String>? annealMethod,
+    Expression<double>? avgWeightGr,
+    Expression<double>? caseCapacityGrH2o,
+    Expression<double>? trimToLengthIn,
+    Expression<double>? lastTrimLengthIn,
+    Expression<double>? neckWallThicknessIn,
+    Expression<bool>? neckTurned,
+    Expression<double>? neckTurnDepthIn,
+    Expression<bool>? pocketUniformed,
+    Expression<bool>? flashHoleDeburred,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (caliber != null) 'caliber': caliber,
+      if (headstampLot != null) 'headstamp_lot': headstampLot,
+      if (count != null) 'count': count,
+      if (firingCount != null) 'firing_count': firingCount,
+      if (lastAnnealed != null) 'last_annealed': lastAnnealed,
+      if (annealMethod != null) 'anneal_method': annealMethod,
+      if (avgWeightGr != null) 'avg_weight_gr': avgWeightGr,
+      if (caseCapacityGrH2o != null) 'case_capacity_gr_h2o': caseCapacityGrH2o,
+      if (trimToLengthIn != null) 'trim_to_length_in': trimToLengthIn,
+      if (lastTrimLengthIn != null) 'last_trim_length_in': lastTrimLengthIn,
+      if (neckWallThicknessIn != null)
+        'neck_wall_thickness_in': neckWallThicknessIn,
+      if (neckTurned != null) 'neck_turned': neckTurned,
+      if (neckTurnDepthIn != null) 'neck_turn_depth_in': neckTurnDepthIn,
+      if (pocketUniformed != null) 'pocket_uniformed': pocketUniformed,
+      if (flashHoleDeburred != null) 'flash_hole_deburred': flashHoleDeburred,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  BrassLotsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String?>? manufacturer,
+    Value<String>? caliber,
+    Value<String?>? headstampLot,
+    Value<int>? count,
+    Value<int>? firingCount,
+    Value<DateTime?>? lastAnnealed,
+    Value<String?>? annealMethod,
+    Value<double?>? avgWeightGr,
+    Value<double?>? caseCapacityGrH2o,
+    Value<double?>? trimToLengthIn,
+    Value<double?>? lastTrimLengthIn,
+    Value<double?>? neckWallThicknessIn,
+    Value<bool>? neckTurned,
+    Value<double?>? neckTurnDepthIn,
+    Value<bool>? pocketUniformed,
+    Value<bool>? flashHoleDeburred,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return BrassLotsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      manufacturer: manufacturer ?? this.manufacturer,
+      caliber: caliber ?? this.caliber,
+      headstampLot: headstampLot ?? this.headstampLot,
+      count: count ?? this.count,
+      firingCount: firingCount ?? this.firingCount,
+      lastAnnealed: lastAnnealed ?? this.lastAnnealed,
+      annealMethod: annealMethod ?? this.annealMethod,
+      avgWeightGr: avgWeightGr ?? this.avgWeightGr,
+      caseCapacityGrH2o: caseCapacityGrH2o ?? this.caseCapacityGrH2o,
+      trimToLengthIn: trimToLengthIn ?? this.trimToLengthIn,
+      lastTrimLengthIn: lastTrimLengthIn ?? this.lastTrimLengthIn,
+      neckWallThicknessIn: neckWallThicknessIn ?? this.neckWallThicknessIn,
+      neckTurned: neckTurned ?? this.neckTurned,
+      neckTurnDepthIn: neckTurnDepthIn ?? this.neckTurnDepthIn,
+      pocketUniformed: pocketUniformed ?? this.pocketUniformed,
+      flashHoleDeburred: flashHoleDeburred ?? this.flashHoleDeburred,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (caliber.present) {
+      map['caliber'] = Variable<String>(caliber.value);
+    }
+    if (headstampLot.present) {
+      map['headstamp_lot'] = Variable<String>(headstampLot.value);
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    if (firingCount.present) {
+      map['firing_count'] = Variable<int>(firingCount.value);
+    }
+    if (lastAnnealed.present) {
+      map['last_annealed'] = Variable<DateTime>(lastAnnealed.value);
+    }
+    if (annealMethod.present) {
+      map['anneal_method'] = Variable<String>(annealMethod.value);
+    }
+    if (avgWeightGr.present) {
+      map['avg_weight_gr'] = Variable<double>(avgWeightGr.value);
+    }
+    if (caseCapacityGrH2o.present) {
+      map['case_capacity_gr_h2o'] = Variable<double>(caseCapacityGrH2o.value);
+    }
+    if (trimToLengthIn.present) {
+      map['trim_to_length_in'] = Variable<double>(trimToLengthIn.value);
+    }
+    if (lastTrimLengthIn.present) {
+      map['last_trim_length_in'] = Variable<double>(lastTrimLengthIn.value);
+    }
+    if (neckWallThicknessIn.present) {
+      map['neck_wall_thickness_in'] = Variable<double>(
+        neckWallThicknessIn.value,
+      );
+    }
+    if (neckTurned.present) {
+      map['neck_turned'] = Variable<bool>(neckTurned.value);
+    }
+    if (neckTurnDepthIn.present) {
+      map['neck_turn_depth_in'] = Variable<double>(neckTurnDepthIn.value);
+    }
+    if (pocketUniformed.present) {
+      map['pocket_uniformed'] = Variable<bool>(pocketUniformed.value);
+    }
+    if (flashHoleDeburred.present) {
+      map['flash_hole_deburred'] = Variable<bool>(flashHoleDeburred.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BrassLotsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('caliber: $caliber, ')
+          ..write('headstampLot: $headstampLot, ')
+          ..write('count: $count, ')
+          ..write('firingCount: $firingCount, ')
+          ..write('lastAnnealed: $lastAnnealed, ')
+          ..write('annealMethod: $annealMethod, ')
+          ..write('avgWeightGr: $avgWeightGr, ')
+          ..write('caseCapacityGrH2o: $caseCapacityGrH2o, ')
+          ..write('trimToLengthIn: $trimToLengthIn, ')
+          ..write('lastTrimLengthIn: $lastTrimLengthIn, ')
+          ..write('neckWallThicknessIn: $neckWallThicknessIn, ')
+          ..write('neckTurned: $neckTurned, ')
+          ..write('neckTurnDepthIn: $neckTurnDepthIn, ')
+          ..write('pocketUniformed: $pocketUniformed, ')
+          ..write('flashHoleDeburred: $flashHoleDeburred, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $UserLoadsTable extends UserLoads
     with TableInfo<$UserLoadsTable, UserLoadRow> {
   @override
@@ -5270,6 +7870,484 @@ class $UserLoadsTable extends UserLoads
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _useCaseMeta = const VerificationMeta(
+    'useCase',
+  );
+  @override
+  late final GeneratedColumn<String> useCase = GeneratedColumn<String>(
+    'use_case',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _powderLotIdMeta = const VerificationMeta(
+    'powderLotId',
+  );
+  @override
+  late final GeneratedColumn<int> powderLotId = GeneratedColumn<int>(
+    'powder_lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES powder_lots (id)',
+    ),
+  );
+  static const VerificationMeta _chargeToleranceGrMeta = const VerificationMeta(
+    'chargeToleranceGr',
+  );
+  @override
+  late final GeneratedColumn<double> chargeToleranceGr =
+      GeneratedColumn<double>(
+        'charge_tolerance_gr',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _primerLotIdMeta = const VerificationMeta(
+    'primerLotId',
+  );
+  @override
+  late final GeneratedColumn<int> primerLotId = GeneratedColumn<int>(
+    'primer_lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES primer_lots (id)',
+    ),
+  );
+  static const VerificationMeta _primerSeatingForceLbsMeta =
+      const VerificationMeta('primerSeatingForceLbs');
+  @override
+  late final GeneratedColumn<double> primerSeatingForceLbs =
+      GeneratedColumn<double>(
+        'primer_seating_force_lbs',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bulletLotIdMeta = const VerificationMeta(
+    'bulletLotId',
+  );
+  @override
+  late final GeneratedColumn<int> bulletLotId = GeneratedColumn<int>(
+    'bullet_lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES bullet_lots (id)',
+    ),
+  );
+  static const VerificationMeta _bulletLengthInMeta = const VerificationMeta(
+    'bulletLengthIn',
+  );
+  @override
+  late final GeneratedColumn<double> bulletLengthIn = GeneratedColumn<double>(
+    'bullet_length_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bulletBaseToOgiveInMeta =
+      const VerificationMeta('bulletBaseToOgiveIn');
+  @override
+  late final GeneratedColumn<double> bulletBaseToOgiveIn =
+      GeneratedColumn<double>(
+        'bullet_base_to_ogive_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bulletBearingSurfaceInMeta =
+      const VerificationMeta('bulletBearingSurfaceIn');
+  @override
+  late final GeneratedColumn<double> bulletBearingSurfaceIn =
+      GeneratedColumn<double>(
+        'bullet_bearing_surface_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bulletMeplatTrimmedMeta =
+      const VerificationMeta('bulletMeplatTrimmed');
+  @override
+  late final GeneratedColumn<bool> bulletMeplatTrimmed = GeneratedColumn<bool>(
+    'bullet_meplat_trimmed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("bullet_meplat_trimmed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _bulletPointedMeta = const VerificationMeta(
+    'bulletPointed',
+  );
+  @override
+  late final GeneratedColumn<bool> bulletPointed = GeneratedColumn<bool>(
+    'bullet_pointed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("bullet_pointed" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _bulletWeightSortedMeta =
+      const VerificationMeta('bulletWeightSorted');
+  @override
+  late final GeneratedColumn<bool> bulletWeightSorted = GeneratedColumn<bool>(
+    'bullet_weight_sorted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("bullet_weight_sorted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _bulletWeightToleranceGrMeta =
+      const VerificationMeta('bulletWeightToleranceGr');
+  @override
+  late final GeneratedColumn<double> bulletWeightToleranceGr =
+      GeneratedColumn<double>(
+        'bullet_weight_tolerance_gr',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bulletBtoSortedMeta = const VerificationMeta(
+    'bulletBtoSorted',
+  );
+  @override
+  late final GeneratedColumn<bool> bulletBtoSorted = GeneratedColumn<bool>(
+    'bullet_bto_sorted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("bullet_bto_sorted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _bulletBtoToleranceInMeta =
+      const VerificationMeta('bulletBtoToleranceIn');
+  @override
+  late final GeneratedColumn<double> bulletBtoToleranceIn =
+      GeneratedColumn<double>(
+        'bullet_bto_tolerance_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bulletDiameterSortedMeta =
+      const VerificationMeta('bulletDiameterSorted');
+  @override
+  late final GeneratedColumn<bool> bulletDiameterSorted = GeneratedColumn<bool>(
+    'bullet_diameter_sorted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("bullet_diameter_sorted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _brassLotIdMeta = const VerificationMeta(
+    'brassLotId',
+  );
+  @override
+  late final GeneratedColumn<int> brassLotId = GeneratedColumn<int>(
+    'brass_lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES brass_lots (id)',
+    ),
+  );
+  static const VerificationMeta _distanceToLandsInMeta = const VerificationMeta(
+    'distanceToLandsIn',
+  );
+  @override
+  late final GeneratedColumn<double> distanceToLandsIn =
+      GeneratedColumn<double>(
+        'distance_to_lands_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _jumpToLandsInMeta = const VerificationMeta(
+    'jumpToLandsIn',
+  );
+  @override
+  late final GeneratedColumn<double> jumpToLandsIn = GeneratedColumn<double>(
+    'jump_to_lands_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _loadedNeckDiameterInMeta =
+      const VerificationMeta('loadedNeckDiameterIn');
+  @override
+  late final GeneratedColumn<double> loadedNeckDiameterIn =
+      GeneratedColumn<double>(
+        'loaded_neck_diameter_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bulletRunoutTirInMeta = const VerificationMeta(
+    'bulletRunoutTirIn',
+  );
+  @override
+  late final GeneratedColumn<double> bulletRunoutTirIn =
+      GeneratedColumn<double>(
+        'bullet_runout_tir_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _bushingSizeInMeta = const VerificationMeta(
+    'bushingSizeIn',
+  );
+  @override
+  late final GeneratedColumn<double> bushingSizeIn = GeneratedColumn<double>(
+    'bushing_size_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pressureNotesMeta = const VerificationMeta(
+    'pressureNotes',
+  );
+  @override
+  late final GeneratedColumn<String> pressureNotes = GeneratedColumn<String>(
+    'pressure_notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _boltLiftMeta = const VerificationMeta(
+    'boltLift',
+  );
+  @override
+  late final GeneratedColumn<String> boltLift = GeneratedColumn<String>(
+    'bolt_lift',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ejectorMarksMeta = const VerificationMeta(
+    'ejectorMarks',
+  );
+  @override
+  late final GeneratedColumn<bool> ejectorMarks = GeneratedColumn<bool>(
+    'ejector_marks',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("ejector_marks" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _crateredPrimersMeta = const VerificationMeta(
+    'crateredPrimers',
+  );
+  @override
+  late final GeneratedColumn<bool> crateredPrimers = GeneratedColumn<bool>(
+    'cratered_primers',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("cratered_primers" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _webExpansion200InMeta = const VerificationMeta(
+    'webExpansion200In',
+  );
+  @override
+  late final GeneratedColumn<double> webExpansion200In =
+      GeneratedColumn<double>(
+        'web_expansion200_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _primerFlatnessMeta = const VerificationMeta(
+    'primerFlatness',
+  );
+  @override
+  late final GeneratedColumn<int> primerFlatness = GeneratedColumn<int>(
+    'primer_flatness',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _loadingDateMeta = const VerificationMeta(
+    'loadingDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> loadingDate = GeneratedColumn<DateTime>(
+    'loading_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _roundsLoadedInBatchMeta =
+      const VerificationMeta('roundsLoadedInBatch');
+  @override
+  late final GeneratedColumn<int> roundsLoadedInBatch = GeneratedColumn<int>(
+    'rounds_loaded_in_batch',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pressUsedMeta = const VerificationMeta(
+    'pressUsed',
+  );
+  @override
+  late final GeneratedColumn<String> pressUsed = GeneratedColumn<String>(
+    'press_used',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sizingDieUsedMeta = const VerificationMeta(
+    'sizingDieUsed',
+  );
+  @override
+  late final GeneratedColumn<String> sizingDieUsed = GeneratedColumn<String>(
+    'sizing_die_used',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _seatingDieUsedMeta = const VerificationMeta(
+    'seatingDieUsed',
+  );
+  @override
+  late final GeneratedColumn<String> seatingDieUsed = GeneratedColumn<String>(
+    'seating_die_used',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scaleUsedMeta = const VerificationMeta(
+    'scaleUsed',
+  );
+  @override
+  late final GeneratedColumn<String> scaleUsed = GeneratedColumn<String>(
+    'scale_used',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _scaleCalibrationDateMeta =
+      const VerificationMeta('scaleCalibrationDate');
+  @override
+  late final GeneratedColumn<DateTime> scaleCalibrationDate =
+      GeneratedColumn<DateTime>(
+        'scale_calibration_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _comparatorInsertUsedMeta =
+      const VerificationMeta('comparatorInsertUsed');
+  @override
+  late final GeneratedColumn<String> comparatorInsertUsed =
+      GeneratedColumn<String>(
+        'comparator_insert_used',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _chronographUsedMeta = const VerificationMeta(
+    'chronographUsed',
+  );
+  @override
+  late final GeneratedColumn<String> chronographUsed = GeneratedColumn<String>(
+    'chronograph_used',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _boreStateMeta = const VerificationMeta(
+    'boreState',
+  );
+  @override
+  late final GeneratedColumn<String> boreState = GeneratedColumn<String>(
+    'bore_state',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _loadedByMeta = const VerificationMeta(
+    'loadedBy',
+  );
+  @override
+  late final GeneratedColumn<String> loadedBy = GeneratedColumn<String>(
+    'loaded_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5291,6 +8369,46 @@ class $UserLoadsTable extends UserLoads
     notes,
     createdAt,
     updatedAt,
+    status,
+    useCase,
+    powderLotId,
+    chargeToleranceGr,
+    primerLotId,
+    primerSeatingForceLbs,
+    bulletLotId,
+    bulletLengthIn,
+    bulletBaseToOgiveIn,
+    bulletBearingSurfaceIn,
+    bulletMeplatTrimmed,
+    bulletPointed,
+    bulletWeightSorted,
+    bulletWeightToleranceGr,
+    bulletBtoSorted,
+    bulletBtoToleranceIn,
+    bulletDiameterSorted,
+    brassLotId,
+    distanceToLandsIn,
+    jumpToLandsIn,
+    loadedNeckDiameterIn,
+    bulletRunoutTirIn,
+    bushingSizeIn,
+    pressureNotes,
+    boltLift,
+    ejectorMarks,
+    crateredPrimers,
+    webExpansion200In,
+    primerFlatness,
+    loadingDate,
+    roundsLoadedInBatch,
+    pressUsed,
+    sizingDieUsed,
+    seatingDieUsed,
+    scaleUsed,
+    scaleCalibrationDate,
+    comparatorInsertUsed,
+    chronographUsed,
+    boreState,
+    loadedBy,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5438,6 +8556,345 @@ class $UserLoadsTable extends UserLoads
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('use_case')) {
+      context.handle(
+        _useCaseMeta,
+        useCase.isAcceptableOrUnknown(data['use_case']!, _useCaseMeta),
+      );
+    }
+    if (data.containsKey('powder_lot_id')) {
+      context.handle(
+        _powderLotIdMeta,
+        powderLotId.isAcceptableOrUnknown(
+          data['powder_lot_id']!,
+          _powderLotIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('charge_tolerance_gr')) {
+      context.handle(
+        _chargeToleranceGrMeta,
+        chargeToleranceGr.isAcceptableOrUnknown(
+          data['charge_tolerance_gr']!,
+          _chargeToleranceGrMeta,
+        ),
+      );
+    }
+    if (data.containsKey('primer_lot_id')) {
+      context.handle(
+        _primerLotIdMeta,
+        primerLotId.isAcceptableOrUnknown(
+          data['primer_lot_id']!,
+          _primerLotIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('primer_seating_force_lbs')) {
+      context.handle(
+        _primerSeatingForceLbsMeta,
+        primerSeatingForceLbs.isAcceptableOrUnknown(
+          data['primer_seating_force_lbs']!,
+          _primerSeatingForceLbsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_lot_id')) {
+      context.handle(
+        _bulletLotIdMeta,
+        bulletLotId.isAcceptableOrUnknown(
+          data['bullet_lot_id']!,
+          _bulletLotIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_length_in')) {
+      context.handle(
+        _bulletLengthInMeta,
+        bulletLengthIn.isAcceptableOrUnknown(
+          data['bullet_length_in']!,
+          _bulletLengthInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_base_to_ogive_in')) {
+      context.handle(
+        _bulletBaseToOgiveInMeta,
+        bulletBaseToOgiveIn.isAcceptableOrUnknown(
+          data['bullet_base_to_ogive_in']!,
+          _bulletBaseToOgiveInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_bearing_surface_in')) {
+      context.handle(
+        _bulletBearingSurfaceInMeta,
+        bulletBearingSurfaceIn.isAcceptableOrUnknown(
+          data['bullet_bearing_surface_in']!,
+          _bulletBearingSurfaceInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_meplat_trimmed')) {
+      context.handle(
+        _bulletMeplatTrimmedMeta,
+        bulletMeplatTrimmed.isAcceptableOrUnknown(
+          data['bullet_meplat_trimmed']!,
+          _bulletMeplatTrimmedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_pointed')) {
+      context.handle(
+        _bulletPointedMeta,
+        bulletPointed.isAcceptableOrUnknown(
+          data['bullet_pointed']!,
+          _bulletPointedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_weight_sorted')) {
+      context.handle(
+        _bulletWeightSortedMeta,
+        bulletWeightSorted.isAcceptableOrUnknown(
+          data['bullet_weight_sorted']!,
+          _bulletWeightSortedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_weight_tolerance_gr')) {
+      context.handle(
+        _bulletWeightToleranceGrMeta,
+        bulletWeightToleranceGr.isAcceptableOrUnknown(
+          data['bullet_weight_tolerance_gr']!,
+          _bulletWeightToleranceGrMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_bto_sorted')) {
+      context.handle(
+        _bulletBtoSortedMeta,
+        bulletBtoSorted.isAcceptableOrUnknown(
+          data['bullet_bto_sorted']!,
+          _bulletBtoSortedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_bto_tolerance_in')) {
+      context.handle(
+        _bulletBtoToleranceInMeta,
+        bulletBtoToleranceIn.isAcceptableOrUnknown(
+          data['bullet_bto_tolerance_in']!,
+          _bulletBtoToleranceInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_diameter_sorted')) {
+      context.handle(
+        _bulletDiameterSortedMeta,
+        bulletDiameterSorted.isAcceptableOrUnknown(
+          data['bullet_diameter_sorted']!,
+          _bulletDiameterSortedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('brass_lot_id')) {
+      context.handle(
+        _brassLotIdMeta,
+        brassLotId.isAcceptableOrUnknown(
+          data['brass_lot_id']!,
+          _brassLotIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('distance_to_lands_in')) {
+      context.handle(
+        _distanceToLandsInMeta,
+        distanceToLandsIn.isAcceptableOrUnknown(
+          data['distance_to_lands_in']!,
+          _distanceToLandsInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('jump_to_lands_in')) {
+      context.handle(
+        _jumpToLandsInMeta,
+        jumpToLandsIn.isAcceptableOrUnknown(
+          data['jump_to_lands_in']!,
+          _jumpToLandsInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('loaded_neck_diameter_in')) {
+      context.handle(
+        _loadedNeckDiameterInMeta,
+        loadedNeckDiameterIn.isAcceptableOrUnknown(
+          data['loaded_neck_diameter_in']!,
+          _loadedNeckDiameterInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bullet_runout_tir_in')) {
+      context.handle(
+        _bulletRunoutTirInMeta,
+        bulletRunoutTirIn.isAcceptableOrUnknown(
+          data['bullet_runout_tir_in']!,
+          _bulletRunoutTirInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bushing_size_in')) {
+      context.handle(
+        _bushingSizeInMeta,
+        bushingSizeIn.isAcceptableOrUnknown(
+          data['bushing_size_in']!,
+          _bushingSizeInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pressure_notes')) {
+      context.handle(
+        _pressureNotesMeta,
+        pressureNotes.isAcceptableOrUnknown(
+          data['pressure_notes']!,
+          _pressureNotesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bolt_lift')) {
+      context.handle(
+        _boltLiftMeta,
+        boltLift.isAcceptableOrUnknown(data['bolt_lift']!, _boltLiftMeta),
+      );
+    }
+    if (data.containsKey('ejector_marks')) {
+      context.handle(
+        _ejectorMarksMeta,
+        ejectorMarks.isAcceptableOrUnknown(
+          data['ejector_marks']!,
+          _ejectorMarksMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cratered_primers')) {
+      context.handle(
+        _crateredPrimersMeta,
+        crateredPrimers.isAcceptableOrUnknown(
+          data['cratered_primers']!,
+          _crateredPrimersMeta,
+        ),
+      );
+    }
+    if (data.containsKey('web_expansion200_in')) {
+      context.handle(
+        _webExpansion200InMeta,
+        webExpansion200In.isAcceptableOrUnknown(
+          data['web_expansion200_in']!,
+          _webExpansion200InMeta,
+        ),
+      );
+    }
+    if (data.containsKey('primer_flatness')) {
+      context.handle(
+        _primerFlatnessMeta,
+        primerFlatness.isAcceptableOrUnknown(
+          data['primer_flatness']!,
+          _primerFlatnessMeta,
+        ),
+      );
+    }
+    if (data.containsKey('loading_date')) {
+      context.handle(
+        _loadingDateMeta,
+        loadingDate.isAcceptableOrUnknown(
+          data['loading_date']!,
+          _loadingDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('rounds_loaded_in_batch')) {
+      context.handle(
+        _roundsLoadedInBatchMeta,
+        roundsLoadedInBatch.isAcceptableOrUnknown(
+          data['rounds_loaded_in_batch']!,
+          _roundsLoadedInBatchMeta,
+        ),
+      );
+    }
+    if (data.containsKey('press_used')) {
+      context.handle(
+        _pressUsedMeta,
+        pressUsed.isAcceptableOrUnknown(data['press_used']!, _pressUsedMeta),
+      );
+    }
+    if (data.containsKey('sizing_die_used')) {
+      context.handle(
+        _sizingDieUsedMeta,
+        sizingDieUsed.isAcceptableOrUnknown(
+          data['sizing_die_used']!,
+          _sizingDieUsedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('seating_die_used')) {
+      context.handle(
+        _seatingDieUsedMeta,
+        seatingDieUsed.isAcceptableOrUnknown(
+          data['seating_die_used']!,
+          _seatingDieUsedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('scale_used')) {
+      context.handle(
+        _scaleUsedMeta,
+        scaleUsed.isAcceptableOrUnknown(data['scale_used']!, _scaleUsedMeta),
+      );
+    }
+    if (data.containsKey('scale_calibration_date')) {
+      context.handle(
+        _scaleCalibrationDateMeta,
+        scaleCalibrationDate.isAcceptableOrUnknown(
+          data['scale_calibration_date']!,
+          _scaleCalibrationDateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('comparator_insert_used')) {
+      context.handle(
+        _comparatorInsertUsedMeta,
+        comparatorInsertUsed.isAcceptableOrUnknown(
+          data['comparator_insert_used']!,
+          _comparatorInsertUsedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('chronograph_used')) {
+      context.handle(
+        _chronographUsedMeta,
+        chronographUsed.isAcceptableOrUnknown(
+          data['chronograph_used']!,
+          _chronographUsedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bore_state')) {
+      context.handle(
+        _boreStateMeta,
+        boreState.isAcceptableOrUnknown(data['bore_state']!, _boreStateMeta),
+      );
+    }
+    if (data.containsKey('loaded_by')) {
+      context.handle(
+        _loadedByMeta,
+        loadedBy.isAcceptableOrUnknown(data['loaded_by']!, _loadedByMeta),
+      );
+    }
     return context;
   }
 
@@ -5523,6 +8980,166 @@ class $UserLoadsTable extends UserLoads
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      ),
+      useCase: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}use_case'],
+      ),
+      powderLotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}powder_lot_id'],
+      ),
+      chargeToleranceGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}charge_tolerance_gr'],
+      ),
+      primerLotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}primer_lot_id'],
+      ),
+      primerSeatingForceLbs: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}primer_seating_force_lbs'],
+      ),
+      bulletLotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}bullet_lot_id'],
+      ),
+      bulletLengthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_length_in'],
+      ),
+      bulletBaseToOgiveIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_base_to_ogive_in'],
+      ),
+      bulletBearingSurfaceIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_bearing_surface_in'],
+      ),
+      bulletMeplatTrimmed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bullet_meplat_trimmed'],
+      )!,
+      bulletPointed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bullet_pointed'],
+      )!,
+      bulletWeightSorted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bullet_weight_sorted'],
+      )!,
+      bulletWeightToleranceGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_weight_tolerance_gr'],
+      ),
+      bulletBtoSorted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bullet_bto_sorted'],
+      )!,
+      bulletBtoToleranceIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_bto_tolerance_in'],
+      ),
+      bulletDiameterSorted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bullet_diameter_sorted'],
+      )!,
+      brassLotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}brass_lot_id'],
+      ),
+      distanceToLandsIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}distance_to_lands_in'],
+      ),
+      jumpToLandsIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}jump_to_lands_in'],
+      ),
+      loadedNeckDiameterIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}loaded_neck_diameter_in'],
+      ),
+      bulletRunoutTirIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_runout_tir_in'],
+      ),
+      bushingSizeIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bushing_size_in'],
+      ),
+      pressureNotes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pressure_notes'],
+      ),
+      boltLift: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bolt_lift'],
+      ),
+      ejectorMarks: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}ejector_marks'],
+      )!,
+      crateredPrimers: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}cratered_primers'],
+      )!,
+      webExpansion200In: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}web_expansion200_in'],
+      ),
+      primerFlatness: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}primer_flatness'],
+      ),
+      loadingDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}loading_date'],
+      ),
+      roundsLoadedInBatch: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rounds_loaded_in_batch'],
+      ),
+      pressUsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}press_used'],
+      ),
+      sizingDieUsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}sizing_die_used'],
+      ),
+      seatingDieUsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}seating_die_used'],
+      ),
+      scaleUsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}scale_used'],
+      ),
+      scaleCalibrationDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scale_calibration_date'],
+      ),
+      comparatorInsertUsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comparator_insert_used'],
+      ),
+      chronographUsed: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chronograph_used'],
+      ),
+      boreState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bore_state'],
+      ),
+      loadedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}loaded_by'],
+      ),
     );
   }
 
@@ -5552,6 +9169,58 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// 'active' | 'testing' | 'retired'. Null treated as 'active' by the UI.
+  final String? status;
+
+  /// 'match' | 'practice' | 'hunting' | 'plinking' | free-form
+  final String? useCase;
+  final int? powderLotId;
+
+  /// ± grain tolerance / scale resolution used while charging.
+  final double? chargeToleranceGr;
+  final int? primerLotId;
+  final double? primerSeatingForceLbs;
+  final int? bulletLotId;
+  final double? bulletLengthIn;
+  final double? bulletBaseToOgiveIn;
+  final double? bulletBearingSurfaceIn;
+  final bool bulletMeplatTrimmed;
+  final bool bulletPointed;
+  final bool bulletWeightSorted;
+  final double? bulletWeightToleranceGr;
+  final bool bulletBtoSorted;
+  final double? bulletBtoToleranceIn;
+  final bool bulletDiameterSorted;
+  final int? brassLotId;
+  final double? distanceToLandsIn;
+  final double? jumpToLandsIn;
+  final double? loadedNeckDiameterIn;
+  final double? bulletRunoutTirIn;
+  final double? bushingSizeIn;
+  final String? pressureNotes;
+
+  /// 'normal' | 'sticky' (kept as text for forward compatibility).
+  final String? boltLift;
+  final bool ejectorMarks;
+  final bool crateredPrimers;
+  final double? webExpansion200In;
+
+  /// 1-5 scale (1 = rounded edges, 5 = flat / cratered).
+  final int? primerFlatness;
+  final DateTime? loadingDate;
+  final int? roundsLoadedInBatch;
+  final String? pressUsed;
+  final String? sizingDieUsed;
+  final String? seatingDieUsed;
+  final String? scaleUsed;
+  final DateTime? scaleCalibrationDate;
+  final String? comparatorInsertUsed;
+  final String? chronographUsed;
+
+  /// 'clean' | 'seasoned' | 'fouled'
+  final String? boreState;
+  final String? loadedBy;
   const UserLoadRow({
     required this.id,
     required this.name,
@@ -5572,6 +9241,46 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     this.notes,
     required this.createdAt,
     required this.updatedAt,
+    this.status,
+    this.useCase,
+    this.powderLotId,
+    this.chargeToleranceGr,
+    this.primerLotId,
+    this.primerSeatingForceLbs,
+    this.bulletLotId,
+    this.bulletLengthIn,
+    this.bulletBaseToOgiveIn,
+    this.bulletBearingSurfaceIn,
+    required this.bulletMeplatTrimmed,
+    required this.bulletPointed,
+    required this.bulletWeightSorted,
+    this.bulletWeightToleranceGr,
+    required this.bulletBtoSorted,
+    this.bulletBtoToleranceIn,
+    required this.bulletDiameterSorted,
+    this.brassLotId,
+    this.distanceToLandsIn,
+    this.jumpToLandsIn,
+    this.loadedNeckDiameterIn,
+    this.bulletRunoutTirIn,
+    this.bushingSizeIn,
+    this.pressureNotes,
+    this.boltLift,
+    required this.ejectorMarks,
+    required this.crateredPrimers,
+    this.webExpansion200In,
+    this.primerFlatness,
+    this.loadingDate,
+    this.roundsLoadedInBatch,
+    this.pressUsed,
+    this.sizingDieUsed,
+    this.seatingDieUsed,
+    this.scaleUsed,
+    this.scaleCalibrationDate,
+    this.comparatorInsertUsed,
+    this.chronographUsed,
+    this.boreState,
+    this.loadedBy,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5625,6 +9334,116 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || status != null) {
+      map['status'] = Variable<String>(status);
+    }
+    if (!nullToAbsent || useCase != null) {
+      map['use_case'] = Variable<String>(useCase);
+    }
+    if (!nullToAbsent || powderLotId != null) {
+      map['powder_lot_id'] = Variable<int>(powderLotId);
+    }
+    if (!nullToAbsent || chargeToleranceGr != null) {
+      map['charge_tolerance_gr'] = Variable<double>(chargeToleranceGr);
+    }
+    if (!nullToAbsent || primerLotId != null) {
+      map['primer_lot_id'] = Variable<int>(primerLotId);
+    }
+    if (!nullToAbsent || primerSeatingForceLbs != null) {
+      map['primer_seating_force_lbs'] = Variable<double>(primerSeatingForceLbs);
+    }
+    if (!nullToAbsent || bulletLotId != null) {
+      map['bullet_lot_id'] = Variable<int>(bulletLotId);
+    }
+    if (!nullToAbsent || bulletLengthIn != null) {
+      map['bullet_length_in'] = Variable<double>(bulletLengthIn);
+    }
+    if (!nullToAbsent || bulletBaseToOgiveIn != null) {
+      map['bullet_base_to_ogive_in'] = Variable<double>(bulletBaseToOgiveIn);
+    }
+    if (!nullToAbsent || bulletBearingSurfaceIn != null) {
+      map['bullet_bearing_surface_in'] = Variable<double>(
+        bulletBearingSurfaceIn,
+      );
+    }
+    map['bullet_meplat_trimmed'] = Variable<bool>(bulletMeplatTrimmed);
+    map['bullet_pointed'] = Variable<bool>(bulletPointed);
+    map['bullet_weight_sorted'] = Variable<bool>(bulletWeightSorted);
+    if (!nullToAbsent || bulletWeightToleranceGr != null) {
+      map['bullet_weight_tolerance_gr'] = Variable<double>(
+        bulletWeightToleranceGr,
+      );
+    }
+    map['bullet_bto_sorted'] = Variable<bool>(bulletBtoSorted);
+    if (!nullToAbsent || bulletBtoToleranceIn != null) {
+      map['bullet_bto_tolerance_in'] = Variable<double>(bulletBtoToleranceIn);
+    }
+    map['bullet_diameter_sorted'] = Variable<bool>(bulletDiameterSorted);
+    if (!nullToAbsent || brassLotId != null) {
+      map['brass_lot_id'] = Variable<int>(brassLotId);
+    }
+    if (!nullToAbsent || distanceToLandsIn != null) {
+      map['distance_to_lands_in'] = Variable<double>(distanceToLandsIn);
+    }
+    if (!nullToAbsent || jumpToLandsIn != null) {
+      map['jump_to_lands_in'] = Variable<double>(jumpToLandsIn);
+    }
+    if (!nullToAbsent || loadedNeckDiameterIn != null) {
+      map['loaded_neck_diameter_in'] = Variable<double>(loadedNeckDiameterIn);
+    }
+    if (!nullToAbsent || bulletRunoutTirIn != null) {
+      map['bullet_runout_tir_in'] = Variable<double>(bulletRunoutTirIn);
+    }
+    if (!nullToAbsent || bushingSizeIn != null) {
+      map['bushing_size_in'] = Variable<double>(bushingSizeIn);
+    }
+    if (!nullToAbsent || pressureNotes != null) {
+      map['pressure_notes'] = Variable<String>(pressureNotes);
+    }
+    if (!nullToAbsent || boltLift != null) {
+      map['bolt_lift'] = Variable<String>(boltLift);
+    }
+    map['ejector_marks'] = Variable<bool>(ejectorMarks);
+    map['cratered_primers'] = Variable<bool>(crateredPrimers);
+    if (!nullToAbsent || webExpansion200In != null) {
+      map['web_expansion200_in'] = Variable<double>(webExpansion200In);
+    }
+    if (!nullToAbsent || primerFlatness != null) {
+      map['primer_flatness'] = Variable<int>(primerFlatness);
+    }
+    if (!nullToAbsent || loadingDate != null) {
+      map['loading_date'] = Variable<DateTime>(loadingDate);
+    }
+    if (!nullToAbsent || roundsLoadedInBatch != null) {
+      map['rounds_loaded_in_batch'] = Variable<int>(roundsLoadedInBatch);
+    }
+    if (!nullToAbsent || pressUsed != null) {
+      map['press_used'] = Variable<String>(pressUsed);
+    }
+    if (!nullToAbsent || sizingDieUsed != null) {
+      map['sizing_die_used'] = Variable<String>(sizingDieUsed);
+    }
+    if (!nullToAbsent || seatingDieUsed != null) {
+      map['seating_die_used'] = Variable<String>(seatingDieUsed);
+    }
+    if (!nullToAbsent || scaleUsed != null) {
+      map['scale_used'] = Variable<String>(scaleUsed);
+    }
+    if (!nullToAbsent || scaleCalibrationDate != null) {
+      map['scale_calibration_date'] = Variable<DateTime>(scaleCalibrationDate);
+    }
+    if (!nullToAbsent || comparatorInsertUsed != null) {
+      map['comparator_insert_used'] = Variable<String>(comparatorInsertUsed);
+    }
+    if (!nullToAbsent || chronographUsed != null) {
+      map['chronograph_used'] = Variable<String>(chronographUsed);
+    }
+    if (!nullToAbsent || boreState != null) {
+      map['bore_state'] = Variable<String>(boreState);
+    }
+    if (!nullToAbsent || loadedBy != null) {
+      map['loaded_by'] = Variable<String>(loadedBy);
+    }
     return map;
   }
 
@@ -5679,6 +9498,112 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           : Value(notes),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      status: status == null && nullToAbsent
+          ? const Value.absent()
+          : Value(status),
+      useCase: useCase == null && nullToAbsent
+          ? const Value.absent()
+          : Value(useCase),
+      powderLotId: powderLotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(powderLotId),
+      chargeToleranceGr: chargeToleranceGr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chargeToleranceGr),
+      primerLotId: primerLotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(primerLotId),
+      primerSeatingForceLbs: primerSeatingForceLbs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(primerSeatingForceLbs),
+      bulletLotId: bulletLotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletLotId),
+      bulletLengthIn: bulletLengthIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletLengthIn),
+      bulletBaseToOgiveIn: bulletBaseToOgiveIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletBaseToOgiveIn),
+      bulletBearingSurfaceIn: bulletBearingSurfaceIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletBearingSurfaceIn),
+      bulletMeplatTrimmed: Value(bulletMeplatTrimmed),
+      bulletPointed: Value(bulletPointed),
+      bulletWeightSorted: Value(bulletWeightSorted),
+      bulletWeightToleranceGr: bulletWeightToleranceGr == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletWeightToleranceGr),
+      bulletBtoSorted: Value(bulletBtoSorted),
+      bulletBtoToleranceIn: bulletBtoToleranceIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletBtoToleranceIn),
+      bulletDiameterSorted: Value(bulletDiameterSorted),
+      brassLotId: brassLotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brassLotId),
+      distanceToLandsIn: distanceToLandsIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceToLandsIn),
+      jumpToLandsIn: jumpToLandsIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(jumpToLandsIn),
+      loadedNeckDiameterIn: loadedNeckDiameterIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(loadedNeckDiameterIn),
+      bulletRunoutTirIn: bulletRunoutTirIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletRunoutTirIn),
+      bushingSizeIn: bushingSizeIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bushingSizeIn),
+      pressureNotes: pressureNotes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pressureNotes),
+      boltLift: boltLift == null && nullToAbsent
+          ? const Value.absent()
+          : Value(boltLift),
+      ejectorMarks: Value(ejectorMarks),
+      crateredPrimers: Value(crateredPrimers),
+      webExpansion200In: webExpansion200In == null && nullToAbsent
+          ? const Value.absent()
+          : Value(webExpansion200In),
+      primerFlatness: primerFlatness == null && nullToAbsent
+          ? const Value.absent()
+          : Value(primerFlatness),
+      loadingDate: loadingDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(loadingDate),
+      roundsLoadedInBatch: roundsLoadedInBatch == null && nullToAbsent
+          ? const Value.absent()
+          : Value(roundsLoadedInBatch),
+      pressUsed: pressUsed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pressUsed),
+      sizingDieUsed: sizingDieUsed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sizingDieUsed),
+      seatingDieUsed: seatingDieUsed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(seatingDieUsed),
+      scaleUsed: scaleUsed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scaleUsed),
+      scaleCalibrationDate: scaleCalibrationDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(scaleCalibrationDate),
+      comparatorInsertUsed: comparatorInsertUsed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(comparatorInsertUsed),
+      chronographUsed: chronographUsed == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chronographUsed),
+      boreState: boreState == null && nullToAbsent
+          ? const Value.absent()
+          : Value(boreState),
+      loadedBy: loadedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(loadedBy),
     );
   }
 
@@ -5707,6 +9632,76 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      status: serializer.fromJson<String?>(json['status']),
+      useCase: serializer.fromJson<String?>(json['useCase']),
+      powderLotId: serializer.fromJson<int?>(json['powderLotId']),
+      chargeToleranceGr: serializer.fromJson<double?>(
+        json['chargeToleranceGr'],
+      ),
+      primerLotId: serializer.fromJson<int?>(json['primerLotId']),
+      primerSeatingForceLbs: serializer.fromJson<double?>(
+        json['primerSeatingForceLbs'],
+      ),
+      bulletLotId: serializer.fromJson<int?>(json['bulletLotId']),
+      bulletLengthIn: serializer.fromJson<double?>(json['bulletLengthIn']),
+      bulletBaseToOgiveIn: serializer.fromJson<double?>(
+        json['bulletBaseToOgiveIn'],
+      ),
+      bulletBearingSurfaceIn: serializer.fromJson<double?>(
+        json['bulletBearingSurfaceIn'],
+      ),
+      bulletMeplatTrimmed: serializer.fromJson<bool>(
+        json['bulletMeplatTrimmed'],
+      ),
+      bulletPointed: serializer.fromJson<bool>(json['bulletPointed']),
+      bulletWeightSorted: serializer.fromJson<bool>(json['bulletWeightSorted']),
+      bulletWeightToleranceGr: serializer.fromJson<double?>(
+        json['bulletWeightToleranceGr'],
+      ),
+      bulletBtoSorted: serializer.fromJson<bool>(json['bulletBtoSorted']),
+      bulletBtoToleranceIn: serializer.fromJson<double?>(
+        json['bulletBtoToleranceIn'],
+      ),
+      bulletDiameterSorted: serializer.fromJson<bool>(
+        json['bulletDiameterSorted'],
+      ),
+      brassLotId: serializer.fromJson<int?>(json['brassLotId']),
+      distanceToLandsIn: serializer.fromJson<double?>(
+        json['distanceToLandsIn'],
+      ),
+      jumpToLandsIn: serializer.fromJson<double?>(json['jumpToLandsIn']),
+      loadedNeckDiameterIn: serializer.fromJson<double?>(
+        json['loadedNeckDiameterIn'],
+      ),
+      bulletRunoutTirIn: serializer.fromJson<double?>(
+        json['bulletRunoutTirIn'],
+      ),
+      bushingSizeIn: serializer.fromJson<double?>(json['bushingSizeIn']),
+      pressureNotes: serializer.fromJson<String?>(json['pressureNotes']),
+      boltLift: serializer.fromJson<String?>(json['boltLift']),
+      ejectorMarks: serializer.fromJson<bool>(json['ejectorMarks']),
+      crateredPrimers: serializer.fromJson<bool>(json['crateredPrimers']),
+      webExpansion200In: serializer.fromJson<double?>(
+        json['webExpansion200In'],
+      ),
+      primerFlatness: serializer.fromJson<int?>(json['primerFlatness']),
+      loadingDate: serializer.fromJson<DateTime?>(json['loadingDate']),
+      roundsLoadedInBatch: serializer.fromJson<int?>(
+        json['roundsLoadedInBatch'],
+      ),
+      pressUsed: serializer.fromJson<String?>(json['pressUsed']),
+      sizingDieUsed: serializer.fromJson<String?>(json['sizingDieUsed']),
+      seatingDieUsed: serializer.fromJson<String?>(json['seatingDieUsed']),
+      scaleUsed: serializer.fromJson<String?>(json['scaleUsed']),
+      scaleCalibrationDate: serializer.fromJson<DateTime?>(
+        json['scaleCalibrationDate'],
+      ),
+      comparatorInsertUsed: serializer.fromJson<String?>(
+        json['comparatorInsertUsed'],
+      ),
+      chronographUsed: serializer.fromJson<String?>(json['chronographUsed']),
+      boreState: serializer.fromJson<String?>(json['boreState']),
+      loadedBy: serializer.fromJson<String?>(json['loadedBy']),
     );
   }
   @override
@@ -5732,6 +9727,54 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'status': serializer.toJson<String?>(status),
+      'useCase': serializer.toJson<String?>(useCase),
+      'powderLotId': serializer.toJson<int?>(powderLotId),
+      'chargeToleranceGr': serializer.toJson<double?>(chargeToleranceGr),
+      'primerLotId': serializer.toJson<int?>(primerLotId),
+      'primerSeatingForceLbs': serializer.toJson<double?>(
+        primerSeatingForceLbs,
+      ),
+      'bulletLotId': serializer.toJson<int?>(bulletLotId),
+      'bulletLengthIn': serializer.toJson<double?>(bulletLengthIn),
+      'bulletBaseToOgiveIn': serializer.toJson<double?>(bulletBaseToOgiveIn),
+      'bulletBearingSurfaceIn': serializer.toJson<double?>(
+        bulletBearingSurfaceIn,
+      ),
+      'bulletMeplatTrimmed': serializer.toJson<bool>(bulletMeplatTrimmed),
+      'bulletPointed': serializer.toJson<bool>(bulletPointed),
+      'bulletWeightSorted': serializer.toJson<bool>(bulletWeightSorted),
+      'bulletWeightToleranceGr': serializer.toJson<double?>(
+        bulletWeightToleranceGr,
+      ),
+      'bulletBtoSorted': serializer.toJson<bool>(bulletBtoSorted),
+      'bulletBtoToleranceIn': serializer.toJson<double?>(bulletBtoToleranceIn),
+      'bulletDiameterSorted': serializer.toJson<bool>(bulletDiameterSorted),
+      'brassLotId': serializer.toJson<int?>(brassLotId),
+      'distanceToLandsIn': serializer.toJson<double?>(distanceToLandsIn),
+      'jumpToLandsIn': serializer.toJson<double?>(jumpToLandsIn),
+      'loadedNeckDiameterIn': serializer.toJson<double?>(loadedNeckDiameterIn),
+      'bulletRunoutTirIn': serializer.toJson<double?>(bulletRunoutTirIn),
+      'bushingSizeIn': serializer.toJson<double?>(bushingSizeIn),
+      'pressureNotes': serializer.toJson<String?>(pressureNotes),
+      'boltLift': serializer.toJson<String?>(boltLift),
+      'ejectorMarks': serializer.toJson<bool>(ejectorMarks),
+      'crateredPrimers': serializer.toJson<bool>(crateredPrimers),
+      'webExpansion200In': serializer.toJson<double?>(webExpansion200In),
+      'primerFlatness': serializer.toJson<int?>(primerFlatness),
+      'loadingDate': serializer.toJson<DateTime?>(loadingDate),
+      'roundsLoadedInBatch': serializer.toJson<int?>(roundsLoadedInBatch),
+      'pressUsed': serializer.toJson<String?>(pressUsed),
+      'sizingDieUsed': serializer.toJson<String?>(sizingDieUsed),
+      'seatingDieUsed': serializer.toJson<String?>(seatingDieUsed),
+      'scaleUsed': serializer.toJson<String?>(scaleUsed),
+      'scaleCalibrationDate': serializer.toJson<DateTime?>(
+        scaleCalibrationDate,
+      ),
+      'comparatorInsertUsed': serializer.toJson<String?>(comparatorInsertUsed),
+      'chronographUsed': serializer.toJson<String?>(chronographUsed),
+      'boreState': serializer.toJson<String?>(boreState),
+      'loadedBy': serializer.toJson<String?>(loadedBy),
     };
   }
 
@@ -5755,6 +9798,46 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<String?> status = const Value.absent(),
+    Value<String?> useCase = const Value.absent(),
+    Value<int?> powderLotId = const Value.absent(),
+    Value<double?> chargeToleranceGr = const Value.absent(),
+    Value<int?> primerLotId = const Value.absent(),
+    Value<double?> primerSeatingForceLbs = const Value.absent(),
+    Value<int?> bulletLotId = const Value.absent(),
+    Value<double?> bulletLengthIn = const Value.absent(),
+    Value<double?> bulletBaseToOgiveIn = const Value.absent(),
+    Value<double?> bulletBearingSurfaceIn = const Value.absent(),
+    bool? bulletMeplatTrimmed,
+    bool? bulletPointed,
+    bool? bulletWeightSorted,
+    Value<double?> bulletWeightToleranceGr = const Value.absent(),
+    bool? bulletBtoSorted,
+    Value<double?> bulletBtoToleranceIn = const Value.absent(),
+    bool? bulletDiameterSorted,
+    Value<int?> brassLotId = const Value.absent(),
+    Value<double?> distanceToLandsIn = const Value.absent(),
+    Value<double?> jumpToLandsIn = const Value.absent(),
+    Value<double?> loadedNeckDiameterIn = const Value.absent(),
+    Value<double?> bulletRunoutTirIn = const Value.absent(),
+    Value<double?> bushingSizeIn = const Value.absent(),
+    Value<String?> pressureNotes = const Value.absent(),
+    Value<String?> boltLift = const Value.absent(),
+    bool? ejectorMarks,
+    bool? crateredPrimers,
+    Value<double?> webExpansion200In = const Value.absent(),
+    Value<int?> primerFlatness = const Value.absent(),
+    Value<DateTime?> loadingDate = const Value.absent(),
+    Value<int?> roundsLoadedInBatch = const Value.absent(),
+    Value<String?> pressUsed = const Value.absent(),
+    Value<String?> sizingDieUsed = const Value.absent(),
+    Value<String?> seatingDieUsed = const Value.absent(),
+    Value<String?> scaleUsed = const Value.absent(),
+    Value<DateTime?> scaleCalibrationDate = const Value.absent(),
+    Value<String?> comparatorInsertUsed = const Value.absent(),
+    Value<String?> chronographUsed = const Value.absent(),
+    Value<String?> boreState = const Value.absent(),
+    Value<String?> loadedBy = const Value.absent(),
   }) => UserLoadRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -5789,6 +9872,88 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    status: status.present ? status.value : this.status,
+    useCase: useCase.present ? useCase.value : this.useCase,
+    powderLotId: powderLotId.present ? powderLotId.value : this.powderLotId,
+    chargeToleranceGr: chargeToleranceGr.present
+        ? chargeToleranceGr.value
+        : this.chargeToleranceGr,
+    primerLotId: primerLotId.present ? primerLotId.value : this.primerLotId,
+    primerSeatingForceLbs: primerSeatingForceLbs.present
+        ? primerSeatingForceLbs.value
+        : this.primerSeatingForceLbs,
+    bulletLotId: bulletLotId.present ? bulletLotId.value : this.bulletLotId,
+    bulletLengthIn: bulletLengthIn.present
+        ? bulletLengthIn.value
+        : this.bulletLengthIn,
+    bulletBaseToOgiveIn: bulletBaseToOgiveIn.present
+        ? bulletBaseToOgiveIn.value
+        : this.bulletBaseToOgiveIn,
+    bulletBearingSurfaceIn: bulletBearingSurfaceIn.present
+        ? bulletBearingSurfaceIn.value
+        : this.bulletBearingSurfaceIn,
+    bulletMeplatTrimmed: bulletMeplatTrimmed ?? this.bulletMeplatTrimmed,
+    bulletPointed: bulletPointed ?? this.bulletPointed,
+    bulletWeightSorted: bulletWeightSorted ?? this.bulletWeightSorted,
+    bulletWeightToleranceGr: bulletWeightToleranceGr.present
+        ? bulletWeightToleranceGr.value
+        : this.bulletWeightToleranceGr,
+    bulletBtoSorted: bulletBtoSorted ?? this.bulletBtoSorted,
+    bulletBtoToleranceIn: bulletBtoToleranceIn.present
+        ? bulletBtoToleranceIn.value
+        : this.bulletBtoToleranceIn,
+    bulletDiameterSorted: bulletDiameterSorted ?? this.bulletDiameterSorted,
+    brassLotId: brassLotId.present ? brassLotId.value : this.brassLotId,
+    distanceToLandsIn: distanceToLandsIn.present
+        ? distanceToLandsIn.value
+        : this.distanceToLandsIn,
+    jumpToLandsIn: jumpToLandsIn.present
+        ? jumpToLandsIn.value
+        : this.jumpToLandsIn,
+    loadedNeckDiameterIn: loadedNeckDiameterIn.present
+        ? loadedNeckDiameterIn.value
+        : this.loadedNeckDiameterIn,
+    bulletRunoutTirIn: bulletRunoutTirIn.present
+        ? bulletRunoutTirIn.value
+        : this.bulletRunoutTirIn,
+    bushingSizeIn: bushingSizeIn.present
+        ? bushingSizeIn.value
+        : this.bushingSizeIn,
+    pressureNotes: pressureNotes.present
+        ? pressureNotes.value
+        : this.pressureNotes,
+    boltLift: boltLift.present ? boltLift.value : this.boltLift,
+    ejectorMarks: ejectorMarks ?? this.ejectorMarks,
+    crateredPrimers: crateredPrimers ?? this.crateredPrimers,
+    webExpansion200In: webExpansion200In.present
+        ? webExpansion200In.value
+        : this.webExpansion200In,
+    primerFlatness: primerFlatness.present
+        ? primerFlatness.value
+        : this.primerFlatness,
+    loadingDate: loadingDate.present ? loadingDate.value : this.loadingDate,
+    roundsLoadedInBatch: roundsLoadedInBatch.present
+        ? roundsLoadedInBatch.value
+        : this.roundsLoadedInBatch,
+    pressUsed: pressUsed.present ? pressUsed.value : this.pressUsed,
+    sizingDieUsed: sizingDieUsed.present
+        ? sizingDieUsed.value
+        : this.sizingDieUsed,
+    seatingDieUsed: seatingDieUsed.present
+        ? seatingDieUsed.value
+        : this.seatingDieUsed,
+    scaleUsed: scaleUsed.present ? scaleUsed.value : this.scaleUsed,
+    scaleCalibrationDate: scaleCalibrationDate.present
+        ? scaleCalibrationDate.value
+        : this.scaleCalibrationDate,
+    comparatorInsertUsed: comparatorInsertUsed.present
+        ? comparatorInsertUsed.value
+        : this.comparatorInsertUsed,
+    chronographUsed: chronographUsed.present
+        ? chronographUsed.value
+        : this.chronographUsed,
+    boreState: boreState.present ? boreState.value : this.boreState,
+    loadedBy: loadedBy.present ? loadedBy.value : this.loadedBy,
   );
   UserLoadRow copyWithCompanion(UserLoadsCompanion data) {
     return UserLoadRow(
@@ -5825,6 +9990,112 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      status: data.status.present ? data.status.value : this.status,
+      useCase: data.useCase.present ? data.useCase.value : this.useCase,
+      powderLotId: data.powderLotId.present
+          ? data.powderLotId.value
+          : this.powderLotId,
+      chargeToleranceGr: data.chargeToleranceGr.present
+          ? data.chargeToleranceGr.value
+          : this.chargeToleranceGr,
+      primerLotId: data.primerLotId.present
+          ? data.primerLotId.value
+          : this.primerLotId,
+      primerSeatingForceLbs: data.primerSeatingForceLbs.present
+          ? data.primerSeatingForceLbs.value
+          : this.primerSeatingForceLbs,
+      bulletLotId: data.bulletLotId.present
+          ? data.bulletLotId.value
+          : this.bulletLotId,
+      bulletLengthIn: data.bulletLengthIn.present
+          ? data.bulletLengthIn.value
+          : this.bulletLengthIn,
+      bulletBaseToOgiveIn: data.bulletBaseToOgiveIn.present
+          ? data.bulletBaseToOgiveIn.value
+          : this.bulletBaseToOgiveIn,
+      bulletBearingSurfaceIn: data.bulletBearingSurfaceIn.present
+          ? data.bulletBearingSurfaceIn.value
+          : this.bulletBearingSurfaceIn,
+      bulletMeplatTrimmed: data.bulletMeplatTrimmed.present
+          ? data.bulletMeplatTrimmed.value
+          : this.bulletMeplatTrimmed,
+      bulletPointed: data.bulletPointed.present
+          ? data.bulletPointed.value
+          : this.bulletPointed,
+      bulletWeightSorted: data.bulletWeightSorted.present
+          ? data.bulletWeightSorted.value
+          : this.bulletWeightSorted,
+      bulletWeightToleranceGr: data.bulletWeightToleranceGr.present
+          ? data.bulletWeightToleranceGr.value
+          : this.bulletWeightToleranceGr,
+      bulletBtoSorted: data.bulletBtoSorted.present
+          ? data.bulletBtoSorted.value
+          : this.bulletBtoSorted,
+      bulletBtoToleranceIn: data.bulletBtoToleranceIn.present
+          ? data.bulletBtoToleranceIn.value
+          : this.bulletBtoToleranceIn,
+      bulletDiameterSorted: data.bulletDiameterSorted.present
+          ? data.bulletDiameterSorted.value
+          : this.bulletDiameterSorted,
+      brassLotId: data.brassLotId.present
+          ? data.brassLotId.value
+          : this.brassLotId,
+      distanceToLandsIn: data.distanceToLandsIn.present
+          ? data.distanceToLandsIn.value
+          : this.distanceToLandsIn,
+      jumpToLandsIn: data.jumpToLandsIn.present
+          ? data.jumpToLandsIn.value
+          : this.jumpToLandsIn,
+      loadedNeckDiameterIn: data.loadedNeckDiameterIn.present
+          ? data.loadedNeckDiameterIn.value
+          : this.loadedNeckDiameterIn,
+      bulletRunoutTirIn: data.bulletRunoutTirIn.present
+          ? data.bulletRunoutTirIn.value
+          : this.bulletRunoutTirIn,
+      bushingSizeIn: data.bushingSizeIn.present
+          ? data.bushingSizeIn.value
+          : this.bushingSizeIn,
+      pressureNotes: data.pressureNotes.present
+          ? data.pressureNotes.value
+          : this.pressureNotes,
+      boltLift: data.boltLift.present ? data.boltLift.value : this.boltLift,
+      ejectorMarks: data.ejectorMarks.present
+          ? data.ejectorMarks.value
+          : this.ejectorMarks,
+      crateredPrimers: data.crateredPrimers.present
+          ? data.crateredPrimers.value
+          : this.crateredPrimers,
+      webExpansion200In: data.webExpansion200In.present
+          ? data.webExpansion200In.value
+          : this.webExpansion200In,
+      primerFlatness: data.primerFlatness.present
+          ? data.primerFlatness.value
+          : this.primerFlatness,
+      loadingDate: data.loadingDate.present
+          ? data.loadingDate.value
+          : this.loadingDate,
+      roundsLoadedInBatch: data.roundsLoadedInBatch.present
+          ? data.roundsLoadedInBatch.value
+          : this.roundsLoadedInBatch,
+      pressUsed: data.pressUsed.present ? data.pressUsed.value : this.pressUsed,
+      sizingDieUsed: data.sizingDieUsed.present
+          ? data.sizingDieUsed.value
+          : this.sizingDieUsed,
+      seatingDieUsed: data.seatingDieUsed.present
+          ? data.seatingDieUsed.value
+          : this.seatingDieUsed,
+      scaleUsed: data.scaleUsed.present ? data.scaleUsed.value : this.scaleUsed,
+      scaleCalibrationDate: data.scaleCalibrationDate.present
+          ? data.scaleCalibrationDate.value
+          : this.scaleCalibrationDate,
+      comparatorInsertUsed: data.comparatorInsertUsed.present
+          ? data.comparatorInsertUsed.value
+          : this.comparatorInsertUsed,
+      chronographUsed: data.chronographUsed.present
+          ? data.chronographUsed.value
+          : this.chronographUsed,
+      boreState: data.boreState.present ? data.boreState.value : this.boreState,
+      loadedBy: data.loadedBy.present ? data.loadedBy.value : this.loadedBy,
     );
   }
 
@@ -5849,13 +10120,53 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           ..write('dateEstablished: $dateEstablished, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('status: $status, ')
+          ..write('useCase: $useCase, ')
+          ..write('powderLotId: $powderLotId, ')
+          ..write('chargeToleranceGr: $chargeToleranceGr, ')
+          ..write('primerLotId: $primerLotId, ')
+          ..write('primerSeatingForceLbs: $primerSeatingForceLbs, ')
+          ..write('bulletLotId: $bulletLotId, ')
+          ..write('bulletLengthIn: $bulletLengthIn, ')
+          ..write('bulletBaseToOgiveIn: $bulletBaseToOgiveIn, ')
+          ..write('bulletBearingSurfaceIn: $bulletBearingSurfaceIn, ')
+          ..write('bulletMeplatTrimmed: $bulletMeplatTrimmed, ')
+          ..write('bulletPointed: $bulletPointed, ')
+          ..write('bulletWeightSorted: $bulletWeightSorted, ')
+          ..write('bulletWeightToleranceGr: $bulletWeightToleranceGr, ')
+          ..write('bulletBtoSorted: $bulletBtoSorted, ')
+          ..write('bulletBtoToleranceIn: $bulletBtoToleranceIn, ')
+          ..write('bulletDiameterSorted: $bulletDiameterSorted, ')
+          ..write('brassLotId: $brassLotId, ')
+          ..write('distanceToLandsIn: $distanceToLandsIn, ')
+          ..write('jumpToLandsIn: $jumpToLandsIn, ')
+          ..write('loadedNeckDiameterIn: $loadedNeckDiameterIn, ')
+          ..write('bulletRunoutTirIn: $bulletRunoutTirIn, ')
+          ..write('bushingSizeIn: $bushingSizeIn, ')
+          ..write('pressureNotes: $pressureNotes, ')
+          ..write('boltLift: $boltLift, ')
+          ..write('ejectorMarks: $ejectorMarks, ')
+          ..write('crateredPrimers: $crateredPrimers, ')
+          ..write('webExpansion200In: $webExpansion200In, ')
+          ..write('primerFlatness: $primerFlatness, ')
+          ..write('loadingDate: $loadingDate, ')
+          ..write('roundsLoadedInBatch: $roundsLoadedInBatch, ')
+          ..write('pressUsed: $pressUsed, ')
+          ..write('sizingDieUsed: $sizingDieUsed, ')
+          ..write('seatingDieUsed: $seatingDieUsed, ')
+          ..write('scaleUsed: $scaleUsed, ')
+          ..write('scaleCalibrationDate: $scaleCalibrationDate, ')
+          ..write('comparatorInsertUsed: $comparatorInsertUsed, ')
+          ..write('chronographUsed: $chronographUsed, ')
+          ..write('boreState: $boreState, ')
+          ..write('loadedBy: $loadedBy')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     caliber,
@@ -5875,7 +10186,47 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     notes,
     createdAt,
     updatedAt,
-  );
+    status,
+    useCase,
+    powderLotId,
+    chargeToleranceGr,
+    primerLotId,
+    primerSeatingForceLbs,
+    bulletLotId,
+    bulletLengthIn,
+    bulletBaseToOgiveIn,
+    bulletBearingSurfaceIn,
+    bulletMeplatTrimmed,
+    bulletPointed,
+    bulletWeightSorted,
+    bulletWeightToleranceGr,
+    bulletBtoSorted,
+    bulletBtoToleranceIn,
+    bulletDiameterSorted,
+    brassLotId,
+    distanceToLandsIn,
+    jumpToLandsIn,
+    loadedNeckDiameterIn,
+    bulletRunoutTirIn,
+    bushingSizeIn,
+    pressureNotes,
+    boltLift,
+    ejectorMarks,
+    crateredPrimers,
+    webExpansion200In,
+    primerFlatness,
+    loadingDate,
+    roundsLoadedInBatch,
+    pressUsed,
+    sizingDieUsed,
+    seatingDieUsed,
+    scaleUsed,
+    scaleCalibrationDate,
+    comparatorInsertUsed,
+    chronographUsed,
+    boreState,
+    loadedBy,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5898,7 +10249,47 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           other.dateEstablished == this.dateEstablished &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.status == this.status &&
+          other.useCase == this.useCase &&
+          other.powderLotId == this.powderLotId &&
+          other.chargeToleranceGr == this.chargeToleranceGr &&
+          other.primerLotId == this.primerLotId &&
+          other.primerSeatingForceLbs == this.primerSeatingForceLbs &&
+          other.bulletLotId == this.bulletLotId &&
+          other.bulletLengthIn == this.bulletLengthIn &&
+          other.bulletBaseToOgiveIn == this.bulletBaseToOgiveIn &&
+          other.bulletBearingSurfaceIn == this.bulletBearingSurfaceIn &&
+          other.bulletMeplatTrimmed == this.bulletMeplatTrimmed &&
+          other.bulletPointed == this.bulletPointed &&
+          other.bulletWeightSorted == this.bulletWeightSorted &&
+          other.bulletWeightToleranceGr == this.bulletWeightToleranceGr &&
+          other.bulletBtoSorted == this.bulletBtoSorted &&
+          other.bulletBtoToleranceIn == this.bulletBtoToleranceIn &&
+          other.bulletDiameterSorted == this.bulletDiameterSorted &&
+          other.brassLotId == this.brassLotId &&
+          other.distanceToLandsIn == this.distanceToLandsIn &&
+          other.jumpToLandsIn == this.jumpToLandsIn &&
+          other.loadedNeckDiameterIn == this.loadedNeckDiameterIn &&
+          other.bulletRunoutTirIn == this.bulletRunoutTirIn &&
+          other.bushingSizeIn == this.bushingSizeIn &&
+          other.pressureNotes == this.pressureNotes &&
+          other.boltLift == this.boltLift &&
+          other.ejectorMarks == this.ejectorMarks &&
+          other.crateredPrimers == this.crateredPrimers &&
+          other.webExpansion200In == this.webExpansion200In &&
+          other.primerFlatness == this.primerFlatness &&
+          other.loadingDate == this.loadingDate &&
+          other.roundsLoadedInBatch == this.roundsLoadedInBatch &&
+          other.pressUsed == this.pressUsed &&
+          other.sizingDieUsed == this.sizingDieUsed &&
+          other.seatingDieUsed == this.seatingDieUsed &&
+          other.scaleUsed == this.scaleUsed &&
+          other.scaleCalibrationDate == this.scaleCalibrationDate &&
+          other.comparatorInsertUsed == this.comparatorInsertUsed &&
+          other.chronographUsed == this.chronographUsed &&
+          other.boreState == this.boreState &&
+          other.loadedBy == this.loadedBy);
 }
 
 class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
@@ -5921,6 +10312,46 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<String?> status;
+  final Value<String?> useCase;
+  final Value<int?> powderLotId;
+  final Value<double?> chargeToleranceGr;
+  final Value<int?> primerLotId;
+  final Value<double?> primerSeatingForceLbs;
+  final Value<int?> bulletLotId;
+  final Value<double?> bulletLengthIn;
+  final Value<double?> bulletBaseToOgiveIn;
+  final Value<double?> bulletBearingSurfaceIn;
+  final Value<bool> bulletMeplatTrimmed;
+  final Value<bool> bulletPointed;
+  final Value<bool> bulletWeightSorted;
+  final Value<double?> bulletWeightToleranceGr;
+  final Value<bool> bulletBtoSorted;
+  final Value<double?> bulletBtoToleranceIn;
+  final Value<bool> bulletDiameterSorted;
+  final Value<int?> brassLotId;
+  final Value<double?> distanceToLandsIn;
+  final Value<double?> jumpToLandsIn;
+  final Value<double?> loadedNeckDiameterIn;
+  final Value<double?> bulletRunoutTirIn;
+  final Value<double?> bushingSizeIn;
+  final Value<String?> pressureNotes;
+  final Value<String?> boltLift;
+  final Value<bool> ejectorMarks;
+  final Value<bool> crateredPrimers;
+  final Value<double?> webExpansion200In;
+  final Value<int?> primerFlatness;
+  final Value<DateTime?> loadingDate;
+  final Value<int?> roundsLoadedInBatch;
+  final Value<String?> pressUsed;
+  final Value<String?> sizingDieUsed;
+  final Value<String?> seatingDieUsed;
+  final Value<String?> scaleUsed;
+  final Value<DateTime?> scaleCalibrationDate;
+  final Value<String?> comparatorInsertUsed;
+  final Value<String?> chronographUsed;
+  final Value<String?> boreState;
+  final Value<String?> loadedBy;
   const UserLoadsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -5941,6 +10372,46 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.useCase = const Value.absent(),
+    this.powderLotId = const Value.absent(),
+    this.chargeToleranceGr = const Value.absent(),
+    this.primerLotId = const Value.absent(),
+    this.primerSeatingForceLbs = const Value.absent(),
+    this.bulletLotId = const Value.absent(),
+    this.bulletLengthIn = const Value.absent(),
+    this.bulletBaseToOgiveIn = const Value.absent(),
+    this.bulletBearingSurfaceIn = const Value.absent(),
+    this.bulletMeplatTrimmed = const Value.absent(),
+    this.bulletPointed = const Value.absent(),
+    this.bulletWeightSorted = const Value.absent(),
+    this.bulletWeightToleranceGr = const Value.absent(),
+    this.bulletBtoSorted = const Value.absent(),
+    this.bulletBtoToleranceIn = const Value.absent(),
+    this.bulletDiameterSorted = const Value.absent(),
+    this.brassLotId = const Value.absent(),
+    this.distanceToLandsIn = const Value.absent(),
+    this.jumpToLandsIn = const Value.absent(),
+    this.loadedNeckDiameterIn = const Value.absent(),
+    this.bulletRunoutTirIn = const Value.absent(),
+    this.bushingSizeIn = const Value.absent(),
+    this.pressureNotes = const Value.absent(),
+    this.boltLift = const Value.absent(),
+    this.ejectorMarks = const Value.absent(),
+    this.crateredPrimers = const Value.absent(),
+    this.webExpansion200In = const Value.absent(),
+    this.primerFlatness = const Value.absent(),
+    this.loadingDate = const Value.absent(),
+    this.roundsLoadedInBatch = const Value.absent(),
+    this.pressUsed = const Value.absent(),
+    this.sizingDieUsed = const Value.absent(),
+    this.seatingDieUsed = const Value.absent(),
+    this.scaleUsed = const Value.absent(),
+    this.scaleCalibrationDate = const Value.absent(),
+    this.comparatorInsertUsed = const Value.absent(),
+    this.chronographUsed = const Value.absent(),
+    this.boreState = const Value.absent(),
+    this.loadedBy = const Value.absent(),
   });
   UserLoadsCompanion.insert({
     this.id = const Value.absent(),
@@ -5962,6 +10433,46 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.status = const Value.absent(),
+    this.useCase = const Value.absent(),
+    this.powderLotId = const Value.absent(),
+    this.chargeToleranceGr = const Value.absent(),
+    this.primerLotId = const Value.absent(),
+    this.primerSeatingForceLbs = const Value.absent(),
+    this.bulletLotId = const Value.absent(),
+    this.bulletLengthIn = const Value.absent(),
+    this.bulletBaseToOgiveIn = const Value.absent(),
+    this.bulletBearingSurfaceIn = const Value.absent(),
+    this.bulletMeplatTrimmed = const Value.absent(),
+    this.bulletPointed = const Value.absent(),
+    this.bulletWeightSorted = const Value.absent(),
+    this.bulletWeightToleranceGr = const Value.absent(),
+    this.bulletBtoSorted = const Value.absent(),
+    this.bulletBtoToleranceIn = const Value.absent(),
+    this.bulletDiameterSorted = const Value.absent(),
+    this.brassLotId = const Value.absent(),
+    this.distanceToLandsIn = const Value.absent(),
+    this.jumpToLandsIn = const Value.absent(),
+    this.loadedNeckDiameterIn = const Value.absent(),
+    this.bulletRunoutTirIn = const Value.absent(),
+    this.bushingSizeIn = const Value.absent(),
+    this.pressureNotes = const Value.absent(),
+    this.boltLift = const Value.absent(),
+    this.ejectorMarks = const Value.absent(),
+    this.crateredPrimers = const Value.absent(),
+    this.webExpansion200In = const Value.absent(),
+    this.primerFlatness = const Value.absent(),
+    this.loadingDate = const Value.absent(),
+    this.roundsLoadedInBatch = const Value.absent(),
+    this.pressUsed = const Value.absent(),
+    this.sizingDieUsed = const Value.absent(),
+    this.seatingDieUsed = const Value.absent(),
+    this.scaleUsed = const Value.absent(),
+    this.scaleCalibrationDate = const Value.absent(),
+    this.comparatorInsertUsed = const Value.absent(),
+    this.chronographUsed = const Value.absent(),
+    this.boreState = const Value.absent(),
+    this.loadedBy = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserLoadRow> custom({
     Expression<int>? id,
@@ -5983,6 +10494,46 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? status,
+    Expression<String>? useCase,
+    Expression<int>? powderLotId,
+    Expression<double>? chargeToleranceGr,
+    Expression<int>? primerLotId,
+    Expression<double>? primerSeatingForceLbs,
+    Expression<int>? bulletLotId,
+    Expression<double>? bulletLengthIn,
+    Expression<double>? bulletBaseToOgiveIn,
+    Expression<double>? bulletBearingSurfaceIn,
+    Expression<bool>? bulletMeplatTrimmed,
+    Expression<bool>? bulletPointed,
+    Expression<bool>? bulletWeightSorted,
+    Expression<double>? bulletWeightToleranceGr,
+    Expression<bool>? bulletBtoSorted,
+    Expression<double>? bulletBtoToleranceIn,
+    Expression<bool>? bulletDiameterSorted,
+    Expression<int>? brassLotId,
+    Expression<double>? distanceToLandsIn,
+    Expression<double>? jumpToLandsIn,
+    Expression<double>? loadedNeckDiameterIn,
+    Expression<double>? bulletRunoutTirIn,
+    Expression<double>? bushingSizeIn,
+    Expression<String>? pressureNotes,
+    Expression<String>? boltLift,
+    Expression<bool>? ejectorMarks,
+    Expression<bool>? crateredPrimers,
+    Expression<double>? webExpansion200In,
+    Expression<int>? primerFlatness,
+    Expression<DateTime>? loadingDate,
+    Expression<int>? roundsLoadedInBatch,
+    Expression<String>? pressUsed,
+    Expression<String>? sizingDieUsed,
+    Expression<String>? seatingDieUsed,
+    Expression<String>? scaleUsed,
+    Expression<DateTime>? scaleCalibrationDate,
+    Expression<String>? comparatorInsertUsed,
+    Expression<String>? chronographUsed,
+    Expression<String>? boreState,
+    Expression<String>? loadedBy,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -6004,6 +10555,58 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (status != null) 'status': status,
+      if (useCase != null) 'use_case': useCase,
+      if (powderLotId != null) 'powder_lot_id': powderLotId,
+      if (chargeToleranceGr != null) 'charge_tolerance_gr': chargeToleranceGr,
+      if (primerLotId != null) 'primer_lot_id': primerLotId,
+      if (primerSeatingForceLbs != null)
+        'primer_seating_force_lbs': primerSeatingForceLbs,
+      if (bulletLotId != null) 'bullet_lot_id': bulletLotId,
+      if (bulletLengthIn != null) 'bullet_length_in': bulletLengthIn,
+      if (bulletBaseToOgiveIn != null)
+        'bullet_base_to_ogive_in': bulletBaseToOgiveIn,
+      if (bulletBearingSurfaceIn != null)
+        'bullet_bearing_surface_in': bulletBearingSurfaceIn,
+      if (bulletMeplatTrimmed != null)
+        'bullet_meplat_trimmed': bulletMeplatTrimmed,
+      if (bulletPointed != null) 'bullet_pointed': bulletPointed,
+      if (bulletWeightSorted != null)
+        'bullet_weight_sorted': bulletWeightSorted,
+      if (bulletWeightToleranceGr != null)
+        'bullet_weight_tolerance_gr': bulletWeightToleranceGr,
+      if (bulletBtoSorted != null) 'bullet_bto_sorted': bulletBtoSorted,
+      if (bulletBtoToleranceIn != null)
+        'bullet_bto_tolerance_in': bulletBtoToleranceIn,
+      if (bulletDiameterSorted != null)
+        'bullet_diameter_sorted': bulletDiameterSorted,
+      if (brassLotId != null) 'brass_lot_id': brassLotId,
+      if (distanceToLandsIn != null) 'distance_to_lands_in': distanceToLandsIn,
+      if (jumpToLandsIn != null) 'jump_to_lands_in': jumpToLandsIn,
+      if (loadedNeckDiameterIn != null)
+        'loaded_neck_diameter_in': loadedNeckDiameterIn,
+      if (bulletRunoutTirIn != null) 'bullet_runout_tir_in': bulletRunoutTirIn,
+      if (bushingSizeIn != null) 'bushing_size_in': bushingSizeIn,
+      if (pressureNotes != null) 'pressure_notes': pressureNotes,
+      if (boltLift != null) 'bolt_lift': boltLift,
+      if (ejectorMarks != null) 'ejector_marks': ejectorMarks,
+      if (crateredPrimers != null) 'cratered_primers': crateredPrimers,
+      if (webExpansion200In != null) 'web_expansion200_in': webExpansion200In,
+      if (primerFlatness != null) 'primer_flatness': primerFlatness,
+      if (loadingDate != null) 'loading_date': loadingDate,
+      if (roundsLoadedInBatch != null)
+        'rounds_loaded_in_batch': roundsLoadedInBatch,
+      if (pressUsed != null) 'press_used': pressUsed,
+      if (sizingDieUsed != null) 'sizing_die_used': sizingDieUsed,
+      if (seatingDieUsed != null) 'seating_die_used': seatingDieUsed,
+      if (scaleUsed != null) 'scale_used': scaleUsed,
+      if (scaleCalibrationDate != null)
+        'scale_calibration_date': scaleCalibrationDate,
+      if (comparatorInsertUsed != null)
+        'comparator_insert_used': comparatorInsertUsed,
+      if (chronographUsed != null) 'chronograph_used': chronographUsed,
+      if (boreState != null) 'bore_state': boreState,
+      if (loadedBy != null) 'loaded_by': loadedBy,
     });
   }
 
@@ -6027,6 +10630,46 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     Value<String?>? notes,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<String?>? status,
+    Value<String?>? useCase,
+    Value<int?>? powderLotId,
+    Value<double?>? chargeToleranceGr,
+    Value<int?>? primerLotId,
+    Value<double?>? primerSeatingForceLbs,
+    Value<int?>? bulletLotId,
+    Value<double?>? bulletLengthIn,
+    Value<double?>? bulletBaseToOgiveIn,
+    Value<double?>? bulletBearingSurfaceIn,
+    Value<bool>? bulletMeplatTrimmed,
+    Value<bool>? bulletPointed,
+    Value<bool>? bulletWeightSorted,
+    Value<double?>? bulletWeightToleranceGr,
+    Value<bool>? bulletBtoSorted,
+    Value<double?>? bulletBtoToleranceIn,
+    Value<bool>? bulletDiameterSorted,
+    Value<int?>? brassLotId,
+    Value<double?>? distanceToLandsIn,
+    Value<double?>? jumpToLandsIn,
+    Value<double?>? loadedNeckDiameterIn,
+    Value<double?>? bulletRunoutTirIn,
+    Value<double?>? bushingSizeIn,
+    Value<String?>? pressureNotes,
+    Value<String?>? boltLift,
+    Value<bool>? ejectorMarks,
+    Value<bool>? crateredPrimers,
+    Value<double?>? webExpansion200In,
+    Value<int?>? primerFlatness,
+    Value<DateTime?>? loadingDate,
+    Value<int?>? roundsLoadedInBatch,
+    Value<String?>? pressUsed,
+    Value<String?>? sizingDieUsed,
+    Value<String?>? seatingDieUsed,
+    Value<String?>? scaleUsed,
+    Value<DateTime?>? scaleCalibrationDate,
+    Value<String?>? comparatorInsertUsed,
+    Value<String?>? chronographUsed,
+    Value<String?>? boreState,
+    Value<String?>? loadedBy,
   }) {
     return UserLoadsCompanion(
       id: id ?? this.id,
@@ -6048,6 +10691,49 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      status: status ?? this.status,
+      useCase: useCase ?? this.useCase,
+      powderLotId: powderLotId ?? this.powderLotId,
+      chargeToleranceGr: chargeToleranceGr ?? this.chargeToleranceGr,
+      primerLotId: primerLotId ?? this.primerLotId,
+      primerSeatingForceLbs:
+          primerSeatingForceLbs ?? this.primerSeatingForceLbs,
+      bulletLotId: bulletLotId ?? this.bulletLotId,
+      bulletLengthIn: bulletLengthIn ?? this.bulletLengthIn,
+      bulletBaseToOgiveIn: bulletBaseToOgiveIn ?? this.bulletBaseToOgiveIn,
+      bulletBearingSurfaceIn:
+          bulletBearingSurfaceIn ?? this.bulletBearingSurfaceIn,
+      bulletMeplatTrimmed: bulletMeplatTrimmed ?? this.bulletMeplatTrimmed,
+      bulletPointed: bulletPointed ?? this.bulletPointed,
+      bulletWeightSorted: bulletWeightSorted ?? this.bulletWeightSorted,
+      bulletWeightToleranceGr:
+          bulletWeightToleranceGr ?? this.bulletWeightToleranceGr,
+      bulletBtoSorted: bulletBtoSorted ?? this.bulletBtoSorted,
+      bulletBtoToleranceIn: bulletBtoToleranceIn ?? this.bulletBtoToleranceIn,
+      bulletDiameterSorted: bulletDiameterSorted ?? this.bulletDiameterSorted,
+      brassLotId: brassLotId ?? this.brassLotId,
+      distanceToLandsIn: distanceToLandsIn ?? this.distanceToLandsIn,
+      jumpToLandsIn: jumpToLandsIn ?? this.jumpToLandsIn,
+      loadedNeckDiameterIn: loadedNeckDiameterIn ?? this.loadedNeckDiameterIn,
+      bulletRunoutTirIn: bulletRunoutTirIn ?? this.bulletRunoutTirIn,
+      bushingSizeIn: bushingSizeIn ?? this.bushingSizeIn,
+      pressureNotes: pressureNotes ?? this.pressureNotes,
+      boltLift: boltLift ?? this.boltLift,
+      ejectorMarks: ejectorMarks ?? this.ejectorMarks,
+      crateredPrimers: crateredPrimers ?? this.crateredPrimers,
+      webExpansion200In: webExpansion200In ?? this.webExpansion200In,
+      primerFlatness: primerFlatness ?? this.primerFlatness,
+      loadingDate: loadingDate ?? this.loadingDate,
+      roundsLoadedInBatch: roundsLoadedInBatch ?? this.roundsLoadedInBatch,
+      pressUsed: pressUsed ?? this.pressUsed,
+      sizingDieUsed: sizingDieUsed ?? this.sizingDieUsed,
+      seatingDieUsed: seatingDieUsed ?? this.seatingDieUsed,
+      scaleUsed: scaleUsed ?? this.scaleUsed,
+      scaleCalibrationDate: scaleCalibrationDate ?? this.scaleCalibrationDate,
+      comparatorInsertUsed: comparatorInsertUsed ?? this.comparatorInsertUsed,
+      chronographUsed: chronographUsed ?? this.chronographUsed,
+      boreState: boreState ?? this.boreState,
+      loadedBy: loadedBy ?? this.loadedBy,
     );
   }
 
@@ -6111,6 +10797,144 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (useCase.present) {
+      map['use_case'] = Variable<String>(useCase.value);
+    }
+    if (powderLotId.present) {
+      map['powder_lot_id'] = Variable<int>(powderLotId.value);
+    }
+    if (chargeToleranceGr.present) {
+      map['charge_tolerance_gr'] = Variable<double>(chargeToleranceGr.value);
+    }
+    if (primerLotId.present) {
+      map['primer_lot_id'] = Variable<int>(primerLotId.value);
+    }
+    if (primerSeatingForceLbs.present) {
+      map['primer_seating_force_lbs'] = Variable<double>(
+        primerSeatingForceLbs.value,
+      );
+    }
+    if (bulletLotId.present) {
+      map['bullet_lot_id'] = Variable<int>(bulletLotId.value);
+    }
+    if (bulletLengthIn.present) {
+      map['bullet_length_in'] = Variable<double>(bulletLengthIn.value);
+    }
+    if (bulletBaseToOgiveIn.present) {
+      map['bullet_base_to_ogive_in'] = Variable<double>(
+        bulletBaseToOgiveIn.value,
+      );
+    }
+    if (bulletBearingSurfaceIn.present) {
+      map['bullet_bearing_surface_in'] = Variable<double>(
+        bulletBearingSurfaceIn.value,
+      );
+    }
+    if (bulletMeplatTrimmed.present) {
+      map['bullet_meplat_trimmed'] = Variable<bool>(bulletMeplatTrimmed.value);
+    }
+    if (bulletPointed.present) {
+      map['bullet_pointed'] = Variable<bool>(bulletPointed.value);
+    }
+    if (bulletWeightSorted.present) {
+      map['bullet_weight_sorted'] = Variable<bool>(bulletWeightSorted.value);
+    }
+    if (bulletWeightToleranceGr.present) {
+      map['bullet_weight_tolerance_gr'] = Variable<double>(
+        bulletWeightToleranceGr.value,
+      );
+    }
+    if (bulletBtoSorted.present) {
+      map['bullet_bto_sorted'] = Variable<bool>(bulletBtoSorted.value);
+    }
+    if (bulletBtoToleranceIn.present) {
+      map['bullet_bto_tolerance_in'] = Variable<double>(
+        bulletBtoToleranceIn.value,
+      );
+    }
+    if (bulletDiameterSorted.present) {
+      map['bullet_diameter_sorted'] = Variable<bool>(
+        bulletDiameterSorted.value,
+      );
+    }
+    if (brassLotId.present) {
+      map['brass_lot_id'] = Variable<int>(brassLotId.value);
+    }
+    if (distanceToLandsIn.present) {
+      map['distance_to_lands_in'] = Variable<double>(distanceToLandsIn.value);
+    }
+    if (jumpToLandsIn.present) {
+      map['jump_to_lands_in'] = Variable<double>(jumpToLandsIn.value);
+    }
+    if (loadedNeckDiameterIn.present) {
+      map['loaded_neck_diameter_in'] = Variable<double>(
+        loadedNeckDiameterIn.value,
+      );
+    }
+    if (bulletRunoutTirIn.present) {
+      map['bullet_runout_tir_in'] = Variable<double>(bulletRunoutTirIn.value);
+    }
+    if (bushingSizeIn.present) {
+      map['bushing_size_in'] = Variable<double>(bushingSizeIn.value);
+    }
+    if (pressureNotes.present) {
+      map['pressure_notes'] = Variable<String>(pressureNotes.value);
+    }
+    if (boltLift.present) {
+      map['bolt_lift'] = Variable<String>(boltLift.value);
+    }
+    if (ejectorMarks.present) {
+      map['ejector_marks'] = Variable<bool>(ejectorMarks.value);
+    }
+    if (crateredPrimers.present) {
+      map['cratered_primers'] = Variable<bool>(crateredPrimers.value);
+    }
+    if (webExpansion200In.present) {
+      map['web_expansion200_in'] = Variable<double>(webExpansion200In.value);
+    }
+    if (primerFlatness.present) {
+      map['primer_flatness'] = Variable<int>(primerFlatness.value);
+    }
+    if (loadingDate.present) {
+      map['loading_date'] = Variable<DateTime>(loadingDate.value);
+    }
+    if (roundsLoadedInBatch.present) {
+      map['rounds_loaded_in_batch'] = Variable<int>(roundsLoadedInBatch.value);
+    }
+    if (pressUsed.present) {
+      map['press_used'] = Variable<String>(pressUsed.value);
+    }
+    if (sizingDieUsed.present) {
+      map['sizing_die_used'] = Variable<String>(sizingDieUsed.value);
+    }
+    if (seatingDieUsed.present) {
+      map['seating_die_used'] = Variable<String>(seatingDieUsed.value);
+    }
+    if (scaleUsed.present) {
+      map['scale_used'] = Variable<String>(scaleUsed.value);
+    }
+    if (scaleCalibrationDate.present) {
+      map['scale_calibration_date'] = Variable<DateTime>(
+        scaleCalibrationDate.value,
+      );
+    }
+    if (comparatorInsertUsed.present) {
+      map['comparator_insert_used'] = Variable<String>(
+        comparatorInsertUsed.value,
+      );
+    }
+    if (chronographUsed.present) {
+      map['chronograph_used'] = Variable<String>(chronographUsed.value);
+    }
+    if (boreState.present) {
+      map['bore_state'] = Variable<String>(boreState.value);
+    }
+    if (loadedBy.present) {
+      map['loaded_by'] = Variable<String>(loadedBy.value);
+    }
     return map;
   }
 
@@ -6135,7 +10959,47 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
           ..write('dateEstablished: $dateEstablished, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('status: $status, ')
+          ..write('useCase: $useCase, ')
+          ..write('powderLotId: $powderLotId, ')
+          ..write('chargeToleranceGr: $chargeToleranceGr, ')
+          ..write('primerLotId: $primerLotId, ')
+          ..write('primerSeatingForceLbs: $primerSeatingForceLbs, ')
+          ..write('bulletLotId: $bulletLotId, ')
+          ..write('bulletLengthIn: $bulletLengthIn, ')
+          ..write('bulletBaseToOgiveIn: $bulletBaseToOgiveIn, ')
+          ..write('bulletBearingSurfaceIn: $bulletBearingSurfaceIn, ')
+          ..write('bulletMeplatTrimmed: $bulletMeplatTrimmed, ')
+          ..write('bulletPointed: $bulletPointed, ')
+          ..write('bulletWeightSorted: $bulletWeightSorted, ')
+          ..write('bulletWeightToleranceGr: $bulletWeightToleranceGr, ')
+          ..write('bulletBtoSorted: $bulletBtoSorted, ')
+          ..write('bulletBtoToleranceIn: $bulletBtoToleranceIn, ')
+          ..write('bulletDiameterSorted: $bulletDiameterSorted, ')
+          ..write('brassLotId: $brassLotId, ')
+          ..write('distanceToLandsIn: $distanceToLandsIn, ')
+          ..write('jumpToLandsIn: $jumpToLandsIn, ')
+          ..write('loadedNeckDiameterIn: $loadedNeckDiameterIn, ')
+          ..write('bulletRunoutTirIn: $bulletRunoutTirIn, ')
+          ..write('bushingSizeIn: $bushingSizeIn, ')
+          ..write('pressureNotes: $pressureNotes, ')
+          ..write('boltLift: $boltLift, ')
+          ..write('ejectorMarks: $ejectorMarks, ')
+          ..write('crateredPrimers: $crateredPrimers, ')
+          ..write('webExpansion200In: $webExpansion200In, ')
+          ..write('primerFlatness: $primerFlatness, ')
+          ..write('loadingDate: $loadingDate, ')
+          ..write('roundsLoadedInBatch: $roundsLoadedInBatch, ')
+          ..write('pressUsed: $pressUsed, ')
+          ..write('sizingDieUsed: $sizingDieUsed, ')
+          ..write('seatingDieUsed: $seatingDieUsed, ')
+          ..write('scaleUsed: $scaleUsed, ')
+          ..write('scaleCalibrationDate: $scaleCalibrationDate, ')
+          ..write('comparatorInsertUsed: $comparatorInsertUsed, ')
+          ..write('chronographUsed: $chronographUsed, ')
+          ..write('boreState: $boreState, ')
+          ..write('loadedBy: $loadedBy')
           ..write(')'))
         .toString();
   }
@@ -6295,6 +11159,72 @@ class $UserFirearmsTable extends UserFirearms
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _barrelManufacturerMeta =
+      const VerificationMeta('barrelManufacturer');
+  @override
+  late final GeneratedColumn<String> barrelManufacturer =
+      GeneratedColumn<String>(
+        'barrel_manufacturer',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _chamberReamerPrintMeta =
+      const VerificationMeta('chamberReamerPrint');
+  @override
+  late final GeneratedColumn<String> chamberReamerPrint =
+      GeneratedColumn<String>(
+        'chamber_reamer_print',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _tunerSettingMeta = const VerificationMeta(
+    'tunerSetting',
+  );
+  @override
+  late final GeneratedColumn<String> tunerSetting = GeneratedColumn<String>(
+    'tuner_setting',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cumulativeRoundCountSnapshotMeta =
+      const VerificationMeta('cumulativeRoundCountSnapshot');
+  @override
+  late final GeneratedColumn<int> cumulativeRoundCountSnapshot =
+      GeneratedColumn<int>(
+        'cumulative_round_count_snapshot',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _throatErosionCbtoInMeta =
+      const VerificationMeta('throatErosionCbtoIn');
+  @override
+  late final GeneratedColumn<double> throatErosionCbtoIn =
+      GeneratedColumn<double>(
+        'throat_erosion_cbto_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _lastThroatMeasurementDateMeta =
+      const VerificationMeta('lastThroatMeasurementDate');
+  @override
+  late final GeneratedColumn<DateTime> lastThroatMeasurementDate =
+      GeneratedColumn<DateTime>(
+        'last_throat_measurement_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -6311,6 +11241,12 @@ class $UserFirearmsTable extends UserFirearms
     notes,
     createdAt,
     updatedAt,
+    barrelManufacturer,
+    chamberReamerPrint,
+    tunerSetting,
+    cumulativeRoundCountSnapshot,
+    throatErosionCbtoIn,
+    lastThroatMeasurementDate,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -6416,6 +11352,60 @@ class $UserFirearmsTable extends UserFirearms
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
     }
+    if (data.containsKey('barrel_manufacturer')) {
+      context.handle(
+        _barrelManufacturerMeta,
+        barrelManufacturer.isAcceptableOrUnknown(
+          data['barrel_manufacturer']!,
+          _barrelManufacturerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('chamber_reamer_print')) {
+      context.handle(
+        _chamberReamerPrintMeta,
+        chamberReamerPrint.isAcceptableOrUnknown(
+          data['chamber_reamer_print']!,
+          _chamberReamerPrintMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tuner_setting')) {
+      context.handle(
+        _tunerSettingMeta,
+        tunerSetting.isAcceptableOrUnknown(
+          data['tuner_setting']!,
+          _tunerSettingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cumulative_round_count_snapshot')) {
+      context.handle(
+        _cumulativeRoundCountSnapshotMeta,
+        cumulativeRoundCountSnapshot.isAcceptableOrUnknown(
+          data['cumulative_round_count_snapshot']!,
+          _cumulativeRoundCountSnapshotMeta,
+        ),
+      );
+    }
+    if (data.containsKey('throat_erosion_cbto_in')) {
+      context.handle(
+        _throatErosionCbtoInMeta,
+        throatErosionCbtoIn.isAcceptableOrUnknown(
+          data['throat_erosion_cbto_in']!,
+          _throatErosionCbtoInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_throat_measurement_date')) {
+      context.handle(
+        _lastThroatMeasurementDateMeta,
+        lastThroatMeasurementDate.isAcceptableOrUnknown(
+          data['last_throat_measurement_date']!,
+          _lastThroatMeasurementDateMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -6481,6 +11471,30 @@ class $UserFirearmsTable extends UserFirearms
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      barrelManufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}barrel_manufacturer'],
+      ),
+      chamberReamerPrint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chamber_reamer_print'],
+      ),
+      tunerSetting: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tuner_setting'],
+      ),
+      cumulativeRoundCountSnapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cumulative_round_count_snapshot'],
+      ),
+      throatErosionCbtoIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}throat_erosion_cbto_in'],
+      ),
+      lastThroatMeasurementDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_throat_measurement_date'],
+      ),
     );
   }
 
@@ -6507,6 +11521,18 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
   final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? barrelManufacturer;
+
+  /// Free-form text — chamber reamer print number, e.g. PT&G #XYZ.
+  final String? chamberReamerPrint;
+  final String? tunerSetting;
+
+  /// Cached roll-up of UserLoads × test sessions, refreshed on save.
+  final int? cumulativeRoundCountSnapshot;
+
+  /// Current CBTO-to-touch — drifts as the throat erodes.
+  final double? throatErosionCbtoIn;
+  final DateTime? lastThroatMeasurementDate;
   const UserFirearmRow({
     required this.id,
     required this.name,
@@ -6522,6 +11548,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     this.notes,
     required this.createdAt,
     required this.updatedAt,
+    this.barrelManufacturer,
+    this.chamberReamerPrint,
+    this.tunerSetting,
+    this.cumulativeRoundCountSnapshot,
+    this.throatErosionCbtoIn,
+    this.lastThroatMeasurementDate,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -6558,6 +11590,28 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || barrelManufacturer != null) {
+      map['barrel_manufacturer'] = Variable<String>(barrelManufacturer);
+    }
+    if (!nullToAbsent || chamberReamerPrint != null) {
+      map['chamber_reamer_print'] = Variable<String>(chamberReamerPrint);
+    }
+    if (!nullToAbsent || tunerSetting != null) {
+      map['tuner_setting'] = Variable<String>(tunerSetting);
+    }
+    if (!nullToAbsent || cumulativeRoundCountSnapshot != null) {
+      map['cumulative_round_count_snapshot'] = Variable<int>(
+        cumulativeRoundCountSnapshot,
+      );
+    }
+    if (!nullToAbsent || throatErosionCbtoIn != null) {
+      map['throat_erosion_cbto_in'] = Variable<double>(throatErosionCbtoIn);
+    }
+    if (!nullToAbsent || lastThroatMeasurementDate != null) {
+      map['last_throat_measurement_date'] = Variable<DateTime>(
+        lastThroatMeasurementDate,
+      );
+    }
     return map;
   }
 
@@ -6593,6 +11647,26 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           : Value(notes),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      barrelManufacturer: barrelManufacturer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barrelManufacturer),
+      chamberReamerPrint: chamberReamerPrint == null && nullToAbsent
+          ? const Value.absent()
+          : Value(chamberReamerPrint),
+      tunerSetting: tunerSetting == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tunerSetting),
+      cumulativeRoundCountSnapshot:
+          cumulativeRoundCountSnapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cumulativeRoundCountSnapshot),
+      throatErosionCbtoIn: throatErosionCbtoIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(throatErosionCbtoIn),
+      lastThroatMeasurementDate:
+          lastThroatMeasurementDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastThroatMeasurementDate),
     );
   }
 
@@ -6616,6 +11690,22 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      barrelManufacturer: serializer.fromJson<String?>(
+        json['barrelManufacturer'],
+      ),
+      chamberReamerPrint: serializer.fromJson<String?>(
+        json['chamberReamerPrint'],
+      ),
+      tunerSetting: serializer.fromJson<String?>(json['tunerSetting']),
+      cumulativeRoundCountSnapshot: serializer.fromJson<int?>(
+        json['cumulativeRoundCountSnapshot'],
+      ),
+      throatErosionCbtoIn: serializer.fromJson<double?>(
+        json['throatErosionCbtoIn'],
+      ),
+      lastThroatMeasurementDate: serializer.fromJson<DateTime?>(
+        json['lastThroatMeasurementDate'],
+      ),
     );
   }
   @override
@@ -6636,6 +11726,16 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'barrelManufacturer': serializer.toJson<String?>(barrelManufacturer),
+      'chamberReamerPrint': serializer.toJson<String?>(chamberReamerPrint),
+      'tunerSetting': serializer.toJson<String?>(tunerSetting),
+      'cumulativeRoundCountSnapshot': serializer.toJson<int?>(
+        cumulativeRoundCountSnapshot,
+      ),
+      'throatErosionCbtoIn': serializer.toJson<double?>(throatErosionCbtoIn),
+      'lastThroatMeasurementDate': serializer.toJson<DateTime?>(
+        lastThroatMeasurementDate,
+      ),
     };
   }
 
@@ -6654,6 +11754,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
+    Value<String?> barrelManufacturer = const Value.absent(),
+    Value<String?> chamberReamerPrint = const Value.absent(),
+    Value<String?> tunerSetting = const Value.absent(),
+    Value<int?> cumulativeRoundCountSnapshot = const Value.absent(),
+    Value<double?> throatErosionCbtoIn = const Value.absent(),
+    Value<DateTime?> lastThroatMeasurementDate = const Value.absent(),
   }) => UserFirearmRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -6673,6 +11779,22 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    barrelManufacturer: barrelManufacturer.present
+        ? barrelManufacturer.value
+        : this.barrelManufacturer,
+    chamberReamerPrint: chamberReamerPrint.present
+        ? chamberReamerPrint.value
+        : this.chamberReamerPrint,
+    tunerSetting: tunerSetting.present ? tunerSetting.value : this.tunerSetting,
+    cumulativeRoundCountSnapshot: cumulativeRoundCountSnapshot.present
+        ? cumulativeRoundCountSnapshot.value
+        : this.cumulativeRoundCountSnapshot,
+    throatErosionCbtoIn: throatErosionCbtoIn.present
+        ? throatErosionCbtoIn.value
+        : this.throatErosionCbtoIn,
+    lastThroatMeasurementDate: lastThroatMeasurementDate.present
+        ? lastThroatMeasurementDate.value
+        : this.lastThroatMeasurementDate,
   );
   UserFirearmRow copyWithCompanion(UserFirearmsCompanion data) {
     return UserFirearmRow(
@@ -6698,6 +11820,24 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      barrelManufacturer: data.barrelManufacturer.present
+          ? data.barrelManufacturer.value
+          : this.barrelManufacturer,
+      chamberReamerPrint: data.chamberReamerPrint.present
+          ? data.chamberReamerPrint.value
+          : this.chamberReamerPrint,
+      tunerSetting: data.tunerSetting.present
+          ? data.tunerSetting.value
+          : this.tunerSetting,
+      cumulativeRoundCountSnapshot: data.cumulativeRoundCountSnapshot.present
+          ? data.cumulativeRoundCountSnapshot.value
+          : this.cumulativeRoundCountSnapshot,
+      throatErosionCbtoIn: data.throatErosionCbtoIn.present
+          ? data.throatErosionCbtoIn.value
+          : this.throatErosionCbtoIn,
+      lastThroatMeasurementDate: data.lastThroatMeasurementDate.present
+          ? data.lastThroatMeasurementDate.value
+          : this.lastThroatMeasurementDate,
     );
   }
 
@@ -6717,7 +11857,15 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           ..write('referenceFirearmId: $referenceFirearmId, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('barrelManufacturer: $barrelManufacturer, ')
+          ..write('chamberReamerPrint: $chamberReamerPrint, ')
+          ..write('tunerSetting: $tunerSetting, ')
+          ..write(
+            'cumulativeRoundCountSnapshot: $cumulativeRoundCountSnapshot, ',
+          )
+          ..write('throatErosionCbtoIn: $throatErosionCbtoIn, ')
+          ..write('lastThroatMeasurementDate: $lastThroatMeasurementDate')
           ..write(')'))
         .toString();
   }
@@ -6738,6 +11886,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     notes,
     createdAt,
     updatedAt,
+    barrelManufacturer,
+    chamberReamerPrint,
+    tunerSetting,
+    cumulativeRoundCountSnapshot,
+    throatErosionCbtoIn,
+    lastThroatMeasurementDate,
   );
   @override
   bool operator ==(Object other) =>
@@ -6756,7 +11910,14 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           other.referenceFirearmId == this.referenceFirearmId &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.barrelManufacturer == this.barrelManufacturer &&
+          other.chamberReamerPrint == this.chamberReamerPrint &&
+          other.tunerSetting == this.tunerSetting &&
+          other.cumulativeRoundCountSnapshot ==
+              this.cumulativeRoundCountSnapshot &&
+          other.throatErosionCbtoIn == this.throatErosionCbtoIn &&
+          other.lastThroatMeasurementDate == this.lastThroatMeasurementDate);
 }
 
 class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
@@ -6774,6 +11935,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<String?> barrelManufacturer;
+  final Value<String?> chamberReamerPrint;
+  final Value<String?> tunerSetting;
+  final Value<int?> cumulativeRoundCountSnapshot;
+  final Value<double?> throatErosionCbtoIn;
+  final Value<DateTime?> lastThroatMeasurementDate;
   const UserFirearmsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -6789,6 +11956,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.barrelManufacturer = const Value.absent(),
+    this.chamberReamerPrint = const Value.absent(),
+    this.tunerSetting = const Value.absent(),
+    this.cumulativeRoundCountSnapshot = const Value.absent(),
+    this.throatErosionCbtoIn = const Value.absent(),
+    this.lastThroatMeasurementDate = const Value.absent(),
   });
   UserFirearmsCompanion.insert({
     this.id = const Value.absent(),
@@ -6805,6 +11978,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.barrelManufacturer = const Value.absent(),
+    this.chamberReamerPrint = const Value.absent(),
+    this.tunerSetting = const Value.absent(),
+    this.cumulativeRoundCountSnapshot = const Value.absent(),
+    this.throatErosionCbtoIn = const Value.absent(),
+    this.lastThroatMeasurementDate = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserFirearmRow> custom({
     Expression<int>? id,
@@ -6821,6 +12000,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? barrelManufacturer,
+    Expression<String>? chamberReamerPrint,
+    Expression<String>? tunerSetting,
+    Expression<int>? cumulativeRoundCountSnapshot,
+    Expression<double>? throatErosionCbtoIn,
+    Expression<DateTime>? lastThroatMeasurementDate,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -6838,6 +12023,16 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (barrelManufacturer != null) 'barrel_manufacturer': barrelManufacturer,
+      if (chamberReamerPrint != null)
+        'chamber_reamer_print': chamberReamerPrint,
+      if (tunerSetting != null) 'tuner_setting': tunerSetting,
+      if (cumulativeRoundCountSnapshot != null)
+        'cumulative_round_count_snapshot': cumulativeRoundCountSnapshot,
+      if (throatErosionCbtoIn != null)
+        'throat_erosion_cbto_in': throatErosionCbtoIn,
+      if (lastThroatMeasurementDate != null)
+        'last_throat_measurement_date': lastThroatMeasurementDate,
     });
   }
 
@@ -6856,6 +12051,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Value<String?>? notes,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
+    Value<String?>? barrelManufacturer,
+    Value<String?>? chamberReamerPrint,
+    Value<String?>? tunerSetting,
+    Value<int?>? cumulativeRoundCountSnapshot,
+    Value<double?>? throatErosionCbtoIn,
+    Value<DateTime?>? lastThroatMeasurementDate,
   }) {
     return UserFirearmsCompanion(
       id: id ?? this.id,
@@ -6872,6 +12073,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      barrelManufacturer: barrelManufacturer ?? this.barrelManufacturer,
+      chamberReamerPrint: chamberReamerPrint ?? this.chamberReamerPrint,
+      tunerSetting: tunerSetting ?? this.tunerSetting,
+      cumulativeRoundCountSnapshot:
+          cumulativeRoundCountSnapshot ?? this.cumulativeRoundCountSnapshot,
+      throatErosionCbtoIn: throatErosionCbtoIn ?? this.throatErosionCbtoIn,
+      lastThroatMeasurementDate:
+          lastThroatMeasurementDate ?? this.lastThroatMeasurementDate,
     );
   }
 
@@ -6920,6 +12129,30 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (barrelManufacturer.present) {
+      map['barrel_manufacturer'] = Variable<String>(barrelManufacturer.value);
+    }
+    if (chamberReamerPrint.present) {
+      map['chamber_reamer_print'] = Variable<String>(chamberReamerPrint.value);
+    }
+    if (tunerSetting.present) {
+      map['tuner_setting'] = Variable<String>(tunerSetting.value);
+    }
+    if (cumulativeRoundCountSnapshot.present) {
+      map['cumulative_round_count_snapshot'] = Variable<int>(
+        cumulativeRoundCountSnapshot.value,
+      );
+    }
+    if (throatErosionCbtoIn.present) {
+      map['throat_erosion_cbto_in'] = Variable<double>(
+        throatErosionCbtoIn.value,
+      );
+    }
+    if (lastThroatMeasurementDate.present) {
+      map['last_throat_measurement_date'] = Variable<DateTime>(
+        lastThroatMeasurementDate.value,
+      );
+    }
     return map;
   }
 
@@ -6937,6 +12170,5026 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
           ..write('twistRate: $twistRate, ')
           ..write('shotsFired: $shotsFired, ')
           ..write('referenceFirearmId: $referenceFirearmId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('barrelManufacturer: $barrelManufacturer, ')
+          ..write('chamberReamerPrint: $chamberReamerPrint, ')
+          ..write('tunerSetting: $tunerSetting, ')
+          ..write(
+            'cumulativeRoundCountSnapshot: $cumulativeRoundCountSnapshot, ',
+          )
+          ..write('throatErosionCbtoIn: $throatErosionCbtoIn, ')
+          ..write('lastThroatMeasurementDate: $lastThroatMeasurementDate')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserProcessStepsTable extends UserProcessSteps
+    with TableInfo<$UserProcessStepsTable, UserProcessStepRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserProcessStepsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _appliesToPistolMeta = const VerificationMeta(
+    'appliesToPistol',
+  );
+  @override
+  late final GeneratedColumn<bool> appliesToPistol = GeneratedColumn<bool>(
+    'applies_to_pistol',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("applies_to_pistol" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _appliesToRifleMeta = const VerificationMeta(
+    'appliesToRifle',
+  );
+  @override
+  late final GeneratedColumn<bool> appliesToRifle = GeneratedColumn<bool>(
+    'applies_to_rifle',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("applies_to_rifle" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _appliesToShotgunMeta = const VerificationMeta(
+    'appliesToShotgun',
+  );
+  @override
+  late final GeneratedColumn<bool> appliesToShotgun = GeneratedColumn<bool>(
+    'applies_to_shotgun',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("applies_to_shotgun" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _isStandardMeta = const VerificationMeta(
+    'isStandard',
+  );
+  @override
+  late final GeneratedColumn<bool> isStandard = GeneratedColumn<bool>(
+    'is_standard',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_standard" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    sortOrder,
+    appliesToPistol,
+    appliesToRifle,
+    appliesToShotgun,
+    isStandard,
+    description,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_process_steps';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserProcessStepRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('applies_to_pistol')) {
+      context.handle(
+        _appliesToPistolMeta,
+        appliesToPistol.isAcceptableOrUnknown(
+          data['applies_to_pistol']!,
+          _appliesToPistolMeta,
+        ),
+      );
+    }
+    if (data.containsKey('applies_to_rifle')) {
+      context.handle(
+        _appliesToRifleMeta,
+        appliesToRifle.isAcceptableOrUnknown(
+          data['applies_to_rifle']!,
+          _appliesToRifleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('applies_to_shotgun')) {
+      context.handle(
+        _appliesToShotgunMeta,
+        appliesToShotgun.isAcceptableOrUnknown(
+          data['applies_to_shotgun']!,
+          _appliesToShotgunMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_standard')) {
+      context.handle(
+        _isStandardMeta,
+        isStandard.isAcceptableOrUnknown(data['is_standard']!, _isStandardMeta),
+      );
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  UserProcessStepRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserProcessStepRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      appliesToPistol: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}applies_to_pistol'],
+      )!,
+      appliesToRifle: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}applies_to_rifle'],
+      )!,
+      appliesToShotgun: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}applies_to_shotgun'],
+      )!,
+      isStandard: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_standard'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $UserProcessStepsTable createAlias(String alias) {
+    return $UserProcessStepsTable(attachedDatabase, alias);
+  }
+}
+
+class UserProcessStepRow extends DataClass
+    implements Insertable<UserProcessStepRow> {
+  final int id;
+
+  /// Human-readable name (e.g. "Tumble", "Anneal", "Trim", "Crimp").
+  final String name;
+  final int sortOrder;
+  final bool appliesToPistol;
+  final bool appliesToRifle;
+  final bool appliesToShotgun;
+
+  /// True for the 8 default reloading stages seeded in schema v4. Lets the
+  /// UI distinguish "system" steps from steps the user added.
+  final bool isStandard;
+  final String? description;
+  final DateTime createdAt;
+  const UserProcessStepRow({
+    required this.id,
+    required this.name,
+    required this.sortOrder,
+    required this.appliesToPistol,
+    required this.appliesToRifle,
+    required this.appliesToShotgun,
+    required this.isStandard,
+    this.description,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['applies_to_pistol'] = Variable<bool>(appliesToPistol);
+    map['applies_to_rifle'] = Variable<bool>(appliesToRifle);
+    map['applies_to_shotgun'] = Variable<bool>(appliesToShotgun);
+    map['is_standard'] = Variable<bool>(isStandard);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  UserProcessStepsCompanion toCompanion(bool nullToAbsent) {
+    return UserProcessStepsCompanion(
+      id: Value(id),
+      name: Value(name),
+      sortOrder: Value(sortOrder),
+      appliesToPistol: Value(appliesToPistol),
+      appliesToRifle: Value(appliesToRifle),
+      appliesToShotgun: Value(appliesToShotgun),
+      isStandard: Value(isStandard),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory UserProcessStepRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserProcessStepRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      appliesToPistol: serializer.fromJson<bool>(json['appliesToPistol']),
+      appliesToRifle: serializer.fromJson<bool>(json['appliesToRifle']),
+      appliesToShotgun: serializer.fromJson<bool>(json['appliesToShotgun']),
+      isStandard: serializer.fromJson<bool>(json['isStandard']),
+      description: serializer.fromJson<String?>(json['description']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'appliesToPistol': serializer.toJson<bool>(appliesToPistol),
+      'appliesToRifle': serializer.toJson<bool>(appliesToRifle),
+      'appliesToShotgun': serializer.toJson<bool>(appliesToShotgun),
+      'isStandard': serializer.toJson<bool>(isStandard),
+      'description': serializer.toJson<String?>(description),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  UserProcessStepRow copyWith({
+    int? id,
+    String? name,
+    int? sortOrder,
+    bool? appliesToPistol,
+    bool? appliesToRifle,
+    bool? appliesToShotgun,
+    bool? isStandard,
+    Value<String?> description = const Value.absent(),
+    DateTime? createdAt,
+  }) => UserProcessStepRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    sortOrder: sortOrder ?? this.sortOrder,
+    appliesToPistol: appliesToPistol ?? this.appliesToPistol,
+    appliesToRifle: appliesToRifle ?? this.appliesToRifle,
+    appliesToShotgun: appliesToShotgun ?? this.appliesToShotgun,
+    isStandard: isStandard ?? this.isStandard,
+    description: description.present ? description.value : this.description,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  UserProcessStepRow copyWithCompanion(UserProcessStepsCompanion data) {
+    return UserProcessStepRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      appliesToPistol: data.appliesToPistol.present
+          ? data.appliesToPistol.value
+          : this.appliesToPistol,
+      appliesToRifle: data.appliesToRifle.present
+          ? data.appliesToRifle.value
+          : this.appliesToRifle,
+      appliesToShotgun: data.appliesToShotgun.present
+          ? data.appliesToShotgun.value
+          : this.appliesToShotgun,
+      isStandard: data.isStandard.present
+          ? data.isStandard.value
+          : this.isStandard,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserProcessStepRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('appliesToPistol: $appliesToPistol, ')
+          ..write('appliesToRifle: $appliesToRifle, ')
+          ..write('appliesToShotgun: $appliesToShotgun, ')
+          ..write('isStandard: $isStandard, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    sortOrder,
+    appliesToPistol,
+    appliesToRifle,
+    appliesToShotgun,
+    isStandard,
+    description,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserProcessStepRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.sortOrder == this.sortOrder &&
+          other.appliesToPistol == this.appliesToPistol &&
+          other.appliesToRifle == this.appliesToRifle &&
+          other.appliesToShotgun == this.appliesToShotgun &&
+          other.isStandard == this.isStandard &&
+          other.description == this.description &&
+          other.createdAt == this.createdAt);
+}
+
+class UserProcessStepsCompanion extends UpdateCompanion<UserProcessStepRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<int> sortOrder;
+  final Value<bool> appliesToPistol;
+  final Value<bool> appliesToRifle;
+  final Value<bool> appliesToShotgun;
+  final Value<bool> isStandard;
+  final Value<String?> description;
+  final Value<DateTime> createdAt;
+  const UserProcessStepsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.appliesToPistol = const Value.absent(),
+    this.appliesToRifle = const Value.absent(),
+    this.appliesToShotgun = const Value.absent(),
+    this.isStandard = const Value.absent(),
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  UserProcessStepsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required int sortOrder,
+    this.appliesToPistol = const Value.absent(),
+    this.appliesToRifle = const Value.absent(),
+    this.appliesToShotgun = const Value.absent(),
+    this.isStandard = const Value.absent(),
+    this.description = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name),
+       sortOrder = Value(sortOrder);
+  static Insertable<UserProcessStepRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<int>? sortOrder,
+    Expression<bool>? appliesToPistol,
+    Expression<bool>? appliesToRifle,
+    Expression<bool>? appliesToShotgun,
+    Expression<bool>? isStandard,
+    Expression<String>? description,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (appliesToPistol != null) 'applies_to_pistol': appliesToPistol,
+      if (appliesToRifle != null) 'applies_to_rifle': appliesToRifle,
+      if (appliesToShotgun != null) 'applies_to_shotgun': appliesToShotgun,
+      if (isStandard != null) 'is_standard': isStandard,
+      if (description != null) 'description': description,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  UserProcessStepsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<int>? sortOrder,
+    Value<bool>? appliesToPistol,
+    Value<bool>? appliesToRifle,
+    Value<bool>? appliesToShotgun,
+    Value<bool>? isStandard,
+    Value<String?>? description,
+    Value<DateTime>? createdAt,
+  }) {
+    return UserProcessStepsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      sortOrder: sortOrder ?? this.sortOrder,
+      appliesToPistol: appliesToPistol ?? this.appliesToPistol,
+      appliesToRifle: appliesToRifle ?? this.appliesToRifle,
+      appliesToShotgun: appliesToShotgun ?? this.appliesToShotgun,
+      isStandard: isStandard ?? this.isStandard,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (appliesToPistol.present) {
+      map['applies_to_pistol'] = Variable<bool>(appliesToPistol.value);
+    }
+    if (appliesToRifle.present) {
+      map['applies_to_rifle'] = Variable<bool>(appliesToRifle.value);
+    }
+    if (appliesToShotgun.present) {
+      map['applies_to_shotgun'] = Variable<bool>(appliesToShotgun.value);
+    }
+    if (isStandard.present) {
+      map['is_standard'] = Variable<bool>(isStandard.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserProcessStepsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('appliesToPistol: $appliesToPistol, ')
+          ..write('appliesToRifle: $appliesToRifle, ')
+          ..write('appliesToShotgun: $appliesToShotgun, ')
+          ..write('isStandard: $isStandard, ')
+          ..write('description: $description, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $BatchesTable extends Batches with TableInfo<$BatchesTable, BatchRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BatchesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recipeIdMeta = const VerificationMeta(
+    'recipeId',
+  );
+  @override
+  late final GeneratedColumn<int> recipeId = GeneratedColumn<int>(
+    'recipe_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_loads (id)',
+    ),
+  );
+  static const VerificationMeta _brassLotIdMeta = const VerificationMeta(
+    'brassLotId',
+  );
+  @override
+  late final GeneratedColumn<int> brassLotId = GeneratedColumn<int>(
+    'brass_lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES brass_lots (id)',
+    ),
+  );
+  static const VerificationMeta _firearmIdMeta = const VerificationMeta(
+    'firearmId',
+  );
+  @override
+  late final GeneratedColumn<int> firearmId = GeneratedColumn<int>(
+    'firearm_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_firearms (id)',
+    ),
+  );
+  static const VerificationMeta _countMeta = const VerificationMeta('count');
+  @override
+  late final GeneratedColumn<int> count = GeneratedColumn<int>(
+    'count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firedCountMeta = const VerificationMeta(
+    'firedCount',
+  );
+  @override
+  late final GeneratedColumn<int> firedCount = GeneratedColumn<int>(
+    'fired_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _loadedAtMeta = const VerificationMeta(
+    'loadedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> loadedAt = GeneratedColumn<DateTime>(
+    'loaded_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _processStateJsonMeta = const VerificationMeta(
+    'processStateJson',
+  );
+  @override
+  late final GeneratedColumn<String> processStateJson = GeneratedColumn<String>(
+    'process_state_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    recipeId,
+    brassLotId,
+    firearmId,
+    count,
+    firedCount,
+    loadedAt,
+    processStateJson,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'batches';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BatchRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('recipe_id')) {
+      context.handle(
+        _recipeIdMeta,
+        recipeId.isAcceptableOrUnknown(data['recipe_id']!, _recipeIdMeta),
+      );
+    }
+    if (data.containsKey('brass_lot_id')) {
+      context.handle(
+        _brassLotIdMeta,
+        brassLotId.isAcceptableOrUnknown(
+          data['brass_lot_id']!,
+          _brassLotIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('firearm_id')) {
+      context.handle(
+        _firearmIdMeta,
+        firearmId.isAcceptableOrUnknown(data['firearm_id']!, _firearmIdMeta),
+      );
+    }
+    if (data.containsKey('count')) {
+      context.handle(
+        _countMeta,
+        count.isAcceptableOrUnknown(data['count']!, _countMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_countMeta);
+    }
+    if (data.containsKey('fired_count')) {
+      context.handle(
+        _firedCountMeta,
+        firedCount.isAcceptableOrUnknown(data['fired_count']!, _firedCountMeta),
+      );
+    }
+    if (data.containsKey('loaded_at')) {
+      context.handle(
+        _loadedAtMeta,
+        loadedAt.isAcceptableOrUnknown(data['loaded_at']!, _loadedAtMeta),
+      );
+    }
+    if (data.containsKey('process_state_json')) {
+      context.handle(
+        _processStateJsonMeta,
+        processStateJson.isAcceptableOrUnknown(
+          data['process_state_json']!,
+          _processStateJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  BatchRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BatchRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      recipeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recipe_id'],
+      ),
+      brassLotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}brass_lot_id'],
+      ),
+      firearmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firearm_id'],
+      ),
+      count: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}count'],
+      )!,
+      firedCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}fired_count'],
+      )!,
+      loadedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}loaded_at'],
+      ),
+      processStateJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}process_state_json'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BatchesTable createAlias(String alias) {
+    return $BatchesTable(attachedDatabase, alias);
+  }
+}
+
+class BatchRow extends DataClass implements Insertable<BatchRow> {
+  final int id;
+  final String name;
+  final int? recipeId;
+  final int? brassLotId;
+  final int? firearmId;
+
+  /// Total rounds loaded in this batch.
+  final int count;
+  final int firedCount;
+  final DateTime? loadedAt;
+
+  /// JSON map of step name → bool (e.g. {"tumble":true,"trim":false,...}).
+  /// Lets the UI render the user-defined process checklist for this batch.
+  final String processStateJson;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const BatchRow({
+    required this.id,
+    required this.name,
+    this.recipeId,
+    this.brassLotId,
+    this.firearmId,
+    required this.count,
+    required this.firedCount,
+    this.loadedAt,
+    required this.processStateJson,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || recipeId != null) {
+      map['recipe_id'] = Variable<int>(recipeId);
+    }
+    if (!nullToAbsent || brassLotId != null) {
+      map['brass_lot_id'] = Variable<int>(brassLotId);
+    }
+    if (!nullToAbsent || firearmId != null) {
+      map['firearm_id'] = Variable<int>(firearmId);
+    }
+    map['count'] = Variable<int>(count);
+    map['fired_count'] = Variable<int>(firedCount);
+    if (!nullToAbsent || loadedAt != null) {
+      map['loaded_at'] = Variable<DateTime>(loadedAt);
+    }
+    map['process_state_json'] = Variable<String>(processStateJson);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  BatchesCompanion toCompanion(bool nullToAbsent) {
+    return BatchesCompanion(
+      id: Value(id),
+      name: Value(name),
+      recipeId: recipeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recipeId),
+      brassLotId: brassLotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brassLotId),
+      firearmId: firearmId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firearmId),
+      count: Value(count),
+      firedCount: Value(firedCount),
+      loadedAt: loadedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(loadedAt),
+      processStateJson: Value(processStateJson),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory BatchRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BatchRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      recipeId: serializer.fromJson<int?>(json['recipeId']),
+      brassLotId: serializer.fromJson<int?>(json['brassLotId']),
+      firearmId: serializer.fromJson<int?>(json['firearmId']),
+      count: serializer.fromJson<int>(json['count']),
+      firedCount: serializer.fromJson<int>(json['firedCount']),
+      loadedAt: serializer.fromJson<DateTime?>(json['loadedAt']),
+      processStateJson: serializer.fromJson<String>(json['processStateJson']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'recipeId': serializer.toJson<int?>(recipeId),
+      'brassLotId': serializer.toJson<int?>(brassLotId),
+      'firearmId': serializer.toJson<int?>(firearmId),
+      'count': serializer.toJson<int>(count),
+      'firedCount': serializer.toJson<int>(firedCount),
+      'loadedAt': serializer.toJson<DateTime?>(loadedAt),
+      'processStateJson': serializer.toJson<String>(processStateJson),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  BatchRow copyWith({
+    int? id,
+    String? name,
+    Value<int?> recipeId = const Value.absent(),
+    Value<int?> brassLotId = const Value.absent(),
+    Value<int?> firearmId = const Value.absent(),
+    int? count,
+    int? firedCount,
+    Value<DateTime?> loadedAt = const Value.absent(),
+    String? processStateJson,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => BatchRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    recipeId: recipeId.present ? recipeId.value : this.recipeId,
+    brassLotId: brassLotId.present ? brassLotId.value : this.brassLotId,
+    firearmId: firearmId.present ? firearmId.value : this.firearmId,
+    count: count ?? this.count,
+    firedCount: firedCount ?? this.firedCount,
+    loadedAt: loadedAt.present ? loadedAt.value : this.loadedAt,
+    processStateJson: processStateJson ?? this.processStateJson,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  BatchRow copyWithCompanion(BatchesCompanion data) {
+    return BatchRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      recipeId: data.recipeId.present ? data.recipeId.value : this.recipeId,
+      brassLotId: data.brassLotId.present
+          ? data.brassLotId.value
+          : this.brassLotId,
+      firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
+      count: data.count.present ? data.count.value : this.count,
+      firedCount: data.firedCount.present
+          ? data.firedCount.value
+          : this.firedCount,
+      loadedAt: data.loadedAt.present ? data.loadedAt.value : this.loadedAt,
+      processStateJson: data.processStateJson.present
+          ? data.processStateJson.value
+          : this.processStateJson,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BatchRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('recipeId: $recipeId, ')
+          ..write('brassLotId: $brassLotId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('count: $count, ')
+          ..write('firedCount: $firedCount, ')
+          ..write('loadedAt: $loadedAt, ')
+          ..write('processStateJson: $processStateJson, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    recipeId,
+    brassLotId,
+    firearmId,
+    count,
+    firedCount,
+    loadedAt,
+    processStateJson,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BatchRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.recipeId == this.recipeId &&
+          other.brassLotId == this.brassLotId &&
+          other.firearmId == this.firearmId &&
+          other.count == this.count &&
+          other.firedCount == this.firedCount &&
+          other.loadedAt == this.loadedAt &&
+          other.processStateJson == this.processStateJson &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class BatchesCompanion extends UpdateCompanion<BatchRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<int?> recipeId;
+  final Value<int?> brassLotId;
+  final Value<int?> firearmId;
+  final Value<int> count;
+  final Value<int> firedCount;
+  final Value<DateTime?> loadedAt;
+  final Value<String> processStateJson;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const BatchesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.recipeId = const Value.absent(),
+    this.brassLotId = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.count = const Value.absent(),
+    this.firedCount = const Value.absent(),
+    this.loadedAt = const Value.absent(),
+    this.processStateJson = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  BatchesCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.recipeId = const Value.absent(),
+    this.brassLotId = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    required int count,
+    this.firedCount = const Value.absent(),
+    this.loadedAt = const Value.absent(),
+    this.processStateJson = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : name = Value(name),
+       count = Value(count);
+  static Insertable<BatchRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<int>? recipeId,
+    Expression<int>? brassLotId,
+    Expression<int>? firearmId,
+    Expression<int>? count,
+    Expression<int>? firedCount,
+    Expression<DateTime>? loadedAt,
+    Expression<String>? processStateJson,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (recipeId != null) 'recipe_id': recipeId,
+      if (brassLotId != null) 'brass_lot_id': brassLotId,
+      if (firearmId != null) 'firearm_id': firearmId,
+      if (count != null) 'count': count,
+      if (firedCount != null) 'fired_count': firedCount,
+      if (loadedAt != null) 'loaded_at': loadedAt,
+      if (processStateJson != null) 'process_state_json': processStateJson,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  BatchesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<int?>? recipeId,
+    Value<int?>? brassLotId,
+    Value<int?>? firearmId,
+    Value<int>? count,
+    Value<int>? firedCount,
+    Value<DateTime?>? loadedAt,
+    Value<String>? processStateJson,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return BatchesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      recipeId: recipeId ?? this.recipeId,
+      brassLotId: brassLotId ?? this.brassLotId,
+      firearmId: firearmId ?? this.firearmId,
+      count: count ?? this.count,
+      firedCount: firedCount ?? this.firedCount,
+      loadedAt: loadedAt ?? this.loadedAt,
+      processStateJson: processStateJson ?? this.processStateJson,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (recipeId.present) {
+      map['recipe_id'] = Variable<int>(recipeId.value);
+    }
+    if (brassLotId.present) {
+      map['brass_lot_id'] = Variable<int>(brassLotId.value);
+    }
+    if (firearmId.present) {
+      map['firearm_id'] = Variable<int>(firearmId.value);
+    }
+    if (count.present) {
+      map['count'] = Variable<int>(count.value);
+    }
+    if (firedCount.present) {
+      map['fired_count'] = Variable<int>(firedCount.value);
+    }
+    if (loadedAt.present) {
+      map['loaded_at'] = Variable<DateTime>(loadedAt.value);
+    }
+    if (processStateJson.present) {
+      map['process_state_json'] = Variable<String>(processStateJson.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BatchesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('recipeId: $recipeId, ')
+          ..write('brassLotId: $brassLotId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('count: $count, ')
+          ..write('firedCount: $firedCount, ')
+          ..write('loadedAt: $loadedAt, ')
+          ..write('processStateJson: $processStateJson, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TestSessionsTable extends TestSessions
+    with TableInfo<$TestSessionsTable, TestSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TestSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _recipeIdMeta = const VerificationMeta(
+    'recipeId',
+  );
+  @override
+  late final GeneratedColumn<int> recipeId = GeneratedColumn<int>(
+    'recipe_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_loads (id)',
+    ),
+  );
+  static const VerificationMeta _firearmIdMeta = const VerificationMeta(
+    'firearmId',
+  );
+  @override
+  late final GeneratedColumn<int> firearmId = GeneratedColumn<int>(
+    'firearm_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_firearms (id)',
+    ),
+  );
+  static const VerificationMeta _batchIdMeta = const VerificationMeta(
+    'batchId',
+  );
+  @override
+  late final GeneratedColumn<int> batchId = GeneratedColumn<int>(
+    'batch_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES batches (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sessionDateMeta = const VerificationMeta(
+    'sessionDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> sessionDate = GeneratedColumn<DateTime>(
+    'session_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sampleSizeMeta = const VerificationMeta(
+    'sampleSize',
+  );
+  @override
+  late final GeneratedColumn<int> sampleSize = GeneratedColumn<int>(
+    'sample_size',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _velocityAvgFpsMeta = const VerificationMeta(
+    'velocityAvgFps',
+  );
+  @override
+  late final GeneratedColumn<double> velocityAvgFps = GeneratedColumn<double>(
+    'velocity_avg_fps',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _velocityMedianFpsMeta = const VerificationMeta(
+    'velocityMedianFps',
+  );
+  @override
+  late final GeneratedColumn<double> velocityMedianFps =
+      GeneratedColumn<double>(
+        'velocity_median_fps',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _velocityHighFpsMeta = const VerificationMeta(
+    'velocityHighFps',
+  );
+  @override
+  late final GeneratedColumn<double> velocityHighFps = GeneratedColumn<double>(
+    'velocity_high_fps',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _velocityLowFpsMeta = const VerificationMeta(
+    'velocityLowFps',
+  );
+  @override
+  late final GeneratedColumn<double> velocityLowFps = GeneratedColumn<double>(
+    'velocity_low_fps',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _velocityEsFpsMeta = const VerificationMeta(
+    'velocityEsFps',
+  );
+  @override
+  late final GeneratedColumn<double> velocityEsFps = GeneratedColumn<double>(
+    'velocity_es_fps',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _velocitySdFpsMeta = const VerificationMeta(
+    'velocitySdFps',
+  );
+  @override
+  late final GeneratedColumn<double> velocitySdFps = GeneratedColumn<double>(
+    'velocity_sd_fps',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _velocityCvPctMeta = const VerificationMeta(
+    'velocityCvPct',
+  );
+  @override
+  late final GeneratedColumn<double> velocityCvPct = GeneratedColumn<double>(
+    'velocity_cv_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _velocitySdCi95FpsMeta = const VerificationMeta(
+    'velocitySdCi95Fps',
+  );
+  @override
+  late final GeneratedColumn<double> velocitySdCi95Fps =
+      GeneratedColumn<double>(
+        'velocity_sd_ci95_fps',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _coldBoreOffsetFpsMeta = const VerificationMeta(
+    'coldBoreOffsetFps',
+  );
+  @override
+  late final GeneratedColumn<double> coldBoreOffsetFps =
+      GeneratedColumn<double>(
+        'cold_bore_offset_fps',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _velocityDriftSlopeMeta =
+      const VerificationMeta('velocityDriftSlope');
+  @override
+  late final GeneratedColumn<double> velocityDriftSlope =
+      GeneratedColumn<double>(
+        'velocity_drift_slope',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _distanceYdMeta = const VerificationMeta(
+    'distanceYd',
+  );
+  @override
+  late final GeneratedColumn<int> distanceYd = GeneratedColumn<int>(
+    'distance_yd',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _groupSizeMoaMeta = const VerificationMeta(
+    'groupSizeMoa',
+  );
+  @override
+  late final GeneratedColumn<double> groupSizeMoa = GeneratedColumn<double>(
+    'group_size_moa',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _verticalDispersionMoaMeta =
+      const VerificationMeta('verticalDispersionMoa');
+  @override
+  late final GeneratedColumn<double> verticalDispersionMoa =
+      GeneratedColumn<double>(
+        'vertical_dispersion_moa',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _horizontalDispersionMoaMeta =
+      const VerificationMeta('horizontalDispersionMoa');
+  @override
+  late final GeneratedColumn<double> horizontalDispersionMoa =
+      GeneratedColumn<double>(
+        'horizontal_dispersion_moa',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _meanRadiusMoaMeta = const VerificationMeta(
+    'meanRadiusMoa',
+  );
+  @override
+  late final GeneratedColumn<double> meanRadiusMoa = GeneratedColumn<double>(
+    'mean_radius_moa',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _temperatureFMeta = const VerificationMeta(
+    'temperatureF',
+  );
+  @override
+  late final GeneratedColumn<double> temperatureF = GeneratedColumn<double>(
+    'temperature_f',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _densityAltitudeFtMeta = const VerificationMeta(
+    'densityAltitudeFt',
+  );
+  @override
+  late final GeneratedColumn<double> densityAltitudeFt =
+      GeneratedColumn<double>(
+        'density_altitude_ft',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _barometricStationInHgMeta =
+      const VerificationMeta('barometricStationInHg');
+  @override
+  late final GeneratedColumn<double> barometricStationInHg =
+      GeneratedColumn<double>(
+        'barometric_station_in_hg',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _humidityPctMeta = const VerificationMeta(
+    'humidityPct',
+  );
+  @override
+  late final GeneratedColumn<double> humidityPct = GeneratedColumn<double>(
+    'humidity_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _windSpeedMphMeta = const VerificationMeta(
+    'windSpeedMph',
+  );
+  @override
+  late final GeneratedColumn<double> windSpeedMph = GeneratedColumn<double>(
+    'wind_speed_mph',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _windDirectionDegMeta = const VerificationMeta(
+    'windDirectionDeg',
+  );
+  @override
+  late final GeneratedColumn<double> windDirectionDeg = GeneratedColumn<double>(
+    'wind_direction_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rangeElevationFtMeta = const VerificationMeta(
+    'rangeElevationFt',
+  );
+  @override
+  late final GeneratedColumn<double> rangeElevationFt = GeneratedColumn<double>(
+    'range_elevation_ft',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    recipeId,
+    firearmId,
+    batchId,
+    name,
+    sessionDate,
+    sampleSize,
+    velocityAvgFps,
+    velocityMedianFps,
+    velocityHighFps,
+    velocityLowFps,
+    velocityEsFps,
+    velocitySdFps,
+    velocityCvPct,
+    velocitySdCi95Fps,
+    coldBoreOffsetFps,
+    velocityDriftSlope,
+    distanceYd,
+    groupSizeMoa,
+    verticalDispersionMoa,
+    horizontalDispersionMoa,
+    meanRadiusMoa,
+    temperatureF,
+    densityAltitudeFt,
+    barometricStationInHg,
+    humidityPct,
+    windSpeedMph,
+    windDirectionDeg,
+    rangeElevationFt,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'test_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TestSessionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('recipe_id')) {
+      context.handle(
+        _recipeIdMeta,
+        recipeId.isAcceptableOrUnknown(data['recipe_id']!, _recipeIdMeta),
+      );
+    }
+    if (data.containsKey('firearm_id')) {
+      context.handle(
+        _firearmIdMeta,
+        firearmId.isAcceptableOrUnknown(data['firearm_id']!, _firearmIdMeta),
+      );
+    }
+    if (data.containsKey('batch_id')) {
+      context.handle(
+        _batchIdMeta,
+        batchId.isAcceptableOrUnknown(data['batch_id']!, _batchIdMeta),
+      );
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    }
+    if (data.containsKey('session_date')) {
+      context.handle(
+        _sessionDateMeta,
+        sessionDate.isAcceptableOrUnknown(
+          data['session_date']!,
+          _sessionDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionDateMeta);
+    }
+    if (data.containsKey('sample_size')) {
+      context.handle(
+        _sampleSizeMeta,
+        sampleSize.isAcceptableOrUnknown(data['sample_size']!, _sampleSizeMeta),
+      );
+    }
+    if (data.containsKey('velocity_avg_fps')) {
+      context.handle(
+        _velocityAvgFpsMeta,
+        velocityAvgFps.isAcceptableOrUnknown(
+          data['velocity_avg_fps']!,
+          _velocityAvgFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_median_fps')) {
+      context.handle(
+        _velocityMedianFpsMeta,
+        velocityMedianFps.isAcceptableOrUnknown(
+          data['velocity_median_fps']!,
+          _velocityMedianFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_high_fps')) {
+      context.handle(
+        _velocityHighFpsMeta,
+        velocityHighFps.isAcceptableOrUnknown(
+          data['velocity_high_fps']!,
+          _velocityHighFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_low_fps')) {
+      context.handle(
+        _velocityLowFpsMeta,
+        velocityLowFps.isAcceptableOrUnknown(
+          data['velocity_low_fps']!,
+          _velocityLowFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_es_fps')) {
+      context.handle(
+        _velocityEsFpsMeta,
+        velocityEsFps.isAcceptableOrUnknown(
+          data['velocity_es_fps']!,
+          _velocityEsFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_sd_fps')) {
+      context.handle(
+        _velocitySdFpsMeta,
+        velocitySdFps.isAcceptableOrUnknown(
+          data['velocity_sd_fps']!,
+          _velocitySdFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_cv_pct')) {
+      context.handle(
+        _velocityCvPctMeta,
+        velocityCvPct.isAcceptableOrUnknown(
+          data['velocity_cv_pct']!,
+          _velocityCvPctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_sd_ci95_fps')) {
+      context.handle(
+        _velocitySdCi95FpsMeta,
+        velocitySdCi95Fps.isAcceptableOrUnknown(
+          data['velocity_sd_ci95_fps']!,
+          _velocitySdCi95FpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cold_bore_offset_fps')) {
+      context.handle(
+        _coldBoreOffsetFpsMeta,
+        coldBoreOffsetFps.isAcceptableOrUnknown(
+          data['cold_bore_offset_fps']!,
+          _coldBoreOffsetFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('velocity_drift_slope')) {
+      context.handle(
+        _velocityDriftSlopeMeta,
+        velocityDriftSlope.isAcceptableOrUnknown(
+          data['velocity_drift_slope']!,
+          _velocityDriftSlopeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('distance_yd')) {
+      context.handle(
+        _distanceYdMeta,
+        distanceYd.isAcceptableOrUnknown(data['distance_yd']!, _distanceYdMeta),
+      );
+    }
+    if (data.containsKey('group_size_moa')) {
+      context.handle(
+        _groupSizeMoaMeta,
+        groupSizeMoa.isAcceptableOrUnknown(
+          data['group_size_moa']!,
+          _groupSizeMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('vertical_dispersion_moa')) {
+      context.handle(
+        _verticalDispersionMoaMeta,
+        verticalDispersionMoa.isAcceptableOrUnknown(
+          data['vertical_dispersion_moa']!,
+          _verticalDispersionMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('horizontal_dispersion_moa')) {
+      context.handle(
+        _horizontalDispersionMoaMeta,
+        horizontalDispersionMoa.isAcceptableOrUnknown(
+          data['horizontal_dispersion_moa']!,
+          _horizontalDispersionMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('mean_radius_moa')) {
+      context.handle(
+        _meanRadiusMoaMeta,
+        meanRadiusMoa.isAcceptableOrUnknown(
+          data['mean_radius_moa']!,
+          _meanRadiusMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('temperature_f')) {
+      context.handle(
+        _temperatureFMeta,
+        temperatureF.isAcceptableOrUnknown(
+          data['temperature_f']!,
+          _temperatureFMeta,
+        ),
+      );
+    }
+    if (data.containsKey('density_altitude_ft')) {
+      context.handle(
+        _densityAltitudeFtMeta,
+        densityAltitudeFt.isAcceptableOrUnknown(
+          data['density_altitude_ft']!,
+          _densityAltitudeFtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('barometric_station_in_hg')) {
+      context.handle(
+        _barometricStationInHgMeta,
+        barometricStationInHg.isAcceptableOrUnknown(
+          data['barometric_station_in_hg']!,
+          _barometricStationInHgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('humidity_pct')) {
+      context.handle(
+        _humidityPctMeta,
+        humidityPct.isAcceptableOrUnknown(
+          data['humidity_pct']!,
+          _humidityPctMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wind_speed_mph')) {
+      context.handle(
+        _windSpeedMphMeta,
+        windSpeedMph.isAcceptableOrUnknown(
+          data['wind_speed_mph']!,
+          _windSpeedMphMeta,
+        ),
+      );
+    }
+    if (data.containsKey('wind_direction_deg')) {
+      context.handle(
+        _windDirectionDegMeta,
+        windDirectionDeg.isAcceptableOrUnknown(
+          data['wind_direction_deg']!,
+          _windDirectionDegMeta,
+        ),
+      );
+    }
+    if (data.containsKey('range_elevation_ft')) {
+      context.handle(
+        _rangeElevationFtMeta,
+        rangeElevationFt.isAcceptableOrUnknown(
+          data['range_elevation_ft']!,
+          _rangeElevationFtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TestSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TestSessionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      recipeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}recipe_id'],
+      ),
+      firearmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firearm_id'],
+      ),
+      batchId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}batch_id'],
+      ),
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      ),
+      sessionDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}session_date'],
+      )!,
+      sampleSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sample_size'],
+      ),
+      velocityAvgFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_avg_fps'],
+      ),
+      velocityMedianFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_median_fps'],
+      ),
+      velocityHighFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_high_fps'],
+      ),
+      velocityLowFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_low_fps'],
+      ),
+      velocityEsFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_es_fps'],
+      ),
+      velocitySdFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_sd_fps'],
+      ),
+      velocityCvPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_cv_pct'],
+      ),
+      velocitySdCi95Fps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_sd_ci95_fps'],
+      ),
+      coldBoreOffsetFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cold_bore_offset_fps'],
+      ),
+      velocityDriftSlope: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_drift_slope'],
+      ),
+      distanceYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}distance_yd'],
+      ),
+      groupSizeMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}group_size_moa'],
+      ),
+      verticalDispersionMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}vertical_dispersion_moa'],
+      ),
+      horizontalDispersionMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}horizontal_dispersion_moa'],
+      ),
+      meanRadiusMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}mean_radius_moa'],
+      ),
+      temperatureF: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}temperature_f'],
+      ),
+      densityAltitudeFt: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}density_altitude_ft'],
+      ),
+      barometricStationInHg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}barometric_station_in_hg'],
+      ),
+      humidityPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}humidity_pct'],
+      ),
+      windSpeedMph: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wind_speed_mph'],
+      ),
+      windDirectionDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}wind_direction_deg'],
+      ),
+      rangeElevationFt: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}range_elevation_ft'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TestSessionsTable createAlias(String alias) {
+    return $TestSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class TestSessionRow extends DataClass implements Insertable<TestSessionRow> {
+  final int id;
+  final int? recipeId;
+  final int? firearmId;
+  final int? batchId;
+  final String? name;
+  final DateTime sessionDate;
+  final int? sampleSize;
+  final double? velocityAvgFps;
+  final double? velocityMedianFps;
+  final double? velocityHighFps;
+  final double? velocityLowFps;
+  final double? velocityEsFps;
+  final double? velocitySdFps;
+  final double? velocityCvPct;
+  final double? velocitySdCi95Fps;
+  final double? coldBoreOffsetFps;
+  final double? velocityDriftSlope;
+  final int? distanceYd;
+  final double? groupSizeMoa;
+  final double? verticalDispersionMoa;
+  final double? horizontalDispersionMoa;
+  final double? meanRadiusMoa;
+  final double? temperatureF;
+  final double? densityAltitudeFt;
+  final double? barometricStationInHg;
+  final double? humidityPct;
+  final double? windSpeedMph;
+  final double? windDirectionDeg;
+  final double? rangeElevationFt;
+  final String? notes;
+  final DateTime createdAt;
+  const TestSessionRow({
+    required this.id,
+    this.recipeId,
+    this.firearmId,
+    this.batchId,
+    this.name,
+    required this.sessionDate,
+    this.sampleSize,
+    this.velocityAvgFps,
+    this.velocityMedianFps,
+    this.velocityHighFps,
+    this.velocityLowFps,
+    this.velocityEsFps,
+    this.velocitySdFps,
+    this.velocityCvPct,
+    this.velocitySdCi95Fps,
+    this.coldBoreOffsetFps,
+    this.velocityDriftSlope,
+    this.distanceYd,
+    this.groupSizeMoa,
+    this.verticalDispersionMoa,
+    this.horizontalDispersionMoa,
+    this.meanRadiusMoa,
+    this.temperatureF,
+    this.densityAltitudeFt,
+    this.barometricStationInHg,
+    this.humidityPct,
+    this.windSpeedMph,
+    this.windDirectionDeg,
+    this.rangeElevationFt,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || recipeId != null) {
+      map['recipe_id'] = Variable<int>(recipeId);
+    }
+    if (!nullToAbsent || firearmId != null) {
+      map['firearm_id'] = Variable<int>(firearmId);
+    }
+    if (!nullToAbsent || batchId != null) {
+      map['batch_id'] = Variable<int>(batchId);
+    }
+    if (!nullToAbsent || name != null) {
+      map['name'] = Variable<String>(name);
+    }
+    map['session_date'] = Variable<DateTime>(sessionDate);
+    if (!nullToAbsent || sampleSize != null) {
+      map['sample_size'] = Variable<int>(sampleSize);
+    }
+    if (!nullToAbsent || velocityAvgFps != null) {
+      map['velocity_avg_fps'] = Variable<double>(velocityAvgFps);
+    }
+    if (!nullToAbsent || velocityMedianFps != null) {
+      map['velocity_median_fps'] = Variable<double>(velocityMedianFps);
+    }
+    if (!nullToAbsent || velocityHighFps != null) {
+      map['velocity_high_fps'] = Variable<double>(velocityHighFps);
+    }
+    if (!nullToAbsent || velocityLowFps != null) {
+      map['velocity_low_fps'] = Variable<double>(velocityLowFps);
+    }
+    if (!nullToAbsent || velocityEsFps != null) {
+      map['velocity_es_fps'] = Variable<double>(velocityEsFps);
+    }
+    if (!nullToAbsent || velocitySdFps != null) {
+      map['velocity_sd_fps'] = Variable<double>(velocitySdFps);
+    }
+    if (!nullToAbsent || velocityCvPct != null) {
+      map['velocity_cv_pct'] = Variable<double>(velocityCvPct);
+    }
+    if (!nullToAbsent || velocitySdCi95Fps != null) {
+      map['velocity_sd_ci95_fps'] = Variable<double>(velocitySdCi95Fps);
+    }
+    if (!nullToAbsent || coldBoreOffsetFps != null) {
+      map['cold_bore_offset_fps'] = Variable<double>(coldBoreOffsetFps);
+    }
+    if (!nullToAbsent || velocityDriftSlope != null) {
+      map['velocity_drift_slope'] = Variable<double>(velocityDriftSlope);
+    }
+    if (!nullToAbsent || distanceYd != null) {
+      map['distance_yd'] = Variable<int>(distanceYd);
+    }
+    if (!nullToAbsent || groupSizeMoa != null) {
+      map['group_size_moa'] = Variable<double>(groupSizeMoa);
+    }
+    if (!nullToAbsent || verticalDispersionMoa != null) {
+      map['vertical_dispersion_moa'] = Variable<double>(verticalDispersionMoa);
+    }
+    if (!nullToAbsent || horizontalDispersionMoa != null) {
+      map['horizontal_dispersion_moa'] = Variable<double>(
+        horizontalDispersionMoa,
+      );
+    }
+    if (!nullToAbsent || meanRadiusMoa != null) {
+      map['mean_radius_moa'] = Variable<double>(meanRadiusMoa);
+    }
+    if (!nullToAbsent || temperatureF != null) {
+      map['temperature_f'] = Variable<double>(temperatureF);
+    }
+    if (!nullToAbsent || densityAltitudeFt != null) {
+      map['density_altitude_ft'] = Variable<double>(densityAltitudeFt);
+    }
+    if (!nullToAbsent || barometricStationInHg != null) {
+      map['barometric_station_in_hg'] = Variable<double>(barometricStationInHg);
+    }
+    if (!nullToAbsent || humidityPct != null) {
+      map['humidity_pct'] = Variable<double>(humidityPct);
+    }
+    if (!nullToAbsent || windSpeedMph != null) {
+      map['wind_speed_mph'] = Variable<double>(windSpeedMph);
+    }
+    if (!nullToAbsent || windDirectionDeg != null) {
+      map['wind_direction_deg'] = Variable<double>(windDirectionDeg);
+    }
+    if (!nullToAbsent || rangeElevationFt != null) {
+      map['range_elevation_ft'] = Variable<double>(rangeElevationFt);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  TestSessionsCompanion toCompanion(bool nullToAbsent) {
+    return TestSessionsCompanion(
+      id: Value(id),
+      recipeId: recipeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recipeId),
+      firearmId: firearmId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firearmId),
+      batchId: batchId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batchId),
+      name: name == null && nullToAbsent ? const Value.absent() : Value(name),
+      sessionDate: Value(sessionDate),
+      sampleSize: sampleSize == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sampleSize),
+      velocityAvgFps: velocityAvgFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityAvgFps),
+      velocityMedianFps: velocityMedianFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityMedianFps),
+      velocityHighFps: velocityHighFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityHighFps),
+      velocityLowFps: velocityLowFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityLowFps),
+      velocityEsFps: velocityEsFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityEsFps),
+      velocitySdFps: velocitySdFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocitySdFps),
+      velocityCvPct: velocityCvPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityCvPct),
+      velocitySdCi95Fps: velocitySdCi95Fps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocitySdCi95Fps),
+      coldBoreOffsetFps: coldBoreOffsetFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(coldBoreOffsetFps),
+      velocityDriftSlope: velocityDriftSlope == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityDriftSlope),
+      distanceYd: distanceYd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceYd),
+      groupSizeMoa: groupSizeMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(groupSizeMoa),
+      verticalDispersionMoa: verticalDispersionMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verticalDispersionMoa),
+      horizontalDispersionMoa: horizontalDispersionMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(horizontalDispersionMoa),
+      meanRadiusMoa: meanRadiusMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(meanRadiusMoa),
+      temperatureF: temperatureF == null && nullToAbsent
+          ? const Value.absent()
+          : Value(temperatureF),
+      densityAltitudeFt: densityAltitudeFt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(densityAltitudeFt),
+      barometricStationInHg: barometricStationInHg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(barometricStationInHg),
+      humidityPct: humidityPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(humidityPct),
+      windSpeedMph: windSpeedMph == null && nullToAbsent
+          ? const Value.absent()
+          : Value(windSpeedMph),
+      windDirectionDeg: windDirectionDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(windDirectionDeg),
+      rangeElevationFt: rangeElevationFt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rangeElevationFt),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory TestSessionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TestSessionRow(
+      id: serializer.fromJson<int>(json['id']),
+      recipeId: serializer.fromJson<int?>(json['recipeId']),
+      firearmId: serializer.fromJson<int?>(json['firearmId']),
+      batchId: serializer.fromJson<int?>(json['batchId']),
+      name: serializer.fromJson<String?>(json['name']),
+      sessionDate: serializer.fromJson<DateTime>(json['sessionDate']),
+      sampleSize: serializer.fromJson<int?>(json['sampleSize']),
+      velocityAvgFps: serializer.fromJson<double?>(json['velocityAvgFps']),
+      velocityMedianFps: serializer.fromJson<double?>(
+        json['velocityMedianFps'],
+      ),
+      velocityHighFps: serializer.fromJson<double?>(json['velocityHighFps']),
+      velocityLowFps: serializer.fromJson<double?>(json['velocityLowFps']),
+      velocityEsFps: serializer.fromJson<double?>(json['velocityEsFps']),
+      velocitySdFps: serializer.fromJson<double?>(json['velocitySdFps']),
+      velocityCvPct: serializer.fromJson<double?>(json['velocityCvPct']),
+      velocitySdCi95Fps: serializer.fromJson<double?>(
+        json['velocitySdCi95Fps'],
+      ),
+      coldBoreOffsetFps: serializer.fromJson<double?>(
+        json['coldBoreOffsetFps'],
+      ),
+      velocityDriftSlope: serializer.fromJson<double?>(
+        json['velocityDriftSlope'],
+      ),
+      distanceYd: serializer.fromJson<int?>(json['distanceYd']),
+      groupSizeMoa: serializer.fromJson<double?>(json['groupSizeMoa']),
+      verticalDispersionMoa: serializer.fromJson<double?>(
+        json['verticalDispersionMoa'],
+      ),
+      horizontalDispersionMoa: serializer.fromJson<double?>(
+        json['horizontalDispersionMoa'],
+      ),
+      meanRadiusMoa: serializer.fromJson<double?>(json['meanRadiusMoa']),
+      temperatureF: serializer.fromJson<double?>(json['temperatureF']),
+      densityAltitudeFt: serializer.fromJson<double?>(
+        json['densityAltitudeFt'],
+      ),
+      barometricStationInHg: serializer.fromJson<double?>(
+        json['barometricStationInHg'],
+      ),
+      humidityPct: serializer.fromJson<double?>(json['humidityPct']),
+      windSpeedMph: serializer.fromJson<double?>(json['windSpeedMph']),
+      windDirectionDeg: serializer.fromJson<double?>(json['windDirectionDeg']),
+      rangeElevationFt: serializer.fromJson<double?>(json['rangeElevationFt']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'recipeId': serializer.toJson<int?>(recipeId),
+      'firearmId': serializer.toJson<int?>(firearmId),
+      'batchId': serializer.toJson<int?>(batchId),
+      'name': serializer.toJson<String?>(name),
+      'sessionDate': serializer.toJson<DateTime>(sessionDate),
+      'sampleSize': serializer.toJson<int?>(sampleSize),
+      'velocityAvgFps': serializer.toJson<double?>(velocityAvgFps),
+      'velocityMedianFps': serializer.toJson<double?>(velocityMedianFps),
+      'velocityHighFps': serializer.toJson<double?>(velocityHighFps),
+      'velocityLowFps': serializer.toJson<double?>(velocityLowFps),
+      'velocityEsFps': serializer.toJson<double?>(velocityEsFps),
+      'velocitySdFps': serializer.toJson<double?>(velocitySdFps),
+      'velocityCvPct': serializer.toJson<double?>(velocityCvPct),
+      'velocitySdCi95Fps': serializer.toJson<double?>(velocitySdCi95Fps),
+      'coldBoreOffsetFps': serializer.toJson<double?>(coldBoreOffsetFps),
+      'velocityDriftSlope': serializer.toJson<double?>(velocityDriftSlope),
+      'distanceYd': serializer.toJson<int?>(distanceYd),
+      'groupSizeMoa': serializer.toJson<double?>(groupSizeMoa),
+      'verticalDispersionMoa': serializer.toJson<double?>(
+        verticalDispersionMoa,
+      ),
+      'horizontalDispersionMoa': serializer.toJson<double?>(
+        horizontalDispersionMoa,
+      ),
+      'meanRadiusMoa': serializer.toJson<double?>(meanRadiusMoa),
+      'temperatureF': serializer.toJson<double?>(temperatureF),
+      'densityAltitudeFt': serializer.toJson<double?>(densityAltitudeFt),
+      'barometricStationInHg': serializer.toJson<double?>(
+        barometricStationInHg,
+      ),
+      'humidityPct': serializer.toJson<double?>(humidityPct),
+      'windSpeedMph': serializer.toJson<double?>(windSpeedMph),
+      'windDirectionDeg': serializer.toJson<double?>(windDirectionDeg),
+      'rangeElevationFt': serializer.toJson<double?>(rangeElevationFt),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  TestSessionRow copyWith({
+    int? id,
+    Value<int?> recipeId = const Value.absent(),
+    Value<int?> firearmId = const Value.absent(),
+    Value<int?> batchId = const Value.absent(),
+    Value<String?> name = const Value.absent(),
+    DateTime? sessionDate,
+    Value<int?> sampleSize = const Value.absent(),
+    Value<double?> velocityAvgFps = const Value.absent(),
+    Value<double?> velocityMedianFps = const Value.absent(),
+    Value<double?> velocityHighFps = const Value.absent(),
+    Value<double?> velocityLowFps = const Value.absent(),
+    Value<double?> velocityEsFps = const Value.absent(),
+    Value<double?> velocitySdFps = const Value.absent(),
+    Value<double?> velocityCvPct = const Value.absent(),
+    Value<double?> velocitySdCi95Fps = const Value.absent(),
+    Value<double?> coldBoreOffsetFps = const Value.absent(),
+    Value<double?> velocityDriftSlope = const Value.absent(),
+    Value<int?> distanceYd = const Value.absent(),
+    Value<double?> groupSizeMoa = const Value.absent(),
+    Value<double?> verticalDispersionMoa = const Value.absent(),
+    Value<double?> horizontalDispersionMoa = const Value.absent(),
+    Value<double?> meanRadiusMoa = const Value.absent(),
+    Value<double?> temperatureF = const Value.absent(),
+    Value<double?> densityAltitudeFt = const Value.absent(),
+    Value<double?> barometricStationInHg = const Value.absent(),
+    Value<double?> humidityPct = const Value.absent(),
+    Value<double?> windSpeedMph = const Value.absent(),
+    Value<double?> windDirectionDeg = const Value.absent(),
+    Value<double?> rangeElevationFt = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => TestSessionRow(
+    id: id ?? this.id,
+    recipeId: recipeId.present ? recipeId.value : this.recipeId,
+    firearmId: firearmId.present ? firearmId.value : this.firearmId,
+    batchId: batchId.present ? batchId.value : this.batchId,
+    name: name.present ? name.value : this.name,
+    sessionDate: sessionDate ?? this.sessionDate,
+    sampleSize: sampleSize.present ? sampleSize.value : this.sampleSize,
+    velocityAvgFps: velocityAvgFps.present
+        ? velocityAvgFps.value
+        : this.velocityAvgFps,
+    velocityMedianFps: velocityMedianFps.present
+        ? velocityMedianFps.value
+        : this.velocityMedianFps,
+    velocityHighFps: velocityHighFps.present
+        ? velocityHighFps.value
+        : this.velocityHighFps,
+    velocityLowFps: velocityLowFps.present
+        ? velocityLowFps.value
+        : this.velocityLowFps,
+    velocityEsFps: velocityEsFps.present
+        ? velocityEsFps.value
+        : this.velocityEsFps,
+    velocitySdFps: velocitySdFps.present
+        ? velocitySdFps.value
+        : this.velocitySdFps,
+    velocityCvPct: velocityCvPct.present
+        ? velocityCvPct.value
+        : this.velocityCvPct,
+    velocitySdCi95Fps: velocitySdCi95Fps.present
+        ? velocitySdCi95Fps.value
+        : this.velocitySdCi95Fps,
+    coldBoreOffsetFps: coldBoreOffsetFps.present
+        ? coldBoreOffsetFps.value
+        : this.coldBoreOffsetFps,
+    velocityDriftSlope: velocityDriftSlope.present
+        ? velocityDriftSlope.value
+        : this.velocityDriftSlope,
+    distanceYd: distanceYd.present ? distanceYd.value : this.distanceYd,
+    groupSizeMoa: groupSizeMoa.present ? groupSizeMoa.value : this.groupSizeMoa,
+    verticalDispersionMoa: verticalDispersionMoa.present
+        ? verticalDispersionMoa.value
+        : this.verticalDispersionMoa,
+    horizontalDispersionMoa: horizontalDispersionMoa.present
+        ? horizontalDispersionMoa.value
+        : this.horizontalDispersionMoa,
+    meanRadiusMoa: meanRadiusMoa.present
+        ? meanRadiusMoa.value
+        : this.meanRadiusMoa,
+    temperatureF: temperatureF.present ? temperatureF.value : this.temperatureF,
+    densityAltitudeFt: densityAltitudeFt.present
+        ? densityAltitudeFt.value
+        : this.densityAltitudeFt,
+    barometricStationInHg: barometricStationInHg.present
+        ? barometricStationInHg.value
+        : this.barometricStationInHg,
+    humidityPct: humidityPct.present ? humidityPct.value : this.humidityPct,
+    windSpeedMph: windSpeedMph.present ? windSpeedMph.value : this.windSpeedMph,
+    windDirectionDeg: windDirectionDeg.present
+        ? windDirectionDeg.value
+        : this.windDirectionDeg,
+    rangeElevationFt: rangeElevationFt.present
+        ? rangeElevationFt.value
+        : this.rangeElevationFt,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  TestSessionRow copyWithCompanion(TestSessionsCompanion data) {
+    return TestSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      recipeId: data.recipeId.present ? data.recipeId.value : this.recipeId,
+      firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
+      batchId: data.batchId.present ? data.batchId.value : this.batchId,
+      name: data.name.present ? data.name.value : this.name,
+      sessionDate: data.sessionDate.present
+          ? data.sessionDate.value
+          : this.sessionDate,
+      sampleSize: data.sampleSize.present
+          ? data.sampleSize.value
+          : this.sampleSize,
+      velocityAvgFps: data.velocityAvgFps.present
+          ? data.velocityAvgFps.value
+          : this.velocityAvgFps,
+      velocityMedianFps: data.velocityMedianFps.present
+          ? data.velocityMedianFps.value
+          : this.velocityMedianFps,
+      velocityHighFps: data.velocityHighFps.present
+          ? data.velocityHighFps.value
+          : this.velocityHighFps,
+      velocityLowFps: data.velocityLowFps.present
+          ? data.velocityLowFps.value
+          : this.velocityLowFps,
+      velocityEsFps: data.velocityEsFps.present
+          ? data.velocityEsFps.value
+          : this.velocityEsFps,
+      velocitySdFps: data.velocitySdFps.present
+          ? data.velocitySdFps.value
+          : this.velocitySdFps,
+      velocityCvPct: data.velocityCvPct.present
+          ? data.velocityCvPct.value
+          : this.velocityCvPct,
+      velocitySdCi95Fps: data.velocitySdCi95Fps.present
+          ? data.velocitySdCi95Fps.value
+          : this.velocitySdCi95Fps,
+      coldBoreOffsetFps: data.coldBoreOffsetFps.present
+          ? data.coldBoreOffsetFps.value
+          : this.coldBoreOffsetFps,
+      velocityDriftSlope: data.velocityDriftSlope.present
+          ? data.velocityDriftSlope.value
+          : this.velocityDriftSlope,
+      distanceYd: data.distanceYd.present
+          ? data.distanceYd.value
+          : this.distanceYd,
+      groupSizeMoa: data.groupSizeMoa.present
+          ? data.groupSizeMoa.value
+          : this.groupSizeMoa,
+      verticalDispersionMoa: data.verticalDispersionMoa.present
+          ? data.verticalDispersionMoa.value
+          : this.verticalDispersionMoa,
+      horizontalDispersionMoa: data.horizontalDispersionMoa.present
+          ? data.horizontalDispersionMoa.value
+          : this.horizontalDispersionMoa,
+      meanRadiusMoa: data.meanRadiusMoa.present
+          ? data.meanRadiusMoa.value
+          : this.meanRadiusMoa,
+      temperatureF: data.temperatureF.present
+          ? data.temperatureF.value
+          : this.temperatureF,
+      densityAltitudeFt: data.densityAltitudeFt.present
+          ? data.densityAltitudeFt.value
+          : this.densityAltitudeFt,
+      barometricStationInHg: data.barometricStationInHg.present
+          ? data.barometricStationInHg.value
+          : this.barometricStationInHg,
+      humidityPct: data.humidityPct.present
+          ? data.humidityPct.value
+          : this.humidityPct,
+      windSpeedMph: data.windSpeedMph.present
+          ? data.windSpeedMph.value
+          : this.windSpeedMph,
+      windDirectionDeg: data.windDirectionDeg.present
+          ? data.windDirectionDeg.value
+          : this.windDirectionDeg,
+      rangeElevationFt: data.rangeElevationFt.present
+          ? data.rangeElevationFt.value
+          : this.rangeElevationFt,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TestSessionRow(')
+          ..write('id: $id, ')
+          ..write('recipeId: $recipeId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('batchId: $batchId, ')
+          ..write('name: $name, ')
+          ..write('sessionDate: $sessionDate, ')
+          ..write('sampleSize: $sampleSize, ')
+          ..write('velocityAvgFps: $velocityAvgFps, ')
+          ..write('velocityMedianFps: $velocityMedianFps, ')
+          ..write('velocityHighFps: $velocityHighFps, ')
+          ..write('velocityLowFps: $velocityLowFps, ')
+          ..write('velocityEsFps: $velocityEsFps, ')
+          ..write('velocitySdFps: $velocitySdFps, ')
+          ..write('velocityCvPct: $velocityCvPct, ')
+          ..write('velocitySdCi95Fps: $velocitySdCi95Fps, ')
+          ..write('coldBoreOffsetFps: $coldBoreOffsetFps, ')
+          ..write('velocityDriftSlope: $velocityDriftSlope, ')
+          ..write('distanceYd: $distanceYd, ')
+          ..write('groupSizeMoa: $groupSizeMoa, ')
+          ..write('verticalDispersionMoa: $verticalDispersionMoa, ')
+          ..write('horizontalDispersionMoa: $horizontalDispersionMoa, ')
+          ..write('meanRadiusMoa: $meanRadiusMoa, ')
+          ..write('temperatureF: $temperatureF, ')
+          ..write('densityAltitudeFt: $densityAltitudeFt, ')
+          ..write('barometricStationInHg: $barometricStationInHg, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('windSpeedMph: $windSpeedMph, ')
+          ..write('windDirectionDeg: $windDirectionDeg, ')
+          ..write('rangeElevationFt: $rangeElevationFt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    recipeId,
+    firearmId,
+    batchId,
+    name,
+    sessionDate,
+    sampleSize,
+    velocityAvgFps,
+    velocityMedianFps,
+    velocityHighFps,
+    velocityLowFps,
+    velocityEsFps,
+    velocitySdFps,
+    velocityCvPct,
+    velocitySdCi95Fps,
+    coldBoreOffsetFps,
+    velocityDriftSlope,
+    distanceYd,
+    groupSizeMoa,
+    verticalDispersionMoa,
+    horizontalDispersionMoa,
+    meanRadiusMoa,
+    temperatureF,
+    densityAltitudeFt,
+    barometricStationInHg,
+    humidityPct,
+    windSpeedMph,
+    windDirectionDeg,
+    rangeElevationFt,
+    notes,
+    createdAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TestSessionRow &&
+          other.id == this.id &&
+          other.recipeId == this.recipeId &&
+          other.firearmId == this.firearmId &&
+          other.batchId == this.batchId &&
+          other.name == this.name &&
+          other.sessionDate == this.sessionDate &&
+          other.sampleSize == this.sampleSize &&
+          other.velocityAvgFps == this.velocityAvgFps &&
+          other.velocityMedianFps == this.velocityMedianFps &&
+          other.velocityHighFps == this.velocityHighFps &&
+          other.velocityLowFps == this.velocityLowFps &&
+          other.velocityEsFps == this.velocityEsFps &&
+          other.velocitySdFps == this.velocitySdFps &&
+          other.velocityCvPct == this.velocityCvPct &&
+          other.velocitySdCi95Fps == this.velocitySdCi95Fps &&
+          other.coldBoreOffsetFps == this.coldBoreOffsetFps &&
+          other.velocityDriftSlope == this.velocityDriftSlope &&
+          other.distanceYd == this.distanceYd &&
+          other.groupSizeMoa == this.groupSizeMoa &&
+          other.verticalDispersionMoa == this.verticalDispersionMoa &&
+          other.horizontalDispersionMoa == this.horizontalDispersionMoa &&
+          other.meanRadiusMoa == this.meanRadiusMoa &&
+          other.temperatureF == this.temperatureF &&
+          other.densityAltitudeFt == this.densityAltitudeFt &&
+          other.barometricStationInHg == this.barometricStationInHg &&
+          other.humidityPct == this.humidityPct &&
+          other.windSpeedMph == this.windSpeedMph &&
+          other.windDirectionDeg == this.windDirectionDeg &&
+          other.rangeElevationFt == this.rangeElevationFt &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class TestSessionsCompanion extends UpdateCompanion<TestSessionRow> {
+  final Value<int> id;
+  final Value<int?> recipeId;
+  final Value<int?> firearmId;
+  final Value<int?> batchId;
+  final Value<String?> name;
+  final Value<DateTime> sessionDate;
+  final Value<int?> sampleSize;
+  final Value<double?> velocityAvgFps;
+  final Value<double?> velocityMedianFps;
+  final Value<double?> velocityHighFps;
+  final Value<double?> velocityLowFps;
+  final Value<double?> velocityEsFps;
+  final Value<double?> velocitySdFps;
+  final Value<double?> velocityCvPct;
+  final Value<double?> velocitySdCi95Fps;
+  final Value<double?> coldBoreOffsetFps;
+  final Value<double?> velocityDriftSlope;
+  final Value<int?> distanceYd;
+  final Value<double?> groupSizeMoa;
+  final Value<double?> verticalDispersionMoa;
+  final Value<double?> horizontalDispersionMoa;
+  final Value<double?> meanRadiusMoa;
+  final Value<double?> temperatureF;
+  final Value<double?> densityAltitudeFt;
+  final Value<double?> barometricStationInHg;
+  final Value<double?> humidityPct;
+  final Value<double?> windSpeedMph;
+  final Value<double?> windDirectionDeg;
+  final Value<double?> rangeElevationFt;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const TestSessionsCompanion({
+    this.id = const Value.absent(),
+    this.recipeId = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.batchId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.sessionDate = const Value.absent(),
+    this.sampleSize = const Value.absent(),
+    this.velocityAvgFps = const Value.absent(),
+    this.velocityMedianFps = const Value.absent(),
+    this.velocityHighFps = const Value.absent(),
+    this.velocityLowFps = const Value.absent(),
+    this.velocityEsFps = const Value.absent(),
+    this.velocitySdFps = const Value.absent(),
+    this.velocityCvPct = const Value.absent(),
+    this.velocitySdCi95Fps = const Value.absent(),
+    this.coldBoreOffsetFps = const Value.absent(),
+    this.velocityDriftSlope = const Value.absent(),
+    this.distanceYd = const Value.absent(),
+    this.groupSizeMoa = const Value.absent(),
+    this.verticalDispersionMoa = const Value.absent(),
+    this.horizontalDispersionMoa = const Value.absent(),
+    this.meanRadiusMoa = const Value.absent(),
+    this.temperatureF = const Value.absent(),
+    this.densityAltitudeFt = const Value.absent(),
+    this.barometricStationInHg = const Value.absent(),
+    this.humidityPct = const Value.absent(),
+    this.windSpeedMph = const Value.absent(),
+    this.windDirectionDeg = const Value.absent(),
+    this.rangeElevationFt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  TestSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    this.recipeId = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.batchId = const Value.absent(),
+    this.name = const Value.absent(),
+    required DateTime sessionDate,
+    this.sampleSize = const Value.absent(),
+    this.velocityAvgFps = const Value.absent(),
+    this.velocityMedianFps = const Value.absent(),
+    this.velocityHighFps = const Value.absent(),
+    this.velocityLowFps = const Value.absent(),
+    this.velocityEsFps = const Value.absent(),
+    this.velocitySdFps = const Value.absent(),
+    this.velocityCvPct = const Value.absent(),
+    this.velocitySdCi95Fps = const Value.absent(),
+    this.coldBoreOffsetFps = const Value.absent(),
+    this.velocityDriftSlope = const Value.absent(),
+    this.distanceYd = const Value.absent(),
+    this.groupSizeMoa = const Value.absent(),
+    this.verticalDispersionMoa = const Value.absent(),
+    this.horizontalDispersionMoa = const Value.absent(),
+    this.meanRadiusMoa = const Value.absent(),
+    this.temperatureF = const Value.absent(),
+    this.densityAltitudeFt = const Value.absent(),
+    this.barometricStationInHg = const Value.absent(),
+    this.humidityPct = const Value.absent(),
+    this.windSpeedMph = const Value.absent(),
+    this.windDirectionDeg = const Value.absent(),
+    this.rangeElevationFt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : sessionDate = Value(sessionDate);
+  static Insertable<TestSessionRow> custom({
+    Expression<int>? id,
+    Expression<int>? recipeId,
+    Expression<int>? firearmId,
+    Expression<int>? batchId,
+    Expression<String>? name,
+    Expression<DateTime>? sessionDate,
+    Expression<int>? sampleSize,
+    Expression<double>? velocityAvgFps,
+    Expression<double>? velocityMedianFps,
+    Expression<double>? velocityHighFps,
+    Expression<double>? velocityLowFps,
+    Expression<double>? velocityEsFps,
+    Expression<double>? velocitySdFps,
+    Expression<double>? velocityCvPct,
+    Expression<double>? velocitySdCi95Fps,
+    Expression<double>? coldBoreOffsetFps,
+    Expression<double>? velocityDriftSlope,
+    Expression<int>? distanceYd,
+    Expression<double>? groupSizeMoa,
+    Expression<double>? verticalDispersionMoa,
+    Expression<double>? horizontalDispersionMoa,
+    Expression<double>? meanRadiusMoa,
+    Expression<double>? temperatureF,
+    Expression<double>? densityAltitudeFt,
+    Expression<double>? barometricStationInHg,
+    Expression<double>? humidityPct,
+    Expression<double>? windSpeedMph,
+    Expression<double>? windDirectionDeg,
+    Expression<double>? rangeElevationFt,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (recipeId != null) 'recipe_id': recipeId,
+      if (firearmId != null) 'firearm_id': firearmId,
+      if (batchId != null) 'batch_id': batchId,
+      if (name != null) 'name': name,
+      if (sessionDate != null) 'session_date': sessionDate,
+      if (sampleSize != null) 'sample_size': sampleSize,
+      if (velocityAvgFps != null) 'velocity_avg_fps': velocityAvgFps,
+      if (velocityMedianFps != null) 'velocity_median_fps': velocityMedianFps,
+      if (velocityHighFps != null) 'velocity_high_fps': velocityHighFps,
+      if (velocityLowFps != null) 'velocity_low_fps': velocityLowFps,
+      if (velocityEsFps != null) 'velocity_es_fps': velocityEsFps,
+      if (velocitySdFps != null) 'velocity_sd_fps': velocitySdFps,
+      if (velocityCvPct != null) 'velocity_cv_pct': velocityCvPct,
+      if (velocitySdCi95Fps != null) 'velocity_sd_ci95_fps': velocitySdCi95Fps,
+      if (coldBoreOffsetFps != null) 'cold_bore_offset_fps': coldBoreOffsetFps,
+      if (velocityDriftSlope != null)
+        'velocity_drift_slope': velocityDriftSlope,
+      if (distanceYd != null) 'distance_yd': distanceYd,
+      if (groupSizeMoa != null) 'group_size_moa': groupSizeMoa,
+      if (verticalDispersionMoa != null)
+        'vertical_dispersion_moa': verticalDispersionMoa,
+      if (horizontalDispersionMoa != null)
+        'horizontal_dispersion_moa': horizontalDispersionMoa,
+      if (meanRadiusMoa != null) 'mean_radius_moa': meanRadiusMoa,
+      if (temperatureF != null) 'temperature_f': temperatureF,
+      if (densityAltitudeFt != null) 'density_altitude_ft': densityAltitudeFt,
+      if (barometricStationInHg != null)
+        'barometric_station_in_hg': barometricStationInHg,
+      if (humidityPct != null) 'humidity_pct': humidityPct,
+      if (windSpeedMph != null) 'wind_speed_mph': windSpeedMph,
+      if (windDirectionDeg != null) 'wind_direction_deg': windDirectionDeg,
+      if (rangeElevationFt != null) 'range_elevation_ft': rangeElevationFt,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  TestSessionsCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? recipeId,
+    Value<int?>? firearmId,
+    Value<int?>? batchId,
+    Value<String?>? name,
+    Value<DateTime>? sessionDate,
+    Value<int?>? sampleSize,
+    Value<double?>? velocityAvgFps,
+    Value<double?>? velocityMedianFps,
+    Value<double?>? velocityHighFps,
+    Value<double?>? velocityLowFps,
+    Value<double?>? velocityEsFps,
+    Value<double?>? velocitySdFps,
+    Value<double?>? velocityCvPct,
+    Value<double?>? velocitySdCi95Fps,
+    Value<double?>? coldBoreOffsetFps,
+    Value<double?>? velocityDriftSlope,
+    Value<int?>? distanceYd,
+    Value<double?>? groupSizeMoa,
+    Value<double?>? verticalDispersionMoa,
+    Value<double?>? horizontalDispersionMoa,
+    Value<double?>? meanRadiusMoa,
+    Value<double?>? temperatureF,
+    Value<double?>? densityAltitudeFt,
+    Value<double?>? barometricStationInHg,
+    Value<double?>? humidityPct,
+    Value<double?>? windSpeedMph,
+    Value<double?>? windDirectionDeg,
+    Value<double?>? rangeElevationFt,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return TestSessionsCompanion(
+      id: id ?? this.id,
+      recipeId: recipeId ?? this.recipeId,
+      firearmId: firearmId ?? this.firearmId,
+      batchId: batchId ?? this.batchId,
+      name: name ?? this.name,
+      sessionDate: sessionDate ?? this.sessionDate,
+      sampleSize: sampleSize ?? this.sampleSize,
+      velocityAvgFps: velocityAvgFps ?? this.velocityAvgFps,
+      velocityMedianFps: velocityMedianFps ?? this.velocityMedianFps,
+      velocityHighFps: velocityHighFps ?? this.velocityHighFps,
+      velocityLowFps: velocityLowFps ?? this.velocityLowFps,
+      velocityEsFps: velocityEsFps ?? this.velocityEsFps,
+      velocitySdFps: velocitySdFps ?? this.velocitySdFps,
+      velocityCvPct: velocityCvPct ?? this.velocityCvPct,
+      velocitySdCi95Fps: velocitySdCi95Fps ?? this.velocitySdCi95Fps,
+      coldBoreOffsetFps: coldBoreOffsetFps ?? this.coldBoreOffsetFps,
+      velocityDriftSlope: velocityDriftSlope ?? this.velocityDriftSlope,
+      distanceYd: distanceYd ?? this.distanceYd,
+      groupSizeMoa: groupSizeMoa ?? this.groupSizeMoa,
+      verticalDispersionMoa:
+          verticalDispersionMoa ?? this.verticalDispersionMoa,
+      horizontalDispersionMoa:
+          horizontalDispersionMoa ?? this.horizontalDispersionMoa,
+      meanRadiusMoa: meanRadiusMoa ?? this.meanRadiusMoa,
+      temperatureF: temperatureF ?? this.temperatureF,
+      densityAltitudeFt: densityAltitudeFt ?? this.densityAltitudeFt,
+      barometricStationInHg:
+          barometricStationInHg ?? this.barometricStationInHg,
+      humidityPct: humidityPct ?? this.humidityPct,
+      windSpeedMph: windSpeedMph ?? this.windSpeedMph,
+      windDirectionDeg: windDirectionDeg ?? this.windDirectionDeg,
+      rangeElevationFt: rangeElevationFt ?? this.rangeElevationFt,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (recipeId.present) {
+      map['recipe_id'] = Variable<int>(recipeId.value);
+    }
+    if (firearmId.present) {
+      map['firearm_id'] = Variable<int>(firearmId.value);
+    }
+    if (batchId.present) {
+      map['batch_id'] = Variable<int>(batchId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (sessionDate.present) {
+      map['session_date'] = Variable<DateTime>(sessionDate.value);
+    }
+    if (sampleSize.present) {
+      map['sample_size'] = Variable<int>(sampleSize.value);
+    }
+    if (velocityAvgFps.present) {
+      map['velocity_avg_fps'] = Variable<double>(velocityAvgFps.value);
+    }
+    if (velocityMedianFps.present) {
+      map['velocity_median_fps'] = Variable<double>(velocityMedianFps.value);
+    }
+    if (velocityHighFps.present) {
+      map['velocity_high_fps'] = Variable<double>(velocityHighFps.value);
+    }
+    if (velocityLowFps.present) {
+      map['velocity_low_fps'] = Variable<double>(velocityLowFps.value);
+    }
+    if (velocityEsFps.present) {
+      map['velocity_es_fps'] = Variable<double>(velocityEsFps.value);
+    }
+    if (velocitySdFps.present) {
+      map['velocity_sd_fps'] = Variable<double>(velocitySdFps.value);
+    }
+    if (velocityCvPct.present) {
+      map['velocity_cv_pct'] = Variable<double>(velocityCvPct.value);
+    }
+    if (velocitySdCi95Fps.present) {
+      map['velocity_sd_ci95_fps'] = Variable<double>(velocitySdCi95Fps.value);
+    }
+    if (coldBoreOffsetFps.present) {
+      map['cold_bore_offset_fps'] = Variable<double>(coldBoreOffsetFps.value);
+    }
+    if (velocityDriftSlope.present) {
+      map['velocity_drift_slope'] = Variable<double>(velocityDriftSlope.value);
+    }
+    if (distanceYd.present) {
+      map['distance_yd'] = Variable<int>(distanceYd.value);
+    }
+    if (groupSizeMoa.present) {
+      map['group_size_moa'] = Variable<double>(groupSizeMoa.value);
+    }
+    if (verticalDispersionMoa.present) {
+      map['vertical_dispersion_moa'] = Variable<double>(
+        verticalDispersionMoa.value,
+      );
+    }
+    if (horizontalDispersionMoa.present) {
+      map['horizontal_dispersion_moa'] = Variable<double>(
+        horizontalDispersionMoa.value,
+      );
+    }
+    if (meanRadiusMoa.present) {
+      map['mean_radius_moa'] = Variable<double>(meanRadiusMoa.value);
+    }
+    if (temperatureF.present) {
+      map['temperature_f'] = Variable<double>(temperatureF.value);
+    }
+    if (densityAltitudeFt.present) {
+      map['density_altitude_ft'] = Variable<double>(densityAltitudeFt.value);
+    }
+    if (barometricStationInHg.present) {
+      map['barometric_station_in_hg'] = Variable<double>(
+        barometricStationInHg.value,
+      );
+    }
+    if (humidityPct.present) {
+      map['humidity_pct'] = Variable<double>(humidityPct.value);
+    }
+    if (windSpeedMph.present) {
+      map['wind_speed_mph'] = Variable<double>(windSpeedMph.value);
+    }
+    if (windDirectionDeg.present) {
+      map['wind_direction_deg'] = Variable<double>(windDirectionDeg.value);
+    }
+    if (rangeElevationFt.present) {
+      map['range_elevation_ft'] = Variable<double>(rangeElevationFt.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TestSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('recipeId: $recipeId, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('batchId: $batchId, ')
+          ..write('name: $name, ')
+          ..write('sessionDate: $sessionDate, ')
+          ..write('sampleSize: $sampleSize, ')
+          ..write('velocityAvgFps: $velocityAvgFps, ')
+          ..write('velocityMedianFps: $velocityMedianFps, ')
+          ..write('velocityHighFps: $velocityHighFps, ')
+          ..write('velocityLowFps: $velocityLowFps, ')
+          ..write('velocityEsFps: $velocityEsFps, ')
+          ..write('velocitySdFps: $velocitySdFps, ')
+          ..write('velocityCvPct: $velocityCvPct, ')
+          ..write('velocitySdCi95Fps: $velocitySdCi95Fps, ')
+          ..write('coldBoreOffsetFps: $coldBoreOffsetFps, ')
+          ..write('velocityDriftSlope: $velocityDriftSlope, ')
+          ..write('distanceYd: $distanceYd, ')
+          ..write('groupSizeMoa: $groupSizeMoa, ')
+          ..write('verticalDispersionMoa: $verticalDispersionMoa, ')
+          ..write('horizontalDispersionMoa: $horizontalDispersionMoa, ')
+          ..write('meanRadiusMoa: $meanRadiusMoa, ')
+          ..write('temperatureF: $temperatureF, ')
+          ..write('densityAltitudeFt: $densityAltitudeFt, ')
+          ..write('barometricStationInHg: $barometricStationInHg, ')
+          ..write('humidityPct: $humidityPct, ')
+          ..write('windSpeedMph: $windSpeedMph, ')
+          ..write('windDirectionDeg: $windDirectionDeg, ')
+          ..write('rangeElevationFt: $rangeElevationFt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserCustomFieldsTable extends UserCustomFields
+    with TableInfo<$UserCustomFieldsTable, UserCustomFieldRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserCustomFieldsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _entityTypeMeta = const VerificationMeta(
+    'entityType',
+  );
+  @override
+  late final GeneratedColumn<String> entityType = GeneratedColumn<String>(
+    'entity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fieldNameMeta = const VerificationMeta(
+    'fieldName',
+  );
+  @override
+  late final GeneratedColumn<String> fieldName = GeneratedColumn<String>(
+    'field_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fieldTypeMeta = const VerificationMeta(
+    'fieldType',
+  );
+  @override
+  late final GeneratedColumn<String> fieldType = GeneratedColumn<String>(
+    'field_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitSuffixMeta = const VerificationMeta(
+    'unitSuffix',
+  );
+  @override
+  late final GeneratedColumn<String> unitSuffix = GeneratedColumn<String>(
+    'unit_suffix',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    entityType,
+    fieldName,
+    fieldType,
+    unitSuffix,
+    sortOrder,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_custom_fields';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserCustomFieldRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('entity_type')) {
+      context.handle(
+        _entityTypeMeta,
+        entityType.isAcceptableOrUnknown(data['entity_type']!, _entityTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityTypeMeta);
+    }
+    if (data.containsKey('field_name')) {
+      context.handle(
+        _fieldNameMeta,
+        fieldName.isAcceptableOrUnknown(data['field_name']!, _fieldNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fieldNameMeta);
+    }
+    if (data.containsKey('field_type')) {
+      context.handle(
+        _fieldTypeMeta,
+        fieldType.isAcceptableOrUnknown(data['field_type']!, _fieldTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fieldTypeMeta);
+    }
+    if (data.containsKey('unit_suffix')) {
+      context.handle(
+        _unitSuffixMeta,
+        unitSuffix.isAcceptableOrUnknown(data['unit_suffix']!, _unitSuffixMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {entityType, fieldName},
+  ];
+  @override
+  UserCustomFieldRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserCustomFieldRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      entityType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_type'],
+      )!,
+      fieldName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field_name'],
+      )!,
+      fieldType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field_type'],
+      )!,
+      unitSuffix: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit_suffix'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $UserCustomFieldsTable createAlias(String alias) {
+    return $UserCustomFieldsTable(attachedDatabase, alias);
+  }
+}
+
+class UserCustomFieldRow extends DataClass
+    implements Insertable<UserCustomFieldRow> {
+  final int id;
+
+  /// 'recipe' | 'firearm' | 'batch' | 'brass-lot'
+  final String entityType;
+  final String fieldName;
+
+  /// 'text' | 'number' | 'boolean' | 'date'
+  final String fieldType;
+
+  /// Optional unit/suffix shown next to the value (e.g. "gr", "fps").
+  final String? unitSuffix;
+  final int sortOrder;
+  final DateTime createdAt;
+  const UserCustomFieldRow({
+    required this.id,
+    required this.entityType,
+    required this.fieldName,
+    required this.fieldType,
+    this.unitSuffix,
+    required this.sortOrder,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['entity_type'] = Variable<String>(entityType);
+    map['field_name'] = Variable<String>(fieldName);
+    map['field_type'] = Variable<String>(fieldType);
+    if (!nullToAbsent || unitSuffix != null) {
+      map['unit_suffix'] = Variable<String>(unitSuffix);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  UserCustomFieldsCompanion toCompanion(bool nullToAbsent) {
+    return UserCustomFieldsCompanion(
+      id: Value(id),
+      entityType: Value(entityType),
+      fieldName: Value(fieldName),
+      fieldType: Value(fieldType),
+      unitSuffix: unitSuffix == null && nullToAbsent
+          ? const Value.absent()
+          : Value(unitSuffix),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory UserCustomFieldRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserCustomFieldRow(
+      id: serializer.fromJson<int>(json['id']),
+      entityType: serializer.fromJson<String>(json['entityType']),
+      fieldName: serializer.fromJson<String>(json['fieldName']),
+      fieldType: serializer.fromJson<String>(json['fieldType']),
+      unitSuffix: serializer.fromJson<String?>(json['unitSuffix']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'entityType': serializer.toJson<String>(entityType),
+      'fieldName': serializer.toJson<String>(fieldName),
+      'fieldType': serializer.toJson<String>(fieldType),
+      'unitSuffix': serializer.toJson<String?>(unitSuffix),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  UserCustomFieldRow copyWith({
+    int? id,
+    String? entityType,
+    String? fieldName,
+    String? fieldType,
+    Value<String?> unitSuffix = const Value.absent(),
+    int? sortOrder,
+    DateTime? createdAt,
+  }) => UserCustomFieldRow(
+    id: id ?? this.id,
+    entityType: entityType ?? this.entityType,
+    fieldName: fieldName ?? this.fieldName,
+    fieldType: fieldType ?? this.fieldType,
+    unitSuffix: unitSuffix.present ? unitSuffix.value : this.unitSuffix,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  UserCustomFieldRow copyWithCompanion(UserCustomFieldsCompanion data) {
+    return UserCustomFieldRow(
+      id: data.id.present ? data.id.value : this.id,
+      entityType: data.entityType.present
+          ? data.entityType.value
+          : this.entityType,
+      fieldName: data.fieldName.present ? data.fieldName.value : this.fieldName,
+      fieldType: data.fieldType.present ? data.fieldType.value : this.fieldType,
+      unitSuffix: data.unitSuffix.present
+          ? data.unitSuffix.value
+          : this.unitSuffix,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserCustomFieldRow(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('fieldName: $fieldName, ')
+          ..write('fieldType: $fieldType, ')
+          ..write('unitSuffix: $unitSuffix, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    entityType,
+    fieldName,
+    fieldType,
+    unitSuffix,
+    sortOrder,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserCustomFieldRow &&
+          other.id == this.id &&
+          other.entityType == this.entityType &&
+          other.fieldName == this.fieldName &&
+          other.fieldType == this.fieldType &&
+          other.unitSuffix == this.unitSuffix &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt);
+}
+
+class UserCustomFieldsCompanion extends UpdateCompanion<UserCustomFieldRow> {
+  final Value<int> id;
+  final Value<String> entityType;
+  final Value<String> fieldName;
+  final Value<String> fieldType;
+  final Value<String?> unitSuffix;
+  final Value<int> sortOrder;
+  final Value<DateTime> createdAt;
+  const UserCustomFieldsCompanion({
+    this.id = const Value.absent(),
+    this.entityType = const Value.absent(),
+    this.fieldName = const Value.absent(),
+    this.fieldType = const Value.absent(),
+    this.unitSuffix = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  UserCustomFieldsCompanion.insert({
+    this.id = const Value.absent(),
+    required String entityType,
+    required String fieldName,
+    required String fieldType,
+    this.unitSuffix = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : entityType = Value(entityType),
+       fieldName = Value(fieldName),
+       fieldType = Value(fieldType);
+  static Insertable<UserCustomFieldRow> custom({
+    Expression<int>? id,
+    Expression<String>? entityType,
+    Expression<String>? fieldName,
+    Expression<String>? fieldType,
+    Expression<String>? unitSuffix,
+    Expression<int>? sortOrder,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (entityType != null) 'entity_type': entityType,
+      if (fieldName != null) 'field_name': fieldName,
+      if (fieldType != null) 'field_type': fieldType,
+      if (unitSuffix != null) 'unit_suffix': unitSuffix,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  UserCustomFieldsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? entityType,
+    Value<String>? fieldName,
+    Value<String>? fieldType,
+    Value<String?>? unitSuffix,
+    Value<int>? sortOrder,
+    Value<DateTime>? createdAt,
+  }) {
+    return UserCustomFieldsCompanion(
+      id: id ?? this.id,
+      entityType: entityType ?? this.entityType,
+      fieldName: fieldName ?? this.fieldName,
+      fieldType: fieldType ?? this.fieldType,
+      unitSuffix: unitSuffix ?? this.unitSuffix,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (entityType.present) {
+      map['entity_type'] = Variable<String>(entityType.value);
+    }
+    if (fieldName.present) {
+      map['field_name'] = Variable<String>(fieldName.value);
+    }
+    if (fieldType.present) {
+      map['field_type'] = Variable<String>(fieldType.value);
+    }
+    if (unitSuffix.present) {
+      map['unit_suffix'] = Variable<String>(unitSuffix.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserCustomFieldsCompanion(')
+          ..write('id: $id, ')
+          ..write('entityType: $entityType, ')
+          ..write('fieldName: $fieldName, ')
+          ..write('fieldType: $fieldType, ')
+          ..write('unitSuffix: $unitSuffix, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $UserCustomFieldValuesTable extends UserCustomFieldValues
+    with TableInfo<$UserCustomFieldValuesTable, UserCustomFieldValueRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $UserCustomFieldValuesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _fieldIdMeta = const VerificationMeta(
+    'fieldId',
+  );
+  @override
+  late final GeneratedColumn<int> fieldId = GeneratedColumn<int>(
+    'field_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_custom_fields (id)',
+    ),
+  );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<int> entityId = GeneratedColumn<int>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    fieldId,
+    entityId,
+    value,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'user_custom_field_values';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<UserCustomFieldValueRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('field_id')) {
+      context.handle(
+        _fieldIdMeta,
+        fieldId.isAcceptableOrUnknown(data['field_id']!, _fieldIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_fieldIdMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityIdMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {fieldId, entityId},
+  ];
+  @override
+  UserCustomFieldValueRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return UserCustomFieldValueRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      fieldId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}field_id'],
+      )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}entity_id'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $UserCustomFieldValuesTable createAlias(String alias) {
+    return $UserCustomFieldValuesTable(attachedDatabase, alias);
+  }
+}
+
+class UserCustomFieldValueRow extends DataClass
+    implements Insertable<UserCustomFieldValueRow> {
+  final int id;
+  final int fieldId;
+
+  /// Row id in the entity's table (UserLoads.id, UserFirearms.id, etc.).
+  final int entityId;
+
+  /// Stored as text; UI casts based on the FieldDef's fieldType.
+  final String? value;
+  final DateTime updatedAt;
+  const UserCustomFieldValueRow({
+    required this.id,
+    required this.fieldId,
+    required this.entityId,
+    this.value,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['field_id'] = Variable<int>(fieldId);
+    map['entity_id'] = Variable<int>(entityId);
+    if (!nullToAbsent || value != null) {
+      map['value'] = Variable<String>(value);
+    }
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  UserCustomFieldValuesCompanion toCompanion(bool nullToAbsent) {
+    return UserCustomFieldValuesCompanion(
+      id: Value(id),
+      fieldId: Value(fieldId),
+      entityId: Value(entityId),
+      value: value == null && nullToAbsent
+          ? const Value.absent()
+          : Value(value),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory UserCustomFieldValueRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return UserCustomFieldValueRow(
+      id: serializer.fromJson<int>(json['id']),
+      fieldId: serializer.fromJson<int>(json['fieldId']),
+      entityId: serializer.fromJson<int>(json['entityId']),
+      value: serializer.fromJson<String?>(json['value']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'fieldId': serializer.toJson<int>(fieldId),
+      'entityId': serializer.toJson<int>(entityId),
+      'value': serializer.toJson<String?>(value),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  UserCustomFieldValueRow copyWith({
+    int? id,
+    int? fieldId,
+    int? entityId,
+    Value<String?> value = const Value.absent(),
+    DateTime? updatedAt,
+  }) => UserCustomFieldValueRow(
+    id: id ?? this.id,
+    fieldId: fieldId ?? this.fieldId,
+    entityId: entityId ?? this.entityId,
+    value: value.present ? value.value : this.value,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  UserCustomFieldValueRow copyWithCompanion(
+    UserCustomFieldValuesCompanion data,
+  ) {
+    return UserCustomFieldValueRow(
+      id: data.id.present ? data.id.value : this.id,
+      fieldId: data.fieldId.present ? data.fieldId.value : this.fieldId,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
+      value: data.value.present ? data.value.value : this.value,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserCustomFieldValueRow(')
+          ..write('id: $id, ')
+          ..write('fieldId: $fieldId, ')
+          ..write('entityId: $entityId, ')
+          ..write('value: $value, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, fieldId, entityId, value, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is UserCustomFieldValueRow &&
+          other.id == this.id &&
+          other.fieldId == this.fieldId &&
+          other.entityId == this.entityId &&
+          other.value == this.value &&
+          other.updatedAt == this.updatedAt);
+}
+
+class UserCustomFieldValuesCompanion
+    extends UpdateCompanion<UserCustomFieldValueRow> {
+  final Value<int> id;
+  final Value<int> fieldId;
+  final Value<int> entityId;
+  final Value<String?> value;
+  final Value<DateTime> updatedAt;
+  const UserCustomFieldValuesCompanion({
+    this.id = const Value.absent(),
+    this.fieldId = const Value.absent(),
+    this.entityId = const Value.absent(),
+    this.value = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  UserCustomFieldValuesCompanion.insert({
+    this.id = const Value.absent(),
+    required int fieldId,
+    required int entityId,
+    this.value = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : fieldId = Value(fieldId),
+       entityId = Value(entityId);
+  static Insertable<UserCustomFieldValueRow> custom({
+    Expression<int>? id,
+    Expression<int>? fieldId,
+    Expression<int>? entityId,
+    Expression<String>? value,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (fieldId != null) 'field_id': fieldId,
+      if (entityId != null) 'entity_id': entityId,
+      if (value != null) 'value': value,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  UserCustomFieldValuesCompanion copyWith({
+    Value<int>? id,
+    Value<int>? fieldId,
+    Value<int>? entityId,
+    Value<String?>? value,
+    Value<DateTime>? updatedAt,
+  }) {
+    return UserCustomFieldValuesCompanion(
+      id: id ?? this.id,
+      fieldId: fieldId ?? this.fieldId,
+      entityId: entityId ?? this.entityId,
+      value: value ?? this.value,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (fieldId.present) {
+      map['field_id'] = Variable<int>(fieldId.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<int>(entityId.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('UserCustomFieldValuesCompanion(')
+          ..write('id: $id, ')
+          ..write('fieldId: $fieldId, ')
+          ..write('entityId: $entityId, ')
+          ..write('value: $value, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
+    with TableInfo<$LoadDevelopmentSessionsTable, LoadDevelopmentSessionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LoadDevelopmentSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sessionTypeMeta = const VerificationMeta(
+    'sessionType',
+  );
+  @override
+  late final GeneratedColumn<String> sessionType = GeneratedColumn<String>(
+    'session_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cartridgeMeta = const VerificationMeta(
+    'cartridge',
+  );
+  @override
+  late final GeneratedColumn<String> cartridge = GeneratedColumn<String>(
+    'cartridge',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _firearmIdMeta = const VerificationMeta(
+    'firearmId',
+  );
+  @override
+  late final GeneratedColumn<int> firearmId = GeneratedColumn<int>(
+    'firearm_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_firearms (id)',
+    ),
+  );
+  static const VerificationMeta _sourceRecipeIdMeta = const VerificationMeta(
+    'sourceRecipeId',
+  );
+  @override
+  late final GeneratedColumn<int> sourceRecipeId = GeneratedColumn<int>(
+    'source_recipe_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES user_loads (id)',
+    ),
+  );
+  static const VerificationMeta _powderMeta = const VerificationMeta('powder');
+  @override
+  late final GeneratedColumn<String> powder = GeneratedColumn<String>(
+    'powder',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bulletMeta = const VerificationMeta('bullet');
+  @override
+  late final GeneratedColumn<String> bullet = GeneratedColumn<String>(
+    'bullet',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _primerMeta = const VerificationMeta('primer');
+  @override
+  late final GeneratedColumn<String> primer = GeneratedColumn<String>(
+    'primer',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _brassLotIdMeta = const VerificationMeta(
+    'brassLotId',
+  );
+  @override
+  late final GeneratedColumn<int> brassLotId = GeneratedColumn<int>(
+    'brass_lot_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES brass_lots (id)',
+    ),
+  );
+  static const VerificationMeta _startValueMeta = const VerificationMeta(
+    'startValue',
+  );
+  @override
+  late final GeneratedColumn<double> startValue = GeneratedColumn<double>(
+    'start_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _endValueMeta = const VerificationMeta(
+    'endValue',
+  );
+  @override
+  late final GeneratedColumn<double> endValue = GeneratedColumn<double>(
+    'end_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stepValueMeta = const VerificationMeta(
+    'stepValue',
+  );
+  @override
+  late final GeneratedColumn<double> stepValue = GeneratedColumn<double>(
+    'step_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rungCountMeta = const VerificationMeta(
+    'rungCount',
+  );
+  @override
+  late final GeneratedColumn<int> rungCount = GeneratedColumn<int>(
+    'rung_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nodeValueMeta = const VerificationMeta(
+    'nodeValue',
+  );
+  @override
+  late final GeneratedColumn<double> nodeValue = GeneratedColumn<double>(
+    'node_value',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rungsJsonMeta = const VerificationMeta(
+    'rungsJson',
+  );
+  @override
+  late final GeneratedColumn<String> rungsJson = GeneratedColumn<String>(
+    'rungs_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    sessionType,
+    cartridge,
+    firearmId,
+    sourceRecipeId,
+    powder,
+    bullet,
+    primer,
+    brassLotId,
+    startValue,
+    endValue,
+    stepValue,
+    rungCount,
+    nodeValue,
+    rungsJson,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'load_development_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LoadDevelopmentSessionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('session_type')) {
+      context.handle(
+        _sessionTypeMeta,
+        sessionType.isAcceptableOrUnknown(
+          data['session_type']!,
+          _sessionTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionTypeMeta);
+    }
+    if (data.containsKey('cartridge')) {
+      context.handle(
+        _cartridgeMeta,
+        cartridge.isAcceptableOrUnknown(data['cartridge']!, _cartridgeMeta),
+      );
+    }
+    if (data.containsKey('firearm_id')) {
+      context.handle(
+        _firearmIdMeta,
+        firearmId.isAcceptableOrUnknown(data['firearm_id']!, _firearmIdMeta),
+      );
+    }
+    if (data.containsKey('source_recipe_id')) {
+      context.handle(
+        _sourceRecipeIdMeta,
+        sourceRecipeId.isAcceptableOrUnknown(
+          data['source_recipe_id']!,
+          _sourceRecipeIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('powder')) {
+      context.handle(
+        _powderMeta,
+        powder.isAcceptableOrUnknown(data['powder']!, _powderMeta),
+      );
+    }
+    if (data.containsKey('bullet')) {
+      context.handle(
+        _bulletMeta,
+        bullet.isAcceptableOrUnknown(data['bullet']!, _bulletMeta),
+      );
+    }
+    if (data.containsKey('primer')) {
+      context.handle(
+        _primerMeta,
+        primer.isAcceptableOrUnknown(data['primer']!, _primerMeta),
+      );
+    }
+    if (data.containsKey('brass_lot_id')) {
+      context.handle(
+        _brassLotIdMeta,
+        brassLotId.isAcceptableOrUnknown(
+          data['brass_lot_id']!,
+          _brassLotIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('start_value')) {
+      context.handle(
+        _startValueMeta,
+        startValue.isAcceptableOrUnknown(data['start_value']!, _startValueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_startValueMeta);
+    }
+    if (data.containsKey('end_value')) {
+      context.handle(
+        _endValueMeta,
+        endValue.isAcceptableOrUnknown(data['end_value']!, _endValueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_endValueMeta);
+    }
+    if (data.containsKey('step_value')) {
+      context.handle(
+        _stepValueMeta,
+        stepValue.isAcceptableOrUnknown(data['step_value']!, _stepValueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stepValueMeta);
+    }
+    if (data.containsKey('rung_count')) {
+      context.handle(
+        _rungCountMeta,
+        rungCount.isAcceptableOrUnknown(data['rung_count']!, _rungCountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rungCountMeta);
+    }
+    if (data.containsKey('node_value')) {
+      context.handle(
+        _nodeValueMeta,
+        nodeValue.isAcceptableOrUnknown(data['node_value']!, _nodeValueMeta),
+      );
+    }
+    if (data.containsKey('rungs_json')) {
+      context.handle(
+        _rungsJsonMeta,
+        rungsJson.isAcceptableOrUnknown(data['rungs_json']!, _rungsJsonMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LoadDevelopmentSessionRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LoadDevelopmentSessionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      sessionType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_type'],
+      )!,
+      cartridge: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cartridge'],
+      ),
+      firearmId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}firearm_id'],
+      ),
+      sourceRecipeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}source_recipe_id'],
+      ),
+      powder: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}powder'],
+      ),
+      bullet: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bullet'],
+      ),
+      primer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}primer'],
+      ),
+      brassLotId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}brass_lot_id'],
+      ),
+      startValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}start_value'],
+      )!,
+      endValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}end_value'],
+      )!,
+      stepValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}step_value'],
+      )!,
+      rungCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rung_count'],
+      )!,
+      nodeValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}node_value'],
+      ),
+      rungsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rungs_json'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LoadDevelopmentSessionsTable createAlias(String alias) {
+    return $LoadDevelopmentSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class LoadDevelopmentSessionRow extends DataClass
+    implements Insertable<LoadDevelopmentSessionRow> {
+  final int id;
+  final String name;
+
+  /// 'charge_ladder' | 'seating_ladder'
+  final String sessionType;
+  final String? cartridge;
+  final int? firearmId;
+
+  /// Source recipe (only for seating ladders, where charge is already locked)
+  final int? sourceRecipeId;
+  final String? powder;
+  final String? bullet;
+  final String? primer;
+  final int? brassLotId;
+  final double startValue;
+  final double endValue;
+  final double stepValue;
+  final int rungCount;
+
+  /// User-selected "node" once analysis completes
+  final double? nodeValue;
+
+  /// JSON: per-rung data (chrono / accuracy / pressure notes)
+  final String rungsJson;
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const LoadDevelopmentSessionRow({
+    required this.id,
+    required this.name,
+    required this.sessionType,
+    this.cartridge,
+    this.firearmId,
+    this.sourceRecipeId,
+    this.powder,
+    this.bullet,
+    this.primer,
+    this.brassLotId,
+    required this.startValue,
+    required this.endValue,
+    required this.stepValue,
+    required this.rungCount,
+    this.nodeValue,
+    required this.rungsJson,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    map['session_type'] = Variable<String>(sessionType);
+    if (!nullToAbsent || cartridge != null) {
+      map['cartridge'] = Variable<String>(cartridge);
+    }
+    if (!nullToAbsent || firearmId != null) {
+      map['firearm_id'] = Variable<int>(firearmId);
+    }
+    if (!nullToAbsent || sourceRecipeId != null) {
+      map['source_recipe_id'] = Variable<int>(sourceRecipeId);
+    }
+    if (!nullToAbsent || powder != null) {
+      map['powder'] = Variable<String>(powder);
+    }
+    if (!nullToAbsent || bullet != null) {
+      map['bullet'] = Variable<String>(bullet);
+    }
+    if (!nullToAbsent || primer != null) {
+      map['primer'] = Variable<String>(primer);
+    }
+    if (!nullToAbsent || brassLotId != null) {
+      map['brass_lot_id'] = Variable<int>(brassLotId);
+    }
+    map['start_value'] = Variable<double>(startValue);
+    map['end_value'] = Variable<double>(endValue);
+    map['step_value'] = Variable<double>(stepValue);
+    map['rung_count'] = Variable<int>(rungCount);
+    if (!nullToAbsent || nodeValue != null) {
+      map['node_value'] = Variable<double>(nodeValue);
+    }
+    map['rungs_json'] = Variable<String>(rungsJson);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  LoadDevelopmentSessionsCompanion toCompanion(bool nullToAbsent) {
+    return LoadDevelopmentSessionsCompanion(
+      id: Value(id),
+      name: Value(name),
+      sessionType: Value(sessionType),
+      cartridge: cartridge == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cartridge),
+      firearmId: firearmId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(firearmId),
+      sourceRecipeId: sourceRecipeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceRecipeId),
+      powder: powder == null && nullToAbsent
+          ? const Value.absent()
+          : Value(powder),
+      bullet: bullet == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bullet),
+      primer: primer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(primer),
+      brassLotId: brassLotId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(brassLotId),
+      startValue: Value(startValue),
+      endValue: Value(endValue),
+      stepValue: Value(stepValue),
+      rungCount: Value(rungCount),
+      nodeValue: nodeValue == null && nullToAbsent
+          ? const Value.absent()
+          : Value(nodeValue),
+      rungsJson: Value(rungsJson),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory LoadDevelopmentSessionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LoadDevelopmentSessionRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      sessionType: serializer.fromJson<String>(json['sessionType']),
+      cartridge: serializer.fromJson<String?>(json['cartridge']),
+      firearmId: serializer.fromJson<int?>(json['firearmId']),
+      sourceRecipeId: serializer.fromJson<int?>(json['sourceRecipeId']),
+      powder: serializer.fromJson<String?>(json['powder']),
+      bullet: serializer.fromJson<String?>(json['bullet']),
+      primer: serializer.fromJson<String?>(json['primer']),
+      brassLotId: serializer.fromJson<int?>(json['brassLotId']),
+      startValue: serializer.fromJson<double>(json['startValue']),
+      endValue: serializer.fromJson<double>(json['endValue']),
+      stepValue: serializer.fromJson<double>(json['stepValue']),
+      rungCount: serializer.fromJson<int>(json['rungCount']),
+      nodeValue: serializer.fromJson<double?>(json['nodeValue']),
+      rungsJson: serializer.fromJson<String>(json['rungsJson']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'sessionType': serializer.toJson<String>(sessionType),
+      'cartridge': serializer.toJson<String?>(cartridge),
+      'firearmId': serializer.toJson<int?>(firearmId),
+      'sourceRecipeId': serializer.toJson<int?>(sourceRecipeId),
+      'powder': serializer.toJson<String?>(powder),
+      'bullet': serializer.toJson<String?>(bullet),
+      'primer': serializer.toJson<String?>(primer),
+      'brassLotId': serializer.toJson<int?>(brassLotId),
+      'startValue': serializer.toJson<double>(startValue),
+      'endValue': serializer.toJson<double>(endValue),
+      'stepValue': serializer.toJson<double>(stepValue),
+      'rungCount': serializer.toJson<int>(rungCount),
+      'nodeValue': serializer.toJson<double?>(nodeValue),
+      'rungsJson': serializer.toJson<String>(rungsJson),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  LoadDevelopmentSessionRow copyWith({
+    int? id,
+    String? name,
+    String? sessionType,
+    Value<String?> cartridge = const Value.absent(),
+    Value<int?> firearmId = const Value.absent(),
+    Value<int?> sourceRecipeId = const Value.absent(),
+    Value<String?> powder = const Value.absent(),
+    Value<String?> bullet = const Value.absent(),
+    Value<String?> primer = const Value.absent(),
+    Value<int?> brassLotId = const Value.absent(),
+    double? startValue,
+    double? endValue,
+    double? stepValue,
+    int? rungCount,
+    Value<double?> nodeValue = const Value.absent(),
+    String? rungsJson,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => LoadDevelopmentSessionRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    sessionType: sessionType ?? this.sessionType,
+    cartridge: cartridge.present ? cartridge.value : this.cartridge,
+    firearmId: firearmId.present ? firearmId.value : this.firearmId,
+    sourceRecipeId: sourceRecipeId.present
+        ? sourceRecipeId.value
+        : this.sourceRecipeId,
+    powder: powder.present ? powder.value : this.powder,
+    bullet: bullet.present ? bullet.value : this.bullet,
+    primer: primer.present ? primer.value : this.primer,
+    brassLotId: brassLotId.present ? brassLotId.value : this.brassLotId,
+    startValue: startValue ?? this.startValue,
+    endValue: endValue ?? this.endValue,
+    stepValue: stepValue ?? this.stepValue,
+    rungCount: rungCount ?? this.rungCount,
+    nodeValue: nodeValue.present ? nodeValue.value : this.nodeValue,
+    rungsJson: rungsJson ?? this.rungsJson,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  LoadDevelopmentSessionRow copyWithCompanion(
+    LoadDevelopmentSessionsCompanion data,
+  ) {
+    return LoadDevelopmentSessionRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      sessionType: data.sessionType.present
+          ? data.sessionType.value
+          : this.sessionType,
+      cartridge: data.cartridge.present ? data.cartridge.value : this.cartridge,
+      firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
+      sourceRecipeId: data.sourceRecipeId.present
+          ? data.sourceRecipeId.value
+          : this.sourceRecipeId,
+      powder: data.powder.present ? data.powder.value : this.powder,
+      bullet: data.bullet.present ? data.bullet.value : this.bullet,
+      primer: data.primer.present ? data.primer.value : this.primer,
+      brassLotId: data.brassLotId.present
+          ? data.brassLotId.value
+          : this.brassLotId,
+      startValue: data.startValue.present
+          ? data.startValue.value
+          : this.startValue,
+      endValue: data.endValue.present ? data.endValue.value : this.endValue,
+      stepValue: data.stepValue.present ? data.stepValue.value : this.stepValue,
+      rungCount: data.rungCount.present ? data.rungCount.value : this.rungCount,
+      nodeValue: data.nodeValue.present ? data.nodeValue.value : this.nodeValue,
+      rungsJson: data.rungsJson.present ? data.rungsJson.value : this.rungsJson,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LoadDevelopmentSessionRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sessionType: $sessionType, ')
+          ..write('cartridge: $cartridge, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('sourceRecipeId: $sourceRecipeId, ')
+          ..write('powder: $powder, ')
+          ..write('bullet: $bullet, ')
+          ..write('primer: $primer, ')
+          ..write('brassLotId: $brassLotId, ')
+          ..write('startValue: $startValue, ')
+          ..write('endValue: $endValue, ')
+          ..write('stepValue: $stepValue, ')
+          ..write('rungCount: $rungCount, ')
+          ..write('nodeValue: $nodeValue, ')
+          ..write('rungsJson: $rungsJson, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    sessionType,
+    cartridge,
+    firearmId,
+    sourceRecipeId,
+    powder,
+    bullet,
+    primer,
+    brassLotId,
+    startValue,
+    endValue,
+    stepValue,
+    rungCount,
+    nodeValue,
+    rungsJson,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LoadDevelopmentSessionRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.sessionType == this.sessionType &&
+          other.cartridge == this.cartridge &&
+          other.firearmId == this.firearmId &&
+          other.sourceRecipeId == this.sourceRecipeId &&
+          other.powder == this.powder &&
+          other.bullet == this.bullet &&
+          other.primer == this.primer &&
+          other.brassLotId == this.brassLotId &&
+          other.startValue == this.startValue &&
+          other.endValue == this.endValue &&
+          other.stepValue == this.stepValue &&
+          other.rungCount == this.rungCount &&
+          other.nodeValue == this.nodeValue &&
+          other.rungsJson == this.rungsJson &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class LoadDevelopmentSessionsCompanion
+    extends UpdateCompanion<LoadDevelopmentSessionRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String> sessionType;
+  final Value<String?> cartridge;
+  final Value<int?> firearmId;
+  final Value<int?> sourceRecipeId;
+  final Value<String?> powder;
+  final Value<String?> bullet;
+  final Value<String?> primer;
+  final Value<int?> brassLotId;
+  final Value<double> startValue;
+  final Value<double> endValue;
+  final Value<double> stepValue;
+  final Value<int> rungCount;
+  final Value<double?> nodeValue;
+  final Value<String> rungsJson;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const LoadDevelopmentSessionsCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.sessionType = const Value.absent(),
+    this.cartridge = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.sourceRecipeId = const Value.absent(),
+    this.powder = const Value.absent(),
+    this.bullet = const Value.absent(),
+    this.primer = const Value.absent(),
+    this.brassLotId = const Value.absent(),
+    this.startValue = const Value.absent(),
+    this.endValue = const Value.absent(),
+    this.stepValue = const Value.absent(),
+    this.rungCount = const Value.absent(),
+    this.nodeValue = const Value.absent(),
+    this.rungsJson = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  LoadDevelopmentSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    required String sessionType,
+    this.cartridge = const Value.absent(),
+    this.firearmId = const Value.absent(),
+    this.sourceRecipeId = const Value.absent(),
+    this.powder = const Value.absent(),
+    this.bullet = const Value.absent(),
+    this.primer = const Value.absent(),
+    this.brassLotId = const Value.absent(),
+    required double startValue,
+    required double endValue,
+    required double stepValue,
+    required int rungCount,
+    this.nodeValue = const Value.absent(),
+    this.rungsJson = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : name = Value(name),
+       sessionType = Value(sessionType),
+       startValue = Value(startValue),
+       endValue = Value(endValue),
+       stepValue = Value(stepValue),
+       rungCount = Value(rungCount);
+  static Insertable<LoadDevelopmentSessionRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? sessionType,
+    Expression<String>? cartridge,
+    Expression<int>? firearmId,
+    Expression<int>? sourceRecipeId,
+    Expression<String>? powder,
+    Expression<String>? bullet,
+    Expression<String>? primer,
+    Expression<int>? brassLotId,
+    Expression<double>? startValue,
+    Expression<double>? endValue,
+    Expression<double>? stepValue,
+    Expression<int>? rungCount,
+    Expression<double>? nodeValue,
+    Expression<String>? rungsJson,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (sessionType != null) 'session_type': sessionType,
+      if (cartridge != null) 'cartridge': cartridge,
+      if (firearmId != null) 'firearm_id': firearmId,
+      if (sourceRecipeId != null) 'source_recipe_id': sourceRecipeId,
+      if (powder != null) 'powder': powder,
+      if (bullet != null) 'bullet': bullet,
+      if (primer != null) 'primer': primer,
+      if (brassLotId != null) 'brass_lot_id': brassLotId,
+      if (startValue != null) 'start_value': startValue,
+      if (endValue != null) 'end_value': endValue,
+      if (stepValue != null) 'step_value': stepValue,
+      if (rungCount != null) 'rung_count': rungCount,
+      if (nodeValue != null) 'node_value': nodeValue,
+      if (rungsJson != null) 'rungs_json': rungsJson,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  LoadDevelopmentSessionsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String>? sessionType,
+    Value<String?>? cartridge,
+    Value<int?>? firearmId,
+    Value<int?>? sourceRecipeId,
+    Value<String?>? powder,
+    Value<String?>? bullet,
+    Value<String?>? primer,
+    Value<int?>? brassLotId,
+    Value<double>? startValue,
+    Value<double>? endValue,
+    Value<double>? stepValue,
+    Value<int>? rungCount,
+    Value<double?>? nodeValue,
+    Value<String>? rungsJson,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return LoadDevelopmentSessionsCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      sessionType: sessionType ?? this.sessionType,
+      cartridge: cartridge ?? this.cartridge,
+      firearmId: firearmId ?? this.firearmId,
+      sourceRecipeId: sourceRecipeId ?? this.sourceRecipeId,
+      powder: powder ?? this.powder,
+      bullet: bullet ?? this.bullet,
+      primer: primer ?? this.primer,
+      brassLotId: brassLotId ?? this.brassLotId,
+      startValue: startValue ?? this.startValue,
+      endValue: endValue ?? this.endValue,
+      stepValue: stepValue ?? this.stepValue,
+      rungCount: rungCount ?? this.rungCount,
+      nodeValue: nodeValue ?? this.nodeValue,
+      rungsJson: rungsJson ?? this.rungsJson,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (sessionType.present) {
+      map['session_type'] = Variable<String>(sessionType.value);
+    }
+    if (cartridge.present) {
+      map['cartridge'] = Variable<String>(cartridge.value);
+    }
+    if (firearmId.present) {
+      map['firearm_id'] = Variable<int>(firearmId.value);
+    }
+    if (sourceRecipeId.present) {
+      map['source_recipe_id'] = Variable<int>(sourceRecipeId.value);
+    }
+    if (powder.present) {
+      map['powder'] = Variable<String>(powder.value);
+    }
+    if (bullet.present) {
+      map['bullet'] = Variable<String>(bullet.value);
+    }
+    if (primer.present) {
+      map['primer'] = Variable<String>(primer.value);
+    }
+    if (brassLotId.present) {
+      map['brass_lot_id'] = Variable<int>(brassLotId.value);
+    }
+    if (startValue.present) {
+      map['start_value'] = Variable<double>(startValue.value);
+    }
+    if (endValue.present) {
+      map['end_value'] = Variable<double>(endValue.value);
+    }
+    if (stepValue.present) {
+      map['step_value'] = Variable<double>(stepValue.value);
+    }
+    if (rungCount.present) {
+      map['rung_count'] = Variable<int>(rungCount.value);
+    }
+    if (nodeValue.present) {
+      map['node_value'] = Variable<double>(nodeValue.value);
+    }
+    if (rungsJson.present) {
+      map['rungs_json'] = Variable<String>(rungsJson.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LoadDevelopmentSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('sessionType: $sessionType, ')
+          ..write('cartridge: $cartridge, ')
+          ..write('firearmId: $firearmId, ')
+          ..write('sourceRecipeId: $sourceRecipeId, ')
+          ..write('powder: $powder, ')
+          ..write('bullet: $bullet, ')
+          ..write('primer: $primer, ')
+          ..write('brassLotId: $brassLotId, ')
+          ..write('startValue: $startValue, ')
+          ..write('endValue: $endValue, ')
+          ..write('stepValue: $stepValue, ')
+          ..write('rungCount: $rungCount, ')
+          ..write('nodeValue: $nodeValue, ')
+          ..write('rungsJson: $rungsJson, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
@@ -6959,8 +17212,24 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CustomComponentsTable customComponents = $CustomComponentsTable(
     this,
   );
+  late final $PowderLotsTable powderLots = $PowderLotsTable(this);
+  late final $PrimerLotsTable primerLots = $PrimerLotsTable(this);
+  late final $BulletLotsTable bulletLots = $BulletLotsTable(this);
+  late final $BrassLotsTable brassLots = $BrassLotsTable(this);
   late final $UserLoadsTable userLoads = $UserLoadsTable(this);
   late final $UserFirearmsTable userFirearms = $UserFirearmsTable(this);
+  late final $UserProcessStepsTable userProcessSteps = $UserProcessStepsTable(
+    this,
+  );
+  late final $BatchesTable batches = $BatchesTable(this);
+  late final $TestSessionsTable testSessions = $TestSessionsTable(this);
+  late final $UserCustomFieldsTable userCustomFields = $UserCustomFieldsTable(
+    this,
+  );
+  late final $UserCustomFieldValuesTable userCustomFieldValues =
+      $UserCustomFieldValuesTable(this);
+  late final $LoadDevelopmentSessionsTable loadDevelopmentSessions =
+      $LoadDevelopmentSessionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6975,8 +17244,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     firearmsRef,
     firearmParts,
     customComponents,
+    powderLots,
+    primerLots,
+    bulletLots,
+    brassLots,
     userLoads,
     userFirearms,
+    userProcessSteps,
+    batches,
+    testSessions,
+    userCustomFields,
+    userCustomFieldValues,
+    loadDevelopmentSessions,
   ];
 }
 
@@ -10784,6 +21063,1861 @@ typedef $$CustomComponentsTableProcessedTableManager =
       CustomComponentRow,
       PrefetchHooks Function()
     >;
+typedef $$PowderLotsTableCreateCompanionBuilder =
+    PowderLotsCompanion Function({
+      Value<int> id,
+      Value<String?> manufacturer,
+      required String name,
+      Value<String?> lotNumber,
+      Value<DateTime?> dateOpened,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$PowderLotsTableUpdateCompanionBuilder =
+    PowderLotsCompanion Function({
+      Value<int> id,
+      Value<String?> manufacturer,
+      Value<String> name,
+      Value<String?> lotNumber,
+      Value<DateTime?> dateOpened,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$PowderLotsTableReferences
+    extends BaseReferences<_$AppDatabase, $PowderLotsTable, PowderLotRow> {
+  $$PowderLotsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UserLoadsTable, List<UserLoadRow>>
+  _userLoadsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userLoads,
+    aliasName: $_aliasNameGenerator(db.powderLots.id, db.userLoads.powderLotId),
+  );
+
+  $$UserLoadsTableProcessedTableManager get userLoadsRefs {
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.powderLotId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userLoadsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PowderLotsTableFilterComposer
+    extends Composer<_$AppDatabase, $PowderLotsTable> {
+  $$PowderLotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userLoadsRefs(
+    Expression<bool> Function($$UserLoadsTableFilterComposer f) f,
+  ) {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.powderLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PowderLotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PowderLotsTable> {
+  $$PowderLotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PowderLotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PowderLotsTable> {
+  $$PowderLotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get lotNumber =>
+      $composableBuilder(column: $table.lotNumber, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> userLoadsRefs<T extends Object>(
+    Expression<T> Function($$UserLoadsTableAnnotationComposer a) f,
+  ) {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.powderLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PowderLotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PowderLotsTable,
+          PowderLotRow,
+          $$PowderLotsTableFilterComposer,
+          $$PowderLotsTableOrderingComposer,
+          $$PowderLotsTableAnnotationComposer,
+          $$PowderLotsTableCreateCompanionBuilder,
+          $$PowderLotsTableUpdateCompanionBuilder,
+          (PowderLotRow, $$PowderLotsTableReferences),
+          PowderLotRow,
+          PrefetchHooks Function({bool userLoadsRefs})
+        > {
+  $$PowderLotsTableTableManager(_$AppDatabase db, $PowderLotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PowderLotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PowderLotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PowderLotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> manufacturer = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> dateOpened = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PowderLotsCompanion(
+                id: id,
+                manufacturer: manufacturer,
+                name: name,
+                lotNumber: lotNumber,
+                dateOpened: dateOpened,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> manufacturer = const Value.absent(),
+                required String name,
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> dateOpened = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PowderLotsCompanion.insert(
+                id: id,
+                manufacturer: manufacturer,
+                name: name,
+                lotNumber: lotNumber,
+                dateOpened: dateOpened,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PowderLotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userLoadsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (userLoadsRefs) db.userLoads],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (userLoadsRefs)
+                    await $_getPrefetchedData<
+                      PowderLotRow,
+                      $PowderLotsTable,
+                      UserLoadRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PowderLotsTableReferences
+                          ._userLoadsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PowderLotsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).userLoadsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.powderLotId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PowderLotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PowderLotsTable,
+      PowderLotRow,
+      $$PowderLotsTableFilterComposer,
+      $$PowderLotsTableOrderingComposer,
+      $$PowderLotsTableAnnotationComposer,
+      $$PowderLotsTableCreateCompanionBuilder,
+      $$PowderLotsTableUpdateCompanionBuilder,
+      (PowderLotRow, $$PowderLotsTableReferences),
+      PowderLotRow,
+      PrefetchHooks Function({bool userLoadsRefs})
+    >;
+typedef $$PrimerLotsTableCreateCompanionBuilder =
+    PrimerLotsCompanion Function({
+      Value<int> id,
+      Value<String?> manufacturer,
+      required String name,
+      Value<String?> lotNumber,
+      Value<DateTime?> dateOpened,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$PrimerLotsTableUpdateCompanionBuilder =
+    PrimerLotsCompanion Function({
+      Value<int> id,
+      Value<String?> manufacturer,
+      Value<String> name,
+      Value<String?> lotNumber,
+      Value<DateTime?> dateOpened,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$PrimerLotsTableReferences
+    extends BaseReferences<_$AppDatabase, $PrimerLotsTable, PrimerLotRow> {
+  $$PrimerLotsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UserLoadsTable, List<UserLoadRow>>
+  _userLoadsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userLoads,
+    aliasName: $_aliasNameGenerator(db.primerLots.id, db.userLoads.primerLotId),
+  );
+
+  $$UserLoadsTableProcessedTableManager get userLoadsRefs {
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.primerLotId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userLoadsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$PrimerLotsTableFilterComposer
+    extends Composer<_$AppDatabase, $PrimerLotsTable> {
+  $$PrimerLotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userLoadsRefs(
+    Expression<bool> Function($$UserLoadsTableFilterComposer f) f,
+  ) {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.primerLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PrimerLotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PrimerLotsTable> {
+  $$PrimerLotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PrimerLotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PrimerLotsTable> {
+  $$PrimerLotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get lotNumber =>
+      $composableBuilder(column: $table.lotNumber, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> userLoadsRefs<T extends Object>(
+    Expression<T> Function($$UserLoadsTableAnnotationComposer a) f,
+  ) {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.primerLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$PrimerLotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PrimerLotsTable,
+          PrimerLotRow,
+          $$PrimerLotsTableFilterComposer,
+          $$PrimerLotsTableOrderingComposer,
+          $$PrimerLotsTableAnnotationComposer,
+          $$PrimerLotsTableCreateCompanionBuilder,
+          $$PrimerLotsTableUpdateCompanionBuilder,
+          (PrimerLotRow, $$PrimerLotsTableReferences),
+          PrimerLotRow,
+          PrefetchHooks Function({bool userLoadsRefs})
+        > {
+  $$PrimerLotsTableTableManager(_$AppDatabase db, $PrimerLotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PrimerLotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PrimerLotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PrimerLotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> manufacturer = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> dateOpened = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PrimerLotsCompanion(
+                id: id,
+                manufacturer: manufacturer,
+                name: name,
+                lotNumber: lotNumber,
+                dateOpened: dateOpened,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> manufacturer = const Value.absent(),
+                required String name,
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> dateOpened = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PrimerLotsCompanion.insert(
+                id: id,
+                manufacturer: manufacturer,
+                name: name,
+                lotNumber: lotNumber,
+                dateOpened: dateOpened,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PrimerLotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userLoadsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (userLoadsRefs) db.userLoads],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (userLoadsRefs)
+                    await $_getPrefetchedData<
+                      PrimerLotRow,
+                      $PrimerLotsTable,
+                      UserLoadRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$PrimerLotsTableReferences
+                          ._userLoadsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$PrimerLotsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).userLoadsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.primerLotId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$PrimerLotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PrimerLotsTable,
+      PrimerLotRow,
+      $$PrimerLotsTableFilterComposer,
+      $$PrimerLotsTableOrderingComposer,
+      $$PrimerLotsTableAnnotationComposer,
+      $$PrimerLotsTableCreateCompanionBuilder,
+      $$PrimerLotsTableUpdateCompanionBuilder,
+      (PrimerLotRow, $$PrimerLotsTableReferences),
+      PrimerLotRow,
+      PrefetchHooks Function({bool userLoadsRefs})
+    >;
+typedef $$BulletLotsTableCreateCompanionBuilder =
+    BulletLotsCompanion Function({
+      Value<int> id,
+      Value<String?> manufacturer,
+      required String name,
+      Value<String?> lotNumber,
+      Value<DateTime?> dateOpened,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$BulletLotsTableUpdateCompanionBuilder =
+    BulletLotsCompanion Function({
+      Value<int> id,
+      Value<String?> manufacturer,
+      Value<String> name,
+      Value<String?> lotNumber,
+      Value<DateTime?> dateOpened,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$BulletLotsTableReferences
+    extends BaseReferences<_$AppDatabase, $BulletLotsTable, BulletLotRow> {
+  $$BulletLotsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UserLoadsTable, List<UserLoadRow>>
+  _userLoadsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userLoads,
+    aliasName: $_aliasNameGenerator(db.bulletLots.id, db.userLoads.bulletLotId),
+  );
+
+  $$UserLoadsTableProcessedTableManager get userLoadsRefs {
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.bulletLotId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userLoadsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$BulletLotsTableFilterComposer
+    extends Composer<_$AppDatabase, $BulletLotsTable> {
+  $$BulletLotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userLoadsRefs(
+    Expression<bool> Function($$UserLoadsTableFilterComposer f) f,
+  ) {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.bulletLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BulletLotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BulletLotsTable> {
+  $$BulletLotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BulletLotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BulletLotsTable> {
+  $$BulletLotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get lotNumber =>
+      $composableBuilder(column: $table.lotNumber, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dateOpened => $composableBuilder(
+    column: $table.dateOpened,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> userLoadsRefs<T extends Object>(
+    Expression<T> Function($$UserLoadsTableAnnotationComposer a) f,
+  ) {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.bulletLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BulletLotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BulletLotsTable,
+          BulletLotRow,
+          $$BulletLotsTableFilterComposer,
+          $$BulletLotsTableOrderingComposer,
+          $$BulletLotsTableAnnotationComposer,
+          $$BulletLotsTableCreateCompanionBuilder,
+          $$BulletLotsTableUpdateCompanionBuilder,
+          (BulletLotRow, $$BulletLotsTableReferences),
+          BulletLotRow,
+          PrefetchHooks Function({bool userLoadsRefs})
+        > {
+  $$BulletLotsTableTableManager(_$AppDatabase db, $BulletLotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BulletLotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BulletLotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BulletLotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> manufacturer = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> dateOpened = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => BulletLotsCompanion(
+                id: id,
+                manufacturer: manufacturer,
+                name: name,
+                lotNumber: lotNumber,
+                dateOpened: dateOpened,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String?> manufacturer = const Value.absent(),
+                required String name,
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> dateOpened = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => BulletLotsCompanion.insert(
+                id: id,
+                manufacturer: manufacturer,
+                name: name,
+                lotNumber: lotNumber,
+                dateOpened: dateOpened,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BulletLotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userLoadsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (userLoadsRefs) db.userLoads],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (userLoadsRefs)
+                    await $_getPrefetchedData<
+                      BulletLotRow,
+                      $BulletLotsTable,
+                      UserLoadRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$BulletLotsTableReferences
+                          ._userLoadsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$BulletLotsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).userLoadsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.bulletLotId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BulletLotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BulletLotsTable,
+      BulletLotRow,
+      $$BulletLotsTableFilterComposer,
+      $$BulletLotsTableOrderingComposer,
+      $$BulletLotsTableAnnotationComposer,
+      $$BulletLotsTableCreateCompanionBuilder,
+      $$BulletLotsTableUpdateCompanionBuilder,
+      (BulletLotRow, $$BulletLotsTableReferences),
+      BulletLotRow,
+      PrefetchHooks Function({bool userLoadsRefs})
+    >;
+typedef $$BrassLotsTableCreateCompanionBuilder =
+    BrassLotsCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String?> manufacturer,
+      required String caliber,
+      Value<String?> headstampLot,
+      required int count,
+      Value<int> firingCount,
+      Value<DateTime?> lastAnnealed,
+      Value<String?> annealMethod,
+      Value<double?> avgWeightGr,
+      Value<double?> caseCapacityGrH2o,
+      Value<double?> trimToLengthIn,
+      Value<double?> lastTrimLengthIn,
+      Value<double?> neckWallThicknessIn,
+      Value<bool> neckTurned,
+      Value<double?> neckTurnDepthIn,
+      Value<bool> pocketUniformed,
+      Value<bool> flashHoleDeburred,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$BrassLotsTableUpdateCompanionBuilder =
+    BrassLotsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String?> manufacturer,
+      Value<String> caliber,
+      Value<String?> headstampLot,
+      Value<int> count,
+      Value<int> firingCount,
+      Value<DateTime?> lastAnnealed,
+      Value<String?> annealMethod,
+      Value<double?> avgWeightGr,
+      Value<double?> caseCapacityGrH2o,
+      Value<double?> trimToLengthIn,
+      Value<double?> lastTrimLengthIn,
+      Value<double?> neckWallThicknessIn,
+      Value<bool> neckTurned,
+      Value<double?> neckTurnDepthIn,
+      Value<bool> pocketUniformed,
+      Value<bool> flashHoleDeburred,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$BrassLotsTableReferences
+    extends BaseReferences<_$AppDatabase, $BrassLotsTable, BrassLotRow> {
+  $$BrassLotsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$UserLoadsTable, List<UserLoadRow>>
+  _userLoadsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.userLoads,
+    aliasName: $_aliasNameGenerator(db.brassLots.id, db.userLoads.brassLotId),
+  );
+
+  $$UserLoadsTableProcessedTableManager get userLoadsRefs {
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.brassLotId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_userLoadsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$BatchesTable, List<BatchRow>> _batchesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.batches,
+    aliasName: $_aliasNameGenerator(db.brassLots.id, db.batches.brassLotId),
+  );
+
+  $$BatchesTableProcessedTableManager get batchesRefs {
+    final manager = $$BatchesTableTableManager(
+      $_db,
+      $_db.batches,
+    ).filter((f) => f.brassLotId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_batchesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LoadDevelopmentSessionsTable,
+    List<LoadDevelopmentSessionRow>
+  >
+  _loadDevelopmentSessionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.loadDevelopmentSessions,
+        aliasName: $_aliasNameGenerator(
+          db.brassLots.id,
+          db.loadDevelopmentSessions.brassLotId,
+        ),
+      );
+
+  $$LoadDevelopmentSessionsTableProcessedTableManager
+  get loadDevelopmentSessionsRefs {
+    final manager = $$LoadDevelopmentSessionsTableTableManager(
+      $_db,
+      $_db.loadDevelopmentSessions,
+    ).filter((f) => f.brassLotId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _loadDevelopmentSessionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$BrassLotsTableFilterComposer
+    extends Composer<_$AppDatabase, $BrassLotsTable> {
+  $$BrassLotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get caliber => $composableBuilder(
+    column: $table.caliber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get headstampLot => $composableBuilder(
+    column: $table.headstampLot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get firingCount => $composableBuilder(
+    column: $table.firingCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastAnnealed => $composableBuilder(
+    column: $table.lastAnnealed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get annealMethod => $composableBuilder(
+    column: $table.annealMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get avgWeightGr => $composableBuilder(
+    column: $table.avgWeightGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get caseCapacityGrH2o => $composableBuilder(
+    column: $table.caseCapacityGrH2o,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get trimToLengthIn => $composableBuilder(
+    column: $table.trimToLengthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lastTrimLengthIn => $composableBuilder(
+    column: $table.lastTrimLengthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get neckWallThicknessIn => $composableBuilder(
+    column: $table.neckWallThicknessIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get neckTurned => $composableBuilder(
+    column: $table.neckTurned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get neckTurnDepthIn => $composableBuilder(
+    column: $table.neckTurnDepthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get pocketUniformed => $composableBuilder(
+    column: $table.pocketUniformed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get flashHoleDeburred => $composableBuilder(
+    column: $table.flashHoleDeburred,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userLoadsRefs(
+    Expression<bool> Function($$UserLoadsTableFilterComposer f) f,
+  ) {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.brassLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> batchesRefs(
+    Expression<bool> Function($$BatchesTableFilterComposer f) f,
+  ) {
+    final $$BatchesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.brassLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableFilterComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> loadDevelopmentSessionsRefs(
+    Expression<bool> Function($$LoadDevelopmentSessionsTableFilterComposer f) f,
+  ) {
+    final $$LoadDevelopmentSessionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.brassLotId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableFilterComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$BrassLotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BrassLotsTable> {
+  $$BrassLotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get caliber => $composableBuilder(
+    column: $table.caliber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get headstampLot => $composableBuilder(
+    column: $table.headstampLot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get firingCount => $composableBuilder(
+    column: $table.firingCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastAnnealed => $composableBuilder(
+    column: $table.lastAnnealed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get annealMethod => $composableBuilder(
+    column: $table.annealMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get avgWeightGr => $composableBuilder(
+    column: $table.avgWeightGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get caseCapacityGrH2o => $composableBuilder(
+    column: $table.caseCapacityGrH2o,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get trimToLengthIn => $composableBuilder(
+    column: $table.trimToLengthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lastTrimLengthIn => $composableBuilder(
+    column: $table.lastTrimLengthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get neckWallThicknessIn => $composableBuilder(
+    column: $table.neckWallThicknessIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get neckTurned => $composableBuilder(
+    column: $table.neckTurned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get neckTurnDepthIn => $composableBuilder(
+    column: $table.neckTurnDepthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get pocketUniformed => $composableBuilder(
+    column: $table.pocketUniformed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get flashHoleDeburred => $composableBuilder(
+    column: $table.flashHoleDeburred,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$BrassLotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BrassLotsTable> {
+  $$BrassLotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get caliber =>
+      $composableBuilder(column: $table.caliber, builder: (column) => column);
+
+  GeneratedColumn<String> get headstampLot => $composableBuilder(
+    column: $table.headstampLot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+
+  GeneratedColumn<int> get firingCount => $composableBuilder(
+    column: $table.firingCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastAnnealed => $composableBuilder(
+    column: $table.lastAnnealed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get annealMethod => $composableBuilder(
+    column: $table.annealMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get avgWeightGr => $composableBuilder(
+    column: $table.avgWeightGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get caseCapacityGrH2o => $composableBuilder(
+    column: $table.caseCapacityGrH2o,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get trimToLengthIn => $composableBuilder(
+    column: $table.trimToLengthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get lastTrimLengthIn => $composableBuilder(
+    column: $table.lastTrimLengthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get neckWallThicknessIn => $composableBuilder(
+    column: $table.neckWallThicknessIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get neckTurned => $composableBuilder(
+    column: $table.neckTurned,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get neckTurnDepthIn => $composableBuilder(
+    column: $table.neckTurnDepthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get pocketUniformed => $composableBuilder(
+    column: $table.pocketUniformed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get flashHoleDeburred => $composableBuilder(
+    column: $table.flashHoleDeburred,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> userLoadsRefs<T extends Object>(
+    Expression<T> Function($$UserLoadsTableAnnotationComposer a) f,
+  ) {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.brassLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> batchesRefs<T extends Object>(
+    Expression<T> Function($$BatchesTableAnnotationComposer a) f,
+  ) {
+    final $$BatchesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.brassLotId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> loadDevelopmentSessionsRefs<T extends Object>(
+    Expression<T> Function($$LoadDevelopmentSessionsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$LoadDevelopmentSessionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.brassLotId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$BrassLotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BrassLotsTable,
+          BrassLotRow,
+          $$BrassLotsTableFilterComposer,
+          $$BrassLotsTableOrderingComposer,
+          $$BrassLotsTableAnnotationComposer,
+          $$BrassLotsTableCreateCompanionBuilder,
+          $$BrassLotsTableUpdateCompanionBuilder,
+          (BrassLotRow, $$BrassLotsTableReferences),
+          BrassLotRow,
+          PrefetchHooks Function({
+            bool userLoadsRefs,
+            bool batchesRefs,
+            bool loadDevelopmentSessionsRefs,
+          })
+        > {
+  $$BrassLotsTableTableManager(_$AppDatabase db, $BrassLotsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BrassLotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BrassLotsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BrassLotsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> manufacturer = const Value.absent(),
+                Value<String> caliber = const Value.absent(),
+                Value<String?> headstampLot = const Value.absent(),
+                Value<int> count = const Value.absent(),
+                Value<int> firingCount = const Value.absent(),
+                Value<DateTime?> lastAnnealed = const Value.absent(),
+                Value<String?> annealMethod = const Value.absent(),
+                Value<double?> avgWeightGr = const Value.absent(),
+                Value<double?> caseCapacityGrH2o = const Value.absent(),
+                Value<double?> trimToLengthIn = const Value.absent(),
+                Value<double?> lastTrimLengthIn = const Value.absent(),
+                Value<double?> neckWallThicknessIn = const Value.absent(),
+                Value<bool> neckTurned = const Value.absent(),
+                Value<double?> neckTurnDepthIn = const Value.absent(),
+                Value<bool> pocketUniformed = const Value.absent(),
+                Value<bool> flashHoleDeburred = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BrassLotsCompanion(
+                id: id,
+                name: name,
+                manufacturer: manufacturer,
+                caliber: caliber,
+                headstampLot: headstampLot,
+                count: count,
+                firingCount: firingCount,
+                lastAnnealed: lastAnnealed,
+                annealMethod: annealMethod,
+                avgWeightGr: avgWeightGr,
+                caseCapacityGrH2o: caseCapacityGrH2o,
+                trimToLengthIn: trimToLengthIn,
+                lastTrimLengthIn: lastTrimLengthIn,
+                neckWallThicknessIn: neckWallThicknessIn,
+                neckTurned: neckTurned,
+                neckTurnDepthIn: neckTurnDepthIn,
+                pocketUniformed: pocketUniformed,
+                flashHoleDeburred: flashHoleDeburred,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String?> manufacturer = const Value.absent(),
+                required String caliber,
+                Value<String?> headstampLot = const Value.absent(),
+                required int count,
+                Value<int> firingCount = const Value.absent(),
+                Value<DateTime?> lastAnnealed = const Value.absent(),
+                Value<String?> annealMethod = const Value.absent(),
+                Value<double?> avgWeightGr = const Value.absent(),
+                Value<double?> caseCapacityGrH2o = const Value.absent(),
+                Value<double?> trimToLengthIn = const Value.absent(),
+                Value<double?> lastTrimLengthIn = const Value.absent(),
+                Value<double?> neckWallThicknessIn = const Value.absent(),
+                Value<bool> neckTurned = const Value.absent(),
+                Value<double?> neckTurnDepthIn = const Value.absent(),
+                Value<bool> pocketUniformed = const Value.absent(),
+                Value<bool> flashHoleDeburred = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BrassLotsCompanion.insert(
+                id: id,
+                name: name,
+                manufacturer: manufacturer,
+                caliber: caliber,
+                headstampLot: headstampLot,
+                count: count,
+                firingCount: firingCount,
+                lastAnnealed: lastAnnealed,
+                annealMethod: annealMethod,
+                avgWeightGr: avgWeightGr,
+                caseCapacityGrH2o: caseCapacityGrH2o,
+                trimToLengthIn: trimToLengthIn,
+                lastTrimLengthIn: lastTrimLengthIn,
+                neckWallThicknessIn: neckWallThicknessIn,
+                neckTurned: neckTurned,
+                neckTurnDepthIn: neckTurnDepthIn,
+                pocketUniformed: pocketUniformed,
+                flashHoleDeburred: flashHoleDeburred,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BrassLotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                userLoadsRefs = false,
+                batchesRefs = false,
+                loadDevelopmentSessionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (userLoadsRefs) db.userLoads,
+                    if (batchesRefs) db.batches,
+                    if (loadDevelopmentSessionsRefs) db.loadDevelopmentSessions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (userLoadsRefs)
+                        await $_getPrefetchedData<
+                          BrassLotRow,
+                          $BrassLotsTable,
+                          UserLoadRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BrassLotsTableReferences
+                              ._userLoadsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BrassLotsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).userLoadsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.brassLotId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (batchesRefs)
+                        await $_getPrefetchedData<
+                          BrassLotRow,
+                          $BrassLotsTable,
+                          BatchRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BrassLotsTableReferences
+                              ._batchesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BrassLotsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).batchesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.brassLotId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (loadDevelopmentSessionsRefs)
+                        await $_getPrefetchedData<
+                          BrassLotRow,
+                          $BrassLotsTable,
+                          LoadDevelopmentSessionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BrassLotsTableReferences
+                              ._loadDevelopmentSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BrassLotsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).loadDevelopmentSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.brassLotId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$BrassLotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BrassLotsTable,
+      BrassLotRow,
+      $$BrassLotsTableFilterComposer,
+      $$BrassLotsTableOrderingComposer,
+      $$BrassLotsTableAnnotationComposer,
+      $$BrassLotsTableCreateCompanionBuilder,
+      $$BrassLotsTableUpdateCompanionBuilder,
+      (BrassLotRow, $$BrassLotsTableReferences),
+      BrassLotRow,
+      PrefetchHooks Function({
+        bool userLoadsRefs,
+        bool batchesRefs,
+        bool loadDevelopmentSessionsRefs,
+      })
+    >;
 typedef $$UserLoadsTableCreateCompanionBuilder =
     UserLoadsCompanion Function({
       Value<int> id,
@@ -10805,6 +22939,46 @@ typedef $$UserLoadsTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<String?> status,
+      Value<String?> useCase,
+      Value<int?> powderLotId,
+      Value<double?> chargeToleranceGr,
+      Value<int?> primerLotId,
+      Value<double?> primerSeatingForceLbs,
+      Value<int?> bulletLotId,
+      Value<double?> bulletLengthIn,
+      Value<double?> bulletBaseToOgiveIn,
+      Value<double?> bulletBearingSurfaceIn,
+      Value<bool> bulletMeplatTrimmed,
+      Value<bool> bulletPointed,
+      Value<bool> bulletWeightSorted,
+      Value<double?> bulletWeightToleranceGr,
+      Value<bool> bulletBtoSorted,
+      Value<double?> bulletBtoToleranceIn,
+      Value<bool> bulletDiameterSorted,
+      Value<int?> brassLotId,
+      Value<double?> distanceToLandsIn,
+      Value<double?> jumpToLandsIn,
+      Value<double?> loadedNeckDiameterIn,
+      Value<double?> bulletRunoutTirIn,
+      Value<double?> bushingSizeIn,
+      Value<String?> pressureNotes,
+      Value<String?> boltLift,
+      Value<bool> ejectorMarks,
+      Value<bool> crateredPrimers,
+      Value<double?> webExpansion200In,
+      Value<int?> primerFlatness,
+      Value<DateTime?> loadingDate,
+      Value<int?> roundsLoadedInBatch,
+      Value<String?> pressUsed,
+      Value<String?> sizingDieUsed,
+      Value<String?> seatingDieUsed,
+      Value<String?> scaleUsed,
+      Value<DateTime?> scaleCalibrationDate,
+      Value<String?> comparatorInsertUsed,
+      Value<String?> chronographUsed,
+      Value<String?> boreState,
+      Value<String?> loadedBy,
     });
 typedef $$UserLoadsTableUpdateCompanionBuilder =
     UserLoadsCompanion Function({
@@ -10827,7 +23001,193 @@ typedef $$UserLoadsTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<String?> status,
+      Value<String?> useCase,
+      Value<int?> powderLotId,
+      Value<double?> chargeToleranceGr,
+      Value<int?> primerLotId,
+      Value<double?> primerSeatingForceLbs,
+      Value<int?> bulletLotId,
+      Value<double?> bulletLengthIn,
+      Value<double?> bulletBaseToOgiveIn,
+      Value<double?> bulletBearingSurfaceIn,
+      Value<bool> bulletMeplatTrimmed,
+      Value<bool> bulletPointed,
+      Value<bool> bulletWeightSorted,
+      Value<double?> bulletWeightToleranceGr,
+      Value<bool> bulletBtoSorted,
+      Value<double?> bulletBtoToleranceIn,
+      Value<bool> bulletDiameterSorted,
+      Value<int?> brassLotId,
+      Value<double?> distanceToLandsIn,
+      Value<double?> jumpToLandsIn,
+      Value<double?> loadedNeckDiameterIn,
+      Value<double?> bulletRunoutTirIn,
+      Value<double?> bushingSizeIn,
+      Value<String?> pressureNotes,
+      Value<String?> boltLift,
+      Value<bool> ejectorMarks,
+      Value<bool> crateredPrimers,
+      Value<double?> webExpansion200In,
+      Value<int?> primerFlatness,
+      Value<DateTime?> loadingDate,
+      Value<int?> roundsLoadedInBatch,
+      Value<String?> pressUsed,
+      Value<String?> sizingDieUsed,
+      Value<String?> seatingDieUsed,
+      Value<String?> scaleUsed,
+      Value<DateTime?> scaleCalibrationDate,
+      Value<String?> comparatorInsertUsed,
+      Value<String?> chronographUsed,
+      Value<String?> boreState,
+      Value<String?> loadedBy,
     });
+
+final class $$UserLoadsTableReferences
+    extends BaseReferences<_$AppDatabase, $UserLoadsTable, UserLoadRow> {
+  $$UserLoadsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $PowderLotsTable _powderLotIdTable(_$AppDatabase db) =>
+      db.powderLots.createAlias(
+        $_aliasNameGenerator(db.userLoads.powderLotId, db.powderLots.id),
+      );
+
+  $$PowderLotsTableProcessedTableManager? get powderLotId {
+    final $_column = $_itemColumn<int>('powder_lot_id');
+    if ($_column == null) return null;
+    final manager = $$PowderLotsTableTableManager(
+      $_db,
+      $_db.powderLots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_powderLotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $PrimerLotsTable _primerLotIdTable(_$AppDatabase db) =>
+      db.primerLots.createAlias(
+        $_aliasNameGenerator(db.userLoads.primerLotId, db.primerLots.id),
+      );
+
+  $$PrimerLotsTableProcessedTableManager? get primerLotId {
+    final $_column = $_itemColumn<int>('primer_lot_id');
+    if ($_column == null) return null;
+    final manager = $$PrimerLotsTableTableManager(
+      $_db,
+      $_db.primerLots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_primerLotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $BulletLotsTable _bulletLotIdTable(_$AppDatabase db) =>
+      db.bulletLots.createAlias(
+        $_aliasNameGenerator(db.userLoads.bulletLotId, db.bulletLots.id),
+      );
+
+  $$BulletLotsTableProcessedTableManager? get bulletLotId {
+    final $_column = $_itemColumn<int>('bullet_lot_id');
+    if ($_column == null) return null;
+    final manager = $$BulletLotsTableTableManager(
+      $_db,
+      $_db.bulletLots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bulletLotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $BrassLotsTable _brassLotIdTable(_$AppDatabase db) =>
+      db.brassLots.createAlias(
+        $_aliasNameGenerator(db.userLoads.brassLotId, db.brassLots.id),
+      );
+
+  $$BrassLotsTableProcessedTableManager? get brassLotId {
+    final $_column = $_itemColumn<int>('brass_lot_id');
+    if ($_column == null) return null;
+    final manager = $$BrassLotsTableTableManager(
+      $_db,
+      $_db.brassLots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_brassLotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$BatchesTable, List<BatchRow>> _batchesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.batches,
+    aliasName: $_aliasNameGenerator(db.userLoads.id, db.batches.recipeId),
+  );
+
+  $$BatchesTableProcessedTableManager get batchesRefs {
+    final manager = $$BatchesTableTableManager(
+      $_db,
+      $_db.batches,
+    ).filter((f) => f.recipeId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_batchesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TestSessionsTable, List<TestSessionRow>>
+  _testSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.testSessions,
+    aliasName: $_aliasNameGenerator(db.userLoads.id, db.testSessions.recipeId),
+  );
+
+  $$TestSessionsTableProcessedTableManager get testSessionsRefs {
+    final manager = $$TestSessionsTableTableManager(
+      $_db,
+      $_db.testSessions,
+    ).filter((f) => f.recipeId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_testSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LoadDevelopmentSessionsTable,
+    List<LoadDevelopmentSessionRow>
+  >
+  _loadDevelopmentSessionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.loadDevelopmentSessions,
+        aliasName: $_aliasNameGenerator(
+          db.userLoads.id,
+          db.loadDevelopmentSessions.sourceRecipeId,
+        ),
+      );
+
+  $$LoadDevelopmentSessionsTableProcessedTableManager
+  get loadDevelopmentSessionsRefs {
+    final manager = $$LoadDevelopmentSessionsTableTableManager(
+      $_db,
+      $_db.loadDevelopmentSessions,
+    ).filter((f) => f.sourceRecipeId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _loadDevelopmentSessionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$UserLoadsTableFilterComposer
     extends Composer<_$AppDatabase, $UserLoadsTable> {
@@ -10932,6 +23292,354 @@ class $$UserLoadsTableFilterComposer
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get useCase => $composableBuilder(
+    column: $table.useCase,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get chargeToleranceGr => $composableBuilder(
+    column: $table.chargeToleranceGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get primerSeatingForceLbs => $composableBuilder(
+    column: $table.primerSeatingForceLbs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletLengthIn => $composableBuilder(
+    column: $table.bulletLengthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletBaseToOgiveIn => $composableBuilder(
+    column: $table.bulletBaseToOgiveIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletBearingSurfaceIn => $composableBuilder(
+    column: $table.bulletBearingSurfaceIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get bulletMeplatTrimmed => $composableBuilder(
+    column: $table.bulletMeplatTrimmed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get bulletPointed => $composableBuilder(
+    column: $table.bulletPointed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get bulletWeightSorted => $composableBuilder(
+    column: $table.bulletWeightSorted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletWeightToleranceGr => $composableBuilder(
+    column: $table.bulletWeightToleranceGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get bulletBtoSorted => $composableBuilder(
+    column: $table.bulletBtoSorted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletBtoToleranceIn => $composableBuilder(
+    column: $table.bulletBtoToleranceIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get bulletDiameterSorted => $composableBuilder(
+    column: $table.bulletDiameterSorted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get distanceToLandsIn => $composableBuilder(
+    column: $table.distanceToLandsIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get jumpToLandsIn => $composableBuilder(
+    column: $table.jumpToLandsIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get loadedNeckDiameterIn => $composableBuilder(
+    column: $table.loadedNeckDiameterIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletRunoutTirIn => $composableBuilder(
+    column: $table.bulletRunoutTirIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bushingSizeIn => $composableBuilder(
+    column: $table.bushingSizeIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pressureNotes => $composableBuilder(
+    column: $table.pressureNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get boltLift => $composableBuilder(
+    column: $table.boltLift,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get ejectorMarks => $composableBuilder(
+    column: $table.ejectorMarks,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get crateredPrimers => $composableBuilder(
+    column: $table.crateredPrimers,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get webExpansion200In => $composableBuilder(
+    column: $table.webExpansion200In,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get primerFlatness => $composableBuilder(
+    column: $table.primerFlatness,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get loadingDate => $composableBuilder(
+    column: $table.loadingDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get roundsLoadedInBatch => $composableBuilder(
+    column: $table.roundsLoadedInBatch,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pressUsed => $composableBuilder(
+    column: $table.pressUsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sizingDieUsed => $composableBuilder(
+    column: $table.sizingDieUsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get seatingDieUsed => $composableBuilder(
+    column: $table.seatingDieUsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get scaleUsed => $composableBuilder(
+    column: $table.scaleUsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scaleCalibrationDate => $composableBuilder(
+    column: $table.scaleCalibrationDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comparatorInsertUsed => $composableBuilder(
+    column: $table.comparatorInsertUsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chronographUsed => $composableBuilder(
+    column: $table.chronographUsed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get boreState => $composableBuilder(
+    column: $table.boreState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get loadedBy => $composableBuilder(
+    column: $table.loadedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$PowderLotsTableFilterComposer get powderLotId {
+    final $$PowderLotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.powderLotId,
+      referencedTable: $db.powderLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PowderLotsTableFilterComposer(
+            $db: $db,
+            $table: $db.powderLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PrimerLotsTableFilterComposer get primerLotId {
+    final $$PrimerLotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.primerLotId,
+      referencedTable: $db.primerLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrimerLotsTableFilterComposer(
+            $db: $db,
+            $table: $db.primerLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BulletLotsTableFilterComposer get bulletLotId {
+    final $$BulletLotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bulletLotId,
+      referencedTable: $db.bulletLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BulletLotsTableFilterComposer(
+            $db: $db,
+            $table: $db.bulletLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableFilterComposer get brassLotId {
+    final $$BrassLotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableFilterComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> batchesRefs(
+    Expression<bool> Function($$BatchesTableFilterComposer f) f,
+  ) {
+    final $$BatchesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.recipeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableFilterComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> testSessionsRefs(
+    Expression<bool> Function($$TestSessionsTableFilterComposer f) f,
+  ) {
+    final $$TestSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.testSessions,
+      getReferencedColumn: (t) => t.recipeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TestSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.testSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> loadDevelopmentSessionsRefs(
+    Expression<bool> Function($$LoadDevelopmentSessionsTableFilterComposer f) f,
+  ) {
+    final $$LoadDevelopmentSessionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.sourceRecipeId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableFilterComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UserLoadsTableOrderingComposer
@@ -11037,6 +23745,278 @@ class $$UserLoadsTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get useCase => $composableBuilder(
+    column: $table.useCase,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get chargeToleranceGr => $composableBuilder(
+    column: $table.chargeToleranceGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get primerSeatingForceLbs => $composableBuilder(
+    column: $table.primerSeatingForceLbs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletLengthIn => $composableBuilder(
+    column: $table.bulletLengthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletBaseToOgiveIn => $composableBuilder(
+    column: $table.bulletBaseToOgiveIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletBearingSurfaceIn => $composableBuilder(
+    column: $table.bulletBearingSurfaceIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get bulletMeplatTrimmed => $composableBuilder(
+    column: $table.bulletMeplatTrimmed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get bulletPointed => $composableBuilder(
+    column: $table.bulletPointed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get bulletWeightSorted => $composableBuilder(
+    column: $table.bulletWeightSorted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletWeightToleranceGr => $composableBuilder(
+    column: $table.bulletWeightToleranceGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get bulletBtoSorted => $composableBuilder(
+    column: $table.bulletBtoSorted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletBtoToleranceIn => $composableBuilder(
+    column: $table.bulletBtoToleranceIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get bulletDiameterSorted => $composableBuilder(
+    column: $table.bulletDiameterSorted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get distanceToLandsIn => $composableBuilder(
+    column: $table.distanceToLandsIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get jumpToLandsIn => $composableBuilder(
+    column: $table.jumpToLandsIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get loadedNeckDiameterIn => $composableBuilder(
+    column: $table.loadedNeckDiameterIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletRunoutTirIn => $composableBuilder(
+    column: $table.bulletRunoutTirIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bushingSizeIn => $composableBuilder(
+    column: $table.bushingSizeIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pressureNotes => $composableBuilder(
+    column: $table.pressureNotes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get boltLift => $composableBuilder(
+    column: $table.boltLift,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get ejectorMarks => $composableBuilder(
+    column: $table.ejectorMarks,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get crateredPrimers => $composableBuilder(
+    column: $table.crateredPrimers,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get webExpansion200In => $composableBuilder(
+    column: $table.webExpansion200In,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get primerFlatness => $composableBuilder(
+    column: $table.primerFlatness,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get loadingDate => $composableBuilder(
+    column: $table.loadingDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get roundsLoadedInBatch => $composableBuilder(
+    column: $table.roundsLoadedInBatch,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pressUsed => $composableBuilder(
+    column: $table.pressUsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sizingDieUsed => $composableBuilder(
+    column: $table.sizingDieUsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get seatingDieUsed => $composableBuilder(
+    column: $table.seatingDieUsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get scaleUsed => $composableBuilder(
+    column: $table.scaleUsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get scaleCalibrationDate => $composableBuilder(
+    column: $table.scaleCalibrationDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get comparatorInsertUsed => $composableBuilder(
+    column: $table.comparatorInsertUsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chronographUsed => $composableBuilder(
+    column: $table.chronographUsed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get boreState => $composableBuilder(
+    column: $table.boreState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get loadedBy => $composableBuilder(
+    column: $table.loadedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$PowderLotsTableOrderingComposer get powderLotId {
+    final $$PowderLotsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.powderLotId,
+      referencedTable: $db.powderLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PowderLotsTableOrderingComposer(
+            $db: $db,
+            $table: $db.powderLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PrimerLotsTableOrderingComposer get primerLotId {
+    final $$PrimerLotsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.primerLotId,
+      referencedTable: $db.primerLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrimerLotsTableOrderingComposer(
+            $db: $db,
+            $table: $db.primerLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BulletLotsTableOrderingComposer get bulletLotId {
+    final $$BulletLotsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bulletLotId,
+      referencedTable: $db.bulletLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BulletLotsTableOrderingComposer(
+            $db: $db,
+            $table: $db.bulletLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableOrderingComposer get brassLotId {
+    final $$BrassLotsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableOrderingComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$UserLoadsTableAnnotationComposer
@@ -11118,6 +24098,341 @@ class $$UserLoadsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get useCase =>
+      $composableBuilder(column: $table.useCase, builder: (column) => column);
+
+  GeneratedColumn<double> get chargeToleranceGr => $composableBuilder(
+    column: $table.chargeToleranceGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get primerSeatingForceLbs => $composableBuilder(
+    column: $table.primerSeatingForceLbs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletLengthIn => $composableBuilder(
+    column: $table.bulletLengthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletBaseToOgiveIn => $composableBuilder(
+    column: $table.bulletBaseToOgiveIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletBearingSurfaceIn => $composableBuilder(
+    column: $table.bulletBearingSurfaceIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get bulletMeplatTrimmed => $composableBuilder(
+    column: $table.bulletMeplatTrimmed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get bulletPointed => $composableBuilder(
+    column: $table.bulletPointed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get bulletWeightSorted => $composableBuilder(
+    column: $table.bulletWeightSorted,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletWeightToleranceGr => $composableBuilder(
+    column: $table.bulletWeightToleranceGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get bulletBtoSorted => $composableBuilder(
+    column: $table.bulletBtoSorted,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletBtoToleranceIn => $composableBuilder(
+    column: $table.bulletBtoToleranceIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get bulletDiameterSorted => $composableBuilder(
+    column: $table.bulletDiameterSorted,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get distanceToLandsIn => $composableBuilder(
+    column: $table.distanceToLandsIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get jumpToLandsIn => $composableBuilder(
+    column: $table.jumpToLandsIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get loadedNeckDiameterIn => $composableBuilder(
+    column: $table.loadedNeckDiameterIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletRunoutTirIn => $composableBuilder(
+    column: $table.bulletRunoutTirIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bushingSizeIn => $composableBuilder(
+    column: $table.bushingSizeIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pressureNotes => $composableBuilder(
+    column: $table.pressureNotes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get boltLift =>
+      $composableBuilder(column: $table.boltLift, builder: (column) => column);
+
+  GeneratedColumn<bool> get ejectorMarks => $composableBuilder(
+    column: $table.ejectorMarks,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get crateredPrimers => $composableBuilder(
+    column: $table.crateredPrimers,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get webExpansion200In => $composableBuilder(
+    column: $table.webExpansion200In,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get primerFlatness => $composableBuilder(
+    column: $table.primerFlatness,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get loadingDate => $composableBuilder(
+    column: $table.loadingDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get roundsLoadedInBatch => $composableBuilder(
+    column: $table.roundsLoadedInBatch,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pressUsed =>
+      $composableBuilder(column: $table.pressUsed, builder: (column) => column);
+
+  GeneratedColumn<String> get sizingDieUsed => $composableBuilder(
+    column: $table.sizingDieUsed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get seatingDieUsed => $composableBuilder(
+    column: $table.seatingDieUsed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get scaleUsed =>
+      $composableBuilder(column: $table.scaleUsed, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get scaleCalibrationDate => $composableBuilder(
+    column: $table.scaleCalibrationDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get comparatorInsertUsed => $composableBuilder(
+    column: $table.comparatorInsertUsed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chronographUsed => $composableBuilder(
+    column: $table.chronographUsed,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get boreState =>
+      $composableBuilder(column: $table.boreState, builder: (column) => column);
+
+  GeneratedColumn<String> get loadedBy =>
+      $composableBuilder(column: $table.loadedBy, builder: (column) => column);
+
+  $$PowderLotsTableAnnotationComposer get powderLotId {
+    final $$PowderLotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.powderLotId,
+      referencedTable: $db.powderLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PowderLotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.powderLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$PrimerLotsTableAnnotationComposer get primerLotId {
+    final $$PrimerLotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.primerLotId,
+      referencedTable: $db.primerLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PrimerLotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.primerLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BulletLotsTableAnnotationComposer get bulletLotId {
+    final $$BulletLotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bulletLotId,
+      referencedTable: $db.bulletLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BulletLotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.bulletLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableAnnotationComposer get brassLotId {
+    final $$BrassLotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> batchesRefs<T extends Object>(
+    Expression<T> Function($$BatchesTableAnnotationComposer a) f,
+  ) {
+    final $$BatchesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.recipeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> testSessionsRefs<T extends Object>(
+    Expression<T> Function($$TestSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$TestSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.testSessions,
+      getReferencedColumn: (t) => t.recipeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TestSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.testSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> loadDevelopmentSessionsRefs<T extends Object>(
+    Expression<T> Function($$LoadDevelopmentSessionsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$LoadDevelopmentSessionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.sourceRecipeId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UserLoadsTableTableManager
@@ -11131,12 +24446,17 @@ class $$UserLoadsTableTableManager
           $$UserLoadsTableAnnotationComposer,
           $$UserLoadsTableCreateCompanionBuilder,
           $$UserLoadsTableUpdateCompanionBuilder,
-          (
-            UserLoadRow,
-            BaseReferences<_$AppDatabase, $UserLoadsTable, UserLoadRow>,
-          ),
+          (UserLoadRow, $$UserLoadsTableReferences),
           UserLoadRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({
+            bool powderLotId,
+            bool primerLotId,
+            bool bulletLotId,
+            bool brassLotId,
+            bool batchesRefs,
+            bool testSessionsRefs,
+            bool loadDevelopmentSessionsRefs,
+          })
         > {
   $$UserLoadsTableTableManager(_$AppDatabase db, $UserLoadsTable table)
     : super(
@@ -11170,6 +24490,46 @@ class $$UserLoadsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> status = const Value.absent(),
+                Value<String?> useCase = const Value.absent(),
+                Value<int?> powderLotId = const Value.absent(),
+                Value<double?> chargeToleranceGr = const Value.absent(),
+                Value<int?> primerLotId = const Value.absent(),
+                Value<double?> primerSeatingForceLbs = const Value.absent(),
+                Value<int?> bulletLotId = const Value.absent(),
+                Value<double?> bulletLengthIn = const Value.absent(),
+                Value<double?> bulletBaseToOgiveIn = const Value.absent(),
+                Value<double?> bulletBearingSurfaceIn = const Value.absent(),
+                Value<bool> bulletMeplatTrimmed = const Value.absent(),
+                Value<bool> bulletPointed = const Value.absent(),
+                Value<bool> bulletWeightSorted = const Value.absent(),
+                Value<double?> bulletWeightToleranceGr = const Value.absent(),
+                Value<bool> bulletBtoSorted = const Value.absent(),
+                Value<double?> bulletBtoToleranceIn = const Value.absent(),
+                Value<bool> bulletDiameterSorted = const Value.absent(),
+                Value<int?> brassLotId = const Value.absent(),
+                Value<double?> distanceToLandsIn = const Value.absent(),
+                Value<double?> jumpToLandsIn = const Value.absent(),
+                Value<double?> loadedNeckDiameterIn = const Value.absent(),
+                Value<double?> bulletRunoutTirIn = const Value.absent(),
+                Value<double?> bushingSizeIn = const Value.absent(),
+                Value<String?> pressureNotes = const Value.absent(),
+                Value<String?> boltLift = const Value.absent(),
+                Value<bool> ejectorMarks = const Value.absent(),
+                Value<bool> crateredPrimers = const Value.absent(),
+                Value<double?> webExpansion200In = const Value.absent(),
+                Value<int?> primerFlatness = const Value.absent(),
+                Value<DateTime?> loadingDate = const Value.absent(),
+                Value<int?> roundsLoadedInBatch = const Value.absent(),
+                Value<String?> pressUsed = const Value.absent(),
+                Value<String?> sizingDieUsed = const Value.absent(),
+                Value<String?> seatingDieUsed = const Value.absent(),
+                Value<String?> scaleUsed = const Value.absent(),
+                Value<DateTime?> scaleCalibrationDate = const Value.absent(),
+                Value<String?> comparatorInsertUsed = const Value.absent(),
+                Value<String?> chronographUsed = const Value.absent(),
+                Value<String?> boreState = const Value.absent(),
+                Value<String?> loadedBy = const Value.absent(),
               }) => UserLoadsCompanion(
                 id: id,
                 name: name,
@@ -11190,6 +24550,46 @@ class $$UserLoadsTableTableManager
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                status: status,
+                useCase: useCase,
+                powderLotId: powderLotId,
+                chargeToleranceGr: chargeToleranceGr,
+                primerLotId: primerLotId,
+                primerSeatingForceLbs: primerSeatingForceLbs,
+                bulletLotId: bulletLotId,
+                bulletLengthIn: bulletLengthIn,
+                bulletBaseToOgiveIn: bulletBaseToOgiveIn,
+                bulletBearingSurfaceIn: bulletBearingSurfaceIn,
+                bulletMeplatTrimmed: bulletMeplatTrimmed,
+                bulletPointed: bulletPointed,
+                bulletWeightSorted: bulletWeightSorted,
+                bulletWeightToleranceGr: bulletWeightToleranceGr,
+                bulletBtoSorted: bulletBtoSorted,
+                bulletBtoToleranceIn: bulletBtoToleranceIn,
+                bulletDiameterSorted: bulletDiameterSorted,
+                brassLotId: brassLotId,
+                distanceToLandsIn: distanceToLandsIn,
+                jumpToLandsIn: jumpToLandsIn,
+                loadedNeckDiameterIn: loadedNeckDiameterIn,
+                bulletRunoutTirIn: bulletRunoutTirIn,
+                bushingSizeIn: bushingSizeIn,
+                pressureNotes: pressureNotes,
+                boltLift: boltLift,
+                ejectorMarks: ejectorMarks,
+                crateredPrimers: crateredPrimers,
+                webExpansion200In: webExpansion200In,
+                primerFlatness: primerFlatness,
+                loadingDate: loadingDate,
+                roundsLoadedInBatch: roundsLoadedInBatch,
+                pressUsed: pressUsed,
+                sizingDieUsed: sizingDieUsed,
+                seatingDieUsed: seatingDieUsed,
+                scaleUsed: scaleUsed,
+                scaleCalibrationDate: scaleCalibrationDate,
+                comparatorInsertUsed: comparatorInsertUsed,
+                chronographUsed: chronographUsed,
+                boreState: boreState,
+                loadedBy: loadedBy,
               ),
           createCompanionCallback:
               ({
@@ -11212,6 +24612,46 @@ class $$UserLoadsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> status = const Value.absent(),
+                Value<String?> useCase = const Value.absent(),
+                Value<int?> powderLotId = const Value.absent(),
+                Value<double?> chargeToleranceGr = const Value.absent(),
+                Value<int?> primerLotId = const Value.absent(),
+                Value<double?> primerSeatingForceLbs = const Value.absent(),
+                Value<int?> bulletLotId = const Value.absent(),
+                Value<double?> bulletLengthIn = const Value.absent(),
+                Value<double?> bulletBaseToOgiveIn = const Value.absent(),
+                Value<double?> bulletBearingSurfaceIn = const Value.absent(),
+                Value<bool> bulletMeplatTrimmed = const Value.absent(),
+                Value<bool> bulletPointed = const Value.absent(),
+                Value<bool> bulletWeightSorted = const Value.absent(),
+                Value<double?> bulletWeightToleranceGr = const Value.absent(),
+                Value<bool> bulletBtoSorted = const Value.absent(),
+                Value<double?> bulletBtoToleranceIn = const Value.absent(),
+                Value<bool> bulletDiameterSorted = const Value.absent(),
+                Value<int?> brassLotId = const Value.absent(),
+                Value<double?> distanceToLandsIn = const Value.absent(),
+                Value<double?> jumpToLandsIn = const Value.absent(),
+                Value<double?> loadedNeckDiameterIn = const Value.absent(),
+                Value<double?> bulletRunoutTirIn = const Value.absent(),
+                Value<double?> bushingSizeIn = const Value.absent(),
+                Value<String?> pressureNotes = const Value.absent(),
+                Value<String?> boltLift = const Value.absent(),
+                Value<bool> ejectorMarks = const Value.absent(),
+                Value<bool> crateredPrimers = const Value.absent(),
+                Value<double?> webExpansion200In = const Value.absent(),
+                Value<int?> primerFlatness = const Value.absent(),
+                Value<DateTime?> loadingDate = const Value.absent(),
+                Value<int?> roundsLoadedInBatch = const Value.absent(),
+                Value<String?> pressUsed = const Value.absent(),
+                Value<String?> sizingDieUsed = const Value.absent(),
+                Value<String?> seatingDieUsed = const Value.absent(),
+                Value<String?> scaleUsed = const Value.absent(),
+                Value<DateTime?> scaleCalibrationDate = const Value.absent(),
+                Value<String?> comparatorInsertUsed = const Value.absent(),
+                Value<String?> chronographUsed = const Value.absent(),
+                Value<String?> boreState = const Value.absent(),
+                Value<String?> loadedBy = const Value.absent(),
               }) => UserLoadsCompanion.insert(
                 id: id,
                 name: name,
@@ -11232,11 +24672,212 @@ class $$UserLoadsTableTableManager
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                status: status,
+                useCase: useCase,
+                powderLotId: powderLotId,
+                chargeToleranceGr: chargeToleranceGr,
+                primerLotId: primerLotId,
+                primerSeatingForceLbs: primerSeatingForceLbs,
+                bulletLotId: bulletLotId,
+                bulletLengthIn: bulletLengthIn,
+                bulletBaseToOgiveIn: bulletBaseToOgiveIn,
+                bulletBearingSurfaceIn: bulletBearingSurfaceIn,
+                bulletMeplatTrimmed: bulletMeplatTrimmed,
+                bulletPointed: bulletPointed,
+                bulletWeightSorted: bulletWeightSorted,
+                bulletWeightToleranceGr: bulletWeightToleranceGr,
+                bulletBtoSorted: bulletBtoSorted,
+                bulletBtoToleranceIn: bulletBtoToleranceIn,
+                bulletDiameterSorted: bulletDiameterSorted,
+                brassLotId: brassLotId,
+                distanceToLandsIn: distanceToLandsIn,
+                jumpToLandsIn: jumpToLandsIn,
+                loadedNeckDiameterIn: loadedNeckDiameterIn,
+                bulletRunoutTirIn: bulletRunoutTirIn,
+                bushingSizeIn: bushingSizeIn,
+                pressureNotes: pressureNotes,
+                boltLift: boltLift,
+                ejectorMarks: ejectorMarks,
+                crateredPrimers: crateredPrimers,
+                webExpansion200In: webExpansion200In,
+                primerFlatness: primerFlatness,
+                loadingDate: loadingDate,
+                roundsLoadedInBatch: roundsLoadedInBatch,
+                pressUsed: pressUsed,
+                sizingDieUsed: sizingDieUsed,
+                seatingDieUsed: seatingDieUsed,
+                scaleUsed: scaleUsed,
+                scaleCalibrationDate: scaleCalibrationDate,
+                comparatorInsertUsed: comparatorInsertUsed,
+                chronographUsed: chronographUsed,
+                boreState: boreState,
+                loadedBy: loadedBy,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserLoadsTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({
+                powderLotId = false,
+                primerLotId = false,
+                bulletLotId = false,
+                brassLotId = false,
+                batchesRefs = false,
+                testSessionsRefs = false,
+                loadDevelopmentSessionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (batchesRefs) db.batches,
+                    if (testSessionsRefs) db.testSessions,
+                    if (loadDevelopmentSessionsRefs) db.loadDevelopmentSessions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (powderLotId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.powderLotId,
+                                    referencedTable: $$UserLoadsTableReferences
+                                        ._powderLotIdTable(db),
+                                    referencedColumn: $$UserLoadsTableReferences
+                                        ._powderLotIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (primerLotId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.primerLotId,
+                                    referencedTable: $$UserLoadsTableReferences
+                                        ._primerLotIdTable(db),
+                                    referencedColumn: $$UserLoadsTableReferences
+                                        ._primerLotIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (bulletLotId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.bulletLotId,
+                                    referencedTable: $$UserLoadsTableReferences
+                                        ._bulletLotIdTable(db),
+                                    referencedColumn: $$UserLoadsTableReferences
+                                        ._bulletLotIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (brassLotId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.brassLotId,
+                                    referencedTable: $$UserLoadsTableReferences
+                                        ._brassLotIdTable(db),
+                                    referencedColumn: $$UserLoadsTableReferences
+                                        ._brassLotIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (batchesRefs)
+                        await $_getPrefetchedData<
+                          UserLoadRow,
+                          $UserLoadsTable,
+                          BatchRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserLoadsTableReferences
+                              ._batchesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserLoadsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).batchesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.recipeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (testSessionsRefs)
+                        await $_getPrefetchedData<
+                          UserLoadRow,
+                          $UserLoadsTable,
+                          TestSessionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserLoadsTableReferences
+                              ._testSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserLoadsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).testSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.recipeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (loadDevelopmentSessionsRefs)
+                        await $_getPrefetchedData<
+                          UserLoadRow,
+                          $UserLoadsTable,
+                          LoadDevelopmentSessionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserLoadsTableReferences
+                              ._loadDevelopmentSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserLoadsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).loadDevelopmentSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sourceRecipeId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -11251,12 +24892,17 @@ typedef $$UserLoadsTableProcessedTableManager =
       $$UserLoadsTableAnnotationComposer,
       $$UserLoadsTableCreateCompanionBuilder,
       $$UserLoadsTableUpdateCompanionBuilder,
-      (
-        UserLoadRow,
-        BaseReferences<_$AppDatabase, $UserLoadsTable, UserLoadRow>,
-      ),
+      (UserLoadRow, $$UserLoadsTableReferences),
       UserLoadRow,
-      PrefetchHooks Function()
+      PrefetchHooks Function({
+        bool powderLotId,
+        bool primerLotId,
+        bool bulletLotId,
+        bool brassLotId,
+        bool batchesRefs,
+        bool testSessionsRefs,
+        bool loadDevelopmentSessionsRefs,
+      })
     >;
 typedef $$UserFirearmsTableCreateCompanionBuilder =
     UserFirearmsCompanion Function({
@@ -11274,6 +24920,12 @@ typedef $$UserFirearmsTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<String?> barrelManufacturer,
+      Value<String?> chamberReamerPrint,
+      Value<String?> tunerSetting,
+      Value<int?> cumulativeRoundCountSnapshot,
+      Value<double?> throatErosionCbtoIn,
+      Value<DateTime?> lastThroatMeasurementDate,
     });
 typedef $$UserFirearmsTableUpdateCompanionBuilder =
     UserFirearmsCompanion Function({
@@ -11291,7 +24943,86 @@ typedef $$UserFirearmsTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
+      Value<String?> barrelManufacturer,
+      Value<String?> chamberReamerPrint,
+      Value<String?> tunerSetting,
+      Value<int?> cumulativeRoundCountSnapshot,
+      Value<double?> throatErosionCbtoIn,
+      Value<DateTime?> lastThroatMeasurementDate,
     });
+
+final class $$UserFirearmsTableReferences
+    extends BaseReferences<_$AppDatabase, $UserFirearmsTable, UserFirearmRow> {
+  $$UserFirearmsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$BatchesTable, List<BatchRow>> _batchesRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.batches,
+    aliasName: $_aliasNameGenerator(db.userFirearms.id, db.batches.firearmId),
+  );
+
+  $$BatchesTableProcessedTableManager get batchesRefs {
+    final manager = $$BatchesTableTableManager(
+      $_db,
+      $_db.batches,
+    ).filter((f) => f.firearmId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_batchesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$TestSessionsTable, List<TestSessionRow>>
+  _testSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.testSessions,
+    aliasName: $_aliasNameGenerator(
+      db.userFirearms.id,
+      db.testSessions.firearmId,
+    ),
+  );
+
+  $$TestSessionsTableProcessedTableManager get testSessionsRefs {
+    final manager = $$TestSessionsTableTableManager(
+      $_db,
+      $_db.testSessions,
+    ).filter((f) => f.firearmId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_testSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LoadDevelopmentSessionsTable,
+    List<LoadDevelopmentSessionRow>
+  >
+  _loadDevelopmentSessionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.loadDevelopmentSessions,
+        aliasName: $_aliasNameGenerator(
+          db.userFirearms.id,
+          db.loadDevelopmentSessions.firearmId,
+        ),
+      );
+
+  $$LoadDevelopmentSessionsTableProcessedTableManager
+  get loadDevelopmentSessionsRefs {
+    final manager = $$LoadDevelopmentSessionsTableTableManager(
+      $_db,
+      $_db.loadDevelopmentSessions,
+    ).filter((f) => f.firearmId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _loadDevelopmentSessionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$UserFirearmsTableFilterComposer
     extends Composer<_$AppDatabase, $UserFirearmsTable> {
@@ -11371,6 +25102,112 @@ class $$UserFirearmsTableFilterComposer
     column: $table.updatedAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<String> get barrelManufacturer => $composableBuilder(
+    column: $table.barrelManufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chamberReamerPrint => $composableBuilder(
+    column: $table.chamberReamerPrint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tunerSetting => $composableBuilder(
+    column: $table.tunerSetting,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cumulativeRoundCountSnapshot => $composableBuilder(
+    column: $table.cumulativeRoundCountSnapshot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get throatErosionCbtoIn => $composableBuilder(
+    column: $table.throatErosionCbtoIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastThroatMeasurementDate => $composableBuilder(
+    column: $table.lastThroatMeasurementDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> batchesRefs(
+    Expression<bool> Function($$BatchesTableFilterComposer f) f,
+  ) {
+    final $$BatchesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableFilterComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> testSessionsRefs(
+    Expression<bool> Function($$TestSessionsTableFilterComposer f) f,
+  ) {
+    final $$TestSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.testSessions,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TestSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.testSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> loadDevelopmentSessionsRefs(
+    Expression<bool> Function($$LoadDevelopmentSessionsTableFilterComposer f) f,
+  ) {
+    final $$LoadDevelopmentSessionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.firearmId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableFilterComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UserFirearmsTableOrderingComposer
@@ -11451,6 +25288,36 @@ class $$UserFirearmsTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get barrelManufacturer => $composableBuilder(
+    column: $table.barrelManufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get chamberReamerPrint => $composableBuilder(
+    column: $table.chamberReamerPrint,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tunerSetting => $composableBuilder(
+    column: $table.tunerSetting,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cumulativeRoundCountSnapshot => $composableBuilder(
+    column: $table.cumulativeRoundCountSnapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get throatErosionCbtoIn => $composableBuilder(
+    column: $table.throatErosionCbtoIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastThroatMeasurementDate => $composableBuilder(
+    column: $table.lastThroatMeasurementDate,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserFirearmsTableAnnotationComposer
@@ -11511,6 +25378,113 @@ class $$UserFirearmsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get barrelManufacturer => $composableBuilder(
+    column: $table.barrelManufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get chamberReamerPrint => $composableBuilder(
+    column: $table.chamberReamerPrint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tunerSetting => $composableBuilder(
+    column: $table.tunerSetting,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cumulativeRoundCountSnapshot => $composableBuilder(
+    column: $table.cumulativeRoundCountSnapshot,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get throatErosionCbtoIn => $composableBuilder(
+    column: $table.throatErosionCbtoIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastThroatMeasurementDate => $composableBuilder(
+    column: $table.lastThroatMeasurementDate,
+    builder: (column) => column,
+  );
+
+  Expression<T> batchesRefs<T extends Object>(
+    Expression<T> Function($$BatchesTableAnnotationComposer a) f,
+  ) {
+    final $$BatchesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> testSessionsRefs<T extends Object>(
+    Expression<T> Function($$TestSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$TestSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.testSessions,
+      getReferencedColumn: (t) => t.firearmId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TestSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.testSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> loadDevelopmentSessionsRefs<T extends Object>(
+    Expression<T> Function($$LoadDevelopmentSessionsTableAnnotationComposer a)
+    f,
+  ) {
+    final $$LoadDevelopmentSessionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.firearmId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$UserFirearmsTableTableManager
@@ -11524,12 +25498,13 @@ class $$UserFirearmsTableTableManager
           $$UserFirearmsTableAnnotationComposer,
           $$UserFirearmsTableCreateCompanionBuilder,
           $$UserFirearmsTableUpdateCompanionBuilder,
-          (
-            UserFirearmRow,
-            BaseReferences<_$AppDatabase, $UserFirearmsTable, UserFirearmRow>,
-          ),
+          (UserFirearmRow, $$UserFirearmsTableReferences),
           UserFirearmRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({
+            bool batchesRefs,
+            bool testSessionsRefs,
+            bool loadDevelopmentSessionsRefs,
+          })
         > {
   $$UserFirearmsTableTableManager(_$AppDatabase db, $UserFirearmsTable table)
     : super(
@@ -11558,6 +25533,13 @@ class $$UserFirearmsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> barrelManufacturer = const Value.absent(),
+                Value<String?> chamberReamerPrint = const Value.absent(),
+                Value<String?> tunerSetting = const Value.absent(),
+                Value<int?> cumulativeRoundCountSnapshot = const Value.absent(),
+                Value<double?> throatErosionCbtoIn = const Value.absent(),
+                Value<DateTime?> lastThroatMeasurementDate =
+                    const Value.absent(),
               }) => UserFirearmsCompanion(
                 id: id,
                 name: name,
@@ -11573,6 +25555,12 @@ class $$UserFirearmsTableTableManager
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                barrelManufacturer: barrelManufacturer,
+                chamberReamerPrint: chamberReamerPrint,
+                tunerSetting: tunerSetting,
+                cumulativeRoundCountSnapshot: cumulativeRoundCountSnapshot,
+                throatErosionCbtoIn: throatErosionCbtoIn,
+                lastThroatMeasurementDate: lastThroatMeasurementDate,
               ),
           createCompanionCallback:
               ({
@@ -11590,6 +25578,13 @@ class $$UserFirearmsTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> barrelManufacturer = const Value.absent(),
+                Value<String?> chamberReamerPrint = const Value.absent(),
+                Value<String?> tunerSetting = const Value.absent(),
+                Value<int?> cumulativeRoundCountSnapshot = const Value.absent(),
+                Value<double?> throatErosionCbtoIn = const Value.absent(),
+                Value<DateTime?> lastThroatMeasurementDate =
+                    const Value.absent(),
               }) => UserFirearmsCompanion.insert(
                 id: id,
                 name: name,
@@ -11605,11 +25600,104 @@ class $$UserFirearmsTableTableManager
                 notes: notes,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
+                barrelManufacturer: barrelManufacturer,
+                chamberReamerPrint: chamberReamerPrint,
+                tunerSetting: tunerSetting,
+                cumulativeRoundCountSnapshot: cumulativeRoundCountSnapshot,
+                throatErosionCbtoIn: throatErosionCbtoIn,
+                lastThroatMeasurementDate: lastThroatMeasurementDate,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserFirearmsTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback:
+              ({
+                batchesRefs = false,
+                testSessionsRefs = false,
+                loadDevelopmentSessionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (batchesRefs) db.batches,
+                    if (testSessionsRefs) db.testSessions,
+                    if (loadDevelopmentSessionsRefs) db.loadDevelopmentSessions,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (batchesRefs)
+                        await $_getPrefetchedData<
+                          UserFirearmRow,
+                          $UserFirearmsTable,
+                          BatchRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserFirearmsTableReferences
+                              ._batchesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserFirearmsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).batchesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.firearmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (testSessionsRefs)
+                        await $_getPrefetchedData<
+                          UserFirearmRow,
+                          $UserFirearmsTable,
+                          TestSessionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserFirearmsTableReferences
+                              ._testSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserFirearmsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).testSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.firearmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (loadDevelopmentSessionsRefs)
+                        await $_getPrefetchedData<
+                          UserFirearmRow,
+                          $UserFirearmsTable,
+                          LoadDevelopmentSessionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$UserFirearmsTableReferences
+                              ._loadDevelopmentSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$UserFirearmsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).loadDevelopmentSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.firearmId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
         ),
       );
 }
@@ -11624,12 +25712,3580 @@ typedef $$UserFirearmsTableProcessedTableManager =
       $$UserFirearmsTableAnnotationComposer,
       $$UserFirearmsTableCreateCompanionBuilder,
       $$UserFirearmsTableUpdateCompanionBuilder,
-      (
-        UserFirearmRow,
-        BaseReferences<_$AppDatabase, $UserFirearmsTable, UserFirearmRow>,
-      ),
+      (UserFirearmRow, $$UserFirearmsTableReferences),
       UserFirearmRow,
+      PrefetchHooks Function({
+        bool batchesRefs,
+        bool testSessionsRefs,
+        bool loadDevelopmentSessionsRefs,
+      })
+    >;
+typedef $$UserProcessStepsTableCreateCompanionBuilder =
+    UserProcessStepsCompanion Function({
+      Value<int> id,
+      required String name,
+      required int sortOrder,
+      Value<bool> appliesToPistol,
+      Value<bool> appliesToRifle,
+      Value<bool> appliesToShotgun,
+      Value<bool> isStandard,
+      Value<String?> description,
+      Value<DateTime> createdAt,
+    });
+typedef $$UserProcessStepsTableUpdateCompanionBuilder =
+    UserProcessStepsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<int> sortOrder,
+      Value<bool> appliesToPistol,
+      Value<bool> appliesToRifle,
+      Value<bool> appliesToShotgun,
+      Value<bool> isStandard,
+      Value<String?> description,
+      Value<DateTime> createdAt,
+    });
+
+class $$UserProcessStepsTableFilterComposer
+    extends Composer<_$AppDatabase, $UserProcessStepsTable> {
+  $$UserProcessStepsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get appliesToPistol => $composableBuilder(
+    column: $table.appliesToPistol,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get appliesToRifle => $composableBuilder(
+    column: $table.appliesToRifle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get appliesToShotgun => $composableBuilder(
+    column: $table.appliesToShotgun,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isStandard => $composableBuilder(
+    column: $table.isStandard,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$UserProcessStepsTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserProcessStepsTable> {
+  $$UserProcessStepsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get appliesToPistol => $composableBuilder(
+    column: $table.appliesToPistol,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get appliesToRifle => $composableBuilder(
+    column: $table.appliesToRifle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get appliesToShotgun => $composableBuilder(
+    column: $table.appliesToShotgun,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isStandard => $composableBuilder(
+    column: $table.isStandard,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserProcessStepsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserProcessStepsTable> {
+  $$UserProcessStepsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get appliesToPistol => $composableBuilder(
+    column: $table.appliesToPistol,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get appliesToRifle => $composableBuilder(
+    column: $table.appliesToRifle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get appliesToShotgun => $composableBuilder(
+    column: $table.appliesToShotgun,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isStandard => $composableBuilder(
+    column: $table.isStandard,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$UserProcessStepsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserProcessStepsTable,
+          UserProcessStepRow,
+          $$UserProcessStepsTableFilterComposer,
+          $$UserProcessStepsTableOrderingComposer,
+          $$UserProcessStepsTableAnnotationComposer,
+          $$UserProcessStepsTableCreateCompanionBuilder,
+          $$UserProcessStepsTableUpdateCompanionBuilder,
+          (
+            UserProcessStepRow,
+            BaseReferences<
+              _$AppDatabase,
+              $UserProcessStepsTable,
+              UserProcessStepRow
+            >,
+          ),
+          UserProcessStepRow,
+          PrefetchHooks Function()
+        > {
+  $$UserProcessStepsTableTableManager(
+    _$AppDatabase db,
+    $UserProcessStepsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserProcessStepsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserProcessStepsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserProcessStepsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<bool> appliesToPistol = const Value.absent(),
+                Value<bool> appliesToRifle = const Value.absent(),
+                Value<bool> appliesToShotgun = const Value.absent(),
+                Value<bool> isStandard = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserProcessStepsCompanion(
+                id: id,
+                name: name,
+                sortOrder: sortOrder,
+                appliesToPistol: appliesToPistol,
+                appliesToRifle: appliesToRifle,
+                appliesToShotgun: appliesToShotgun,
+                isStandard: isStandard,
+                description: description,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required int sortOrder,
+                Value<bool> appliesToPistol = const Value.absent(),
+                Value<bool> appliesToRifle = const Value.absent(),
+                Value<bool> appliesToShotgun = const Value.absent(),
+                Value<bool> isStandard = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserProcessStepsCompanion.insert(
+                id: id,
+                name: name,
+                sortOrder: sortOrder,
+                appliesToPistol: appliesToPistol,
+                appliesToRifle: appliesToRifle,
+                appliesToShotgun: appliesToShotgun,
+                isStandard: isStandard,
+                description: description,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$UserProcessStepsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserProcessStepsTable,
+      UserProcessStepRow,
+      $$UserProcessStepsTableFilterComposer,
+      $$UserProcessStepsTableOrderingComposer,
+      $$UserProcessStepsTableAnnotationComposer,
+      $$UserProcessStepsTableCreateCompanionBuilder,
+      $$UserProcessStepsTableUpdateCompanionBuilder,
+      (
+        UserProcessStepRow,
+        BaseReferences<
+          _$AppDatabase,
+          $UserProcessStepsTable,
+          UserProcessStepRow
+        >,
+      ),
+      UserProcessStepRow,
       PrefetchHooks Function()
+    >;
+typedef $$BatchesTableCreateCompanionBuilder =
+    BatchesCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<int?> recipeId,
+      Value<int?> brassLotId,
+      Value<int?> firearmId,
+      required int count,
+      Value<int> firedCount,
+      Value<DateTime?> loadedAt,
+      Value<String> processStateJson,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$BatchesTableUpdateCompanionBuilder =
+    BatchesCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<int?> recipeId,
+      Value<int?> brassLotId,
+      Value<int?> firearmId,
+      Value<int> count,
+      Value<int> firedCount,
+      Value<DateTime?> loadedAt,
+      Value<String> processStateJson,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$BatchesTableReferences
+    extends BaseReferences<_$AppDatabase, $BatchesTable, BatchRow> {
+  $$BatchesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UserLoadsTable _recipeIdTable(_$AppDatabase db) => db.userLoads
+      .createAlias($_aliasNameGenerator(db.batches.recipeId, db.userLoads.id));
+
+  $$UserLoadsTableProcessedTableManager? get recipeId {
+    final $_column = $_itemColumn<int>('recipe_id');
+    if ($_column == null) return null;
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_recipeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $BrassLotsTable _brassLotIdTable(_$AppDatabase db) =>
+      db.brassLots.createAlias(
+        $_aliasNameGenerator(db.batches.brassLotId, db.brassLots.id),
+      );
+
+  $$BrassLotsTableProcessedTableManager? get brassLotId {
+    final $_column = $_itemColumn<int>('brass_lot_id');
+    if ($_column == null) return null;
+    final manager = $$BrassLotsTableTableManager(
+      $_db,
+      $_db.brassLots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_brassLotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UserFirearmsTable _firearmIdTable(_$AppDatabase db) =>
+      db.userFirearms.createAlias(
+        $_aliasNameGenerator(db.batches.firearmId, db.userFirearms.id),
+      );
+
+  $$UserFirearmsTableProcessedTableManager? get firearmId {
+    final $_column = $_itemColumn<int>('firearm_id');
+    if ($_column == null) return null;
+    final manager = $$UserFirearmsTableTableManager(
+      $_db,
+      $_db.userFirearms,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_firearmIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$TestSessionsTable, List<TestSessionRow>>
+  _testSessionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.testSessions,
+    aliasName: $_aliasNameGenerator(db.batches.id, db.testSessions.batchId),
+  );
+
+  $$TestSessionsTableProcessedTableManager get testSessionsRefs {
+    final manager = $$TestSessionsTableTableManager(
+      $_db,
+      $_db.testSessions,
+    ).filter((f) => f.batchId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_testSessionsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$BatchesTableFilterComposer
+    extends Composer<_$AppDatabase, $BatchesTable> {
+  $$BatchesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get firedCount => $composableBuilder(
+    column: $table.firedCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get loadedAt => $composableBuilder(
+    column: $table.loadedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get processStateJson => $composableBuilder(
+    column: $table.processStateJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserLoadsTableFilterComposer get recipeId {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableFilterComposer get brassLotId {
+    final $$BrassLotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableFilterComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableFilterComposer get firearmId {
+    final $$UserFirearmsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableFilterComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> testSessionsRefs(
+    Expression<bool> Function($$TestSessionsTableFilterComposer f) f,
+  ) {
+    final $$TestSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.testSessions,
+      getReferencedColumn: (t) => t.batchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TestSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.testSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BatchesTableOrderingComposer
+    extends Composer<_$AppDatabase, $BatchesTable> {
+  $$BatchesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get count => $composableBuilder(
+    column: $table.count,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get firedCount => $composableBuilder(
+    column: $table.firedCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get loadedAt => $composableBuilder(
+    column: $table.loadedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get processStateJson => $composableBuilder(
+    column: $table.processStateJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserLoadsTableOrderingComposer get recipeId {
+    final $$UserLoadsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableOrderingComposer get brassLotId {
+    final $$BrassLotsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableOrderingComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableOrderingComposer get firearmId {
+    final $$UserFirearmsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BatchesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BatchesTable> {
+  $$BatchesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<int> get count =>
+      $composableBuilder(column: $table.count, builder: (column) => column);
+
+  GeneratedColumn<int> get firedCount => $composableBuilder(
+    column: $table.firedCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get loadedAt =>
+      $composableBuilder(column: $table.loadedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get processStateJson => $composableBuilder(
+    column: $table.processStateJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$UserLoadsTableAnnotationComposer get recipeId {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableAnnotationComposer get brassLotId {
+    final $$BrassLotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableAnnotationComposer get firearmId {
+    final $$UserFirearmsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> testSessionsRefs<T extends Object>(
+    Expression<T> Function($$TestSessionsTableAnnotationComposer a) f,
+  ) {
+    final $$TestSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.testSessions,
+      getReferencedColumn: (t) => t.batchId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TestSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.testSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$BatchesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BatchesTable,
+          BatchRow,
+          $$BatchesTableFilterComposer,
+          $$BatchesTableOrderingComposer,
+          $$BatchesTableAnnotationComposer,
+          $$BatchesTableCreateCompanionBuilder,
+          $$BatchesTableUpdateCompanionBuilder,
+          (BatchRow, $$BatchesTableReferences),
+          BatchRow,
+          PrefetchHooks Function({
+            bool recipeId,
+            bool brassLotId,
+            bool firearmId,
+            bool testSessionsRefs,
+          })
+        > {
+  $$BatchesTableTableManager(_$AppDatabase db, $BatchesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BatchesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BatchesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BatchesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<int?> recipeId = const Value.absent(),
+                Value<int?> brassLotId = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<int> count = const Value.absent(),
+                Value<int> firedCount = const Value.absent(),
+                Value<DateTime?> loadedAt = const Value.absent(),
+                Value<String> processStateJson = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BatchesCompanion(
+                id: id,
+                name: name,
+                recipeId: recipeId,
+                brassLotId: brassLotId,
+                firearmId: firearmId,
+                count: count,
+                firedCount: firedCount,
+                loadedAt: loadedAt,
+                processStateJson: processStateJson,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<int?> recipeId = const Value.absent(),
+                Value<int?> brassLotId = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                required int count,
+                Value<int> firedCount = const Value.absent(),
+                Value<DateTime?> loadedAt = const Value.absent(),
+                Value<String> processStateJson = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => BatchesCompanion.insert(
+                id: id,
+                name: name,
+                recipeId: recipeId,
+                brassLotId: brassLotId,
+                firearmId: firearmId,
+                count: count,
+                firedCount: firedCount,
+                loadedAt: loadedAt,
+                processStateJson: processStateJson,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BatchesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                recipeId = false,
+                brassLotId = false,
+                firearmId = false,
+                testSessionsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (testSessionsRefs) db.testSessions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (recipeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.recipeId,
+                                    referencedTable: $$BatchesTableReferences
+                                        ._recipeIdTable(db),
+                                    referencedColumn: $$BatchesTableReferences
+                                        ._recipeIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (brassLotId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.brassLotId,
+                                    referencedTable: $$BatchesTableReferences
+                                        ._brassLotIdTable(db),
+                                    referencedColumn: $$BatchesTableReferences
+                                        ._brassLotIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+                        if (firearmId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.firearmId,
+                                    referencedTable: $$BatchesTableReferences
+                                        ._firearmIdTable(db),
+                                    referencedColumn: $$BatchesTableReferences
+                                        ._firearmIdTable(db)
+                                        .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (testSessionsRefs)
+                        await $_getPrefetchedData<
+                          BatchRow,
+                          $BatchesTable,
+                          TestSessionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BatchesTableReferences
+                              ._testSessionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BatchesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).testSessionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.batchId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$BatchesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BatchesTable,
+      BatchRow,
+      $$BatchesTableFilterComposer,
+      $$BatchesTableOrderingComposer,
+      $$BatchesTableAnnotationComposer,
+      $$BatchesTableCreateCompanionBuilder,
+      $$BatchesTableUpdateCompanionBuilder,
+      (BatchRow, $$BatchesTableReferences),
+      BatchRow,
+      PrefetchHooks Function({
+        bool recipeId,
+        bool brassLotId,
+        bool firearmId,
+        bool testSessionsRefs,
+      })
+    >;
+typedef $$TestSessionsTableCreateCompanionBuilder =
+    TestSessionsCompanion Function({
+      Value<int> id,
+      Value<int?> recipeId,
+      Value<int?> firearmId,
+      Value<int?> batchId,
+      Value<String?> name,
+      required DateTime sessionDate,
+      Value<int?> sampleSize,
+      Value<double?> velocityAvgFps,
+      Value<double?> velocityMedianFps,
+      Value<double?> velocityHighFps,
+      Value<double?> velocityLowFps,
+      Value<double?> velocityEsFps,
+      Value<double?> velocitySdFps,
+      Value<double?> velocityCvPct,
+      Value<double?> velocitySdCi95Fps,
+      Value<double?> coldBoreOffsetFps,
+      Value<double?> velocityDriftSlope,
+      Value<int?> distanceYd,
+      Value<double?> groupSizeMoa,
+      Value<double?> verticalDispersionMoa,
+      Value<double?> horizontalDispersionMoa,
+      Value<double?> meanRadiusMoa,
+      Value<double?> temperatureF,
+      Value<double?> densityAltitudeFt,
+      Value<double?> barometricStationInHg,
+      Value<double?> humidityPct,
+      Value<double?> windSpeedMph,
+      Value<double?> windDirectionDeg,
+      Value<double?> rangeElevationFt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$TestSessionsTableUpdateCompanionBuilder =
+    TestSessionsCompanion Function({
+      Value<int> id,
+      Value<int?> recipeId,
+      Value<int?> firearmId,
+      Value<int?> batchId,
+      Value<String?> name,
+      Value<DateTime> sessionDate,
+      Value<int?> sampleSize,
+      Value<double?> velocityAvgFps,
+      Value<double?> velocityMedianFps,
+      Value<double?> velocityHighFps,
+      Value<double?> velocityLowFps,
+      Value<double?> velocityEsFps,
+      Value<double?> velocitySdFps,
+      Value<double?> velocityCvPct,
+      Value<double?> velocitySdCi95Fps,
+      Value<double?> coldBoreOffsetFps,
+      Value<double?> velocityDriftSlope,
+      Value<int?> distanceYd,
+      Value<double?> groupSizeMoa,
+      Value<double?> verticalDispersionMoa,
+      Value<double?> horizontalDispersionMoa,
+      Value<double?> meanRadiusMoa,
+      Value<double?> temperatureF,
+      Value<double?> densityAltitudeFt,
+      Value<double?> barometricStationInHg,
+      Value<double?> humidityPct,
+      Value<double?> windSpeedMph,
+      Value<double?> windDirectionDeg,
+      Value<double?> rangeElevationFt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$TestSessionsTableReferences
+    extends BaseReferences<_$AppDatabase, $TestSessionsTable, TestSessionRow> {
+  $$TestSessionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $UserLoadsTable _recipeIdTable(_$AppDatabase db) =>
+      db.userLoads.createAlias(
+        $_aliasNameGenerator(db.testSessions.recipeId, db.userLoads.id),
+      );
+
+  $$UserLoadsTableProcessedTableManager? get recipeId {
+    final $_column = $_itemColumn<int>('recipe_id');
+    if ($_column == null) return null;
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_recipeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UserFirearmsTable _firearmIdTable(_$AppDatabase db) =>
+      db.userFirearms.createAlias(
+        $_aliasNameGenerator(db.testSessions.firearmId, db.userFirearms.id),
+      );
+
+  $$UserFirearmsTableProcessedTableManager? get firearmId {
+    final $_column = $_itemColumn<int>('firearm_id');
+    if ($_column == null) return null;
+    final manager = $$UserFirearmsTableTableManager(
+      $_db,
+      $_db.userFirearms,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_firearmIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $BatchesTable _batchIdTable(_$AppDatabase db) =>
+      db.batches.createAlias(
+        $_aliasNameGenerator(db.testSessions.batchId, db.batches.id),
+      );
+
+  $$BatchesTableProcessedTableManager? get batchId {
+    final $_column = $_itemColumn<int>('batch_id');
+    if ($_column == null) return null;
+    final manager = $$BatchesTableTableManager(
+      $_db,
+      $_db.batches,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_batchIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TestSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $TestSessionsTable> {
+  $$TestSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get sessionDate => $composableBuilder(
+    column: $table.sessionDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sampleSize => $composableBuilder(
+    column: $table.sampleSize,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityAvgFps => $composableBuilder(
+    column: $table.velocityAvgFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityMedianFps => $composableBuilder(
+    column: $table.velocityMedianFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityHighFps => $composableBuilder(
+    column: $table.velocityHighFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityLowFps => $composableBuilder(
+    column: $table.velocityLowFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityEsFps => $composableBuilder(
+    column: $table.velocityEsFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocitySdFps => $composableBuilder(
+    column: $table.velocitySdFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityCvPct => $composableBuilder(
+    column: $table.velocityCvPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocitySdCi95Fps => $composableBuilder(
+    column: $table.velocitySdCi95Fps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get coldBoreOffsetFps => $composableBuilder(
+    column: $table.coldBoreOffsetFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityDriftSlope => $composableBuilder(
+    column: $table.velocityDriftSlope,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get distanceYd => $composableBuilder(
+    column: $table.distanceYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get groupSizeMoa => $composableBuilder(
+    column: $table.groupSizeMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get verticalDispersionMoa => $composableBuilder(
+    column: $table.verticalDispersionMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get horizontalDispersionMoa => $composableBuilder(
+    column: $table.horizontalDispersionMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get meanRadiusMoa => $composableBuilder(
+    column: $table.meanRadiusMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get densityAltitudeFt => $composableBuilder(
+    column: $table.densityAltitudeFt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get barometricStationInHg => $composableBuilder(
+    column: $table.barometricStationInHg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get windSpeedMph => $composableBuilder(
+    column: $table.windSpeedMph,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get windDirectionDeg => $composableBuilder(
+    column: $table.windDirectionDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get rangeElevationFt => $composableBuilder(
+    column: $table.rangeElevationFt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserLoadsTableFilterComposer get recipeId {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableFilterComposer get firearmId {
+    final $$UserFirearmsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableFilterComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BatchesTableFilterComposer get batchId {
+    final $$BatchesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableFilterComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TestSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TestSessionsTable> {
+  $$TestSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get sessionDate => $composableBuilder(
+    column: $table.sessionDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sampleSize => $composableBuilder(
+    column: $table.sampleSize,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityAvgFps => $composableBuilder(
+    column: $table.velocityAvgFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityMedianFps => $composableBuilder(
+    column: $table.velocityMedianFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityHighFps => $composableBuilder(
+    column: $table.velocityHighFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityLowFps => $composableBuilder(
+    column: $table.velocityLowFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityEsFps => $composableBuilder(
+    column: $table.velocityEsFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocitySdFps => $composableBuilder(
+    column: $table.velocitySdFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityCvPct => $composableBuilder(
+    column: $table.velocityCvPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocitySdCi95Fps => $composableBuilder(
+    column: $table.velocitySdCi95Fps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get coldBoreOffsetFps => $composableBuilder(
+    column: $table.coldBoreOffsetFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityDriftSlope => $composableBuilder(
+    column: $table.velocityDriftSlope,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get distanceYd => $composableBuilder(
+    column: $table.distanceYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get groupSizeMoa => $composableBuilder(
+    column: $table.groupSizeMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get verticalDispersionMoa => $composableBuilder(
+    column: $table.verticalDispersionMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get horizontalDispersionMoa => $composableBuilder(
+    column: $table.horizontalDispersionMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get meanRadiusMoa => $composableBuilder(
+    column: $table.meanRadiusMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get densityAltitudeFt => $composableBuilder(
+    column: $table.densityAltitudeFt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get barometricStationInHg => $composableBuilder(
+    column: $table.barometricStationInHg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get windSpeedMph => $composableBuilder(
+    column: $table.windSpeedMph,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get windDirectionDeg => $composableBuilder(
+    column: $table.windDirectionDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get rangeElevationFt => $composableBuilder(
+    column: $table.rangeElevationFt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserLoadsTableOrderingComposer get recipeId {
+    final $$UserLoadsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableOrderingComposer get firearmId {
+    final $$UserFirearmsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BatchesTableOrderingComposer get batchId {
+    final $$BatchesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableOrderingComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TestSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TestSessionsTable> {
+  $$TestSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get sessionDate => $composableBuilder(
+    column: $table.sessionDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sampleSize => $composableBuilder(
+    column: $table.sampleSize,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocityAvgFps => $composableBuilder(
+    column: $table.velocityAvgFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocityMedianFps => $composableBuilder(
+    column: $table.velocityMedianFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocityHighFps => $composableBuilder(
+    column: $table.velocityHighFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocityLowFps => $composableBuilder(
+    column: $table.velocityLowFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocityEsFps => $composableBuilder(
+    column: $table.velocityEsFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocitySdFps => $composableBuilder(
+    column: $table.velocitySdFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocityCvPct => $composableBuilder(
+    column: $table.velocityCvPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocitySdCi95Fps => $composableBuilder(
+    column: $table.velocitySdCi95Fps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get coldBoreOffsetFps => $composableBuilder(
+    column: $table.coldBoreOffsetFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get velocityDriftSlope => $composableBuilder(
+    column: $table.velocityDriftSlope,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get distanceYd => $composableBuilder(
+    column: $table.distanceYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get groupSizeMoa => $composableBuilder(
+    column: $table.groupSizeMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get verticalDispersionMoa => $composableBuilder(
+    column: $table.verticalDispersionMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get horizontalDispersionMoa => $composableBuilder(
+    column: $table.horizontalDispersionMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get meanRadiusMoa => $composableBuilder(
+    column: $table.meanRadiusMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get temperatureF => $composableBuilder(
+    column: $table.temperatureF,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get densityAltitudeFt => $composableBuilder(
+    column: $table.densityAltitudeFt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get barometricStationInHg => $composableBuilder(
+    column: $table.barometricStationInHg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get humidityPct => $composableBuilder(
+    column: $table.humidityPct,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get windSpeedMph => $composableBuilder(
+    column: $table.windSpeedMph,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get windDirectionDeg => $composableBuilder(
+    column: $table.windDirectionDeg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get rangeElevationFt => $composableBuilder(
+    column: $table.rangeElevationFt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$UserLoadsTableAnnotationComposer get recipeId {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserFirearmsTableAnnotationComposer get firearmId {
+    final $$UserFirearmsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BatchesTableAnnotationComposer get batchId {
+    final $$BatchesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.batchId,
+      referencedTable: $db.batches,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BatchesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.batches,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TestSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TestSessionsTable,
+          TestSessionRow,
+          $$TestSessionsTableFilterComposer,
+          $$TestSessionsTableOrderingComposer,
+          $$TestSessionsTableAnnotationComposer,
+          $$TestSessionsTableCreateCompanionBuilder,
+          $$TestSessionsTableUpdateCompanionBuilder,
+          (TestSessionRow, $$TestSessionsTableReferences),
+          TestSessionRow,
+          PrefetchHooks Function({bool recipeId, bool firearmId, bool batchId})
+        > {
+  $$TestSessionsTableTableManager(_$AppDatabase db, $TestSessionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TestSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TestSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TestSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> recipeId = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<int?> batchId = const Value.absent(),
+                Value<String?> name = const Value.absent(),
+                Value<DateTime> sessionDate = const Value.absent(),
+                Value<int?> sampleSize = const Value.absent(),
+                Value<double?> velocityAvgFps = const Value.absent(),
+                Value<double?> velocityMedianFps = const Value.absent(),
+                Value<double?> velocityHighFps = const Value.absent(),
+                Value<double?> velocityLowFps = const Value.absent(),
+                Value<double?> velocityEsFps = const Value.absent(),
+                Value<double?> velocitySdFps = const Value.absent(),
+                Value<double?> velocityCvPct = const Value.absent(),
+                Value<double?> velocitySdCi95Fps = const Value.absent(),
+                Value<double?> coldBoreOffsetFps = const Value.absent(),
+                Value<double?> velocityDriftSlope = const Value.absent(),
+                Value<int?> distanceYd = const Value.absent(),
+                Value<double?> groupSizeMoa = const Value.absent(),
+                Value<double?> verticalDispersionMoa = const Value.absent(),
+                Value<double?> horizontalDispersionMoa = const Value.absent(),
+                Value<double?> meanRadiusMoa = const Value.absent(),
+                Value<double?> temperatureF = const Value.absent(),
+                Value<double?> densityAltitudeFt = const Value.absent(),
+                Value<double?> barometricStationInHg = const Value.absent(),
+                Value<double?> humidityPct = const Value.absent(),
+                Value<double?> windSpeedMph = const Value.absent(),
+                Value<double?> windDirectionDeg = const Value.absent(),
+                Value<double?> rangeElevationFt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TestSessionsCompanion(
+                id: id,
+                recipeId: recipeId,
+                firearmId: firearmId,
+                batchId: batchId,
+                name: name,
+                sessionDate: sessionDate,
+                sampleSize: sampleSize,
+                velocityAvgFps: velocityAvgFps,
+                velocityMedianFps: velocityMedianFps,
+                velocityHighFps: velocityHighFps,
+                velocityLowFps: velocityLowFps,
+                velocityEsFps: velocityEsFps,
+                velocitySdFps: velocitySdFps,
+                velocityCvPct: velocityCvPct,
+                velocitySdCi95Fps: velocitySdCi95Fps,
+                coldBoreOffsetFps: coldBoreOffsetFps,
+                velocityDriftSlope: velocityDriftSlope,
+                distanceYd: distanceYd,
+                groupSizeMoa: groupSizeMoa,
+                verticalDispersionMoa: verticalDispersionMoa,
+                horizontalDispersionMoa: horizontalDispersionMoa,
+                meanRadiusMoa: meanRadiusMoa,
+                temperatureF: temperatureF,
+                densityAltitudeFt: densityAltitudeFt,
+                barometricStationInHg: barometricStationInHg,
+                humidityPct: humidityPct,
+                windSpeedMph: windSpeedMph,
+                windDirectionDeg: windDirectionDeg,
+                rangeElevationFt: rangeElevationFt,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> recipeId = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<int?> batchId = const Value.absent(),
+                Value<String?> name = const Value.absent(),
+                required DateTime sessionDate,
+                Value<int?> sampleSize = const Value.absent(),
+                Value<double?> velocityAvgFps = const Value.absent(),
+                Value<double?> velocityMedianFps = const Value.absent(),
+                Value<double?> velocityHighFps = const Value.absent(),
+                Value<double?> velocityLowFps = const Value.absent(),
+                Value<double?> velocityEsFps = const Value.absent(),
+                Value<double?> velocitySdFps = const Value.absent(),
+                Value<double?> velocityCvPct = const Value.absent(),
+                Value<double?> velocitySdCi95Fps = const Value.absent(),
+                Value<double?> coldBoreOffsetFps = const Value.absent(),
+                Value<double?> velocityDriftSlope = const Value.absent(),
+                Value<int?> distanceYd = const Value.absent(),
+                Value<double?> groupSizeMoa = const Value.absent(),
+                Value<double?> verticalDispersionMoa = const Value.absent(),
+                Value<double?> horizontalDispersionMoa = const Value.absent(),
+                Value<double?> meanRadiusMoa = const Value.absent(),
+                Value<double?> temperatureF = const Value.absent(),
+                Value<double?> densityAltitudeFt = const Value.absent(),
+                Value<double?> barometricStationInHg = const Value.absent(),
+                Value<double?> humidityPct = const Value.absent(),
+                Value<double?> windSpeedMph = const Value.absent(),
+                Value<double?> windDirectionDeg = const Value.absent(),
+                Value<double?> rangeElevationFt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => TestSessionsCompanion.insert(
+                id: id,
+                recipeId: recipeId,
+                firearmId: firearmId,
+                batchId: batchId,
+                name: name,
+                sessionDate: sessionDate,
+                sampleSize: sampleSize,
+                velocityAvgFps: velocityAvgFps,
+                velocityMedianFps: velocityMedianFps,
+                velocityHighFps: velocityHighFps,
+                velocityLowFps: velocityLowFps,
+                velocityEsFps: velocityEsFps,
+                velocitySdFps: velocitySdFps,
+                velocityCvPct: velocityCvPct,
+                velocitySdCi95Fps: velocitySdCi95Fps,
+                coldBoreOffsetFps: coldBoreOffsetFps,
+                velocityDriftSlope: velocityDriftSlope,
+                distanceYd: distanceYd,
+                groupSizeMoa: groupSizeMoa,
+                verticalDispersionMoa: verticalDispersionMoa,
+                horizontalDispersionMoa: horizontalDispersionMoa,
+                meanRadiusMoa: meanRadiusMoa,
+                temperatureF: temperatureF,
+                densityAltitudeFt: densityAltitudeFt,
+                barometricStationInHg: barometricStationInHg,
+                humidityPct: humidityPct,
+                windSpeedMph: windSpeedMph,
+                windDirectionDeg: windDirectionDeg,
+                rangeElevationFt: rangeElevationFt,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$TestSessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({recipeId = false, firearmId = false, batchId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (recipeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.recipeId,
+                                    referencedTable:
+                                        $$TestSessionsTableReferences
+                                            ._recipeIdTable(db),
+                                    referencedColumn:
+                                        $$TestSessionsTableReferences
+                                            ._recipeIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (firearmId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.firearmId,
+                                    referencedTable:
+                                        $$TestSessionsTableReferences
+                                            ._firearmIdTable(db),
+                                    referencedColumn:
+                                        $$TestSessionsTableReferences
+                                            ._firearmIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (batchId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.batchId,
+                                    referencedTable:
+                                        $$TestSessionsTableReferences
+                                            ._batchIdTable(db),
+                                    referencedColumn:
+                                        $$TestSessionsTableReferences
+                                            ._batchIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TestSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TestSessionsTable,
+      TestSessionRow,
+      $$TestSessionsTableFilterComposer,
+      $$TestSessionsTableOrderingComposer,
+      $$TestSessionsTableAnnotationComposer,
+      $$TestSessionsTableCreateCompanionBuilder,
+      $$TestSessionsTableUpdateCompanionBuilder,
+      (TestSessionRow, $$TestSessionsTableReferences),
+      TestSessionRow,
+      PrefetchHooks Function({bool recipeId, bool firearmId, bool batchId})
+    >;
+typedef $$UserCustomFieldsTableCreateCompanionBuilder =
+    UserCustomFieldsCompanion Function({
+      Value<int> id,
+      required String entityType,
+      required String fieldName,
+      required String fieldType,
+      Value<String?> unitSuffix,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+    });
+typedef $$UserCustomFieldsTableUpdateCompanionBuilder =
+    UserCustomFieldsCompanion Function({
+      Value<int> id,
+      Value<String> entityType,
+      Value<String> fieldName,
+      Value<String> fieldType,
+      Value<String?> unitSuffix,
+      Value<int> sortOrder,
+      Value<DateTime> createdAt,
+    });
+
+final class $$UserCustomFieldsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $UserCustomFieldsTable,
+          UserCustomFieldRow
+        > {
+  $$UserCustomFieldsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<
+    $UserCustomFieldValuesTable,
+    List<UserCustomFieldValueRow>
+  >
+  _userCustomFieldValuesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.userCustomFieldValues,
+        aliasName: $_aliasNameGenerator(
+          db.userCustomFields.id,
+          db.userCustomFieldValues.fieldId,
+        ),
+      );
+
+  $$UserCustomFieldValuesTableProcessedTableManager
+  get userCustomFieldValuesRefs {
+    final manager = $$UserCustomFieldValuesTableTableManager(
+      $_db,
+      $_db.userCustomFieldValues,
+    ).filter((f) => f.fieldId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _userCustomFieldValuesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$UserCustomFieldsTableFilterComposer
+    extends Composer<_$AppDatabase, $UserCustomFieldsTable> {
+  $$UserCustomFieldsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fieldName => $composableBuilder(
+    column: $table.fieldName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fieldType => $composableBuilder(
+    column: $table.fieldType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unitSuffix => $composableBuilder(
+    column: $table.unitSuffix,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> userCustomFieldValuesRefs(
+    Expression<bool> Function($$UserCustomFieldValuesTableFilterComposer f) f,
+  ) {
+    final $$UserCustomFieldValuesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.userCustomFieldValues,
+          getReferencedColumn: (t) => t.fieldId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$UserCustomFieldValuesTableFilterComposer(
+                $db: $db,
+                $table: $db.userCustomFieldValues,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$UserCustomFieldsTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserCustomFieldsTable> {
+  $$UserCustomFieldsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fieldName => $composableBuilder(
+    column: $table.fieldName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get fieldType => $composableBuilder(
+    column: $table.fieldType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unitSuffix => $composableBuilder(
+    column: $table.unitSuffix,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$UserCustomFieldsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserCustomFieldsTable> {
+  $$UserCustomFieldsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get entityType => $composableBuilder(
+    column: $table.entityType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fieldName =>
+      $composableBuilder(column: $table.fieldName, builder: (column) => column);
+
+  GeneratedColumn<String> get fieldType =>
+      $composableBuilder(column: $table.fieldType, builder: (column) => column);
+
+  GeneratedColumn<String> get unitSuffix => $composableBuilder(
+    column: $table.unitSuffix,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> userCustomFieldValuesRefs<T extends Object>(
+    Expression<T> Function($$UserCustomFieldValuesTableAnnotationComposer a) f,
+  ) {
+    final $$UserCustomFieldValuesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.userCustomFieldValues,
+          getReferencedColumn: (t) => t.fieldId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$UserCustomFieldValuesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.userCustomFieldValues,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$UserCustomFieldsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserCustomFieldsTable,
+          UserCustomFieldRow,
+          $$UserCustomFieldsTableFilterComposer,
+          $$UserCustomFieldsTableOrderingComposer,
+          $$UserCustomFieldsTableAnnotationComposer,
+          $$UserCustomFieldsTableCreateCompanionBuilder,
+          $$UserCustomFieldsTableUpdateCompanionBuilder,
+          (UserCustomFieldRow, $$UserCustomFieldsTableReferences),
+          UserCustomFieldRow,
+          PrefetchHooks Function({bool userCustomFieldValuesRefs})
+        > {
+  $$UserCustomFieldsTableTableManager(
+    _$AppDatabase db,
+    $UserCustomFieldsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserCustomFieldsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$UserCustomFieldsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$UserCustomFieldsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> entityType = const Value.absent(),
+                Value<String> fieldName = const Value.absent(),
+                Value<String> fieldType = const Value.absent(),
+                Value<String?> unitSuffix = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserCustomFieldsCompanion(
+                id: id,
+                entityType: entityType,
+                fieldName: fieldName,
+                fieldType: fieldType,
+                unitSuffix: unitSuffix,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String entityType,
+                required String fieldName,
+                required String fieldType,
+                Value<String?> unitSuffix = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => UserCustomFieldsCompanion.insert(
+                id: id,
+                entityType: entityType,
+                fieldName: fieldName,
+                fieldType: fieldType,
+                unitSuffix: unitSuffix,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserCustomFieldsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({userCustomFieldValuesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (userCustomFieldValuesRefs) db.userCustomFieldValues,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (userCustomFieldValuesRefs)
+                    await $_getPrefetchedData<
+                      UserCustomFieldRow,
+                      $UserCustomFieldsTable,
+                      UserCustomFieldValueRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$UserCustomFieldsTableReferences
+                          ._userCustomFieldValuesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$UserCustomFieldsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).userCustomFieldValuesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.fieldId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$UserCustomFieldsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserCustomFieldsTable,
+      UserCustomFieldRow,
+      $$UserCustomFieldsTableFilterComposer,
+      $$UserCustomFieldsTableOrderingComposer,
+      $$UserCustomFieldsTableAnnotationComposer,
+      $$UserCustomFieldsTableCreateCompanionBuilder,
+      $$UserCustomFieldsTableUpdateCompanionBuilder,
+      (UserCustomFieldRow, $$UserCustomFieldsTableReferences),
+      UserCustomFieldRow,
+      PrefetchHooks Function({bool userCustomFieldValuesRefs})
+    >;
+typedef $$UserCustomFieldValuesTableCreateCompanionBuilder =
+    UserCustomFieldValuesCompanion Function({
+      Value<int> id,
+      required int fieldId,
+      required int entityId,
+      Value<String?> value,
+      Value<DateTime> updatedAt,
+    });
+typedef $$UserCustomFieldValuesTableUpdateCompanionBuilder =
+    UserCustomFieldValuesCompanion Function({
+      Value<int> id,
+      Value<int> fieldId,
+      Value<int> entityId,
+      Value<String?> value,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$UserCustomFieldValuesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $UserCustomFieldValuesTable,
+          UserCustomFieldValueRow
+        > {
+  $$UserCustomFieldValuesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserCustomFieldsTable _fieldIdTable(_$AppDatabase db) =>
+      db.userCustomFields.createAlias(
+        $_aliasNameGenerator(
+          db.userCustomFieldValues.fieldId,
+          db.userCustomFields.id,
+        ),
+      );
+
+  $$UserCustomFieldsTableProcessedTableManager get fieldId {
+    final $_column = $_itemColumn<int>('field_id')!;
+
+    final manager = $$UserCustomFieldsTableTableManager(
+      $_db,
+      $_db.userCustomFields,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_fieldIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$UserCustomFieldValuesTableFilterComposer
+    extends Composer<_$AppDatabase, $UserCustomFieldValuesTable> {
+  $$UserCustomFieldValuesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserCustomFieldsTableFilterComposer get fieldId {
+    final $$UserCustomFieldsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.fieldId,
+      referencedTable: $db.userCustomFields,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserCustomFieldsTableFilterComposer(
+            $db: $db,
+            $table: $db.userCustomFields,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserCustomFieldValuesTableOrderingComposer
+    extends Composer<_$AppDatabase, $UserCustomFieldValuesTable> {
+  $$UserCustomFieldValuesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserCustomFieldsTableOrderingComposer get fieldId {
+    final $$UserCustomFieldsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.fieldId,
+      referencedTable: $db.userCustomFields,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserCustomFieldsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userCustomFields,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserCustomFieldValuesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $UserCustomFieldValuesTable> {
+  $$UserCustomFieldValuesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$UserCustomFieldsTableAnnotationComposer get fieldId {
+    final $$UserCustomFieldsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.fieldId,
+      referencedTable: $db.userCustomFields,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserCustomFieldsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userCustomFields,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$UserCustomFieldValuesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $UserCustomFieldValuesTable,
+          UserCustomFieldValueRow,
+          $$UserCustomFieldValuesTableFilterComposer,
+          $$UserCustomFieldValuesTableOrderingComposer,
+          $$UserCustomFieldValuesTableAnnotationComposer,
+          $$UserCustomFieldValuesTableCreateCompanionBuilder,
+          $$UserCustomFieldValuesTableUpdateCompanionBuilder,
+          (UserCustomFieldValueRow, $$UserCustomFieldValuesTableReferences),
+          UserCustomFieldValueRow,
+          PrefetchHooks Function({bool fieldId})
+        > {
+  $$UserCustomFieldValuesTableTableManager(
+    _$AppDatabase db,
+    $UserCustomFieldValuesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$UserCustomFieldValuesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$UserCustomFieldValuesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$UserCustomFieldValuesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> fieldId = const Value.absent(),
+                Value<int> entityId = const Value.absent(),
+                Value<String?> value = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => UserCustomFieldValuesCompanion(
+                id: id,
+                fieldId: fieldId,
+                entityId: entityId,
+                value: value,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int fieldId,
+                required int entityId,
+                Value<String?> value = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => UserCustomFieldValuesCompanion.insert(
+                id: id,
+                fieldId: fieldId,
+                entityId: entityId,
+                value: value,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$UserCustomFieldValuesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({fieldId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (fieldId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.fieldId,
+                                referencedTable:
+                                    $$UserCustomFieldValuesTableReferences
+                                        ._fieldIdTable(db),
+                                referencedColumn:
+                                    $$UserCustomFieldValuesTableReferences
+                                        ._fieldIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$UserCustomFieldValuesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $UserCustomFieldValuesTable,
+      UserCustomFieldValueRow,
+      $$UserCustomFieldValuesTableFilterComposer,
+      $$UserCustomFieldValuesTableOrderingComposer,
+      $$UserCustomFieldValuesTableAnnotationComposer,
+      $$UserCustomFieldValuesTableCreateCompanionBuilder,
+      $$UserCustomFieldValuesTableUpdateCompanionBuilder,
+      (UserCustomFieldValueRow, $$UserCustomFieldValuesTableReferences),
+      UserCustomFieldValueRow,
+      PrefetchHooks Function({bool fieldId})
+    >;
+typedef $$LoadDevelopmentSessionsTableCreateCompanionBuilder =
+    LoadDevelopmentSessionsCompanion Function({
+      Value<int> id,
+      required String name,
+      required String sessionType,
+      Value<String?> cartridge,
+      Value<int?> firearmId,
+      Value<int?> sourceRecipeId,
+      Value<String?> powder,
+      Value<String?> bullet,
+      Value<String?> primer,
+      Value<int?> brassLotId,
+      required double startValue,
+      required double endValue,
+      required double stepValue,
+      required int rungCount,
+      Value<double?> nodeValue,
+      Value<String> rungsJson,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$LoadDevelopmentSessionsTableUpdateCompanionBuilder =
+    LoadDevelopmentSessionsCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String> sessionType,
+      Value<String?> cartridge,
+      Value<int?> firearmId,
+      Value<int?> sourceRecipeId,
+      Value<String?> powder,
+      Value<String?> bullet,
+      Value<String?> primer,
+      Value<int?> brassLotId,
+      Value<double> startValue,
+      Value<double> endValue,
+      Value<double> stepValue,
+      Value<int> rungCount,
+      Value<double?> nodeValue,
+      Value<String> rungsJson,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$LoadDevelopmentSessionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LoadDevelopmentSessionsTable,
+          LoadDevelopmentSessionRow
+        > {
+  $$LoadDevelopmentSessionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $UserFirearmsTable _firearmIdTable(_$AppDatabase db) =>
+      db.userFirearms.createAlias(
+        $_aliasNameGenerator(
+          db.loadDevelopmentSessions.firearmId,
+          db.userFirearms.id,
+        ),
+      );
+
+  $$UserFirearmsTableProcessedTableManager? get firearmId {
+    final $_column = $_itemColumn<int>('firearm_id');
+    if ($_column == null) return null;
+    final manager = $$UserFirearmsTableTableManager(
+      $_db,
+      $_db.userFirearms,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_firearmIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $UserLoadsTable _sourceRecipeIdTable(_$AppDatabase db) =>
+      db.userLoads.createAlias(
+        $_aliasNameGenerator(
+          db.loadDevelopmentSessions.sourceRecipeId,
+          db.userLoads.id,
+        ),
+      );
+
+  $$UserLoadsTableProcessedTableManager? get sourceRecipeId {
+    final $_column = $_itemColumn<int>('source_recipe_id');
+    if ($_column == null) return null;
+    final manager = $$UserLoadsTableTableManager(
+      $_db,
+      $_db.userLoads,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sourceRecipeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $BrassLotsTable _brassLotIdTable(_$AppDatabase db) =>
+      db.brassLots.createAlias(
+        $_aliasNameGenerator(
+          db.loadDevelopmentSessions.brassLotId,
+          db.brassLots.id,
+        ),
+      );
+
+  $$BrassLotsTableProcessedTableManager? get brassLotId {
+    final $_column = $_itemColumn<int>('brass_lot_id');
+    if ($_column == null) return null;
+    final manager = $$BrassLotsTableTableManager(
+      $_db,
+      $_db.brassLots,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_brassLotIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LoadDevelopmentSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $LoadDevelopmentSessionsTable> {
+  $$LoadDevelopmentSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionType => $composableBuilder(
+    column: $table.sessionType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cartridge => $composableBuilder(
+    column: $table.cartridge,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get powder => $composableBuilder(
+    column: $table.powder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bullet => $composableBuilder(
+    column: $table.bullet,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get primer => $composableBuilder(
+    column: $table.primer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get startValue => $composableBuilder(
+    column: $table.startValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get endValue => $composableBuilder(
+    column: $table.endValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get stepValue => $composableBuilder(
+    column: $table.stepValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get rungCount => $composableBuilder(
+    column: $table.rungCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get nodeValue => $composableBuilder(
+    column: $table.nodeValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rungsJson => $composableBuilder(
+    column: $table.rungsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$UserFirearmsTableFilterComposer get firearmId {
+    final $$UserFirearmsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableFilterComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserLoadsTableFilterComposer get sourceRecipeId {
+    final $$UserLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceRecipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableFilterComposer get brassLotId {
+    final $$BrassLotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableFilterComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LoadDevelopmentSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LoadDevelopmentSessionsTable> {
+  $$LoadDevelopmentSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionType => $composableBuilder(
+    column: $table.sessionType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cartridge => $composableBuilder(
+    column: $table.cartridge,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get powder => $composableBuilder(
+    column: $table.powder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bullet => $composableBuilder(
+    column: $table.bullet,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get primer => $composableBuilder(
+    column: $table.primer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get startValue => $composableBuilder(
+    column: $table.startValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get endValue => $composableBuilder(
+    column: $table.endValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get stepValue => $composableBuilder(
+    column: $table.stepValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get rungCount => $composableBuilder(
+    column: $table.rungCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get nodeValue => $composableBuilder(
+    column: $table.nodeValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rungsJson => $composableBuilder(
+    column: $table.rungsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$UserFirearmsTableOrderingComposer get firearmId {
+    final $$UserFirearmsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserLoadsTableOrderingComposer get sourceRecipeId {
+    final $$UserLoadsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceRecipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableOrderingComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableOrderingComposer get brassLotId {
+    final $$BrassLotsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableOrderingComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LoadDevelopmentSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LoadDevelopmentSessionsTable> {
+  $$LoadDevelopmentSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionType => $composableBuilder(
+    column: $table.sessionType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cartridge =>
+      $composableBuilder(column: $table.cartridge, builder: (column) => column);
+
+  GeneratedColumn<String> get powder =>
+      $composableBuilder(column: $table.powder, builder: (column) => column);
+
+  GeneratedColumn<String> get bullet =>
+      $composableBuilder(column: $table.bullet, builder: (column) => column);
+
+  GeneratedColumn<String> get primer =>
+      $composableBuilder(column: $table.primer, builder: (column) => column);
+
+  GeneratedColumn<double> get startValue => $composableBuilder(
+    column: $table.startValue,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get endValue =>
+      $composableBuilder(column: $table.endValue, builder: (column) => column);
+
+  GeneratedColumn<double> get stepValue =>
+      $composableBuilder(column: $table.stepValue, builder: (column) => column);
+
+  GeneratedColumn<int> get rungCount =>
+      $composableBuilder(column: $table.rungCount, builder: (column) => column);
+
+  GeneratedColumn<double> get nodeValue =>
+      $composableBuilder(column: $table.nodeValue, builder: (column) => column);
+
+  GeneratedColumn<String> get rungsJson =>
+      $composableBuilder(column: $table.rungsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$UserFirearmsTableAnnotationComposer get firearmId {
+    final $$UserFirearmsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.firearmId,
+      referencedTable: $db.userFirearms,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserFirearmsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userFirearms,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$UserLoadsTableAnnotationComposer get sourceRecipeId {
+    final $$UserLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sourceRecipeId,
+      referencedTable: $db.userLoads,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$UserLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.userLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$BrassLotsTableAnnotationComposer get brassLotId {
+    final $$BrassLotsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.brassLotId,
+      referencedTable: $db.brassLots,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BrassLotsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.brassLots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LoadDevelopmentSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LoadDevelopmentSessionsTable,
+          LoadDevelopmentSessionRow,
+          $$LoadDevelopmentSessionsTableFilterComposer,
+          $$LoadDevelopmentSessionsTableOrderingComposer,
+          $$LoadDevelopmentSessionsTableAnnotationComposer,
+          $$LoadDevelopmentSessionsTableCreateCompanionBuilder,
+          $$LoadDevelopmentSessionsTableUpdateCompanionBuilder,
+          (LoadDevelopmentSessionRow, $$LoadDevelopmentSessionsTableReferences),
+          LoadDevelopmentSessionRow,
+          PrefetchHooks Function({
+            bool firearmId,
+            bool sourceRecipeId,
+            bool brassLotId,
+          })
+        > {
+  $$LoadDevelopmentSessionsTableTableManager(
+    _$AppDatabase db,
+    $LoadDevelopmentSessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LoadDevelopmentSessionsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$LoadDevelopmentSessionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LoadDevelopmentSessionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> sessionType = const Value.absent(),
+                Value<String?> cartridge = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<int?> sourceRecipeId = const Value.absent(),
+                Value<String?> powder = const Value.absent(),
+                Value<String?> bullet = const Value.absent(),
+                Value<String?> primer = const Value.absent(),
+                Value<int?> brassLotId = const Value.absent(),
+                Value<double> startValue = const Value.absent(),
+                Value<double> endValue = const Value.absent(),
+                Value<double> stepValue = const Value.absent(),
+                Value<int> rungCount = const Value.absent(),
+                Value<double?> nodeValue = const Value.absent(),
+                Value<String> rungsJson = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => LoadDevelopmentSessionsCompanion(
+                id: id,
+                name: name,
+                sessionType: sessionType,
+                cartridge: cartridge,
+                firearmId: firearmId,
+                sourceRecipeId: sourceRecipeId,
+                powder: powder,
+                bullet: bullet,
+                primer: primer,
+                brassLotId: brassLotId,
+                startValue: startValue,
+                endValue: endValue,
+                stepValue: stepValue,
+                rungCount: rungCount,
+                nodeValue: nodeValue,
+                rungsJson: rungsJson,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                required String sessionType,
+                Value<String?> cartridge = const Value.absent(),
+                Value<int?> firearmId = const Value.absent(),
+                Value<int?> sourceRecipeId = const Value.absent(),
+                Value<String?> powder = const Value.absent(),
+                Value<String?> bullet = const Value.absent(),
+                Value<String?> primer = const Value.absent(),
+                Value<int?> brassLotId = const Value.absent(),
+                required double startValue,
+                required double endValue,
+                required double stepValue,
+                required int rungCount,
+                Value<double?> nodeValue = const Value.absent(),
+                Value<String> rungsJson = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => LoadDevelopmentSessionsCompanion.insert(
+                id: id,
+                name: name,
+                sessionType: sessionType,
+                cartridge: cartridge,
+                firearmId: firearmId,
+                sourceRecipeId: sourceRecipeId,
+                powder: powder,
+                bullet: bullet,
+                primer: primer,
+                brassLotId: brassLotId,
+                startValue: startValue,
+                endValue: endValue,
+                stepValue: stepValue,
+                rungCount: rungCount,
+                nodeValue: nodeValue,
+                rungsJson: rungsJson,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LoadDevelopmentSessionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                firearmId = false,
+                sourceRecipeId = false,
+                brassLotId = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (firearmId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.firearmId,
+                                    referencedTable:
+                                        $$LoadDevelopmentSessionsTableReferences
+                                            ._firearmIdTable(db),
+                                    referencedColumn:
+                                        $$LoadDevelopmentSessionsTableReferences
+                                            ._firearmIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (sourceRecipeId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.sourceRecipeId,
+                                    referencedTable:
+                                        $$LoadDevelopmentSessionsTableReferences
+                                            ._sourceRecipeIdTable(db),
+                                    referencedColumn:
+                                        $$LoadDevelopmentSessionsTableReferences
+                                            ._sourceRecipeIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (brassLotId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.brassLotId,
+                                    referencedTable:
+                                        $$LoadDevelopmentSessionsTableReferences
+                                            ._brassLotIdTable(db),
+                                    referencedColumn:
+                                        $$LoadDevelopmentSessionsTableReferences
+                                            ._brassLotIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$LoadDevelopmentSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LoadDevelopmentSessionsTable,
+      LoadDevelopmentSessionRow,
+      $$LoadDevelopmentSessionsTableFilterComposer,
+      $$LoadDevelopmentSessionsTableOrderingComposer,
+      $$LoadDevelopmentSessionsTableAnnotationComposer,
+      $$LoadDevelopmentSessionsTableCreateCompanionBuilder,
+      $$LoadDevelopmentSessionsTableUpdateCompanionBuilder,
+      (LoadDevelopmentSessionRow, $$LoadDevelopmentSessionsTableReferences),
+      LoadDevelopmentSessionRow,
+      PrefetchHooks Function({
+        bool firearmId,
+        bool sourceRecipeId,
+        bool brassLotId,
+      })
     >;
 
 class $AppDatabaseManager {
@@ -11653,8 +29309,31 @@ class $AppDatabaseManager {
       $$FirearmPartsTableTableManager(_db, _db.firearmParts);
   $$CustomComponentsTableTableManager get customComponents =>
       $$CustomComponentsTableTableManager(_db, _db.customComponents);
+  $$PowderLotsTableTableManager get powderLots =>
+      $$PowderLotsTableTableManager(_db, _db.powderLots);
+  $$PrimerLotsTableTableManager get primerLots =>
+      $$PrimerLotsTableTableManager(_db, _db.primerLots);
+  $$BulletLotsTableTableManager get bulletLots =>
+      $$BulletLotsTableTableManager(_db, _db.bulletLots);
+  $$BrassLotsTableTableManager get brassLots =>
+      $$BrassLotsTableTableManager(_db, _db.brassLots);
   $$UserLoadsTableTableManager get userLoads =>
       $$UserLoadsTableTableManager(_db, _db.userLoads);
   $$UserFirearmsTableTableManager get userFirearms =>
       $$UserFirearmsTableTableManager(_db, _db.userFirearms);
+  $$UserProcessStepsTableTableManager get userProcessSteps =>
+      $$UserProcessStepsTableTableManager(_db, _db.userProcessSteps);
+  $$BatchesTableTableManager get batches =>
+      $$BatchesTableTableManager(_db, _db.batches);
+  $$TestSessionsTableTableManager get testSessions =>
+      $$TestSessionsTableTableManager(_db, _db.testSessions);
+  $$UserCustomFieldsTableTableManager get userCustomFields =>
+      $$UserCustomFieldsTableTableManager(_db, _db.userCustomFields);
+  $$UserCustomFieldValuesTableTableManager get userCustomFieldValues =>
+      $$UserCustomFieldValuesTableTableManager(_db, _db.userCustomFieldValues);
+  $$LoadDevelopmentSessionsTableTableManager get loadDevelopmentSessions =>
+      $$LoadDevelopmentSessionsTableTableManager(
+        _db,
+        _db.loadDevelopmentSessions,
+      );
 }

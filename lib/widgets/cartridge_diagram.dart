@@ -218,11 +218,14 @@ class _CartridgeDiagramPainter extends CustomPainter {
       rimDia ?? bodyDia,
     ].reduce(math.max);
 
-    // Reserve margins for dimension labels.
+    // Reserve margins for dimension labels. Left margin holds the rim
+    // (head) callout — critical reloader data — so it's wider than the
+    // right margin. Right margin holds the bullet (cartridge mode) or
+    // bore/groove (chamber mode) callouts.
     const labelTop = 28.0;
     const labelBottom = 32.0;
-    const labelLeft = 16.0;
-    const labelRight = 16.0;
+    const labelLeft = 56.0;
+    const labelRight = 80.0;
 
     final drawW = size.width - labelLeft - labelRight;
     final drawH = size.height - labelTop - labelBottom;
@@ -413,6 +416,175 @@ class _CartridgeDiagramPainter extends CustomPainter {
         text: _formatDiameter(neckDia),
         color: textColor,
       );
+    }
+
+    // ── Base/Rim callouts — REQUIRED on every diagram ─────────────────────
+    // Reloaders care about head/rim dimensions more than almost anything
+    // else (bolt-face fit, headspace, pressure ring expansion). These are
+    // always shown when the data is available.
+
+    // Vertical rim diameter dimension on the far left.
+    _drawVerticalDimension(
+      canvas,
+      x: x(0) - 28,
+      y0: centerY - half(usedRimDia),
+      y1: centerY + half(usedRimDia),
+      bracketX: x(0) - 22,
+      label: '${_formatDiameter(usedRimDia)} rim',
+      color: label,
+      textColor: textColor,
+    );
+
+    // Rim thickness — small horizontal callout below the rim protrusion.
+    if (rimThk != null) {
+      _drawHorizontalDimension(
+        canvas,
+        x0: x(0),
+        x1: x(usedRimThk),
+        y: centerY + half(usedRimDia) + 14,
+        bracketY: centerY + half(usedRimDia) + 8,
+        label: '${_formatDiameter(rimThk)} thk',
+        color: label,
+        textColor: textColor,
+        below: true,
+      );
+    }
+
+    // Primer-pocket indicator + label at the case head — purely visual cue
+    // that this end is the head, plus the primer-size info reloaders need.
+    final primerType = cartridge.primerType;
+    if (primerType != null) {
+      // Small filled circle representing the primer pocket on the case base.
+      final pocketPaint = Paint()
+        ..color = stroke.withValues(alpha: 0.45)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(
+        Offset(x(0) + 1.5, centerY),
+        2.5,
+        pocketPaint,
+      );
+      // Label: "Small Rifle primer", "Large Pistol primer", etc.
+      _drawDiameterLabel(
+        canvas,
+        labelX: x(usedRimThk) + 4,
+        labelY: centerY - 5,
+        text: '${_humanPrimer(primerType)} primer',
+        color: textColor,
+      );
+    }
+
+    // Bullet diameter (cartridge mode) — labeled near the ogive base.
+    if (mode == DiagramMode.cartridge) {
+      _drawDiameterLabel(
+        canvas,
+        labelX: x(caseLen) + 6,
+        labelY: centerY - half(bulletDia) - 14,
+        text: '${_formatDiameter(bulletDia)} bullet',
+        color: textColor,
+      );
+    }
+
+    // Bore + groove (chamber mode) — labeled at the chamber mouth on the
+    // right, since those are barrel dimensions, not cartridge dimensions.
+    if (mode == DiagramMode.chamber) {
+      final bore = cartridge.boreDiameterIn;
+      final groove = cartridge.grooveDiameterIn;
+      var rightLabelY = centerY - 8;
+      if (bore != null) {
+        _drawDiameterLabel(
+          canvas,
+          labelX: x(caseLen + 0.05) + 6,
+          labelY: rightLabelY,
+          text: '${_formatDiameter(bore)} bore',
+          color: textColor,
+        );
+        rightLabelY += 12;
+      }
+      if (groove != null) {
+        _drawDiameterLabel(
+          canvas,
+          labelX: x(caseLen + 0.05) + 6,
+          labelY: rightLabelY,
+          text: '${_formatDiameter(groove)} groove',
+          color: textColor,
+        );
+      }
+    }
+  }
+
+  /// Vertical dimension callout (e.g. rim diameter shown on the side).
+  /// `bracketX` is the x where the small horizontal "tick" lines extend
+  /// out from the dimension line; `x` is where the label sits.
+  void _drawVerticalDimension(
+    Canvas canvas, {
+    required double x,
+    required double y0,
+    required double y1,
+    required double bracketX,
+    required String label,
+    required Color color,
+    required Color textColor,
+  }) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1;
+    canvas.drawLine(Offset(x, y0), Offset(x, y1), paint);
+    canvas.drawLine(Offset(x, y0), Offset(bracketX, y0), paint);
+    canvas.drawLine(Offset(x, y1), Offset(bracketX, y1), paint);
+    // Tiny up + down arrowheads.
+    canvas.drawPath(
+      Path()
+        ..moveTo(x, y0)
+        ..lineTo(x - 2, y0 + 4)
+        ..lineTo(x + 2, y0 + 4)
+        ..close(),
+      paint,
+    );
+    canvas.drawPath(
+      Path()
+        ..moveTo(x, y1)
+        ..lineTo(x - 2, y1 - 4)
+        ..lineTo(x + 2, y1 - 4)
+        ..close(),
+      paint,
+    );
+
+    // Rotated text — centered between y0 and y1, just left of the line.
+    final span = TextSpan(
+      text: label,
+      style: TextStyle(
+        color: textColor.withValues(alpha: 0.9),
+        fontSize: 10,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+    final tp = TextPainter(text: span, textDirection: TextDirection.ltr)
+      ..layout();
+    canvas.save();
+    canvas.translate(x - 4, (y0 + y1) / 2 + tp.width / 2);
+    canvas.rotate(-math.pi / 2);
+    tp.paint(canvas, Offset.zero);
+    canvas.restore();
+  }
+
+  /// Convert a primer-type seed key into a human-readable label suitable for
+  /// the case-head callout.
+  static String _humanPrimer(String key) {
+    switch (key) {
+      case 'small-pistol':
+        return 'Small Pistol';
+      case 'large-pistol':
+        return 'Large Pistol';
+      case 'small-rifle':
+        return 'Small Rifle';
+      case 'large-rifle':
+        return 'Large Rifle';
+      case 'berdan':
+        return 'Berdan';
+      case 'rimfire':
+        return 'Rimfire';
+      default:
+        return key;
     }
   }
 

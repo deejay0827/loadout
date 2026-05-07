@@ -1,0 +1,877 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../../database/database.dart';
+import '../../services/backup_crypto.dart';
+import '../../services/cloud_backup.dart';
+import '../../services/drive_backup_service.dart';
+import '../../services/entitlement_notifier.dart';
+import '../../services/export_service.dart';
+import '../../services/icloud_backup_service.dart';
+import '../paywall/paywall_screen.dart';
+
+/// Top-level "Backup & Export" destination reachable from the home drawer.
+///
+/// Free users see a paywall card explaining what Pro unlocks; the local
+/// JSON export tile is always free. Pro users see three cards:
+///
+///   - Local Export (always free): builds a JSON file and hands it to
+///     `share_plus` so the user can drop it anywhere they like.
+///   - iCloud Drive (iOS only): encrypted blob in the app's iCloud
+///     container. Shows a "Sign in to iCloud in Settings" message when
+///     the entitlement isn't enabled / the user isn't signed in.
+///   - Google Drive (cross-platform): encrypted blob in the user's per-app
+///     `appDataFolder`. Cross-device restore path even on iOS.
+///
+/// Passphrases are NEVER persisted — neither to disk, secure enclave,
+/// keychain, nor SharedPreferences. The Backup screen holds them in
+/// memory for the duration of a single operation, then drops them.
+class BackupScreen extends StatefulWidget {
+  const BackupScreen({super.key});
+
+  @override
+  State<BackupScreen> createState() => _BackupScreenState();
+}
+
+class _BackupScreenState extends State<BackupScreen> {
+  late final ExportService _export;
+  late final ICloudBackupService _icloud;
+  late final DriveBackupService _drive;
+
+  bool _busy = false;
+  String? _statusMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    final db = context.read<AppDatabase>();
+    _export = ExportService(db);
+    _icloud = ICloudBackupService();
+    _drive = DriveBackupService();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isPro = context.watch<EntitlementNotifier>().isPro;
+    return Scaffold(
+      appBar: AppBar(title: const Text('Backup & Export')),
+      body: AbsorbPointer(
+        absorbing: _busy,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _PrivacyBlurb(),
+            const SizedBox(height: 16),
+            _LocalExportCard(
+              busy: _busy,
+              onShare: _runLocalExport,
+            ),
+            const SizedBox(height: 16),
+            if (!isPro) ...[
+              _ProUpsellCard(onUpgrade: _openPaywall),
+            ] else ...[
+              if (Platform.isIOS) ...[
+                _CloudCard(
+                  provider: _icloud,
+                  busy: _busy,
+                  onBackup: () => _runCloudBackup(_icloud),
+                  onRestore: () => _runCloudRestore(_icloud),
+                  onListAndManage: () => _openCloudList(_icloud),
+                ),
+                const SizedBox(height: 16),
+              ],
+              _CloudCard(
+                provider: _drive,
+                busy: _busy,
+                onBackup: () => _runCloudBackup(_drive),
+                onRestore: () => _runCloudRestore(_drive),
+                onListAndManage: () => _openCloudList(_drive),
+              ),
+            ],
+            if (_statusMessage != null) ...[
+              const SizedBox(height: 16),
+              _StatusBanner(message: _statusMessage!),
+            ],
+            const SizedBox(height: 24),
+            if (_busy)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────── operations ───────────────
+
+  Future<void> _runLocalExport() async {
+    await _withBusy(() async {
+      final file = await _export.writeExportToTempFile();
+      // Hand off to the system share sheet. The user picks where the
+      // file ends up — Files.app, AirDrop, email, Drive, anywhere.
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        subject: 'LoadOut export',
+      );
+      _setStatus(
+        'Export ready — pick a destination from the share sheet.',
+      );
+    }, errorPrefix: 'Export failed');
+  }
+
+  Future<void> _runCloudBackup(CloudBackupProvider provider) async {
+    if (!await provider.isAvailable()) {
+      _setStatus(_unavailableMessage(provider));
+      return;
+    }
+    final passphrase = await _promptForPassphrase(
+      title: 'Set Backup Passphrase',
+      confirmation: true,
+    );
+    if (passphrase == null) return;
+
+    await _withBusy(() async {
+      final json = await _export.exportToJson();
+      final crypto = BackupCrypto();
+      final blob = await crypto.encrypt(passphrase, json);
+      await provider.upload(blob);
+      _setStatus(
+        'Backup uploaded to ${provider.displayName} '
+        '(${_formatSize(blob.length)}).',
+      );
+    }, errorPrefix: '${provider.displayName} backup failed');
+  }
+
+  Future<void> _runCloudRestore(CloudBackupProvider provider) async {
+    if (!await provider.isAvailable()) {
+      _setStatus(_unavailableMessage(provider));
+      return;
+    }
+    await _withBusy(() async {
+      final backups = await provider.list();
+      if (!mounted) return;
+      if (backups.isEmpty) {
+        _setStatus('No backups found in ${provider.displayName}.');
+        return;
+      }
+      final picked = await _pickBackup(backups, provider.displayName);
+      if (picked == null) return;
+      final confirmed = await _confirmDestructiveRestore(picked);
+      if (confirmed != true) return;
+      final passphrase = await _promptForPassphrase(
+        title: 'Enter Passphrase',
+        confirmation: false,
+      );
+      if (passphrase == null) return;
+      final mode = await _pickMergeMode();
+      if (mode == null) return;
+
+      final blob = await provider.download(picked);
+      final crypto = BackupCrypto();
+      late final String json;
+      try {
+        json = await crypto.decrypt(passphrase, Uint8List.fromList(blob));
+      } on BackupDecryptException catch (e) {
+        _setStatus(e.message);
+        return;
+      }
+      final summary = await _export.importFromJson(json, mode: mode);
+      if (summary.fatalError != null) {
+        _setStatus('Restore aborted: ${summary.fatalError}');
+        return;
+      }
+      _setStatus(
+        'Restore complete — added ${summary.totalAdded} '
+        'rows, skipped ${summary.totalSkipped}'
+        '${summary.hasErrors ? " (with errors)" : ""}.',
+      );
+    }, errorPrefix: '${provider.displayName} restore failed');
+  }
+
+  Future<void> _openCloudList(CloudBackupProvider provider) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _CloudBackupListScreen(provider: provider),
+      ),
+    );
+  }
+
+  // ─────────────── helpers ───────────────
+
+  String _unavailableMessage(CloudBackupProvider provider) {
+    if (provider is ICloudBackupService) {
+      return 'iCloud Drive is unavailable — make sure iCloud Drive is '
+          'turned on in Settings → [your name] → iCloud, and that '
+          'this app has iCloud access.';
+    }
+    return '${provider.displayName} is unavailable — sign in to your '
+        'Google account to back up here.';
+  }
+
+  Future<void> _withBusy(
+    Future<void> Function() action, {
+    required String errorPrefix,
+  }) async {
+    setState(() {
+      _busy = true;
+      _statusMessage = null;
+    });
+    try {
+      await action();
+    } catch (e, stack) {
+      if (kDebugMode) {
+        debugPrint('$errorPrefix: $e');
+        debugPrintStack(stackTrace: stack);
+      }
+      // We deliberately keep error messages generic — never include any
+      // string that could leak the passphrase.
+      _setStatus('$errorPrefix: ${_redact(e)}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+        });
+      }
+    }
+  }
+
+  void _setStatus(String message) {
+    if (!mounted) return;
+    setState(() => _statusMessage = message);
+  }
+
+  /// Strip anything that looks like it could contain a passphrase from an
+  /// error string. Cheap belt-and-suspenders — [BackupCrypto] already
+  /// avoids echoing it, but third-party plugin errors might.
+  String _redact(Object e) {
+    final s = e.toString();
+    return s.replaceAll(RegExp(r'passphrase[^,)\]]*'), 'passphrase=<redacted>');
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / 1024 / 1024).toStringAsFixed(2)} MB';
+  }
+
+  Future<String?> _promptForPassphrase({
+    required String title,
+    required bool confirmation,
+  }) async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => _PassphraseDialog(
+        title: title,
+        confirmation: confirmation,
+      ),
+    );
+  }
+
+  Future<CloudBackupMetadata?> _pickBackup(
+    List<CloudBackupMetadata> options,
+    String providerName,
+  ) async {
+    return showDialog<CloudBackupMetadata>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: Text('Pick a $providerName Backup'),
+        children: [
+          for (final meta in options)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, meta),
+              child: ListTile(
+                title: Text(meta.filename),
+                subtitle: Text(
+                  '${_formatSize(meta.size)} · '
+                  '${meta.modifiedAt?.toLocal() ?? "unknown date"}',
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _confirmDestructiveRestore(CloudBackupMetadata meta) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restore From Backup?'),
+        content: Text(
+          'You are about to import "${meta.filename}". Existing rows that '
+          'share an id with the backup will be either kept or overwritten '
+          '(your choice next). New rows will be added.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Continue'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<ImportMergeMode?> _pickMergeMode() async {
+    return showDialog<ImportMergeMode>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Conflict Mode'),
+        content: const Text(
+          'When a row in the backup has the same id as something already in '
+          'your database, what should LoadOut do?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(ctx, ImportMergeMode.skipDuplicates),
+            child: const Text('Skip Duplicates'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ImportMergeMode.overwrite),
+            child: const Text('Overwrite'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openPaywall() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const PaywallScreen(),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+}
+
+// ─────────────────────── Sub-widgets ───────────────────────
+
+class _PrivacyBlurb extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.lock_outline, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Your Data, Your Custody',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Local export is a plain JSON file you control. Cloud backups '
+              'are encrypted on this device with a passphrase only you '
+              'know — LoadOut never sees the encrypted blob and never '
+              'stores your passphrase. Forgotten passphrases cannot be '
+              'recovered, so write yours down somewhere safe.',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LocalExportCard extends StatelessWidget {
+  const _LocalExportCard({required this.busy, required this.onShare});
+
+  final bool busy;
+  final VoidCallback onShare;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.file_download_outlined,
+                    color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text('Local Export',
+                    style: theme.textTheme.titleMedium),
+                const Spacer(),
+                Chip(
+                  label: const Text('Free'),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.12,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Build a plain-JSON copy of every recipe, firearm, lot, '
+              'and custom field. The file is handed to your share '
+              'sheet — keep it locally, AirDrop it, or upload it '
+              'wherever you like.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: busy ? null : onShare,
+                icon: const Icon(Icons.ios_share),
+                label: const Text('Export & Share'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProUpsellCard extends StatelessWidget {
+  const _ProUpsellCard({required this.onUpgrade});
+  final VoidCallback onUpgrade;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.workspace_premium_outlined,
+                    color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text('Encrypted Cloud Backup',
+                    style: theme.textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'LoadOut Pro unlocks end-to-end encrypted backups to your '
+              'own iCloud Drive (iOS) or Google Drive (any platform). '
+              'Files are encrypted on this device with a passphrase '
+              'only you know — LoadOut never holds the blob.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton(
+                onPressed: onUpgrade,
+                child: const Text('See Pro'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CloudCard extends StatefulWidget {
+  const _CloudCard({
+    required this.provider,
+    required this.busy,
+    required this.onBackup,
+    required this.onRestore,
+    required this.onListAndManage,
+  });
+
+  final CloudBackupProvider provider;
+  final bool busy;
+  final VoidCallback onBackup;
+  final VoidCallback onRestore;
+  final VoidCallback onListAndManage;
+
+  @override
+  State<_CloudCard> createState() => _CloudCardState();
+}
+
+class _CloudCardState extends State<_CloudCard> {
+  bool? _available;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshAvailability();
+  }
+
+  Future<void> _refreshAvailability() async {
+    final available = await widget.provider.isAvailable();
+    if (!mounted) return;
+    setState(() => _available = available);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final providerIcon = widget.provider is ICloudBackupService
+        ? Icons.cloud_outlined
+        : Icons.cloud_queue_outlined;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(providerIcon, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(widget.provider.displayName,
+                    style: theme.textTheme.titleMedium),
+                const Spacer(),
+                _StatusChip(available: _available),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              widget.provider is ICloudBackupService
+                  ? 'Encrypted blob lives in your iCloud Drive under '
+                      'Files.app → LoadOut → Backups. Apple sees an opaque '
+                      'file; only your passphrase unlocks it.'
+                  : 'Encrypted blob lives in a per-app Drive folder only '
+                      'LoadOut can read. Works the same on iOS and Android, '
+                      'so it is the cross-device restore path.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: widget.busy ? null : widget.onBackup,
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                  label: const Text('Back Up Now'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: widget.busy ? null : widget.onRestore,
+                  icon: const Icon(Icons.restore),
+                  label: const Text('Restore'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: widget.busy ? null : widget.onListAndManage,
+                  icon: const Icon(Icons.list_alt),
+                  label: const Text('Manage'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.available});
+  final bool? available;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (available == null) {
+      return const SizedBox(
+        height: 20,
+        width: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+    final ok = available!;
+    return Chip(
+      visualDensity: VisualDensity.compact,
+      backgroundColor: ok
+          ? theme.colorScheme.primary.withValues(alpha: 0.12)
+          : theme.colorScheme.errorContainer,
+      label: Text(ok ? 'Ready' : 'Unavailable'),
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Expanded(child: Text(message, style: theme.textTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PassphraseDialog extends StatefulWidget {
+  const _PassphraseDialog({
+    required this.title,
+    required this.confirmation,
+  });
+
+  final String title;
+  final bool confirmation;
+
+  @override
+  State<_PassphraseDialog> createState() => _PassphraseDialogState();
+}
+
+class _PassphraseDialogState extends State<_PassphraseDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _ctrl1 = TextEditingController();
+  final _ctrl2 = TextEditingController();
+  bool _obscure1 = true;
+  bool _obscure2 = true;
+
+  @override
+  void dispose() {
+    // Wipe the controllers on tear-down so the passphrase doesn't linger
+    // in the heap any longer than necessary.
+    _ctrl1.text = '';
+    _ctrl2.text = '';
+    _ctrl1.dispose();
+    _ctrl2.dispose();
+    super.dispose();
+  }
+
+  String? _validateFirst(String? value) {
+    if (value == null || value.length < BackupCrypto.minPassphraseLength) {
+      return 'Use at least ${BackupCrypto.minPassphraseLength} characters.';
+    }
+    return null;
+  }
+
+  String? _validateSecond(String? value) {
+    if (value != _ctrl1.text) return 'Passphrases do not match.';
+    return null;
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final result = _ctrl1.text;
+      Navigator.of(context).pop(result);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _ctrl1,
+              obscureText: _obscure1,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Passphrase',
+                suffixIcon: IconButton(
+                  icon: Icon(_obscure1 ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscure1 = !_obscure1),
+                ),
+              ),
+              validator: _validateFirst,
+              onFieldSubmitted: (_) => _submit(),
+            ),
+            if (widget.confirmation) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _ctrl2,
+                obscureText: _obscure2,
+                decoration: InputDecoration(
+                  labelText: 'Confirm Passphrase',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscure2 ? Icons.visibility_off : Icons.visibility,
+                    ),
+                    onPressed: () => setState(() => _obscure2 = !_obscure2),
+                  ),
+                ),
+                validator: _validateSecond,
+                onFieldSubmitted: (_) => _submit(),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Text(
+              'LoadOut cannot recover this passphrase. Save it somewhere '
+              'you trust before continuing.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(null),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('OK'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Per-provider list/manage screen. Lets the user nuke old backups one
+/// by one. We surface only filename + size + modified date — enough to
+/// disambiguate, nothing that could leak data.
+class _CloudBackupListScreen extends StatefulWidget {
+  const _CloudBackupListScreen({required this.provider});
+  final CloudBackupProvider provider;
+
+  @override
+  State<_CloudBackupListScreen> createState() => _CloudBackupListScreenState();
+}
+
+class _CloudBackupListScreenState extends State<_CloudBackupListScreen> {
+  late Future<List<CloudBackupMetadata>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.provider.list();
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = widget.provider.list();
+    });
+    await _future;
+  }
+
+  Future<void> _confirmAndDelete(CloudBackupMetadata meta) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Backup?'),
+        content: Text(
+          'Permanently delete "${meta.filename}" from '
+          '${widget.provider.displayName}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await widget.provider.delete(meta);
+      await _refresh();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: $e')),
+      );
+    }
+  }
+
+  String _formatSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / 1024 / 1024).toStringAsFixed(2)} MB';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('${widget.provider.displayName} Backups'),
+      ),
+      body: FutureBuilder<List<CloudBackupMetadata>>(
+        future: _future,
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Error: ${snap.error}'),
+              ),
+            );
+          }
+          final items = snap.data ?? const <CloudBackupMetadata>[];
+          if (items.isEmpty) {
+            return const Center(child: Text('No backups yet.'));
+          }
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.separated(
+              itemCount: items.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, i) {
+                final m = items[i];
+                return ListTile(
+                  leading: const Icon(Icons.lock_outline),
+                  title: Text(m.filename),
+                  subtitle: Text(
+                    '${_formatSize(m.size)} · '
+                    '${m.modifiedAt?.toLocal() ?? "unknown date"}',
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: () => _confirmAndDelete(m),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
