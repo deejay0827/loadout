@@ -1,3 +1,196 @@
+// FILE: lib/services/ballistics/drag_functions.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// This file holds the six classical drag functions used in exterior
+// ballistics: G1, G2, G5, G6, G7, and G8. Each one is a lookup table
+// mapping Mach number (the bullet's speed divided by the local speed of
+// sound) to a dimensionless drag coefficient Cd for one specific REFERENCE
+// bullet shape. The solver reads from these tables every integration step
+// to figure out how much aerodynamic drag to apply.
+//
+// Public API:
+//   * `enum DragModel { g1, g2, g5, g6, g7, g8 }`
+//      Identifier the user (or load configuration) picks to say "this
+//      bullet's published BC is referenced to the G7 standard".
+//      The enum carries two helpers, `label` (long human-readable name
+//      like "G7 (boat-tail, VLD)") and `short` (compact "G7" tag for
+//      chips and table cells).
+//   * `double dragCoefficient(DragModel model, double mach)` — return the
+//     standard-projectile drag coefficient at the given Mach number,
+//     linearly interpolated between adjacent table samples. Below the
+//     first sample it clamps to the first value; above the last sample
+//     it clamps to the last.
+//   * `({double low, double high}) tabulatedRange(DragModel model)` —
+//     report the Mach range the table actually covers. Useful for
+//     sanity checks.
+//   * `double dragRetardation({DragModel model, double mach})` — thin
+//     pass-through wrapper around `dragCoefficient` clamped to mach >= 0.
+//     The solver uses this; the wrapper exists so future versions can
+//     adjust the retardation curve without changing call sites.
+//
+// Private internals:
+//   * `_tableFor(model)` — switch from `DragModel` to the right list of
+//     `[mach, cd]` pairs.
+//   * `_interp(table, mach)` — binary-search the table for the bracketing
+//     pair, then linearly interpolate.
+//   * `_g1`, `_g2`, `_g5`, `_g6`, `_g7`, `_g8` — the actual table data.
+//
+// All functions are pure. No state, no I/O, no allocations beyond the
+// returned numbers.
+//
+// ============================================================================
+// THE PHYSICS / MATH
+// ============================================================================
+// A bullet flying through air experiences a drag force opposite its
+// motion. From first principles:
+//
+//     F_drag = ½ · ρ · v² · A · Cd
+//
+// where:
+//   ρ  = air density (kg/m³)
+//   v  = bullet's airspeed (m/s)
+//   A  = bullet's reference cross-sectional area (m²) = π · D² / 4
+//   Cd = dimensionless drag COEFFICIENT — captures shape and the
+//        complicated dependence on Mach number, separation, wave drag,
+//        etc.
+//
+// `Cd` is what the lookup tables in this file return. It is dimensionless
+// (no units), so it depends only on Mach number for a given bullet shape.
+//
+// ----------------------------------------------------------------------------
+// THE STANDARD-PROJECTILE TRICK
+// ----------------------------------------------------------------------------
+// Computing Cd from first principles requires CFD. Instead, exterior
+// ballistics has used (since the late 1800s) a clever simplification:
+//
+//   1. Define a precisely-shaped REFERENCE bullet with a fixed Cd-vs-Mach
+//      curve. This is what "G1" or "G7" or "G2" means — each name refers
+//      to one specific reference shape.
+//   2. For a real bullet, measure how much drag it actually experiences.
+//      Compare to the reference bullet at the same speed.
+//   3. The ratio is captured in a single number, the BALLISTIC COEFFICIENT
+//      (BC). Specifically: BC = (sectional density of real bullet) /
+//      (form factor relative to reference). A higher BC means the bullet
+//      decelerates more slowly than the reference does at the same speed.
+//   4. To compute drag on the real bullet at any Mach number, look up the
+//      reference Cd from the table and scale by 1/BC (with appropriate
+//      unit conversions; see `solver.dart` for the full expression).
+//
+// The shape of the reference Cd curve depends on the reference bullet's
+// shape:
+//
+//   * G1 (Ingalls): A flat-base bullet with a 2-caliber tangent ogive
+//     nose. This is the OLDEST reference (Major Ingalls, 1890s) and is
+//     still the default published BC for most hunting and pistol bullets.
+//     Its Cd curve has a low subsonic plateau (~0.20-0.25), rises
+//     steeply through the transonic region (~Mach 0.85-1.20), peaks
+//     near Mach 1.4 at ~0.66, then declines slowly through supersonic.
+//   * G7: A 1-caliber-long boat-tail bullet with a 10° boat-tail. The
+//     standard reference for modern long-range bullets — Berger VLDs,
+//     Hornady ELDs, Sierra MatchKings. Its Cd curve is much flatter:
+//     subsonic plateau ~0.12, less dramatic transonic rise, peak ~0.40,
+//     gentler decline. Boat-tail bullets actually MATCH this curve at
+//     long range, so a single-number G7 BC predicts trajectory more
+//     accurately than a single-number G1 BC for those bullets.
+//   * G2 (Aberdeen J): An older reference for conical/spitzer bullets.
+//     Modern use is rare but supported for legacy data.
+//   * G5: Short boat-tail; common for some older 30-caliber hunting
+//     bullets.
+//   * G6: Long flat-base; reference for classic match bullets.
+//   * G8: Very long flat-base; reference for some military bullets.
+//
+// G1 and G7 are tabulated densely (0.05 Mach steps in the supersonic
+// region, finer in the transonic band). G2/G5/G6/G8 use coarser steps
+// because they're seldom selected by users.
+//
+// ----------------------------------------------------------------------------
+// LINEAR INTERPOLATION VS THE REAL CURVE
+// ----------------------------------------------------------------------------
+// Between table samples we use straight-line interpolation. At the 0.05
+// Mach resolution of the G1 / G7 tables, this introduces well below 1%
+// error in Cd — much smaller than the error from approximating a real
+// bullet with a single BC number. For the abbreviated G2/G5/G6/G8 tables
+// the interpolation error is larger but still small compared to other
+// modeling assumptions.
+//
+// ----------------------------------------------------------------------------
+// REFERENCES
+// ----------------------------------------------------------------------------
+// McCoy, R.L., "Modern Exterior Ballistics", 2nd ed., Schiffer
+// Publishing — Tables 8.1 (G1) through 8.8 (G8). Bryan Litz's "Applied
+// Ballistics for Long-Range Shooting" reproduces the McCoy G7 table and
+// is the modern bible on G7 BCs.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Layered above `units.dart`. Imports nothing from the rest of the project
+// other than `dart:math`. Below `projectile.dart` (which has-a `DragModel`)
+// and `solver.dart` (which queries `dragCoefficient` once per RK4
+// substep). Keeping the tables in their own file means:
+//
+//   1. The numbers are easy to audit against published references without
+//      hunting through solver code.
+//   2. Adding G2/G5/G6/G8 (or future custom doppler-radar drag tables) is
+//      a localized change.
+//   3. Any UI surface that wants to plot or list available drag families
+//      depends only on this file, not the solver.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * The transonic region (Mach 0.85-1.20) has the steepest Cd
+//     gradient. The G1 curve more than doubles its Cd between Mach 0.85
+//     and Mach 1.05. If the integration step is too coarse here, the
+//     bullet's velocity decay can be off by several percent at long
+//     range. The solver compensates by switching to a 5× smaller time
+//     step (0.0002s vs 0.001s) inside this band — see `solver.dart`.
+//
+//   * "Subsonic dead": below ~Mach 0.85 the bullet has dropped through
+//     the transonic regime; the trajectory becomes erratic and the
+//     point-mass model breaks down. The solver stops integrating once
+//     speed drops below 100 fps for safety, but useful predictions end
+//     long before that.
+//
+//   * Clamping behavior: a Mach 7 hypersonic projectile would clamp to
+//     the Mach-5 Cd value, under-predicting drag dramatically. We don't
+//     anticipate small-arms users to hit this, but the comment exists.
+//
+//   * Edge case mach < 0: physically impossible (negative velocity is
+//     not a magnitude). `dragRetardation` clamps to 0 to avoid table
+//     read errors; the solver should never feed it a negative speed
+//     since speeds are computed from sqrt of squares.
+//
+//   * Choosing the right model for the bullet matters MORE than table
+//     resolution. Using a G1 BC with a boat-tail bullet over a long
+//     trajectory will systematically under-predict velocity in the
+//     supersonic region and over-predict it through the transonic
+//     transition. Bullet manufacturers' single-number G7 BCs for
+//     boat-tail bullets are usually a better choice for ranges past
+//     ~600 yards.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+//   - lib/services/ballistics/projectile.dart  (Projectile holds a
+//                                                DragModel; nothing
+//                                                else from this file
+//                                                is referenced)
+//   - lib/services/ballistics/solver.dart      (calls dragCoefficient
+//                                                inside `_derivative`
+//                                                every RK4 substep)
+//   - any future UI that wants to draw a Cd curve, list available drag
+//     models, or label a load with its drag family.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None. The drag tables are private final lists initialized at class load.
+// All public functions are pure.
+// ============================================================================
+
 /// Standard drag functions used in exterior ballistics.
 ///
 /// Each drag function defines a curve of dimensionless drag coefficient

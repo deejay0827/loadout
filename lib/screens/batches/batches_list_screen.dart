@@ -1,3 +1,54 @@
+// FILE: lib/screens/batches/batches_list_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the top-level "Batches" list screen. A batch represents a physical
+// quantity of loaded ammunition produced from a recipe — for example "100
+// rounds of 6.5 Creedmoor Hornady ELD-M 140gr loaded on 2026-04-12, fired 37".
+// The screen is a streamed ListView fed by BatchRepository.watchAll(), which
+// returns BatchWithRefs records that join Batches against UserLoads, BrassLots,
+// and UserFirearms so the tile can show recipe name, brass-lot name, and a
+// fire-progress count without doing any further lookups.
+//
+// Each tile renders a status pill computed from firedCount vs count: "Loaded"
+// when nothing has been shot yet, "In Process" while shots remain, "Fired Out"
+// once firedCount has caught up to count. Tapping a tile pushes the batch
+// detail screen; the FAB pushes the batch form for creation; swipe-to-dismiss
+// triggers a confirmation dialog and then deletes via BatchRepository.delete.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Recipes describe how to load ammunition; batches describe specific physical
+// production runs of that ammunition. Without this list a reloader has no way
+// to track "I loaded 50 rounds of recipe X last weekend, with brass lot Y, and
+// I've fired 12 of them at the range so far." It is reachable from the home
+// screen drawer / bottom-nav as the primary entry point into the batching
+// subsystem.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The status pill colors and labels have to be computed from raw counts (no
+// stored status field) and stay in sync with reality if the user edits the
+// batch from the detail screen. Using a Stream avoids a stale-data class of
+// bugs. The Dismissible wrapper has to coordinate with a confirmation dialog
+// before allowing the actual delete, otherwise an accidental swipe nukes a
+// batch the user spent five minutes filling in.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/home/home_screen.dart (mounts it as a tab destination)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads batches via BatchRepository.watchAll() (live SQLite stream). Calls
+// BatchRepository.delete on dismiss. Pushes BatchDetailScreen / BatchFormScreen
+// through the navigator.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

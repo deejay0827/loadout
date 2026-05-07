@@ -1,3 +1,75 @@
+// FILE: lib/screens/load_development/load_development_detail_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Per-session dashboard for a Load Development experiment. Renders five
+// vertical cards: Header (name, type pill, source recipe / firearm chips),
+// Ladder (one expandable rung card per row with the right measurement
+// fields for the path type), Analysis (recommendation engine, only
+// activates at >= 3 rungs of data), Chart (custom-painted SD-vs-charge bar
+// chart for charge ladders, group-MOA-vs-CBTO line chart for seating
+// ladders), and Notes.
+//
+// Per-rung editors differ by session type: charge ladders show velocity
+// average, velocity SD, group size MOA, and an optional fired-flag, while
+// seating ladders show group MOA and vertical-spread MOA. Editing any
+// field rewrites the whole rungs array via LoadDevelopmentRepository.setRungs
+// — we keep an in-memory _rungsOverride so the UI doesn't visibly flicker
+// while the JSON write hits SQLite.
+//
+// The Analysis card is the recommendation engine. For charge ladders it
+// finds the longest cluster of consecutive rungs whose SD falls under a
+// median-based threshold and labels its center as the velocity node; for
+// seating ladders it picks the rung with the smallest combined mean(group,
+// vertical) MOA. After picking a node, "Pick This Node" surfaces two
+// follow-ups: charge nodes offer "Start a seating ladder at this charge"
+// (push the wizard with preselectedSessionType + suggestedStart), seating
+// nodes offer "Update source recipe CBTO" (write the picked CBTO into the
+// linked UserLoads row's cbtoIn column).
+//
+// The chart is hand-rolled with CustomPaint — we deliberately don't depend
+// on fl_chart so the bundle stays small and we don't inherit fl_chart's
+// quirks. The seating chart is a line; the charge chart is a bar chart.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reached from a tile tap on LoadDevelopmentListScreen and via
+// pushReplacement from NewLoadDevelopmentScreen on save. This is the page
+// the reloader actually lives on at the range — entering chrono data and
+// group sizes between strings, then back home looking at the analysis to
+// decide what to load next.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Per-rung text fields can't round-trip every keystroke through the JSON
+// write or typing becomes unusable, so we keep _rungsOverride in memory
+// and persist on field commit / blur. The longest-low-SD-cluster algorithm
+// has to handle gaps in the data (rungs not yet fired) without segfaulting.
+// The "Pick This Node" cascade for charge nodes has to construct a sensible
+// suggestedStart for the seating wizard — which means stripping any
+// existing seating-ladder context from the source. The CBTO write-back
+// for seating winners has to use the source recipe's id captured at
+// session-create time; if the source recipe was deleted in the interim
+// the write must no-op gracefully.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/load_development/load_development_list_screen.dart (tile tap)
+// - lib/screens/load_development/new_load_development_screen.dart
+//   (pushReplace on session creation)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Streams LoadDevelopmentRepository.watchById. Loads firearm / brass lot /
+// source recipe via their repos. Writes rungs JSON via setRungs. On node
+// selection: optionally pushes NewLoadDevelopmentScreen for Path B; or writes
+// CBTO back to UserLoads via RecipeRepository.
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';

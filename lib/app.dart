@@ -1,3 +1,118 @@
+// FILE: lib/app.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// This is the root of the widget tree — the top-level UI component that
+// Flutter renders first. In Flutter, every UI element ("widget") nests
+// inside another widget; the screen you see is the leaves of a tree whose
+// root sits here. `LoadOutApp.build(...)` returns a `MaterialApp`, which is
+// the standard top-level widget that wires up navigation, theming, and
+// localization for an app that follows Google's Material design language.
+//
+// The interesting work this file does is dependency injection. Flutter
+// itself has no built-in DI container, so the LoadOut app uses the
+// `provider` package — a popular, lightweight state management library that
+// builds on top of Flutter's `InheritedWidget` mechanism. The
+// `MultiProvider` widget at the top of `build()` declares every long-lived
+// service the rest of the app needs: the SQLite database, the auth
+// service, the seven repository classes that wrap database tables, the
+// RevenueCat purchases service, and the `EntitlementNotifier` that
+// publishes "is this user a Pro subscriber?" as observable state. The
+// `Provider<T>` form creates objects, and the `ChangeNotifierProvider<T>`
+// form additionally listens for `notifyListeners()` calls so widgets that
+// read it can rebuild when state changes. The `StreamProvider<User?>`
+// turns Firebase Auth's "the signed-in user changed" stream into a value
+// any descendant widget can read with `context.watch<User?>()`.
+//
+// Below `MultiProvider` is the routing logic, implemented as a chain of
+// gate widgets. `_DisclaimerGate` checks `SharedPreferences` for the
+// versioned `disclaimer_accepted_v1` flag and shows the full-screen
+// disclaimer until the user accepts; once accepted it shows a per-launch
+// reminder dialog and renders `_AuthGate`. `_AuthGate` initializes
+// platform deep-link handling (iOS Universal Links / Android App Links via
+// `app_links`) so email-link sign-in callbacks resolve properly, mirrors
+// the Firebase Auth user ID into RevenueCat so entitlements follow the
+// user across devices, then shows either `LoginScreen` or `HomeScreen`
+// based on whether `User?` is null.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Centralizing all provider declarations here means the rest of the app can
+// pull dependencies from `BuildContext` without ever calling a constructor
+// directly. A screen deep in the tree just writes
+// `context.read<RecipeRepository>()` and gets the singleton wired up here.
+// This keeps each screen testable in isolation (you can rebuild that
+// subtree against a fake repository) and avoids passing constructor
+// arguments through every layer.
+//
+// The two gates exist because both checks (legal disclaimer accepted? user
+// signed in?) need to run before the user is allowed near the home
+// screen, and both checks involve async work (reading prefs, listening
+// to Firebase). Splitting them into separate widgets keeps each
+// responsibility narrow and lets the disclaimer state survive sign-out
+// without being tangled up with auth state.
+//
+// `themeMode: ThemeMode.dark` is a deliberate brand decision: the app icon,
+// landing page, and onboarding are all designed in the brass-on-gunmetal
+// dark palette. The light theme exists as a courtesy for users who flip
+// system appearance, but dark is the canonical look.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// `Provider` ordering matters. `EntitlementNotifier` reads `PurchasesService`
+// out of context during its constructor, so `PurchasesService` MUST be
+// listed above it in the `providers:` list. Get this order wrong and you
+// crash on first build with "Could not find PurchasesService in context."
+//
+// Deep-link handling has two surfaces: `appLinks.getInitialLink()` returns
+// the URI that launched the app (cold start case), while
+// `appLinks.uriLinkStream` fires for links that arrive while the app is
+// already running. Both have to be wired up or one of the email-link
+// flows breaks. The subscription must be cancelled in `dispose()` to
+// avoid leaks.
+//
+// `discarded_futures` lints are intentionally suppressed in
+// `_initPurchasesUserSync` — the auth state listener is sync (a `void`
+// callback), but the body needs to call an async method
+// (`setAppUserId`). We genuinely don't want to await it (would block the
+// stream) and we genuinely don't care about the result, so the lint is
+// silenced where it would otherwise complain.
+//
+// `_DisclaimerGate` uses a private `_launchReminderShown` flag instead of
+// state to remember it already showed the per-launch dialog. Without
+// that, every state rebuild after acceptance would re-show the dialog —
+// it has to fire exactly once per app launch.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/main.dart` — instantiates `LoadOutApp` and passes it to `runApp`.
+// - Every screen and widget in `lib/screens/` and `lib/widgets/` reads its
+//   dependencies from the `MultiProvider` declared here via
+//   `context.read<T>()` or `context.watch<T>()`.
+// - `lib/screens/disclaimer/disclaimer_screen.dart` — rendered by
+//   `_DisclaimerGate` until the user accepts.
+// - `lib/screens/auth/login_screen.dart` and
+//   `lib/screens/home/home_screen.dart` — the two terminal destinations
+//   `_AuthGate` switches between.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads/writes `SharedPreferences` for the disclaimer-accepted flag.
+// - Subscribes to two Firebase streams (auth state, deep links) and one
+//   `app_links` stream; subscriptions are tracked for disposal.
+// - Calls `PurchasesService.setAppUserId()` whenever the Firebase Auth
+//   user changes — this round-trips to the RevenueCat servers.
+// - Schedules a post-frame callback to show the launch-reminder dialog;
+//   that involves `showDialog`, which pushes a route on the navigator.
+// - Provides every long-lived service to the widget tree; constructor
+//   side effects of those services (e.g. opening database connections,
+//   setting up Firestore listeners) fire on first read.
+
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';

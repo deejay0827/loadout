@@ -1,3 +1,68 @@
+// FILE: lib/screens/load_development/new_load_development_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Wizard for creating a new Load Development session. Opens with a
+// two-card path picker: Path A "Start with Charge Weight" (walk a powder
+// charge ladder to find a velocity node) or Path B "Start with Seating
+// Depth" (tune CBTO around an existing recipe). Once a path is picked the
+// wizard transitions to a long form with Identification, Components,
+// Firearm, Ladder, and Notes sections.
+//
+// Path A asks for cartridge + components from scratch and a start/end/step
+// triple in grains. Path B requires the user to pick a source recipe from
+// the recipes dropdown — picking pre-fills cartridge, powder, bullet,
+// primer, brass lot, and seeds the start/end/step around the recipe's
+// existing CBTO with a default 0.020" bracket and 0.005" step. Both paths
+// render a live "ladder preview" card under the inputs, recomputed on
+// every keystroke via LoadDevelopmentRepository.generateRungs(); the
+// preview shows rung count and the comma-separated values so the user
+// can sanity-check the ladder before saving.
+//
+// On save we call LoadDevelopmentRepository.buildInitialRungs to pre-create
+// the rung array (one row per ladder value with empty measurement fields),
+// JSON-encode it into rungsJson, insert the session row, and pushReplace
+// to LoadDevelopmentDetailScreen so the user lands ready to enter range
+// data.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reached from the FAB on LoadDevelopmentListScreen for the cold start, and
+// from the LoadDevelopmentDetailScreen analysis card via the
+// preselectedSessionType / preselectedSourceRecipeId / suggestedStart hooks
+// for the "start a Path B at this charge node" flow that lets a user move
+// from a completed charge ladder into a seating ladder without re-entering
+// component data.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Path B's source-recipe pre-fill has to be done twice: once on initState
+// when the wizard opens via the deep-link path with preselectedSourceRecipeId,
+// and once again when the user changes the dropdown selection inside the
+// form. The orElse on firstWhere has to construct a no-op UserLoadRow to
+// satisfy non-null returns, but is only triggered when the recipes list
+// is empty. The ladder preview validates start/end/step on every keystroke
+// — bad values render an italic gray hint, not a snackbar, so the user
+// isn't yelled at while typing. The rungs JSON must be initialized at
+// session-create time, never at first-open of the detail screen, so the
+// detail screen can rely on the array being present.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/load_development/load_development_list_screen.dart (FAB)
+// - lib/screens/load_development/load_development_detail_screen.dart
+//   (analysis-card "start Path B" flow)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads firearms, lots, recipes via their repos. Inserts a new row via
+// LoadDevelopmentRepository.insert and pushReplace to detail screen.
+
 import 'dart:convert';
 
 import 'package:drift/drift.dart' as drift;

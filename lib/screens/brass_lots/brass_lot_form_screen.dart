@@ -1,3 +1,60 @@
+// FILE: lib/screens/brass_lots/brass_lot_form_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Add-or-edit form for a Brass Lot. Five sections vertically: Identification
+// (name, manufacturer, caliber, headstamp/lot number), Quantity & Life
+// (on-hand count, firing count, last-annealed date, anneal method), Measurements
+// (avg weight in grains, case capacity in gr H2O, trim-to and last-trim
+// length in inches, neck wall thickness in inches), Prep Flags (neck turned
+// + neck-turn depth, primer pocket uniformed, flash hole deburred), and
+// Notes. The caliber field is a ComponentField so the user can either pick
+// a known cartridge or type a custom name; on save, a typed-in unknown
+// caliber is persisted as a custom cartridge component so it shows up in
+// future caliber dropdowns.
+//
+// On existing lots, a Quick Actions card is shown at the top of the form
+// with three buttons: Fire Rounds (increments firingCount via a numeric
+// dialog), Mark Annealed (sets lastAnnealed to today + writes anneal method),
+// and Adjust Count (set the on-hand case count, e.g. after losing some
+// cases at the range). Each Quick Action is a focused single-purpose dialog
+// so the user doesn't have to scroll through the whole form to make a
+// common in-the-moment update.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reached from BrassLotsListScreen — both the FAB (new) and tap-to-open
+// (edit). The Quick Actions card is the highest-traffic interaction in the
+// brass-lot subsystem; a reloader at the bench wants Mark Annealed in one
+// tap, not three.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Caliber is free-form text but is also the join key into the cartridges
+// catalog elsewhere — letting a user create a brass lot with caliber
+// "6.5cm" instead of "6.5 Creedmoor" silently breaks downstream lookups.
+// We work around that by ensuring the typed caliber gets registered as a
+// custom cartridge when it isn't already known. Anneal method values are
+// hyphenated lowercase ("salt-bath") to match schema convention while the
+// dropdown labels are human-readable ("Salt Bath"). The Neck Turn Depth
+// field only persists when neckTurned is true — saving 0.0015" depth on a
+// not-turned lot would be misleading metadata.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/brass_lots/brass_lots_list_screen.dart (FAB + tile tap)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Inserts/updates BrassLotRepository on save. ComponentRepository writes a
+// custom cartridge when the caliber is not in the known set. Quick Actions
+// call recordFiring, markAnnealed, setCount on BrassLotRepository.
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

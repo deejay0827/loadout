@@ -1,3 +1,97 @@
+// FILE: lib/theme/app_theme.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Defines the visual identity of the LoadOut app — colors, typography,
+// component shapes, button sizing, input field styling, navigation bar
+// appearance, dialog corner radii, snackbar behavior, and so on. The whole
+// file is one Dart class, `AppTheme`, that exposes two static getters:
+// `AppTheme.dark` and `AppTheme.light`. Each returns a fully-configured
+// Flutter `ThemeData` object. `MaterialApp` (in `app.dart`) reads these
+// and propagates them down through `Theme.of(context)` so every widget
+// picks up consistent styling without having to specify colors locally.
+//
+// The brand palette is brass + gunmetal: a warm metallic gold (`#C5A572`)
+// against a deep cool charcoal (`#1F2937`). These two colors evoke
+// reloading-bench aesthetics — brass cartridge cases on a gun-blue
+// surface — and are the canonical reference for any new UI work.
+// Variations (`brassHighlight`, `brassDeep`, `gunmetalSurface`,
+// `gunmetalSurfaceHigh`, `parchment`, `oxblood`) are the sanctioned
+// derivatives for accents, surfaces, and error states.
+//
+// Both themes use Material 3 (`useMaterial3: true`), Google's current
+// design system. `ColorScheme.fromSeed(...)` is a Material 3 helper that
+// algorithmically generates a tonal palette around a seed color (here,
+// `brass`); the explicit overrides after that lock in the exact brand
+// values rather than letting the algorithm pick. The shared
+// `_buildTheme()` method then takes a finished color scheme and applies
+// component-level overrides (button heights, input border radii, card
+// shapes) so dark and light render with the same geometry, just different
+// pigments.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Without a centralized theme, every screen and button would have to
+// hand-pick colors and dimensions, and the app would drift visually as
+// new code lands. By funnelling all styling decisions through this file,
+// a one-line tweak here propagates to every button in the app, and the
+// brand stays internally consistent.
+//
+// Both `dark` and `light` are exposed even though the app defaults to
+// dark mode (`themeMode: ThemeMode.dark` in `app.dart`). The light theme
+// exists because Material 3 best practice — and Apple's HIG — is to
+// honour the system appearance toggle. Even though dark is the canonical
+// look, a user who has the OS in light mode sees the light variant when
+// the app supplies one.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Material 3's `ColorScheme.fromSeed` is opinionated and will pick its own
+// secondary/tertiary colors that may not match your brand. The pattern
+// here — passing a seed and then explicitly overriding `primary`,
+// `secondary`, `surface`, etc. — is the prescribed way to keep the
+// generated tonal ramps useful for things like ripples and elevated
+// surfaces while still locking the brand colors that matter most.
+//
+// `Color.withValues(alpha: ...)` is the Material 3 / Flutter 3.27+
+// replacement for the older `withOpacity()`. It uses a wider color gamut
+// representation that doesn't lose precision. Switching back to
+// `withOpacity()` will produce a deprecation warning in `flutter analyze`.
+//
+// The serif font is declared as just `'serif'` rather than a specific
+// family — that defers to whatever the platform's default serif is (New
+// York / Times on iOS, Noto Serif or platform default on Android). This
+// avoids bundling a custom font and keeps the binary small, but it does
+// mean the headlines look subtly different on each platform.
+//
+// `WidgetStateProperty` (formerly `MaterialStateProperty`) is how Material
+// 3 lets a property vary by state (selected/hovered/disabled/etc.). The
+// nav bar's `iconTheme` uses it to brighten icons when selected without
+// duplicating the theme entry.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/app.dart` — wires `AppTheme.dark` and `AppTheme.light` into
+//   `MaterialApp`'s `theme` and `darkTheme` slots.
+// - `lib/screens/disclaimer/disclaimer_screen.dart` and other screens
+//   that reach for brand colors directly (e.g. for accent borders or
+//   custom paint) import `AppTheme` and read constants like
+//   `AppTheme.brass`, `AppTheme.gunmetal`.
+// - Indirectly: every widget that calls `Theme.of(context)` or uses any
+//   themable Material widget (Button, Card, AppBar, NavigationBar,
+//   Dialog, SnackBar, TextField) picks up the styling defined here.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None — pure data. The static getters allocate fresh `ThemeData` objects
+// on each call but perform no I/O, no platform calls, no persistence.
+// They are safe to call from any context.
+
 import 'package:flutter/material.dart';
 
 /// LoadOut visual identity. Brass + gunmetal palette — see `ROADMAP.md`

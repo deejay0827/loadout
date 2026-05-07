@@ -1,3 +1,56 @@
+// FILE: lib/screens/process_steps/process_steps_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// User-managed catalog of reloading process steps. The 8 default stages were
+// seeded on a database migration with isStandard = true (Inspect Brass /
+// Resize / Trim / Chamfer & Deburr / Prime / Charge / Seat / Final
+// Inspection). The screen is a ReorderableListView fed by
+// ProcessStepRepository.watchAll(); long-press a row to drag it into a new
+// position, and the new ordering is persisted via repo.reorder(next). The
+// per-tile order on this screen drives the order of the process checklist
+// rendered on BatchDetailScreen.
+//
+// Each tile shows a "Standard" pill on isStandard rows. Standard steps can
+// be edited (rename, change description, toggle which caliber types they
+// apply to) but cannot be deleted — the popup menu suppresses the Delete
+// item for them. A dedicated "Add custom step" FAB launches the same
+// edit dialog with no `existing` row, defaulting to applies-to-rifle.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reloading workflows differ by caliber and by reloader. A pistol shooter
+// might add "Taper Crimp"; a precision rifle shooter might add "Anneal" and
+// "Mandrel Necks". The per-batch checklist on BatchDetailScreen needs a
+// caliber-aware source of truth, and this screen is where the user curates
+// that source of truth.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Standard steps are partially-mutable: name, description, and
+// applies-to-X flags are editable (so a user can rename "Resize" to
+// "Resize / Decap" or hide "Anneal" from rifle), but the row itself can't
+// be removed because every Batch.processStateJson references step names
+// that may have been seeded long ago. ReorderableListView's onReorder
+// callback uses the post-removal index convention (subtract 1 from
+// newIndex when dragging downward), which is easy to get wrong.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/home/home_screen.dart (drawer destination)
+// - lib/screens/batches/batch_detail_screen.dart (reads the same UserProcessSteps
+//   table for its checklist; ordering changes here re-render there)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads ProcessStepRepository.watchAll(). Calls reorder, insertCustom,
+// update, delete on the same repository.
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -1,3 +1,211 @@
+// FILE: lib/repositories/load_development_repository.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Owns all database operations and analysis algorithms for **load
+// development sessions** — the schema-v5 feature that lets a reloader
+// run a structured "ladder test". A ladder test fires a series of
+// almost-identical loads where one variable changes in small steps
+// (powder charge or seating depth), records chronograph data and
+// group sizes per rung, and looks for the sweet spot where the load
+// is most accurate or most consistent.
+//
+// This file has three responsibilities:
+//   1. CRUD over `LoadDevelopmentSessions` rows (the table that holds
+//      the session metadata + a JSON blob of rung measurements).
+//   2. The `LadderRung` value class + JSON codec for parsing /
+//      serializing the per-rung measurement bag.
+//   3. The two analysis algorithms — `analyzeChargeNode` and
+//      `analyzeSeatingNode` — that turn the rung data into a
+//      recommended node value.
+//
+// **Public types:**
+//   * `LadderRung` — immutable record for one row of the ladder. Has
+//     `index`, `value` (charge in grains OR CBTO in inches), `fired`
+//     flag, and a bag of nullable measurement fields (`velocityAvgFps`,
+//     `velocitySdFps`, `velocityEsFps`, `sampleSize`, `groupMoa`,
+//     `verticalMoa`, `horizontalMoa`, `distanceYd`, `pressureNotes`,
+//     `notes`). Provides `toJson`, `fromJson`, `copyWith`, and
+//     `hasData` helpers.
+//   * `ChargeAnalysis` — outcome record from `analyzeChargeNode`,
+//     bundling `rungsAnalyzed`, `medianSd`, `clusterIndices`, and the
+//     `recommendedValue` (the node).
+//   * `SeatingAnalysis` — outcome record from `analyzeSeatingNode`
+//     with `rungsAnalyzed`, `bestIndex`, `bestScore`, and
+//     `recommendedValue` (the recommended CBTO).
+//
+// **Public methods on `LoadDevelopmentRepository`:**
+//
+//   CRUD
+//     * `watchAll()` — live stream of every session, newest-edited first.
+//     * `getAll()` — one-shot variant.
+//     * `getById(id)` / `watchById(id)` — single-row lookups.
+//     * `insert(entry)` / `update(id, entry)` / `delete(id)` — standard CRUD.
+//     * `setRungs(id, rungs)` — JSON-encodes a `List<LadderRung>` and
+//       writes it to the session's `rungsJson` column.
+//     * `setNode(id, nodeValue)` — persist a chosen node value.
+//
+//   Static rung helpers
+//     * `decodeRungs(raw)` — parse the `rungsJson` blob back into a
+//       `List<LadderRung>`. Malformed JSON returns `[]` (the UI stays
+//       usable rather than crashing).
+//     * `generateRungs({start, end, step})` — produce a deterministic
+//       list of rung values from `start` (inclusive) through `end`,
+//       stepping by `step`. Defensive fallbacks for `step <= 0` or
+//       `end <= start`. All values rounded to 4 decimals.
+//     * `buildInitialRungs({start, end, step})` — convenience: wrap
+//       the `generateRungs` output in a `List<LadderRung>` with
+//       sequential indices and no measurements. Used when starting a
+//       new session.
+//     * `round(v, places)` — public stable rounding (used by tests
+//       and the UI to match repository precision).
+//
+//   Static analysis (the heart of the file)
+//     * `analyzeChargeNode(rungs)` — see "WHY HARDER THAN IT LOOKS".
+//     * `analyzeSeatingNode(rungs)` — see same.
+//
+//   Recipe writeback
+//     * `applySeatingNodeToRecipe({recipeId, cbtoIn})` — when the
+//       seating analysis picks a winner, push the chosen CBTO back to
+//       the source recipe by writing `cbtoIn` (rounded to 4 decimals)
+//       on the `UserLoads` row.
+//
+// Pseudo-code for a typical session lifecycle:
+//   final values = generateRungs(start: 41.0, end: 43.0, step: 0.2);
+//   final initialRungs = buildInitialRungs(start: 41.0, end: 43.0, step: 0.2);
+//   await repo.setRungs(sessionId, initialRungs);
+//   // ...user shoots, enters chrono data per rung, calls setRungs again...
+//   final analysis = LoadDevelopmentRepository.analyzeChargeNode(latestRungs);
+//   if (analysis.recommendedValue != null) {
+//     await repo.setNode(sessionId, analysis.recommendedValue!);
+//   }
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Three reasons this gets its own repository:
+//   1. The CRUD shape is unique — sessions store nested measurement data
+//      as a JSON blob, not as joined rows. A dedicated repo is the
+//      cleanest place to own that JSON encode/decode boundary.
+//   2. The analysis algorithms are computationally substantial and
+//      best kept out of the widget layer. Putting them on the
+//      repository keeps them testable in isolation (they're `static`
+//      methods that don't even need a database connection).
+//   3. The recipe writeback (`applySeatingNodeToRecipe`) is a
+//      cross-table operation: a session's analysis result writes back
+//      to `UserLoads`. Owning that cross-table write here keeps the
+//      flow visible in one file.
+//
+// Constructed in `lib/app.dart` as `LoadDevelopmentRepository(db)` and
+// provided to the widget tree.
+//
+// (For Dart/Flutter readers new to this idiom: `static` methods on a
+// class are just namespaced free functions — they don't need an
+// instance and don't touch instance state. The analysis algorithms
+// are `static` precisely so they can be called and tested without
+// constructing a repository or opening a database.)
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// 1. **Storing rungs as JSON instead of rows.** `Rungs` could live in
+//    a dedicated `LoadDevelopmentRungs` table with foreign keys, but
+//    we store them as a JSON-encoded text column on the session.
+//    Tradeoffs:
+//      Pro: a session is loaded with one query; saving rungs is one
+//      atomic write; schema migrations don't need to touch an
+//      auxiliary table; the rung shape can evolve without a migration
+//      because `LadderRung.fromJson` ignores unknown keys and provides
+//      defaults for missing ones.
+//      Con: you cannot SQL-query across rungs (e.g. "find every rung
+//      with SD < 5"); every analysis happens in Dart on the decoded
+//      list.
+//      Mitigation: `decodeRungs` is forgiving — malformed JSON, missing
+//      keys, and stray types all degrade to sensible defaults so the
+//      UI stays usable even if a future migration leaves a session in
+//      a half-decoded state.
+//
+// 2. **`analyzeChargeNode` (the OCW / Satterlee node finder).**
+//    Algorithm:
+//      a) Filter to rungs that have a `velocitySdFps`. Need at least 3
+//         to do anything useful; below that, return an empty result.
+//      b) Compute the **median** velocity SD across those rungs (not
+//         the mean — median is robust against one wild rung).
+//      c) Walk the rungs in index order looking for the longest run
+//         of CONSECUTIVE rungs whose SD is `<= median`.
+//      d) The recommended node is the value of the rung at the centre
+//         of the winning run (rounded down for even-length clusters
+//         via integer division).
+//    Why "longest consecutive low-SD run"? Reloaders call this an
+//    "OCW node" (Optimal Charge Weight) or "Satterlee node": when
+//    several adjacent charge weights all produce similar (low)
+//    velocity spread, the load is on an internal-pressure plateau and
+//    is forgiving of small powder-charge variation — meaning your
+//    load tolerates the tiny day-to-day differences between thrown
+//    charges and humidity-affected powder.
+//
+// 3. **`analyzeSeatingNode` (the seating-depth optimizer).**
+//    Algorithm:
+//      a) For each rung that has at least one of `groupMoa` or
+//         `verticalMoa`, compute the unweighted mean of whatever
+//         values are present.
+//      b) The rung with the SMALLEST mean wins.
+//    Why average group + vertical (and not average group +
+//    horizontal)? In seating-depth ladders, vertical dispersion is the
+//    primary thing the user is trying to flatten — large horizontals
+//    in a seating ladder usually point at wind or shooter error rather
+//    than the load itself. Vertical alone can be too noisy if only
+//    a few shots are fired, so we average it with overall group size
+//    to add a bit of stability.
+//
+// 4. **`applySeatingNodeToRecipe` is deliberately conservative.** It
+//    writes only `cbtoIn`, not `seatingDepthIn`. We could derive the
+//    seating depth from CBTO + bullet base-to-ogive, but that math is
+//    too brittle to do silently — leave the second number to the user.
+//    The comment in the method preserves this rationale.
+//
+// 5. **`generateRungs` has loop-safety.** The `while (v <= end + 1e-9)`
+//    loop has a `safety < 1000` cap to prevent infinite loops if
+//    floating-point drift makes the increment fail to advance. The
+//    `1e-9` epsilon on the loop bound and the explicit final-rung
+//    clamp ensure the user gets exactly the rungs they asked for
+//    even when `end - start` isn't an exact multiple of `step`.
+//
+// 6. **The `_unset` sentinel pattern in `copyWith`.** Dart's named
+//    parameters can't distinguish "argument not passed" from
+//    "argument passed as null" for nullable types. To support
+//    "explicitly clear this nullable field", `copyWith` uses a private
+//    sentinel object (`_unset`) as the default. `identical(arg, _unset)`
+//    means the caller didn't touch the field; anything else means
+//    they did, even null. This is a standard Dart trick for nullable
+//    `copyWith`.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/load_development/* (the load-development screens for
+//   listing, creating, editing, and analyzing ladder sessions) —
+//   primary owner; calls every method on this repository.
+// - lib/screens/loads/load_form_screen.dart — passively benefits from
+//   `applySeatingNodeToRecipe` (the recipe row gets `cbtoIn` updated
+//   when the user accepts a seating node from the development screen).
+// - lib/app.dart — constructs and provides the singleton.
+// - test/* — the static analysis methods and `generateRungs` /
+//   `decodeRungs` are designed to be tested in isolation without a
+//   database.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads and writes against the local SQLite database via drift. JSON
+// encode/decode at the boundary for `rungsJson`. **Cross-table write:**
+// `applySeatingNodeToRecipe` writes to `UserLoads`, not to
+// `LoadDevelopmentSessions`, so this repository does write outside
+// its primary table. That single cross-table write is the deliberate
+// price of keeping the seating-node-applies-to-recipe flow visible in
+// one file rather than spread across two repositories.
+
 import 'dart:convert';
 import 'dart:math' as math;
 

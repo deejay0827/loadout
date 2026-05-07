@@ -1,3 +1,62 @@
+// FILE: lib/screens/batches/batch_detail_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Per-batch dashboard with three vertical regions. The top is an
+// Identification card showing recipe / caliber / brass-lot / firearm with an
+// edit button that pushes BatchFormScreen. The middle is a large "Fired Y of
+// X" counter with a primary "Fire Rounds" button. The bottom is the per-batch
+// process checklist — a list of CheckboxListTile widgets driven by every
+// UserProcessSteps row, with persistence into Batches.processStateJson.
+//
+// The Fire Rounds flow is the load-bearing interaction: it opens an integer
+// prompt, clamps the entered value to remaining rounds, then calls
+// BatchRepository.recordFiring AND BrassLotRepository.recordFiring (when the
+// batch is linked to a brass lot) so the lot's firingCount stays accurate.
+// This cascade is the whole reason the Brass Lot dropdown lives on the form.
+//
+// The checklist is driven by caliber-type filtering: the recipe's caliber is
+// looked up against CartridgeRow.type, and only steps whose
+// appliesToPistol/Rifle/Shotgun matches the cartridge type are shown. Steps
+// not in the stored JSON default to false; steps in the stored JSON but
+// missing from the live steps table are dropped silently.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reached from BatchesListScreen on tap. This is where the user spends most
+// of their batch-related time — checking off "trim brass / chamfer /
+// deprime" while loading, then later "Fire 20 rounds" and watching the
+// counter tick down. Without it the batch is a write-once record.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The dual-write to Batches and BrassLots needs to capture provider refs
+// before any await so the Flutter analyzer doesn't complain about
+// post-async-gap context use. The checklist needs an in-state override
+// (_checklistOverride) to keep the UI responsive while the JSON write to
+// SQLite is in flight — without it the checkbox would visibly flicker.
+// Caliber-type filtering must default to "rifle" when the recipe has no
+// caliber or the caliber doesn't match a known cartridge — rifle is also
+// the seeded default for the eight standard stages, so it's the safer
+// fallback. The merge between stored state and live steps must be done
+// every build so adding/removing steps in the catalog doesn't desync.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/batches/batches_list_screen.dart (tile-tap destination)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Streams BatchRow from BatchRepository.watchById; loads recipe, brass lot,
+// firearm, process steps, and cartridges via their repos. Writes
+// processStateJson via BatchRepository.setProcessState. On Fire Rounds:
+// BatchRepository.recordFiring + (optional) BrassLotRepository.recordFiring.
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';

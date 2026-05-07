@@ -1,3 +1,89 @@
+// FILE: lib/screens/auth/login_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// The unauthenticated landing surface. Renders an email + password form, an
+// "Or Continue With" divider, and four social provider buttons (Google,
+// Apple, Microsoft, Yahoo). Beneath those sits a passwordless "Email me a
+// sign-in link" affordance and a "Continue as Guest" button for anonymous
+// sign-in. Email/password mode is toggleable between Sign In and Create
+// Account via an inline link, and a "Forgot Password?" affordance opens a
+// small dialog that prompts for an email and dispatches a Firebase password
+// reset.
+//
+// The screen is a `StatefulWidget` because the email/password fields, the
+// "creating account vs. signing in" toggle, the busy spinner, and the
+// inline error text all live as widget state. Submission flows route
+// through the `_runAuth` helper, which:
+//
+// 1. Sets `_busy = true` so every button (and the form) disables.
+// 2. Awaits the supplied async callback inside a try/catch.
+// 3. On `FirebaseAuthException`, surfaces the message inline.
+// 4. On unrelated exceptions, runs `_isCancellation` to silently swallow
+//    user-cancelled provider sheets (the Google Sign-In cancellation code,
+//    the Apple `canceled` enum, and Firebase's `web-context-canceled`).
+// 5. Resets `_busy = false` regardless of outcome.
+//
+// All seven sign-in methods share that error-handling pipeline, so the UI
+// is consistent across providers.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// This is the unauthenticated branch of `_AuthGate` in `lib/app.dart`. The
+// gate watches a `StreamProvider<User?>` and renders this screen whenever
+// the current Firebase user is null. The disclaimer has already been
+// accepted by this point in the flow, so login is the last hop before the
+// user lands on `HomeScreen`.
+//
+// Seven sign-in methods are intentional: each one is wired through
+// `AuthService` and corresponds to one configured provider in the Firebase
+// project. See `CLAUDE.md` for the full list and the JWT/secret rotation
+// chores that come with each.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The cross-device email-link UX is the trickiest piece. When the user
+// taps "Email me a sign-in link", `AuthService.sendEmailLink` stashes the
+// email address in `SharedPreferences` under `auth.pendingEmailLinkEmail`
+// before sending. When the user opens the email on the same device, the
+// `app_links` deep-link handler in `lib/app.dart` reads the pending email
+// and calls `AuthService.tryCompleteEmailLink`. If they open the email on
+// a different device the prefs entry won't exist there, and the link
+// completion currently fails — that's tracked as a known gap in
+// `LAUNCH_CHECKLIST.md`.
+//
+// `_isCancellation` is also non-obvious: the three providers each surface
+// "user dismissed the platform sheet" through a different exception type,
+// and silently swallowing them (instead of showing an error) avoids
+// flashing scary red text every time someone backs out of the Google
+// chooser.
+//
+// `_ProviderButton` styling deserves a note: each social button is an
+// `OutlinedButton.icon` with a left-aligned label, fixed 48-pixel height,
+// and a `FaIcon` from `font_awesome_flutter` for brand parity. They are
+// stacked rather than gridded because the labels ("Continue with Google")
+// are too long to row up on a phone width.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/app.dart` (`_AuthGate.build`) — renders `LoginScreen()` whenever
+//   the auth stream emits a null user.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Calls `AuthService.signIn` / `.signUp` / `.sendEmailLink` /
+//   `.signInAnonymously` / `.signInWithGoogle` / `.signInWithApple` /
+//   `.signInWithMicrosoft` / `.signInWithYahoo` / `.sendPasswordResetEmail`.
+// - Triggers a Firebase Auth state change on success — `_AuthGate` will
+//   then swap this screen for `HomeScreen` automatically.
+// - Shows a `SnackBar` confirmation when an email link is sent or a
+//   password reset is dispatched.
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';

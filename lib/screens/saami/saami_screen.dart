@@ -1,3 +1,115 @@
+// FILE: lib/screens/saami/saami_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// The SAAMI Specs tab — tab 4 of `HomeScreen`'s bottom nav. A read-only
+// reference surface. The user picks a cartridge from a fuzzy-search
+// `_CartridgePicker`, and the screen renders a richly detailed
+// breakdown sourced from the `Cartridges` Drift table:
+//
+// * `_HeaderCard` — large name + chips for type, case subtype, SAAMI
+//   doc reference, parent case, and year introduced; an "Also Known
+//   As" list of aliases.
+// * `_DimensionsCard` — bullet diameter, case length, max COAL, body
+//   diameter, neck and shoulder geometry (when applicable), rim
+//   diameter / thickness. For non-bottleneck cases the shoulder
+//   /neck-length / base-to-shoulder rows are hidden entirely.
+// * `_BoreRiflingCard` — bore + groove diameter and twist rate.
+// * `_PressurePrimingCard` — max average pressure (PSI) and primer
+//   type.
+// * `_ShotgunCard` — replaces the dimensions/bore/pressure trio for
+//   `cartridge.type == 'shotgun'`; renders gauge, shell length, and
+//   max average pressure.
+// * `_DiagramsSection` — Pro-gated parametric `CartridgeDiagram`
+//   widgets (cartridge profile + chamber profile) wrapped in a
+//   `ProGate(feature: ...)`.
+// * `_DisclaimerFooter` — italicised reminder that values are
+//   reference, not gospel.
+//
+// The whole layout lives inside a single `CustomScrollView`. The
+// picker is a non-pinned `SliverToBoxAdapter` at the top; the
+// currently-selected cartridge name is a small pinned
+// `SliverPersistentHeader` with `_SelectedNameHeaderDelegate` so the
+// label stays visible while the user scrolls through long detail
+// cards.
+//
+// `_Format` is a small static helper class with `diameter`, `length`,
+// `angle`, `pressure`, `primerType`, and `gauge` formatters. Each one
+// returns the em-dash `—` for nulls so missing values render
+// uniformly across cards.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reloaders cross-reference SAAMI and CIP cartridge specifications
+// constantly — case length, max COAL, max average pressure, neck
+// diameter — and bouncing to a PDF mid-process is a friction point.
+// LoadOut bundles the reference data as JSON (see
+// `assets/seed_data/cartridges.json`) and seeds it into the local
+// `Cartridges` table, so this tab is fully offline-capable. It's
+// docked at bottom-nav slot 4.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The cartridge picker was originally a `DropdownMenu`. That broke
+// hard when wrapped in a pinned `SliverPersistentHeader`: the
+// menu's overlay positioning is computed against the
+// `OverlayEntry`'s ancestor `RenderObject` chain, and pinning the
+// header causes the chain's layout constraints to mutate during the
+// same frame the overlay is being placed. The result was a
+// `!semantics.parentDataDirty` layout-loop assertion on every
+// frame — the screen would render but the picker overlay flashed
+// off in debug builds.
+//
+// The fix was to (a) replace `DropdownMenu` with `Autocomplete<CartridgeRow>`
+// for fuzzy token-matching search, and (b) leave the picker in a
+// non-pinned `SliverToBoxAdapter` so its overlay positions against
+// stable layout. Only the small static cartridge-name chip is
+// pinned via `SliverPersistentHeader`, because it has no overlay
+// or focus concerns.
+//
+// `_CartridgePicker._matches` is the search heuristic: split the
+// query on whitespace, drop empties, and require every remaining
+// token to appear (case-insensitively) in either the cartridge name
+// or the JSON-encoded aliases blob. So `"6 GT"` matches `"6mm GT"`
+// because the tokens `"6"` and `"gt"` both appear in `"6mm gt"`.
+// The OS-level autocorrect / autocomplete suggestions on the picker
+// field are explicitly disabled (`autocorrect: false`,
+// `enableSuggestions: false`, `textCapitalization: none`) — cartridge
+// names are short technical strings the OS shouldn't be guessing
+// at, and we'd had a user report a "get x" suggestion chip
+// appearing.
+//
+// `_DimensionsCard._hasShoulder` is a small but important detail:
+// straight-wall and tapered straight cases (most pistol cartridges,
+// .45-70, .350 Legend, etc.) don't have a defined shoulder, and
+// SAAMI doesn't publish shoulder / neck-length / base-to-shoulder
+// dimensions for them. The card hides those rows entirely instead
+// of rendering em-dashes that look like missing data. The check is
+// `caseSubtype.contains('bottleneck')` — both `"bottleneck"` and
+// `"bottleneck-belted"` qualify.
+//
+// `CartridgeDiagram` integration is Pro-gated: the entire diagrams
+// section is wrapped in `ProGate(feature: 'Visual Cartridge & Chamber
+// Diagrams', child: ...)`. Free users see the pro-gate's upgrade
+// affordance; Pro users see the parametric drawings.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/home/home_screen.dart` — slotted at index 4 of
+//   `_pages` and rendered inside the `IndexedStack`.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Subscribes to `ComponentRepository.watchCartridges()` for the
+//   lifetime of the StreamBuilder.
+// - No writes — the screen is read-only.
+// - Renders `CartridgeDiagram` widgets, which are pure CustomPainters.
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';

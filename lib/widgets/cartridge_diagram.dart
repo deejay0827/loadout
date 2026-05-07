@@ -1,3 +1,186 @@
+// FILE: lib/widgets/cartridge_diagram.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the side-profile drawing that appears on the SAAMI screen when
+// the user picks a cartridge. Two flavors:
+//
+//   - `DiagramMode.cartridge` — the loaded round (case + bullet seated to
+//     max COAL).
+//   - `DiagramMode.chamber`   — the chamber the round fits into (same
+//     case shape minus the bullet, plus a small freebore lip past the
+//     case mouth).
+//
+// Implementation strategy: pure `CustomPaint` over a `CustomPainter`. No
+// raster assets are bundled — every line is drawn at runtime from the
+// numeric SAAMI/CIP fields on the `CartridgeRow` (case length, body
+// diameter, neck diameter, shoulder angle, rim diameter, rim thickness,
+// primer type, etc.). That keeps the app binary tiny while letting the
+// drawing scale crisply on every device.
+//
+// Public API (`CartridgeDiagram`):
+//   - `cartridge` — the drift `CartridgeRow` from the cartridges table.
+//   - `mode`      — `DiagramMode.cartridge` (default) or `.chamber`.
+//   - `height`    — target height in logical pixels; width is taken from
+//                    the parent. Default 200.
+//
+// Top-level dispatch in `build()`:
+//   - Shotguns get their own simple silhouette via `_ShotshellDiagramPainter`
+//     (rim/headspace shape doesn't apply; what matters is gauge + shell
+//     length).
+//   - Pistol/rifle cartridges flow into `_CartridgeDiagramPainter`. Need
+//     at minimum case length + body diameter + bullet diameter to draw
+//     anything meaningful; missing those triggers `_Placeholder`.
+//
+// `_Placeholder` shows a dashed rounded rectangle with an italicized
+// "Diagram unavailable" hint. The dashed border is itself a custom
+// painter (`_DashedBorderPainter`) that walks the path metrics and
+// alternates `extractPath` segments with gaps.
+//
+// `_CartridgeDiagramPainter` is the heart of the file. Its `paint`
+// method does, in order:
+//   1. Pulls every dimensional field from the row and decides which are
+//      present (rim thickness and shoulder angle are optional).
+//   2. Computes the longest dimension (`overall`) and the largest
+//      diameter (`maxDia`), then derives a uniform pixel-per-inch
+//      `scale` so the whole drawing fits inside the available canvas
+//      minus margins. The left margin is wider than the right because
+//      it has to hold the rim-diameter callout.
+//   3. Builds the TOP HALF of the silhouette as a `Path`, going
+//      left-to-right: rim → body → shoulder taper → neck → mouth, then
+//      either the bullet ogive (cartridge mode) or a freebore lip
+//      (chamber mode). The shoulder taper uses the actual shoulder
+//      angle when available; otherwise it falls back to using neck
+//      length as a proxy for taper end.
+//   4. Mirrors that top-half path across the centerline using the
+//      `_mirrorAcross` 4x4 matrix, draws fill + stroke, and overlays a
+//      thin dashed centerline.
+//   5. Draws all the dimension callouts: case length on top, max COAL on
+//      bottom, body / shoulder-angle / neck inline labels, RIM DIAMETER
+//      vertical callout on the far left, RIM THICKNESS horizontal
+//      callout below the rim, primer-pocket dot + primer-type label,
+//      and (cartridge mode) bullet diameter on the right or (chamber
+//      mode) bore + groove diameters on the right.
+//
+// `_ShotshellDiagramPainter` is the simpler partner. Shotshells are
+// approximated as two rounded rectangles (brass head + plastic hull)
+// with a vertical crimp tick at the mouth. Bore diameter for non-.410
+// gauges comes from the gauge formula `bore ≈ 1.67 / gauge^(1/3)`,
+// .410 is special-cased as 0.410".
+//
+// Shared private helpers used by `_CartridgeDiagramPainter`:
+//   - `_drawHorizontalDimension` — full callout (line + brackets +
+//      arrowheads + label, above or below).
+//   - `_drawVerticalDimension`   — same idea, vertical, with the label
+//      rotated 90° so it reads bottom-to-top.
+//   - `_drawArrow`               — tiny triangular arrowhead at the
+//      end of a dimension line.
+//   - `_drawDiameterLabel`       — single text label, no line.
+//   - `_drawDashedLine`          — used for the centerline.
+//   - `_humanPrimer`             — converts seed-data primer keys
+//      (`small-rifle`, `large-pistol`, …) to display strings
+//      (`Small Rifle`, `Large Pistol`).
+//   - `_mirrorAcross(y)`         — returns a `Float64List` shaped like
+//      a 4×4 column-major matrix that flips coordinates around the
+//      horizontal line `y`. `Path.transform` insists on this exact
+//      shape; you cannot pass a `Matrix4` directly.
+//   - `_formatLength` / `_formatDiameter` — adaptive precision (length
+//      always 3 decimals, diameter 2 if ≥ 0.5", 3 otherwise).
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// The SAAMI screen wants to be the in-app substitute for SAAMI's PDF
+// drawings. PDFs are large, copyrighted, and impossible to re-style for
+// dark mode or different screen sizes. Rendering from numeric dimension
+// fields gives us:
+//
+//   - A drawing that scales perfectly to any device.
+//   - Theme-aware coloring (the stroke is the LoadOut brass color, the
+//     text uses the active text-on-surface color).
+//   - Zero binary footprint per cartridge.
+//   - The freedom to pick which dimensions to emphasize. SAAMI drawings
+//     commit equal visual weight to every callout; the LoadOut diagram
+//     deliberately calls out RIM DIAMETER and RIM THICKNESS prominently
+//     because reloaders care about head/rim dimensions more than
+//     anything else. Bolt-face fit, headspace, and pressure-ring
+//     expansion all hinge on rim geometry. Marketing dimensions that
+//     don't help the reloader (overall length labels in mm, etc.) get
+//     dropped.
+//
+// The widget reads only from a `CartridgeRow` instance, so callers can
+// hand it fresh rows from the seeded reference table or hypothetically
+// hydrated rows from an unsaved cartridge. There is no I/O inside
+// `paint`.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// 1. SCALING TO TWO BUDGETS AT ONCE. The diagram must fit both the
+//    horizontal budget (`overall`, the longest dimension) and the
+//    vertical budget (`maxDia`, the widest cross-section). We compute
+//    `scale = min(scaleByLen, scaleByDia)` so neither axis ever overflows.
+//    Calling either budget independently produces a clipped or
+//    distorted drawing.
+// 2. PATH.TRANSFORM TAKES Float64List, NOT Matrix4. Flutter's
+//    `Path.transform` is implemented around a column-major 4x4 matrix
+//    represented as a flat `Float64List(16)`. You can hand it a Matrix4
+//    by calling `.storage`, but a hand-built one is more explicit. The
+//    mirror matrix is mostly identity, with `m[5] = -1` (flip y) and
+//    `m[13] = 2y` (re-translate so the line `y` is fixed). Get either
+//    one wrong and the bottom half ends up flipped about the wrong
+//    axis or shifted off-canvas.
+// 3. SHOULDER-ANGLE GEOMETRY. Many cartridge rows have a shoulder angle
+//    in degrees but no explicit base-to-neck length. We compute the
+//    horizontal taper length from the radial step and the angle:
+//    `taperLen = ((shoulderDia - neckDia) / 2) / tan(angle)`. Some rows
+//    lack the angle entirely (the older seed dataset), so we fall back
+//    to using `neckLen` as a proxy when present, or a worst-case
+//    "shoulderDia - neckDia" if even that's missing. Without the
+//    fallbacks the path collapses to a vertical jump at the shoulder.
+// 4. NULL-SAFETY VS. NULLABLE FIELDS. Dart's flow-analysis only
+//    promotes a nullable to non-null inside the same scope where the
+//    null check happens, and only against final variables. We assign
+//    `shoulderDia`, `neckDia`, `baseToShoulder`, etc. to local `final`
+//    references at the top of `paint`, then test `hasShoulder` once and
+//    let the analyzer promote those locals everywhere `hasShoulder` is
+//    true. Doing the null checks in-line at each use site would force
+//    bang operators (`!`) on every dereference.
+// 5. STRAIGHT-WALL VS. BOTTLENECK. `caseSubtype == 'straight'`
+//    short-circuits the shoulder logic — straight-wall pistol cases
+//    (`.45 ACP`, `.38 Spl`) don't have a shoulder, just body straight
+//    to mouth.
+// 6. CHAMBER MODE EXTRA. Chambers extend slightly past the case mouth
+//    to model the freebore (the throat ahead of the rifling). We add
+//    `+0.05"` of extra length and cap the silhouette there with a
+//    short vertical drop down to the centerline.
+// 7. DIMENSION-LABEL OVERLAP. The horizontal margins (`labelTop = 28`,
+//    `labelBottom = 32`, `labelLeft = 56`, `labelRight = 80`) were
+//    tuned by eye. They reserve enough space for the largest expected
+//    label (the vertical rim-diameter callout, which has rotated text)
+//    without leaving the silhouette tiny.
+// 8. SHOTSHELLS ARE A DIFFERENT BEAST. Gauges aren't expressed as a
+//    diameter — they're a count (12-gauge = 12 lead balls of bore
+//    diameter weigh one pound). We back the bore out from the gauge
+//    formula and special-case .410. Shotshells also lack rim
+//    geometry that matters for the reloader the way rifle / pistol
+//    rim geometry does, so the painter is far simpler.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/saami/saami_screen.dart — the SAAMI lookup screen renders
+//   one diagram in cartridge mode and one in chamber mode side-by-side
+//   (or stacked on narrow screens) per selected cartridge.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - None. `paint` is a pure function of the `CartridgeRow` it was given
+//   and the available canvas size. No I/O, no SharedPreferences, no
+//   network.
+
 import 'dart:math' as math;
 import 'dart:typed_data';
 

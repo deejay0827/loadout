@@ -1,3 +1,126 @@
+// FILE: lib/repositories/component_repository.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// This is the "bridge" between the seeded reference catalog (cartridges,
+// powders, bullets, primers, brass, reference firearms) and the UI dropdowns
+// that let users pick a component when building a recipe. It returns flat,
+// alphabetized lists of human-readable strings that can be dropped straight
+// into an autocomplete or dropdown widget.
+//
+// Public methods at a glance (all live on `ComponentRepository`):
+//   * `allCartridges()` / `watchCartridges()` / `cartridgeByName(name)` —
+//     read the full cartridge reference set (one-shot or live stream),
+//     plus a single-row lookup by exact name.
+//   * `componentLabels(kind)` — the workhorse. Given a kind string of
+//     `"powder" | "bullet" | "primer" | "brass" | "cartridge"`, returns
+//     the COMBINED list of formatted labels for both reference rows and
+//     user-added custom components. Each kind formats differently:
+//       - powder: `"<Mfg> <Powder Name>"` (e.g. `"Hodgdon Varget"`)
+//       - bullet: `"<Mfg> <Line> <Weight>gr"` (e.g. `"Berger Hybrid 105gr"`)
+//       - primer: `"<Mfg> #<PrimerId>"` (e.g. `"Federal #210M"`)
+//       - brass:  `"<Mfg>"` (e.g. `"Lapua"`)
+//       - cartridge: just the cartridge name (e.g. `"6.5 Creedmoor"`)
+//     Pseudo-code call: `final powders = await repo.componentLabels('powder');`
+//   * `addCustomComponent(kind, name, notes)` — upsert a user-defined
+//     component. UI calls this when the user types a name not in the
+//     reference list and wants to save it.
+//   * `primerByLabel(label)` — parses a string like `"Federal #210M"`
+//     and returns the matching `PrimerRow`. Used by the recipe form to
+//     auto-fill primer size when a user picks a known primer from the
+//     dropdown.
+//   * `primerManufacturers()` / `primersByManufacturer(name)` — feed the
+//     two halves of the cascading primer field on the recipe form
+//     (brand dropdown + product dropdown).
+//   * `primerProductLabel(p)` / `primerStorageLabel(mfg, p)` /
+//     `splitPrimerStorageLabel(label)` — three static label helpers that
+//     keep the on-screen format and the on-disk format in sync.
+//   * `allReferenceFirearms()` — joins firearms reference rows with their
+//     manufacturers and decodes the JSON-encoded calibers list. Used by
+//     the firearm form's "pick from catalog" mode.
+//
+// Note on token-based fuzzy matching (the SAAMI cartridge picker): that
+// happens upstream in the picker widget. This file just provides the raw
+// data; the matching algorithm lives in the widget layer.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// LoadOut uses the **repository pattern**. A repository is a thin Dart class
+// that owns all of the database queries for one logical area of the app
+// (here: components / reference data). Screens and widgets never talk to
+// drift directly — they call `componentRepository.componentLabels('powder')`
+// and get back a `List<String>`. This means:
+//   * SQL/drift internals stay in one place. If we change the schema or
+//     swap drift for another ORM, we only edit this file.
+//   * Screen widgets stay free of database boilerplate (joins, ordering,
+//     companion objects). Their `build` methods read like UI code, not
+//     query code.
+//   * Repositories can be mocked in tests — the screen depends on a
+//     `ComponentRepository` interface, not on a live SQLite database.
+//
+// The UI reaches this repository through `Provider`. In `lib/app.dart` we
+// construct a single `ComponentRepository(db)` at startup and provide it to
+// the widget tree. A screen reads it with
+// `context.read<ComponentRepository>()`. There is no global singleton.
+//
+// (For readers new to Dart/Flutter: `Stream<T>` is Dart's async-iterable.
+// `db.select(...).watch()` returns a `Stream` that pushes a fresh `List`
+// every time the underlying table changes. The UI subscribes via
+// `StreamBuilder` and rebuilds automatically — that's how list views stay
+// "live" without manual refreshes.)
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The non-obvious part is the union semantics. `componentLabels(kind)`
+// returns a single flat list that mixes two sources — the seeded reference
+// catalog (manufacturer-joined SQL queries) and the user's custom
+// components (a separate `CustomComponents` table keyed by `kind` + `name`).
+// Reference rows are formatted differently per kind (bullet weight gets
+// a `gr` suffix; primer ID gets a `#` prefix), while custom components
+// are stored as opaque strings so they always come back as-is. The order
+// is "reference first (alphabetized), then customs (alphabetized)" so that
+// the dropdown shows curated names at the top and the user's additions
+// underneath.
+//
+// The primer label scheme is the other gotcha. A primer needs three
+// representations:
+//   * Cascading-dropdown UI: brand picked separately, then a per-brand
+//     product label that excludes the brand (`primerProductLabel`).
+//   * On-disk storage in `UserLoads.primer`: a single string with the
+//     brand baked in (`primerStorageLabel`), so old recipes round-trip
+//     cleanly even when a user later renames a brand.
+//   * Edit mode: the stored string has to be split back into a
+//     (manufacturer, primerName) pair to pre-select the dropdowns
+//     (`splitPrimerStorageLabel`).
+// All three forms have to agree byte-for-byte or the dropdown won't
+// recognize a saved value. The static helpers exist precisely to keep
+// every screen using the same parser.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/loads/load_form_screen.dart and the recipe form widgets in
+//   lib/widgets/component_field.dart — call `componentLabels(kind)` to
+//   power autocomplete dropdowns, plus `primerByLabel` /
+//   `primersByManufacturer` for the cascading primer field.
+// - lib/screens/saami/saami_screen.dart — uses `watchCartridges` /
+//   `cartridgeByName` to drive the SAAMI cartridge picker and spec card.
+// - lib/screens/firearms/firearm_form_screen.dart — uses
+//   `allReferenceFirearms` to let the user pick from the catalog.
+// - lib/app.dart — constructs the repository and provides it via
+//   `Provider<ComponentRepository>`.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads/writes against the local SQLite database via drift. The only writes
+// are `addCustomComponent` (insertOnConflictUpdate into `CustomComponents`).
+// JSON encode/decode happens at the boundary for `FirearmsRef.calibersJson`
+// only. No network calls, no shared preferences, no file I/O.
+
 import 'dart:convert';
 
 import 'package:drift/drift.dart';

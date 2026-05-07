@@ -1,3 +1,401 @@
+// FILE: lib/services/ballistics/solver.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// This is the main ballistic engine. It takes a `Projectile`, an
+// `Environment`, and the shot details (muzzle velocity, sight height, zero
+// range), then numerically integrates the 3D equations of motion to
+// produce a list of `TrajectorySample` records — one per requested
+// downrange distance — telling the shooter how much the bullet has
+// dropped, drifted sideways, slowed down, etc.
+//
+// Public API:
+//
+//   * `class TrajectorySample` — one row of the output table:
+//       - rangeYards, timeSec, dropInches, windDriftInches,
+//         spinDriftInches, velocityFps, energyFtLb, machNumber
+//     Sign conventions: dropInches positive = below line of sight,
+//     windDriftInches positive = right of LoS.
+//
+//   * `class ShotInputs` — the parameters that change per-shot rather
+//     than per-load:
+//       - muzzleVelocityFps  — measured chronograph velocity.
+//       - sightHeightIn      — vertical distance from bore axis to scope
+//                              centerline (typically 1.5"-2.5").
+//       - zeroRangeYards     — the range the rifle is sighted in at
+//                              (typically 100, 200, or 300 yards).
+//       - muzzleCantDeg      — rifle cant about the bore (degrees).
+//                              Used only for the small aerodynamic-jump
+//                              correction; defaults to 0.
+//
+//   * `List<TrajectorySample> solveTrajectory({ ... })` — the top-level
+//     entry point. Steps:
+//       1. Computes a one-time drag scaling constant from bullet
+//          geometry (form factor, diameter, mass).
+//       2. Bisects on the muzzle elevation angle until the bullet
+//          crosses the line of sight at the user's zero range.
+//       3. Integrates forward at the resolved departure angle, sampling
+//          state at each requested range.
+//       4. Adds Litz's empirical spin drift to each sample.
+//       5. Returns the list.
+//
+//     Optional flags `includeSpinDrift` and `includeCoriolis` let the
+//     caller turn off those corrections (e.g. for short-range plinking).
+//
+// Private internals (read for full understanding):
+//
+//   * `_findDepartureAngle(...)` — bisection zero solver.
+//   * `_integrateUntilRange(...)` — RK4 integration without sampling;
+//     used by the zero-finder to evaluate "how far below LoS is the
+//     bullet at zero range?".
+//   * `_integrateAndSample(...)` — RK4 integration WITH sampling; used
+//     for the actual output trajectory.
+//   * `_makeSample(...)` — convert an internal `_State` into a
+//     user-facing `TrajectorySample`.
+//   * `_State` — immutable 7-tuple (x, y, z, vx, vy, vz, t).
+//   * `_rk4Step(...)` — one RK4 step.
+//   * `_statePlus(...)` — apply a `_Derivative` scaled by `dt` to a
+//     `_State`.
+//   * `_Derivative` — immutable 6-tuple of derivatives.
+//   * `_derivative(...)` — compute the derivatives at a state (drag,
+//     gravity, Coriolis combined).
+//   * `_gravity = 9.80665 m/s²` — standard gravity constant.
+//
+// ============================================================================
+// THE PHYSICS / MATH
+// ============================================================================
+// ----------------------------------------------------------------------------
+// THE STATE VECTOR AND THE EQUATIONS OF MOTION
+// ----------------------------------------------------------------------------
+// The bullet is treated as a POINT MASS. Its state at time t is six
+// numbers — position (x, y, z) and velocity (vx, vy, vz). Newton's second
+// law (F = m·a) in vector form gives:
+//
+//     d(position)/dt = velocity
+//     d(velocity)/dt = sum_of_forces / mass
+//
+// We have three force contributions:
+//
+//   1. GRAVITY: a constant downward acceleration of g = 9.80665 m/s²
+//      regardless of altitude. (We ignore Earth-curvature effects;
+//      <0.5 inch error at 1500 yards.)
+//
+//   2. AERODYNAMIC DRAG: opposing the bullet's velocity through the air,
+//      with magnitude:
+//
+//          F_drag = (π/8) · ρ · i · Cd_std(Mach) · D² · v²
+//
+//      where:
+//        ρ        = air density (kg/m³, from atmosphere)
+//        i        = bullet form factor = sectional density / BC
+//        Cd_std   = standard-projectile drag coefficient at this Mach
+//                   number (looked up from drag_functions.dart)
+//        D        = bullet diameter (m)
+//        v        = bullet's speed RELATIVE TO THE AIR (m/s)
+//
+//      The drag ACCELERATION is F_drag / m. We pre-compute the
+//      "everything except ρ × Cd × v²" factor once at the start of the
+//      solve as `dragK = (π/8) · i · D² / m_kg`. Then each step is:
+//
+//          a_drag_magnitude = dragK · ρ · v_rel · Cd
+//          a_drag_vector    = -a_drag_magnitude · v_rel_vector
+//
+//      Note the velocity used is RELATIVE TO THE AIR — i.e. the bullet's
+//      velocity minus the wind vector. This is how WIND enters the
+//      equations: not as a separate force, but as an offset to the
+//      relative-velocity term. A 10 mph crosswind makes the bullet's
+//      apparent airspeed have a small lateral component, which then
+//      generates lateral drag that pushes the bullet sideways.
+//
+//   3. CORIOLIS: a fictitious acceleration that arises from working in
+//      Earth's rotating reference frame:
+//
+//          a_coriolis = −2 · Ω × v_bullet
+//
+//      where Ω is Earth's rotation vector (computed by
+//      `Environment.earthRotationVector` from latitude and shot
+//      azimuth) and × is the cross product. Magnitude is small (a few
+//      cm/s² for typical bullet speeds) but it adds up over flight
+//      times of seconds — typically a few inches at 1000 yards.
+//
+//      Component-wise, with Ω = (er.x, er.y, er.z) and v = (vx, vy, vz):
+//
+//          a_cor_x = −2 · (er.y · vz − er.z · vy)
+//          a_cor_y = −2 · (er.z · vx − er.x · vz)
+//          a_cor_z = −2 · (er.x · vy − er.y · vx)
+//
+// ----------------------------------------------------------------------------
+// SPIN DRIFT (added POST-INTEGRATION)
+// ----------------------------------------------------------------------------
+// A spin-stabilized bullet drifts SIDEWAYS in the direction of its spin
+// (right-hand twist barrels — the dominant US convention — drift the
+// bullet to the RIGHT). This is a 6-DOF effect that arises from the
+// gyroscopic interaction between the spinning bullet and the airflow,
+// which we DO NOT model directly. Instead, we use Bryan Litz's empirical
+// formula:
+//
+//     spin_drift_inches = 1.25 · (Sg + 1.2) · t^1.83
+//
+// where Sg is the Miller stability factor and t is time of flight in
+// seconds. This formula is calibrated against full 6-DOF simulations and
+// is accurate to a few tenths of an inch at typical small-arms ranges.
+// We add this drift in +Z (right) for right-hand twist after the main
+// integration completes — the integrator never sees it.
+//
+// ----------------------------------------------------------------------------
+// THE RK4 INTEGRATOR (Runge-Kutta 4th order)
+// ----------------------------------------------------------------------------
+// To advance the state from time t to t+dt, the simplest method is Euler:
+//
+//     state_new = state_old + dt · derivative(state_old)
+//
+// This is FIRST-ORDER accurate — the error per step is O(dt²), and over
+// the full integration the error is O(dt). To get fourth-order accuracy
+// (error O(dt⁴) per step, O(dt³) over the integration), Runge-Kutta-4
+// evaluates the derivative at FOUR strategic points within the time step
+// and combines them with carefully chosen weights:
+//
+//     k1 = f(state_old)                    # derivative at start
+//     k2 = f(state_old + (dt/2) · k1)      # derivative at midpoint
+//                                            using k1 estimate
+//     k3 = f(state_old + (dt/2) · k2)      # derivative at midpoint
+//                                            using k2 estimate (refined)
+//     k4 = f(state_old + dt · k3)          # derivative at end using k3
+//                                            estimate
+//     state_new = state_old + (dt/6)·(k1 + 2·k2 + 2·k3 + k4)
+//
+// The weights (1/6, 2/6, 2/6, 1/6) come from a Taylor-series expansion
+// that cancels error terms up to and including the 4th order. This is
+// the workhorse integrator of classical mechanics and gives excellent
+// accuracy for smooth dynamics like ours.
+//
+// Implementation note: we represent `_State` and `_Derivative` as
+// immutable record-style classes. `_statePlus(state, deriv, dt)` advances
+// state by `deriv · dt`. The full `_rk4Step` in the file is the textbook
+// algorithm above.
+//
+// ----------------------------------------------------------------------------
+// TIME STEP (dt) AND TRANSONIC ADAPTATION
+// ----------------------------------------------------------------------------
+// Default dt = 0.001 s (1 millisecond). For a 2700 fps bullet that's
+// 0.823 m per step — fine for the smooth supersonic regime.
+//
+// In the TRANSONIC band (Mach 0.85 to Mach 1.20), the drag coefficient
+// changes rapidly — for the G1 standard, Cd more than doubles across
+// this range. A 1-millisecond step there would resolve the rise too
+// coarsely and the bullet's velocity loss would be biased. We adapt to
+// `dt = 0.0002 s` (5× smaller) inside this band. This is a poor man's
+// adaptive integrator — a "real" adaptive RK4 would adjust dt based on
+// estimated truncation error each step, but for the smooth ballistics
+// problem the band-based heuristic is sufficient.
+//
+// Stop conditions for the integration:
+//   * `t >= 10.0 s`             — hard cap on flight time.
+//   * `state.x > targetRange`   — passed all sample ranges.
+//   * `state.y < -50 m`         — fell to the dirt.
+//   * `state.speed < 100 fps`   — bullet effectively dead.
+//
+// ----------------------------------------------------------------------------
+// THE ZERO-FINDING BISECTION (find the muzzle elevation angle)
+// ----------------------------------------------------------------------------
+// The user tells us they have a 100-yard zero (or 200, or 300, or
+// whatever). Physically, this means: when aiming through the scope at a
+// 100-yard target, the bullet should hit where the cross-hair is
+// pointing. The scope is mounted ABOVE the bore, so the bore points
+// slightly upward relative to the line of sight — the bullet leaves the
+// muzzle ASCENDING relative to LoS, crosses the LoS, peaks, then drops
+// back through the LoS at the zero range.
+//
+// We don't know this departure angle a priori — drag and gravity both
+// affect it. So we BISECT:
+//
+//   1. Compute a quick parabolic approximation:
+//          θ_0 ≈ (g·R) / (2·v₀²)
+//      from the no-drag trajectory equation y(t) = v₀ sin(θ) t − ½ g t²
+//      with the boundary condition y(R/v₀) = 0. This gets us within 10%.
+//
+//   2. Bracket: try θ_low = θ_0 − 0.020 rad, θ_high = θ_0 + 0.040 rad.
+//      Compute the y-offset (bullet height − line-of-sight height) at
+//      the zero range for both. We want the offset to be 0; if both
+//      offsets have the same sign, expand the bracket and try again.
+//
+//   3. Bisect: 40 iterations of standard interval halving, stopping
+//      early if the offset is below 0.1 mm. Each iteration runs a full
+//      `_integrateUntilRange` simulation, so this is the expensive part
+//      of solving — typically dominates the total runtime.
+//
+// ----------------------------------------------------------------------------
+// LINE-OF-SIGHT GEOMETRY
+// ----------------------------------------------------------------------------
+// We put the muzzle at y=0 and the scope at y = +sightHeight (typically
+// 1.5"-2.5" = 0.038-0.064 m). The shooter aims through the scope at the
+// zero target which is at LoS y=0. So the line of sight as a function of
+// downrange distance x is:
+//
+//     y_los(x) = sightHeight · (1 − x/zeroRange)
+//
+// At x = 0:           y_los = sightHeight (scope height above muzzle)
+// At x = zeroRange:   y_los = 0 (target sits on the LoS)
+// At x > zeroRange:   y_los < 0 (LoS continues downward past zero)
+//
+// The user's reported "drop" is the distance the bullet sits BELOW the
+// LoS at any given range. We compute it as `dropM = y_los − bulletY`,
+// then convert to inches.
+//
+// ============================================================================
+// THE SIMPLIFICATIONS — VS A FULL 6-DOF MCCOY MPM
+// ============================================================================
+// "Modified Point Mass" (MPM) is McCoy's name for the family of point-mass
+// solvers that get close to a full 6-DOF result by adding empirical
+// corrections rather than tracking the full bullet attitude (yaw, pitch,
+// spin axis). Compared to a full 6-DOF simulation, our implementation:
+//
+//   1. NO YAW OF REPOSE. Real bullets fly with their spin axis tilted
+//      slightly off the velocity vector — a steady-state lean called the
+//      "yaw of repose." This is what causes spin drift via gyroscopic
+//      interaction with airflow. We add spin drift via Litz's empirical
+//      formula instead of tracking yaw.
+//
+//   2. DRAG IS ISOTROPIC. We use `|v_rel|² · Cd(Mach)` along the
+//      negative relative-velocity direction. The full McCoy treatment
+//      decomposes drag into axial (along the spin axis) and yaw
+//      components. For point-mass purposes our isotropic drag is fine —
+//      yaw of repose is small in straight-line flight.
+//
+//   3. NO AERODYNAMIC-JUMP-FROM-CANT CORRECTION. Rifle cant (the
+//      shooter holding the rifle tilted) tilts the line of sight, but
+//      doesn't change the bullet's actual trajectory — the bullet still
+//      flies the same path through the air. The `muzzleCantDeg` field
+//      exists for a future correction; the solver does NOT currently
+//      apply one (you can verify this by searching the file: the field
+//      is read but only documented as "we'd compute aerodynamic jump
+//      here").
+//
+//   4. CORIOLIS USES MUZZLE-VELOCITY DIRECTION ONLY. McCoy's full
+//      treatment uses the instantaneous velocity direction. We only
+//      project Earth's Ω vector once, at the start, using the muzzle
+//      direction (which is essentially shot azimuth). For typical
+//      small-arms ranges where the trajectory is nearly straight, this
+//      is well below 0.1 MOA error.
+//
+//   5. NO TRANSONIC LIFT "KICK". Real bullets passing through the
+//      transonic region experience a brief lift component that briefly
+//      destabilizes them. We don't model the lift kick directly; the
+//      finer dt in the transonic band partially compensates by
+//      resolving the steep Cd gradient.
+//
+// At small-arms ranges (out to 1500 yards), these simplifications cost
+// well below 0.1 MOA in vertical drop and a few inches in lateral drift —
+// far smaller than typical shooter-induced error and well below the
+// uncertainty in BC, MV, and atmospheric inputs.
+//
+// ============================================================================
+// REFERENCES
+// ============================================================================
+//   * McCoy, R.L., "Modern Exterior Ballistics", 2nd ed. Schiffer
+//     Publishing, 1999. The reference text on point-mass and 6-DOF
+//     ballistic modeling.
+//   * Litz, B., "Applied Ballistics for Long-Range Shooting", 2nd ed.
+//     2009. Source of the 1.25·(Sg+1.2)·t^1.83 spin-drift formula and
+//     the modern shooter-friendly treatment of MPM.
+//   * Numerical Recipes (Press, Teukolsky, Vetterling, Flannery) —
+//     classical RK4 derivation.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Top of the ballistics package. Imports `units.dart`,
+// `drag_functions.dart`, `projectile.dart`, `environment.dart` — pulls
+// from every other file in the package. Imported by future ballistics-
+// solver UI screens. No dependence on Flutter widgets, Drift, Firebase,
+// or anything else in the app — purely mathematical. This means:
+//
+//   1. The solver can be unit-tested headless with reference inputs and
+//      expected outputs (e.g. against published Hornady or Berger
+//      trajectory tables).
+//   2. The same engine could power a CLI, a watchOS complication, or a
+//      web preview without dragging in the rest of the app.
+//   3. The dependency direction is unambiguous: `units` → `drag_functions`,
+//      `units` → `atmosphere`, `units` → `projectile` → `drag_functions`,
+//      `units` → `environment` → `atmosphere`, and `solver` → all of
+//      them.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+//   * NUMERICAL STABILITY of the zero-finder. If the user requests a
+//     zero range that the load can't reach (insufficient muzzle velocity,
+//     too far), the integration may never cross the line of sight. We
+//     return -1e6 from `yOffsetAt` in that case so the bisection treats
+//     "fell short" as "deeply negative offset". The bracket-expansion
+//     loop bails out after 8 attempts and falls back to the analytic
+//     guess — better than crashing.
+//
+//   * ZERO-RANGE EDGE CASES. Very short zero ranges (~50 yd) need a
+//     small departure angle that the parabolic guess hits accurately.
+//     Very long zero ranges (~1000 yd) need a large angle where the
+//     parabolic guess is off by more, but the bracket window absorbs it.
+//     Vertical-shooting cases (purely up or down) are NOT supported —
+//     the integration assumes the bullet is moving primarily downrange
+//     in +X, and a vertical shot has zero downrange velocity. There is
+//     no "shoot straight up" mode in the solver.
+//
+//   * SUBSONIC TRANSITION. Once the bullet drops below ~Mach 0.85, the
+//     point-mass model breaks down (the Magnus moment changes sign,
+//     yaw destabilizes, etc.). We continue integrating until 100 fps,
+//     but trajectories below Mach 1 should be considered approximate.
+//     Long-range competitive shooting tries to keep the bullet
+//     supersonic at the target.
+//
+//   * RK4 IS NOT ADAPTIVE. We don't estimate truncation error step by
+//     step; we just use a fixed (or band-switched) dt. For the smooth
+//     dynamics here that's fine, but if you ever model spin-stabilized
+//     boattail bullets through hypersonic regimes, you'd want an
+//     adaptive integrator.
+//
+//   * SIGN CONVENTIONS — SIX OF THEM. (a) drop positive=below LoS;
+//     (b) wind drift positive=right; (c) spin drift positive=right
+//     (right-hand twist); (d) +X downrange; (e) +Y up; (f) +Z right.
+//     They're chosen so the user-facing outputs feel natural to a
+//     shooter, but mismatches are easy to introduce if you ever
+//     re-derive them. Test against known reference trajectories.
+//
+//   * COORDINATE FRAME IS FIXED AT MUZZLE. We do NOT rotate the frame
+//     as the bullet flies. Earth's rotation enters via Coriolis. This
+//     is fine for small-arms but would break for ICBM-scale flights.
+//
+//   * SAMPLE-RANGE INTERPOLATION. We integrate a fixed-step trajectory
+//     and linearly interpolate state across the requested sample
+//     ranges. If the user requests samples at 100, 200, 300, ..., 1000
+//     and the integration step is 0.001s × ~800 m/s ≈ 0.8 m, then each
+//     sample interpolation spans ~0.4 m before vs after — well below
+//     the 100-yard sample spacing.
+//
+//   * COMPUTE COST. The bisection runs ~40 iterations × full
+//     integration each. For a 1000-yard zero at 2700 fps, full flight
+//     time is ~1.4 s, integration steps ~1400, bisection ~40, total
+//     ~56 000 derivative evaluations. On a phone this is a few
+//     milliseconds.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+//   - any future UI screen in `lib/screens/` that displays a trajectory
+//     table or plot for a load (none yet wired in this branch).
+//   - test code under `test/` (placeholder `widget_test.dart` exists;
+//     real ballistics test coverage is a launch-checklist item).
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None. The solver is pure-functional: same `Projectile` + `Environment`
+// + `ShotInputs` + sample ranges always produces the same output list.
+// No I/O, no globals, no allocations beyond the returned
+// `List<TrajectorySample>` and the immutable `_State` / `_Derivative`
+// instances created during integration.
+// ============================================================================
+
 /// Modified Point-Mass (McCoy) ballistic solver for the LoadOut app.
 ///
 /// Implements a 3D point-mass equation of motion with the following

@@ -1,3 +1,52 @@
+// FILE: lib/screens/load_development/load_development_list_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Top-level list of saved load-development sessions. A session represents
+// one ladder experiment — either a charge-weight ladder ("test 41.5gr to
+// 43.0gr in 0.3gr steps") or a seating-depth ladder ("test 0.020"
+// CBTO bracket in 0.005" steps"). The screen wraps its body in a ProGate;
+// free users see the upgrade card, Pro users see the streamed list with
+// dismiss-to-delete and a "+" FAB pointing at the new-session wizard.
+//
+// Each tile renders a status pill computed from session.nodeValue:
+// "Complete" once a node has been picked, "In Progress" otherwise. The
+// type pill in the subtitle line distinguishes Charge vs Seating ladders,
+// followed by a count of fired rungs and the start-end range with units
+// (gr for charge, in for seating).
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Pro-tier feature reachable from the home drawer. Without it Pro users
+// have nowhere to find the experiments they've started or completed. The
+// FAB and full functionality are only visible to Pro users; the
+// EntitlementNotifier from provider determines the FAB visibility, and
+// ProGate handles the body.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The subtitle has to decode rungsJson to get the fired-count, but it must
+// fall back to session.rungCount when the JSON is empty (corrupted /
+// pre-migration sessions). The pill colors must respond to whether the
+// session has been "completed" by the user picking a node, not just the
+// presence of any rung data. Dismiss-to-delete needs a confirmation dialog
+// so users don't lose hours of range data on a mis-swipe.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/home/home_screen.dart (drawer destination)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Streams LoadDevelopmentRepository.watchAll(). Calls delete on dismiss.
+// Pushes NewLoadDevelopmentScreen (FAB) and LoadDevelopmentDetailScreen
+// (tile tap). Reads EntitlementNotifier for FAB visibility.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

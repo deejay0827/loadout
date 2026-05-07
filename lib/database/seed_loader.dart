@@ -1,3 +1,128 @@
+// FILE: lib/database/seed_loader.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// On launch (called from `main.dart` right after the database opens), this
+// class reads the bundled JSON catalog files in `assets/seed_data/` —
+// `cartridges.json`, `powders.json`, `bullets.json`, `primers.json`,
+// `brass.json`, `firearms.json`, `firearm_parts.json` — and inserts their
+// contents into the reference tables defined in `database.dart`. Those
+// tables (`Cartridges`, `Powders`, `Bullets`, `Primers`, `BrassProducts`,
+// `FirearmsRef`, `FirearmParts`, plus the shared `Manufacturers` lookup)
+// are what populate every component dropdown the user sees in the
+// recipe form, the firearm form, and the SAAMI lookup screen.
+//
+// The seed data ships as part of the Flutter app bundle: at build time
+// the contents of `assets/` get copied into the iOS / Android binary,
+// and at runtime `rootBundle.loadString(path)` reads them back as a
+// `String`. `json.decode()` then parses that string into Dart maps and
+// lists. The seed methods (`_seedCartridges`, `_seedPowders`,
+// `_seedBullets`, `_seedPrimers`, `_seedBrass`, `_seedFirearms`,
+// `_seedFirearmParts`) walk the parsed structure and emit batched
+// drift inserts via the generated `*Companion.insert(...)` helpers.
+//
+// `seedIfNeeded()` is the single public entry point. It checks three
+// flags exposed by `AppDatabase`: `firstRun` (the cartridge table is
+// empty, i.e. brand-new install), `primersMissing` (the primer table is
+// empty — happens after a v3 migration deliberately wipes primers to
+// force a re-seed with the new `productLine` column), and
+// `cartridgesNeedReseed` (the cartridges exist but are missing the v2
+// SAAMI/CIP dimensional fields, indicating an upgraded install that
+// needs a refresh). If none are true, the function returns immediately.
+// Otherwise the appropriate seed methods run inside one drift
+// transaction so the database is never half-populated.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// The local-first promise of LoadOut means there is no remote API to call
+// for "list all known powder types" — that catalog has to be on-device
+// from the moment the app first opens. Bundling the data as JSON in
+// `assets/` and seeding it into SQLite gives the user a fully populated,
+// offline-capable component picker on the very first launch with no
+// network request.
+//
+// Storing the catalog in SQLite (rather than reading the JSON each time
+// a dropdown opens) lets us issue real SQL queries against it later —
+// cascading dropdowns, manufacturer filters, alias lookups for the
+// SAAMI screen, joining `UserLoads.powder` against `Powders.name`.
+// The JSON is the source-of-truth file the team edits; SQLite is the
+// query surface the running app uses.
+//
+// The conditional re-seed logic exists because the schema and the data
+// shape evolve over time. When v2 added SAAMI dimensions to existing
+// cartridges, the migration could only `ALTER TABLE` to add the
+// columns — populating them required re-running the seed. Rather than
+// blow away the database and ask users to re-enter their loads, the
+// re-seed pattern lets us refresh just the reference data while
+// leaving user data (`UserLoads`, `UserFirearms`, `CustomComponents`)
+// completely untouched.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The dispatch logic in `seedIfNeeded` is deliberately three-pronged:
+//   - If `firstRun` we seed everything.
+//   - If only `cartridgesNeedReseed` we re-seed cartridges (deleting
+//     existing rows first to avoid unique-constraint collisions on
+//     `name`).
+//   - If only `primersMissing` we re-seed primers.
+// Mixing those branches incorrectly would either skip data that needs
+// to be present (broken UI) or duplicate-insert and crash on unique
+// constraints. This is why the function reads all three flags up front
+// and gates each seed step explicitly.
+//
+// The fall-back to `Value.absent()` for fields that may be missing from
+// older JSON shapes is critical. `Value.absent()` tells drift "leave
+// this column at its default" instead of "set this column to null."
+// They're different — using `Value(null)` on a non-nullable column with
+// a default would override the default with NULL and crash. Whenever
+// you add a new optional field to the seed JSON, gate it behind
+// `m.containsKey(...)` and emit `Value.absent()` when absent. This
+// keeps older datasets shipping without rebuilding every JSON file.
+//
+// `_manufacturerId(...)` is shared across the seeds because manufacturers
+// can produce more than one component category (Federal makes both
+// primers AND brass). The helper looks up by `(name, kind)` — a unique
+// composite — and inserts a new row only if no match exists. This is
+// why `Manufacturers` has a unique key on `(name, kind)` rather than
+// just `name`.
+//
+// All inserts happen inside `db.transaction(() async { ... })`. If any
+// step fails, the transaction rolls back and the database stays in its
+// previous state. Without this, a partial seed would leave the app in
+// a broken half-populated condition that would never self-heal.
+//
+// `db.batch((b) => b.insertAll(...))` batches multiple INSERTs into one
+// SQL statement on SQLite's side, dramatically reducing the latency of
+// seeding thousands of rows. Issuing them one at a time would noticeably
+// slow first launch.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/main.dart` — instantiates `SeedLoader(db)` and calls
+//   `seedIfNeeded()` on every launch, before `runApp()`.
+// - Indirectly, every UI surface that reads from the seeded reference
+//   tables: `lib/screens/loads/load_form_screen.dart` (component
+//   dropdowns), `lib/screens/firearms/firearm_form_screen.dart`,
+//   `lib/screens/saami/saami_screen.dart`, etc.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads up to 7 JSON files from the bundled `assets/seed_data/`
+//   directory via `rootBundle.loadString`.
+// - Writes potentially thousands of rows into SQLite (cartridges,
+//   manufacturers, powders, bullets, primers, brass products, firearms,
+//   firearm parts) inside one transaction.
+// - On v3 migrations + re-seed paths, deletes existing rows in the
+//   targeted reference table before re-inserting (to avoid unique
+//   constraint collisions on `name`).
+// - No network I/O. No cloud calls. Reference data stays entirely
+//   on-device.
+
 import 'dart:convert';
 
 import 'package:drift/drift.dart';

@@ -1,3 +1,87 @@
+// FILE: lib/screens/backup/backup_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Top-level "Backup & Export" screen. Three operationally distinct paths
+// are exposed in three cards.
+//
+// (1) Local Export — always free, available to any user. Calls
+// ExportService.writeExportToTempFile to serialize all user reloading data
+// (recipes, firearms, brass lots, batches, custom components, process
+// steps, load development sessions) into a JSON file inside the app's
+// temp directory, then hands the file to share_plus. The user picks where
+// the file actually lands (Files.app, AirDrop, email, Drive, anywhere) —
+// the app never sees the destination. This is the privacy-pure escape
+// hatch: even with no Pro subscription and no cloud account, every user
+// can get all their data off-device.
+//
+// (2) iCloud Drive — Pro-gated, iOS-only. Lives in the app's iCloud
+// container and goes through ICloudBackupService. Shows a friendly
+// "Sign in to iCloud in Settings" message when the entitlement isn't
+// enabled or the user isn't signed in.
+//
+// (3) Google Drive — Pro-gated, cross-platform. Uses
+// DriveBackupService and writes into the user's per-app appDataFolder
+// (invisible to the user's other Drive content). This is the cross-device
+// restore path that works even on iOS — a user who buys a new Android
+// phone and signs into the same Google account gets their recipes back.
+//
+// The cloud paths share a single passphrase setup flow. On backup we
+// prompt for a passphrase (plus confirmation), encrypt the JSON with
+// BackupCrypto, and upload the resulting blob. On restore we list
+// available backups, let the user pick one, prompt for the passphrase,
+// download, decrypt, and call ExportService.importFromJson. Passphrase
+// entry has an 8-character minimum enforced inside the dialog. Restore
+// shows a destructive-action confirmation and a merge-mode picker (skip
+// duplicates vs overwrite) before any DB writes happen. Passphrases are
+// NEVER persisted — they live only in memory for the duration of one
+// operation, then are dropped.
+//
+// A backup-listing sub-screen lets the user view existing backups in
+// either provider, with delete capability for cleanup.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// LoadOut's privacy posture (CLAUDE.md §13) promises no cloud sync of
+// reloading data. That promise is a marketing claim; the cloud-backup
+// feature lives here because (a) end-to-end encryption with a user-held
+// passphrase keeps us compliant with that promise (we can't read the
+// blob, neither can Apple/Google), and (b) reloaders need their data
+// portable across phone replacements. Pro-gating the cloud tiers is
+// what funds the development.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The encryption boundary has to be airtight: passphrases must never
+// touch SharedPreferences, secure enclave, keychain, or disk. We
+// deliberately re-prompt every operation rather than caching. Restore
+// confirmation has to be unmistakable — a sloppy click and you wipe local
+// data. Merge mode picker (skip vs overwrite) has to be presented so the
+// user understands what each does without writing a paragraph of help
+// text. Provider availability checks have to be done before each
+// operation because the iCloud entitlement state can change between
+// launch and now. Errors have to be classified into "decryption failed
+// (wrong passphrase)" vs "import had partial errors" vs "fatal abort"
+// because the right user response is different in each case.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/home/home_screen.dart (drawer destination)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads the entire AppDatabase via ExportService.exportToJson. Writes a
+// temp JSON file via writeExportToTempFile. Calls share_plus.
+// CloudBackupProvider implementations talk to iCloud / Google Drive over
+// the network. BackupCrypto runs Argon2id key derivation + AES-GCM. On
+// restore: writes new rows into AppDatabase via ExportService.importFromJson.
+// EntitlementNotifier read for paywall gating.
+
 import 'dart:async';
 import 'dart:io' show Platform;
 

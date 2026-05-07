@@ -1,3 +1,62 @@
+// FILE: lib/screens/recipes/recipes_list_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// The Recipes tab — tab 0 of `HomeScreen`'s bottom nav. Renders the user's
+// recipe list as a `StreamBuilder<List<UserLoadRow>>` reading from
+// `RecipeRepository.watchAll()`, so the list updates live whenever the
+// underlying Drift table changes (insert, update, delete from anywhere in
+// the app).
+//
+// Each row is a `Dismissible` swipe-to-delete `ListTile`. The tile shows
+// the recipe name as the title and a dot-separated subtitle line composed
+// from caliber, powder charge (with a `gr` suffix), bullet, and COAL —
+// whichever fields are populated. Tapping a tile pushes
+// `RecipeFormScreen(existing: r)` for editing; the floating action button
+// pushes a blank `RecipeFormScreen()` for creating a new recipe.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Recipes are the central artifact in LoadOut — every other tab orbits
+// around them (firearms record what shoots them, batches track when they
+// were loaded, ballistics computes their trajectory). This screen is the
+// canonical entry point for browsing and managing them, reachable via the
+// bottom-nav slot at index 0.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The dismiss-to-delete flow hides a confirmation dialog inside
+// `confirmDismiss` so a stray swipe doesn't permanently destroy work.
+// Returning `false` from the dialog cancels the dismiss animation and
+// snaps the tile back; returning `true` lets it complete and triggers
+// `onDismissed`, which calls `RecipeRepository.delete`. The
+// `?? false` guard at the bottom of `confirmDismiss` is critical — if the
+// dialog is dismissed via tapping outside (returning null), the tile
+// would otherwise be deleted without a yes from the user.
+//
+// The list builder uses `ValueKey('recipe_${r.id}')` so Flutter can
+// identify which row was dismissed when the underlying list reorders —
+// otherwise an unrelated tile could be removed when the stream emits the
+// post-delete list.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/home/home_screen.dart` — slotted at index 0 of `_pages`
+//   and rendered inside the `IndexedStack`.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Subscribes to `RecipeRepository.watchAll()` for the lifetime of the
+//   stream builder.
+// - Calls `RecipeRepository.delete(r.id)` on confirmed swipe.
+// - Pushes `RecipeFormScreen` routes via `MaterialPageRoute` for both
+//   create and edit flows.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

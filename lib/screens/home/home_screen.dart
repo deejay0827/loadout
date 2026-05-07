@@ -1,3 +1,95 @@
+// FILE: lib/screens/home/home_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// The bottom-nav shell that hosts the app's five primary tabs once the user
+// has signed in and accepted the disclaimer. `HomeScreen` is a `StatefulWidget`
+// that keeps a single `int _index` for the active tab and renders an
+// `IndexedStack` over the five page widgets so that each tab's scroll
+// position, search query, and form state survive a tab switch instead of
+// being thrown away on every navigation.
+//
+// The five tabs are (in order): `RecipesListScreen`, `FirearmsListScreen`,
+// `BatchesListScreen`, `BallisticsScreen`, `SaamiScreen`. The `AppBar`
+// updates its title from `_titles[_index]` and exposes a single trailing
+// action — a Pro icon (`Icons.workspace_premium`) that opens
+// `PaywallScreen` as a fullscreen dialog. The icon style switches based on
+// `EntitlementNotifier.isPro` so existing Pro subscribers see a filled
+// medallion.
+//
+// `_MainDrawer` is the left side drawer reachable from the AppBar's leading
+// hamburger. It hosts every secondary destination that didn't earn a slot in
+// the bottom nav: How It Works, Reloading Guide, Glossary, Brass Lots, Load
+// Development, Reloading Steps, Reloading Assistant, Backup & Export,
+// Privacy Policy, and Sign Out. The drawer header uses the brass serif
+// wordmark on a charcoal background to mirror the brand identity.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// This is the auth-gated landing surface routed to from `_AuthGate` in
+// `lib/app.dart` once a non-null `User?` arrives on the auth `StreamProvider`
+// and disclaimer-acceptance has been recorded. It's the home for everything
+// the user does day-to-day with their reloading data, so it has to balance
+// quick access (bottom nav) against discoverability (drawer) without making
+// the chrome feel cluttered.
+//
+// `HomeScreen.switchTab(context, index)` is a static helper that lets any
+// descendant widget jump to a specific tab without holding a reference to
+// the state. It walks the tree with `findAncestorStateOfType<HomeScreenState>`
+// and is the mechanism behind topic CTAs in `HowItWorksScreen` — those
+// screens push themselves onto the navigator, then on completion pop and
+// call `HomeScreen.switchTab(context, 4)` to deep-link the user into, say,
+// the SAAMI tab.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The non-obvious piece is `_ScrollableBottomNav`. Material's
+// `NavigationBar` is comfortable hosting 3–5 destinations with fixed-tab
+// layout, but five tabs already crowd the bar on smaller iPhone widths and
+// any future addition would force destinations into a "more" overflow.
+// Instead we render our own horizontally-scrollable bar that:
+//
+// * uses a `LayoutBuilder` to compute a natural per-item width
+//   (`constraints.maxWidth / items.length`) and clamps it between
+//   `_itemMinWidth` and `_itemMaxWidth` so items either evenly fill the
+//   viewport or scroll horizontally — never get squashed unreadably small;
+// * keeps a `GlobalKey` per item so `Scrollable.ensureVisible` can pull the
+//   selected destination into view after a programmatic tab switch from
+//   `HomeScreen.switchTab` (otherwise that would silently change the index
+//   to a tab the user can't see);
+// * draws its own animated brass-tinted "pill" indicator inside each
+//   `_NavItem` rather than using a separate cross-bar indicator widget. The
+//   indicator naturally tracks the item it belongs to as the bar scrolls,
+//   without bookkeeping.
+//
+// `IndexedStack` (rather than a `PageView` or per-tab `Navigator`) is a
+// deliberate choice — it preserves widget state across tab switches but
+// keeps every tab in the tree, which is fine here because all five tabs are
+// cheap stream-backed list screens.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/app.dart` (`_AuthGate.build`) — instantiates `HomeScreen()` once
+//   the user is signed in and the disclaimer has been accepted.
+// - `lib/screens/how_it_works/how_it_works_screen.dart` — calls
+//   `HomeScreen.switchTab` to deep-link the user into a specific tab from
+//   topic CTAs.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads `EntitlementNotifier.isPro` via `context.watch` to drive the Pro
+//   icon's filled/outlined state.
+// - Pushes a fullscreen `PaywallScreen` route via `_openPaywall`.
+// - Pushes drawer-destination routes (HowItWorks, ReloadingGuide, Glossary,
+//   BrassLotsList, LoadDevelopmentList, ProcessSteps, AiChat, Backup,
+//   Privacy) via `MaterialPageRoute`.
+// - Calls `AuthService.signOut()` from the drawer's Sign Out tile.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

@@ -1,3 +1,55 @@
+// FILE: lib/screens/batches/batch_form_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Add-or-edit form for a Batch. Shows three sections: Identification (name +
+// recipe / brass-lot / firearm dropdowns), Counts (rounds in batch, fired
+// count, optional loaded-at date), and Notes. The dropdowns are populated by
+// fetching one snapshot each of the user's recipes, brass lots, and firearms
+// via Future.wait — the form runs the wait inside a FutureBuilder so the
+// dropdowns become interactive only once the FK lookup data is in.
+//
+// New batches default to a name like "100rd batch 2026-05-07" (today's date)
+// and a count of 100 to match the most common case. The processStateJson
+// column on a brand-new batch is seeded by querying every UserProcessSteps
+// row, mapping each step name to false, and JSON-encoding the result; this
+// pre-populates the per-batch checklist on BatchDetailScreen so the user
+// sees the full default sequence with nothing checked. On edit we leave the
+// existing processStateJson alone (drift.Value.absent()) so adds/removes to
+// the steps catalog don't erase the user's checkbox state.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reached from the FAB on BatchesListScreen (new) and from the edit icon on
+// BatchDetailScreen (edit). Single screen owns both create and edit; the
+// presence of widget.existing toggles the submit-button label and whether
+// Quick Actions appear.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The recipes / brass / firearms providers expose different APIs — recipes
+// and firearms are streams (we pull .first), brass lots is a one-shot getAll.
+// Mixing them into one Future.wait has to cast the dynamic results back to
+// their typed lists. Default-name generation has to use zero-padded month
+// and day so the names sort lexicographically. The processStateJson seed
+// must be done once at insert time, never on update — overwriting user
+// progress is a footgun.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/batches/batches_list_screen.dart (FAB destination)
+// - lib/screens/batches/batch_detail_screen.dart (edit-icon destination)
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// Reads recipes, brass lots, firearms, and process steps from their repos.
+// Inserts/updates BatchRepository on save. ScaffoldMessenger snackbar + pop.
+
 import 'dart:convert';
 
 import 'package:drift/drift.dart' as drift;

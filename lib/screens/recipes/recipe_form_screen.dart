@@ -1,3 +1,158 @@
+// FILE: lib/screens/recipes/recipe_form_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// The recipe create / edit form. Hosts every column the `UserLoads` Drift
+// table exposes — load identification, powder, primer, bullet, brass,
+// loaded-round dimensions, pressure indicators, process and equipment
+// provenance, and free-form notes — plus user-defined custom fields.
+// Reachable from `RecipesListScreen` via the FAB (create) or by tapping a
+// list tile (edit, with `widget.existing` populated).
+//
+// The form is data-driven instead of hand-laid-out. Three pieces wire it
+// up:
+//
+// 1. `_FieldId` — an enum with one value per visible field, used as the
+//    stable key everywhere downstream (filter matching, section
+//    membership, widget keys).
+// 2. `_FieldDef` — a record-style class that pairs a `_FieldId` with a
+//    user-visible label, a minimum `DetailLevel`, alias tokens for fuzzy
+//    search, and a `builder(BuildContext)` that returns the editor
+//    widget. The builders close over the per-controller / per-state
+//    fields on `_RecipeFormScreenState`, so the form rendering loop
+//    doesn't need to know what kind of editor a field uses.
+// 3. `_Section` — a const list that groups `_FieldId`s into the
+//    collapsible sections you see on screen ("Load Identification",
+//    "Powder", "Primer", "Bullet", etc.).
+//
+// On top of the FieldDef registry is a 3-level detail toggle
+// (`DetailLevel.basic`/`detailed`/`all`) with `SharedPreferences`
+// persistence under the key `recipe_form_detail_level`. Every `_FieldDef`
+// declares the lowest level at which it should be visible, and
+// `DetailLevel.includes` enforces nesting (basic ⊂ detailed ⊂ all). The
+// `Basic` level shows just the most-used fields (Recipe Name, Caliber,
+// Powder, Charge, Bullet, Bullet Weight, Primer, Brass, COAL); `Detailed`
+// adds CBTO, Seating Depth, primer / brass setup, lot pickers, etc.;
+// `All` exposes pressure indicators, process / equipment provenance, and
+// advanced bullet-sorting fields.
+//
+// A token-based filter input sits above the section list. When non-empty,
+// every token must appear (case-insensitively) in either the field's
+// label or one of its declared aliases — so typing "tolerance grain"
+// matches both Charge Tolerance and Bullet Weight Tolerance. The filter
+// takes priority over the detail level: a filtered result will surface
+// even if its declared level is higher than the active toggle.
+//
+// Lot pickers (`_LotPickerField`) appear for powder, primer, bullet, and
+// brass. Each is a `DropdownButtonFormField<int>` whose options are
+// loaded from the DB via a `Future<List<...LotRow>>`. The bottom of every
+// dropdown is a "+ Create New" tile that delegates to a caller-supplied
+// dialog; selecting it kicks off `_showCreateLotDialog`, which writes a
+// new row to the appropriate lots table and updates the dropdown's
+// future / selected id once the insert returns.
+//
+// Custom Fields are managed in their own special section (id =
+// `_customFieldsSectionId`). The section is rendered with bespoke logic
+// instead of going through the FieldDef registry because both the field
+// list and the editor type are user-defined at runtime. Four editor
+// types are supported: text, number (with optional unit suffix), boolean
+// (rendered as a `Switch`), and date (rendered through `_DateField`).
+// Values persist to the `UserCustomFieldValues` table on save; the
+// in-memory `_customValues` map and per-field `_customControllers` keep
+// edits during the form's lifetime. A "+ Add Field" affordance opens
+// `_showCreateCustomFieldDialog`, which inserts into `UserCustomFields`
+// and refreshes the future.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Recipes are LoadOut's central data type, and the schema underlying them
+// is wide — currently 50+ columns on the `UserLoads` table. Hand-rolling
+// a flat scrolling form for every column would push the precision-shooter
+// fields (CBTO, runout, primer flatness, bolt-lift state) into the same
+// visual weight as the absolute basics (caliber, powder charge), making
+// the screen impossible to use for casual reloaders. The detail toggle
+// and the data-driven section list let the same form serve both
+// audiences without duplicating code.
+//
+// Note the asymmetry: this file is named `recipe_form_screen.dart` and
+// the public class is `RecipeFormScreen`, but the underlying Drift table
+// is still `UserLoads`. That naming gap is legacy — the table predates
+// the rename of "loads" to "recipes" in the UI vocabulary. Don't try to
+// reconcile it without a migration plan.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Adding a new field touches three places, none of them obvious without
+// the FieldDef pattern documentation:
+//
+//   1. Append a new value to `_FieldId`.
+//   2. Add a `_FieldDef` for it inside `_buildFieldDefs`, providing
+//      label, level, aliases, and a builder.
+//   3. Add the new id to the appropriate `_Section.fieldIds` list so it
+//      lands in a section.
+//
+// The form rendering loop and the filter logic pick it up automatically
+// after that. Forgetting step 3 is the most common mistake — the field
+// will compile, validate, and persist, but won't render because nothing
+// puts it in a section.
+//
+// The 3-level toggle's persistence is asynchronous: the active level is
+// loaded from `SharedPreferences` in `initState` via a future and
+// defaults to `DetailLevel.basic` until the load completes. That means
+// the very first frame may show the basic-level subset even if the user
+// last left the form on Detailed; the `setState` after the load corrects
+// it within a frame or two. Avoid trying to use the level synchronously
+// in `initState`.
+//
+// Lot pickers have a sentinel-value gotcha: `_createNewSentinel = -1` is
+// the "Create New" row's `value`. The `onChanged` handler must
+// short-circuit on the sentinel and call `onCreate()` instead of
+// propagating the -1 to the parent — otherwise the form would think the
+// user picked a lot whose primary key is -1.
+//
+// Custom field editors and their controllers are lazily constructed via
+// `putIfAbsent` on `_customControllers`, so opening a recipe with custom
+// fields doesn't allocate unused controllers. They're disposed together
+// in `dispose`. If you add a fifth custom-field editor type, both the
+// editor render path in `_customFieldEditor` AND the save loop in
+// `_save` need to learn how to serialise the new type's value into the
+// `value` text column of `UserCustomFieldValues`.
+//
+// One last asymmetry: typed-in component values (powder, bullet, primer,
+// brass) are persisted as `CustomComponents` on save so they appear in
+// future `ComponentField` dropdowns. That means a recipe save can write
+// to multiple tables (UserLoads + CustomComponents + UserCustomFieldValues),
+// and the order of those writes matters when the recipe references a new
+// custom component by name.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/recipes/recipes_list_screen.dart` — pushes
+//   `RecipeFormScreen()` via the FAB and `RecipeFormScreen(existing: r)`
+//   via list-tile taps.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads from `RecipeRepository` futures: `allPowderLots`,
+//   `allPrimerLots`, `allBulletLots`, `allBrassLots`,
+//   `customFieldsForEntity('recipe')`, `customFieldValuesForEntity`.
+// - Reads from `ComponentRepository.componentLabels(...)` for the
+//   "persist typed-in component as custom" path.
+// - Writes via `RecipeRepository.insert` / `.update` / `.createPowderLot`
+//   / `.createPrimerLot` / `.createBulletLot` / `.createBrassLot` /
+//   `.createCustomField` / `.upsertCustomFieldValue`.
+// - Writes via `ComponentRepository.addCustomComponent` for any typed-in
+//   powder, primer, bullet, brass, or cartridge that isn't already in
+//   the catalog or custom-components table.
+// - Reads / writes `SharedPreferences` under `recipe_form_detail_level`
+//   to persist the 3-level detail toggle.
+// - Pops the navigator on successful save.
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

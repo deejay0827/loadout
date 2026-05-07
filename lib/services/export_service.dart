@@ -1,3 +1,170 @@
+// FILE: lib/services/export_service.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Defines `ExportService`, the class that converts the user-mutable side of
+// LoadOut's local SQLite database to and from a self-describing JSON
+// document. This is the foundation of two user-visible features:
+//
+//   1. "Export to file" — produces a plain JSON file that the user can
+//      AirDrop / email / save to Files / drop in Dropbox. The export goes
+//      out via a temp file fed to the system share sheet via the
+//      `share_plus` package.
+//   2. "Encrypted cloud backup" — the same JSON body is the *plaintext*
+//      input to `BackupCrypto.encrypt`. The encrypted blob is then
+//      uploaded to iCloud Drive or Google Drive's appDataFolder.
+//
+// What is "JSON"? JSON (JavaScript Object Notation) is a text format that
+// represents a tree of strings, numbers, booleans, lists, and key/value
+// objects. It's universally readable — any programming language can parse
+// it, every text editor can open it, and a determined user can hand-edit
+// it if they need to.
+//
+// What is "drift"? Drift is the Dart package LoadOut uses to talk to SQLite
+// in a typed, code-generated way. Each table is declared in
+// `lib/database/database.dart` and drift generates `*Row` classes with
+// `toJson()` / `fromJson()` helpers — those are what we use here.
+//
+// Public surface, in the order it appears:
+//
+//   - `kLoadOutExportVersion` — top-level version number for the on-disk
+//     wrapper format. Bumped whenever the exporter layout changes (new
+//     top-level field, renamed table, etc.). Independent of the database
+//     schema version.
+//   - `kUserDataTableOrder` — the FK-safe order in which tables are dumped
+//     and re-inserted. Order matters on import: parent rows (PowderLots,
+//     BrassLots, etc.) must land BEFORE child rows that reference them
+//     (UserLoads, Batches), or the foreign key constraint fires.
+//   - `ImportTableSummary` — per-table counts of added / skipped / errored
+//     rows. The Backup screen renders one of these per section.
+//   - `ImportSummary` — aggregate result. Has `totalAdded`, `totalSkipped`,
+//     `hasErrors`, and an optional `fatalError` set when the import was
+//     refused before any tables were walked.
+//   - `ImportMergeMode.skipDuplicates` — keep the local row, skip inbound.
+//     Default. Safe.
+//   - `ImportMergeMode.overwrite` — overwrite the local row with inbound.
+//     Destructive — only used when the user explicitly chooses "replace".
+//   - `ExportService(db)` — constructor.
+//   - `exportToJson()` — produces the wrapped JSON document. Pretty-printed
+//     so the user opening the file in TextEdit gets a legible view.
+//   - `writeExportToTempFile({filename})` — writes `exportToJson()` to a
+//     timestamped temp file via `path_provider.getTemporaryDirectory()` and
+//     returns the resulting `File`. The Backup screen then hands this file
+//     to `share_plus`, which opens the system share sheet (AirDrop, Files,
+//     Mail, Drive, etc.). The temp directory is purged by the OS on
+//     uninstall and after a while of inactivity, so this is a safe staging
+//     spot — the file is intentionally not persistent.
+//   - `importFromJson(json, {mode})` — inverse of `exportToJson`. Parses,
+//     validates the wrapper (see "Wrapper format" below), then walks
+//     `kUserDataTableOrder` and inserts each table's rows inside a single
+//     SQLite transaction so the import is atomic.
+//
+// WRAPPER FORMAT (`exportToJson` output):
+// ```json
+// {
+//   "loadout_export_version": 1,
+//   "exported_at": "2026-05-07T12:34:56.000Z",
+//   "schema_version": 4,
+//   "tables": {
+//     "user_loads":    [ {...row...}, {...row...} ],
+//     "user_firearms": [ ... ],
+//     ...
+//   }
+// }
+// ```
+// `loadout_export_version` distinguishes wrapper-format changes from the
+// database schema version. `schema_version` snapshots the runtime DB
+// schema so the importer can refuse forward-incompatible payloads.
+//
+// VERSION REJECTION RULES (in `importFromJson`):
+//   - Inbound `loadout_export_version` > our `kLoadOutExportVersion`
+//     ⇒ FATAL: "Backup was created by a newer version of LoadOut".
+//   - Inbound `schema_version` > runtime `db.schemaVersion`
+//     ⇒ FATAL: "Backup uses database schema vX, but this app is on vY".
+//   - Either field missing or wrong type ⇒ FATAL: "is this a LoadOut export?"
+//   - Inbound `tables` not a Map ⇒ FATAL: "missing the tables map".
+// Forward-compatible imports (older payload, newer DB) are accepted; older
+// columns just don't appear in the row JSON, drift's `fromJson` tolerates
+// that.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// LoadOut is a local-first app — the user's data lives in SQLite, never on
+// our servers. That means losing the device or migrating to a new one
+// would lose their reloading log unless we provide an explicit export path.
+// `ExportService` is that path. It is deliberately NOT integrated with any
+// cloud sync — the backup screens that DO talk to cloud providers (iCloud,
+// Drive) layer on top of this service via `BackupCrypto`.
+//
+// In the layer cake:
+//
+//   UI (Backup screen, Export menu)
+//     ↓
+//   ExportService                     ← this file
+//     ├──→ AppDatabase (drift)
+//     └──→ BackupCrypto (encryption layer for cloud backup)
+//
+// The seeded reference tables (Cartridges, Powders, Bullets, Primers,
+// BrassProducts, FirearmsRef, FirearmParts, Manufacturers) are
+// INTENTIONALLY EXCLUDED from the export. Those ship with every install
+// from JSON in `assets/seed_data/` and would only inflate backups. The
+// user is the source of truth only for `kUserDataTableOrder`.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// 1. FOREIGN KEY ORDER. SQLite enforces FK constraints when foreign keys
+//    are enabled (drift turns them on). If the importer inserts a UserLoad
+//    that references a PowderLot before that PowderLot has been inserted,
+//    the constraint fires and the row fails. `kUserDataTableOrder` is
+//    therefore canonical — both `exportToJson` and `importFromJson` walk
+//    it identically.
+// 2. PRIMARY KEY COLLISIONS. After a user re-imports a backup taken on
+//    the same device, every primary key already exists. Default mode
+//    (`skipDuplicates`) keeps the local row and counts it under "skipped".
+//    `overwrite` mode forces an upsert via `InsertMode.insertOrReplace`,
+//    which obliterates any local edits made since the backup was taken.
+// 3. ATOMICITY. The whole import runs inside `db.transaction(...)`. If a
+//    single row fails mid-walk, the entire transaction can be rolled back.
+//    Without this, a half-successful import would leave the DB in a
+//    half-merged state.
+// 4. FORWARD COMPATIBILITY OF TABLE NAMES. The importer's `_insertOne`
+//    `switch` returns `false` for unknown table names rather than
+//    throwing — so a backup taken on a slightly newer version we still
+//    consider compatible (export_version <= ours, schema_version <= ours)
+//    that includes a new table doesn't crash; the new table is silently
+//    ignored, the rest imports fine.
+// 5. DRIFT JSON ROUND-TRIP. We use drift-generated `Row.toJson()` /
+//    `Row.fromJson()` so unknown columns automatically appear/disappear
+//    when the schema evolves. Hand-rolled JSON would have to be updated
+//    every time we add a column.
+// 6. TEMP FILE LIFETIME. `writeExportToTempFile` writes into the OS temp
+//    directory. iOS and Android both purge this directory on uninstall
+//    and after a while of inactivity, which is exactly what we want — the
+//    user only needs the file long enough for `share_plus` to hand it
+//    off to their chosen destination app.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - The Backup / Settings screen drives `exportToJson`, `writeExportToTempFile`,
+//   and `importFromJson`. (See screens under
+//   `/Users/general/Development/Applications/LoadOut/lib/screens/`).
+// - `cloud_backup.dart` doesn't import this file directly — instead the
+//   Backup screen calls `ExportService.exportToJson` to get the plaintext
+//   JSON, then feeds that to `BackupCrypto.encrypt`, then hands the
+//   encrypted blob to a `CloudBackupProvider`.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads every user-data table via drift `select(...).get()` calls.
+// - Writes a temp file in `path_provider.getTemporaryDirectory()` (export only).
+// - On import: opens a SQLite transaction and runs N inserts/upserts.
+// - No network. No persistence beyond the temp file. No analytics.
+
 import 'dart:convert';
 import 'dart:io';
 

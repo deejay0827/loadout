@@ -1,3 +1,155 @@
+// FILE: lib/widgets/primer_cascade_field.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Defines `PrimerCascadeField`, a two-stage cascading dropdown for picking
+// a primer in the recipe form. Stage one is a manufacturer dropdown
+// ("Federal", "CCI", "Winchester", "Remington", …). Stage two appears as
+// soon as a manufacturer is chosen and lists THAT manufacturer's primer
+// products by their full marketing label, e.g.
+// `"Premium Gold Medal Small Rifle Match #GM205M"` rather than the bare
+// part number `"GM205M"`. The product list comes from the `productLine`
+// column on `Primers` rows that was added in seed-data v3 specifically
+// to support this widget.
+//
+// Public API:
+//   - `controller`        — the parent form's `TextEditingController`. The
+//                            stored value is the canonical
+//                            `"<Brand> #<Name>"` string (e.g.
+//                            `"Federal #210M"`), identical in shape to
+//                            what the legacy `ComponentField` produced.
+//                            Existing recipes round-trip; the rest of the
+//                            app — including
+//                            `ComponentRepository.primerByLabel` for the
+//                            primer-size auto-fill on the recipe form —
+//                            keeps working unchanged.
+//   - `onSelected(label)` — fires once when the user picks a product from
+//                            the second dropdown. Receives the full
+//                            canonical label.
+//
+// State tracked inside `_PrimerCascadeFieldState`:
+//   - `_customSentinel`        — the magic string `"__custom__"` used as the
+//                                 dropdown value for the "Other / Custom…"
+//                                 option, so we can distinguish "user picked
+//                                 the escape hatch" from "user picked a real
+//                                 manufacturer that happens to be named X".
+//   - `_futureBrands`          — the future returned by
+//                                 `primerManufacturers()`. Resolved once,
+//                                 used to populate the brand dropdown.
+//   - `_selectedBrand`         — name of the currently selected manufacturer,
+//                                 or `_customSentinel` for free-form mode,
+//                                 or null on first build.
+//   - `_selectedPrimerName`    — the bare model number once the user has
+//                                 picked a product (e.g. `"GM205M"`).
+//                                 Stays null until they do.
+//   - `_futureProducts`        — future for the product list of the picked
+//                                 brand. Re-issued every time the brand
+//                                 changes.
+//   - `_customController`      — separate `TextEditingController` for the
+//                                 free-form text field that appears in
+//                                 custom mode. Pre-populated from the parent
+//                                 controller so users can edit, not retype.
+//
+// Key methods:
+//   - `_hydrateFromController(text)` — invoked from `initState`. Parses an
+//     incoming canonical label (`"Federal #210M"`) via
+//     `ComponentRepository.splitPrimerStorageLabel`, and pre-selects both
+//     dropdowns so editing an existing recipe shows the user what was
+//     stored. If the parse fails (legacy data, custom entry, empty) we
+//     either drop into custom mode or leave both dropdowns unset.
+//   - `_onExternalControllerChange()` — listener on the parent controller.
+//     Re-hydrates state when the parent resets the field (e.g. tapping
+//     "New Recipe" clears the form). Guarded with equality checks to
+//     avoid `setState` loops.
+//   - `_onBrandChanged(value)` — runs when the brand dropdown changes.
+//     Either issues a fresh `primersByManufacturer(brand)` future or, for
+//     the custom sentinel, tears down the products future and copies the
+//     custom text into the parent controller.
+//   - `_onProductChanged(p)` — runs when the product dropdown changes.
+//     Builds the canonical label via
+//     `ComponentRepository.primerStorageLabel` and writes it to the
+//     parent controller, then fires `onSelected`.
+//   - `_onCustomTextChanged(value)` — pipes free-form text directly to the
+//     parent controller in custom mode.
+//
+// `_PlaceholderHint` is a tiny private widget that renders a one-line
+// italicized hint ("Pick a primer brand to see available products.") when
+// no brand has been picked yet.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reloaders identify primers in two different ways:
+//
+//   - GUNR-style part-number labels  ("Federal #205M", "CCI #BR4")
+//     used in load-data publications and forum threads.
+//   - Marketing-name labels          ("Premium Gold Medal Small Rifle
+//                                      Match", "Benchrest Small Rifle")
+//     used on the actual box at the store.
+//
+// New reloaders see "#205M" on a Hodgdon load chart and have no idea that
+// "Federal Gold Medal Match Small Rifle" on the shelf in front of them is
+// the same thing. The flat, single-field `ComponentField` legacy primer
+// picker only displayed the part-number form, so we hid the marketing
+// label that connects the two worlds. The cascading dropdown shows BOTH
+// — the marketing line AND the part number — so the picker doubles as a
+// "what's on the shelf" lookup.
+//
+// We could not just replace the existing storage format. Existing recipes
+// in the wild already store `"Federal #210M"` as a single string, and
+// other places in the app (the primer-size auto-fill, anything that
+// renders a recipe summary) parse that exact format. So this widget
+// READS via the cascading UI but WRITES the same canonical string the old
+// widget did. That gives us the new UX without forcing a migration.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// 1. ROUND-TRIPPING THE STORED LABEL. To show the right brand and product
+//    when an existing recipe is loaded, `_hydrateFromController` parses
+//    the canonical label, looks up the manufacturer's products, and
+//    matches by `name`. If the manufacturer name in the stored label
+//    doesn't match anything in the seeded primers table (e.g. the user
+//    saved a custom value through the legacy widget), we fall back to
+//    custom mode rather than silently dropping the data.
+// 2. THE EXTERNAL-CONTROLLER LOOP. The parent can reset the controller
+//    (clear the recipe, load a different recipe). We listen for that and
+//    re-hydrate. But re-hydration calls `setState`, which writes back to
+//    the controller, which fires the listener again. We break the loop
+//    by checking each piece of state for equality before calling
+//    `setState`.
+// 3. CUSTOM-MODE ESCAPE HATCH. Not every primer the user might want is in
+//    the catalog (Russian Murom KVB-7, obscure benchrest brands, etc.).
+//    The "Other / Custom…" option in the brand dropdown, encoded by the
+//    `_customSentinel` string, swaps the second dropdown for a free-form
+//    `TextFormField`. Whatever the user types becomes the canonical
+//    stored value verbatim, no `"<Brand> #<Name>"` prefix.
+// 4. TWO FUTURES. The brand list comes from one query, the products
+//    list from a second query that depends on the brand. We use two
+//    nested `FutureBuilder`s rather than a single one because each
+//    future has a different lifetime and the products future re-issues
+//    every time `_onBrandChanged` runs.
+// 5. `DropdownButtonFormField<PrimerRow>` USES THE ENTIRE ROW AS THE
+//    VALUE. Dart equality on drift `PrimerRow` is reference-based, so we
+//    cannot pre-select by simply passing in a freshly-fetched row.
+//    Instead we scan the products list for one whose `name` matches the
+//    pre-selected `_selectedPrimerName` and pass THAT exact instance to
+//    `initialValue`.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/loads/load_form_screen.dart — the primer row in the
+//   recipe form is the only caller today.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads from SQLite via `ComponentRepository.primerManufacturers()` and
+//   `primersByManufacturer(brand)`. No writes — the widget only mutates
+//   the parent's `TextEditingController`.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

@@ -1,3 +1,104 @@
+// FILE: lib/services/entitlement_notifier.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Defines `EntitlementNotifier`, a Flutter `ChangeNotifier` that exposes a
+// single boolean — `isPro` — and emits a "something changed" signal whenever
+// it flips. Widgets read this notifier through Flutter's `provider` package
+// and rebuild themselves automatically when entitlement state changes (after
+// a purchase, a restore, an expiry, etc.).
+//
+// What is a `ChangeNotifier`? It's Flutter's simplest "tell me when this
+// changes" object. It owns some piece of state, and when that state changes
+// it calls `notifyListeners()`. Any widget that did `context.watch<X>()` for
+// that notifier gets rebuilt with the new value. We picked it (over a
+// `StreamProvider<bool>`) so callers can also call helpers like `refresh()`
+// imperatively without rewiring the provider tree.
+//
+// Public surface:
+//
+//   - `EntitlementNotifier(purchases)` — constructor. Subscribes to
+//     `PurchasesService.customerInfoStream` (a stream of RevenueCat
+//     `CustomerInfo` snapshots) and primes `_isPro` with the current state.
+//     If the underlying `PurchasesService` was never configured (placeholder
+//     keys path), the constructor short-circuits — `isPro` stays false but
+//     the notifier still wires up cleanly.
+//   - `isPro` — boolean read by widgets. Returns `true` when the dev override
+//     is set AND the build is debug; otherwise reflects the real RevenueCat
+//     entitlement state.
+//   - `refresh()` — force a one-shot re-fetch of `CustomerInfo`. Useful right
+//     after a successful purchase to flip the UI before the listener event
+//     lands.
+//   - `entitlementKey` — diagnostic getter that returns the entitlement
+//     identifier from `RevenueCatConfig`.
+//   - `dispose()` — cancels the stream subscription. Called by Flutter when
+//     the provider is torn down.
+//
+// `debugForceProActive` (compile-time constant) lets developers reach
+// Pro-gated UI in debug builds without going through a real sandbox purchase.
+// In release builds `kDebugMode` is a const-false, so the dead branch is
+// stripped by the Dart compiler — the override has zero effect on shipped
+// binaries.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// The layer cake for the monetization stack:
+//
+//   UI (Pro-gated screens, ProGate widget, ensurePro action gate)
+//     ↓ context.watch<EntitlementNotifier>()
+//   EntitlementNotifier                ← this file
+//     ↓ subscribes to
+//   PurchasesService.customerInfoStream
+//     ↓ wraps
+//   purchases_flutter / Purchases SDK
+//
+// Without this notifier, every Pro-gated widget would have to subscribe to
+// the RevenueCat stream itself, decode `CustomerInfo`, and compare the
+// active entitlement key. Centralizing that logic here means each widget
+// just reads a boolean.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// 1. FIRST-FRAME RENDER ORDER. The first event from the RevenueCat stream
+//    arrives some milliseconds after the SDK boots. Without the priming
+//    `refresh()` call in the constructor, the very first frame after a
+//    cold start would render every Pro user as "not pro" and only flip
+//    once the listener fires.
+// 2. PLACEHOLDER-KEYS PATH. When `RevenueCatConfig.isPlaceholder` is true
+//    the SDK is never configured (so `customerInfoStream` would never emit).
+//    We have to check `_purchases.isConfigured` BEFORE subscribing to avoid
+//    listening on a dead stream.
+// 3. DEV OVERRIDE FAIL-SAFE. `debugForceProActive` is hardcoded to true
+//    during development. The pre-release checklist requires flipping this
+//    to false before any TestFlight or App Store build — see comment block
+//    above the constant.
+// 4. NOTIFY EQUALS-CHECK. We only call `notifyListeners()` when the value
+//    actually flips. Re-emitting on every stream event would cause needless
+//    widget rebuilds.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - /Users/general/Development/Applications/LoadOut/lib/app.dart provides this
+//   notifier to the widget tree via `ChangeNotifierProvider`.
+// - /Users/general/Development/Applications/LoadOut/lib/widgets/pro_gate.dart
+//   reads `isPro` to render the gated child or a Pro upsell.
+// - /Users/general/Development/Applications/LoadOut/lib/screens/paywall/paywall_screen.dart
+//   calls `refresh()` after a purchase succeeds to flip Pro-gated UI before
+//   the next stream event lands.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Subscribes to `PurchasesService.customerInfoStream` for the lifetime of
+//   the notifier. Calls `notifyListeners()` whenever `_isPro` flips.
+// - `refresh()` makes a synchronous-style call into RevenueCat to pull the
+//   latest `CustomerInfo`.
+// - No persistence, no network beyond what RevenueCat does internally.
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';

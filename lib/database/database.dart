@@ -1,3 +1,162 @@
+// FILE: lib/database/database.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Defines the LoadOut app's entire on-device SQLite schema using `drift` —
+// a typed Dart ORM (Object-Relational Mapper). Drift is the preferred way
+// to talk to SQLite from Flutter: instead of writing raw SQL strings, you
+// describe each table as a Dart class that extends `Table`, declare its
+// columns as typed getters (`IntColumn`, `TextColumn`, `RealColumn`,
+// `BoolColumn`, `DateTimeColumn`), and a build-time code generator
+// produces all the boilerplate to insert, query, update, and delete rows
+// with full Dart type safety.
+//
+// The class declarations in this file fall into two groups. First are the
+// "reference" tables — `Manufacturers`, `Cartridges`, `Powders`, `Bullets`,
+// `Primers`, `BrassProducts`, `FirearmsRef`, `FirearmParts`. These are
+// effectively read-only catalogs seeded from the JSON files in
+// `assets/seed_data/` on first launch (see `seed_loader.dart`); the user
+// never edits them, the dropdowns in the UI just pull from them. Second
+// are the user data tables — `CustomComponents`, `UserLoads`,
+// `UserFirearms`, `BrassLots`, `Batches`, `TestSessions`, `PowderLots`,
+// `BulletLots`, `PrimerLots`, `UserProcessSteps`, `UserCustomFields`,
+// `UserCustomFieldValues`, `LoadDevelopmentSessions`. These hold the
+// reloader's actual recipes, firearms, batches, range data, and custom
+// fields. They are the entire reason for the local-first architecture
+// described in `CLAUDE.md`.
+//
+// Below the table declarations is the `AppDatabase` class. The
+// `@DriftDatabase(tables: [...])` annotation on it is what triggers the
+// code generator: drift inspects the listed tables and emits a sibling
+// file `database.g.dart` (which you must NEVER edit by hand — re-run
+// `dart run build_runner build` after schema changes). That generated
+// file defines `_$AppDatabase`, the mixin our class extends; it provides
+// the typed `select(...)`, `insert(...)`, `update(...)`, `delete(...)`
+// methods plus generated companions like `UserLoadsCompanion` for
+// constructing rows.
+//
+// `schemaVersion` is currently 5. The `MigrationStrategy` defines two
+// callbacks: `onCreate` runs on a fresh install (creates every table, then
+// seeds the 8 standard reloading process steps), and `onUpgrade` runs
+// when an installed user opens a build with a newer `schemaVersion`. The
+// upgrade path adds columns and tables additively, preserving user data,
+// while occasionally invalidating reference tables so they get re-seeded
+// from the latest JSON. The three boolean getters at the bottom
+// (`needsSeed`, `primersAreEmpty`, `cartridgesNeedReseed`) are how
+// `seed_loader.dart` detects whether seeding (or re-seeding) needs to
+// run — they spot-check specific rows that should always exist and
+// always have certain fields populated.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// SQLite is the storage engine for everything LoadOut knows about a user.
+// There is no Firestore, no cloud sync, no remote API for user data. This
+// file is the single source of truth for the schema; if it doesn't
+// declare a column, that column doesn't exist on disk and the rest of
+// the app can't store the value.
+//
+// The `@DriftDatabase` class also acts as the central repository handle —
+// every repository class in `lib/repositories/` takes an `AppDatabase` in
+// its constructor and uses it to issue queries. `app.dart` provides the
+// singleton `AppDatabase` to the whole widget tree via `provider`, so
+// every screen and repository points at the same SQLite connection.
+//
+// The migration strategy is the contract that lets the schema evolve
+// without breaking existing users. Each time we change anything that
+// affects on-disk shape, we must bump `schemaVersion` and add an
+// `onUpgrade` clause. Skip that and an existing user's app crashes on
+// next launch with "no such column" errors.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// `database.g.dart` is generated. Editing it manually will be silently
+// overwritten by the next `build_runner` run. After any change to this
+// file, run `dart run build_runner build` (or
+// `dart run build_runner watch --delete-conflicting-outputs` for
+// continuous regeneration). Forgetting this leaves the project in a
+// non-compiling state because the generated companions and `_$AppDatabase`
+// mixin won't reflect the new schema.
+//
+// SQLite cannot drop or alter columns once they exist — only add. So
+// `onUpgrade` is constrained to adding columns and tables. If a column
+// needs to change type, the migration must create a new column, copy
+// data, and stop reading the old one. We have not had to do this yet.
+//
+// JSON-encoded text columns (`aliasesJson`, `calibersJson`,
+// `compatibleWithJson`, `processStateJson`, `rungsJson`) are how we store
+// list/map values without a separate child table. They look like strings
+// to SQLite but get decoded at the repository boundary with
+// `json.decode(...)`. This trades query-ability (you can't easily WHERE
+// against a JSON value) for schema simplicity. Don't introduce JSON
+// columns when a child table would let you query the values; do
+// introduce them for tag-like data the user just sees.
+//
+// `currentDateAndTime` is a drift-provided default that records "now"
+// when the row is inserted. It's the standard way to backfill
+// `createdAt` / `updatedAt` columns. Drift translates this to SQLite's
+// `CURRENT_TIMESTAMP` under the hood.
+//
+// The migration sequence in `onUpgrade` is `if (from < 2) { ... }
+// if (from < 3) { ... } if (from < 4) { ... } if (from < 5) { ... }` —
+// drift gives you the user's old schema version and you fall through
+// every gap that needs catching up. Don't use `else if`: a user three
+// versions behind needs every block to run in order.
+//
+// The v3 migration intentionally clears `Primers` and the `primer`-kind
+// `Manufacturers` rows. Without that, the new `productLine` column would
+// stay null for every existing primer, and the cascading dropdown in the
+// recipe form would lose the marketing names. The user-data tables
+// (`UserLoads`, `UserFirearms`, `CustomComponents`) are NEVER deleted by
+// any migration — that would lose the user's work.
+//
+// `cartridgesNeedReseed` spot-checks "9mm Luger" because that's a stable
+// canary cartridge that has been in the seed data since v1 and was
+// extended with the v2 SAAMI dimensional fields. If it exists but
+// `bodyDiameterIn` is null, the user is on a v2-migrated database that
+// needs the cartridges re-seeded so the new fields populate.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/main.dart` — instantiates `AppDatabase()`, which opens the
+//   SQLite connection and runs migrations.
+// - `lib/database/seed_loader.dart` — calls `db.needsSeed`,
+//   `db.primersAreEmpty`, `db.cartridgesNeedReseed` to decide what to
+//   re-seed; uses the generated companions to insert rows.
+// - `lib/repositories/component_repository.dart` — reads the reference
+//   tables (`Powders`, `Bullets`, `Primers`, `BrassProducts`,
+//   `Manufacturers`, `Cartridges`) for dropdown menus.
+// - `lib/repositories/firearm_repository.dart` — CRUD over `UserFirearms`
+//   and `FirearmsRef`.
+// - `lib/repositories/recipe_repository.dart` — CRUD over `UserLoads`.
+// - `lib/repositories/brass_lot_repository.dart` — CRUD over `BrassLots`.
+// - `lib/repositories/batch_repository.dart` — CRUD over `Batches` and
+//   `TestSessions`.
+// - `lib/repositories/process_step_repository.dart` — CRUD over
+//   `UserProcessSteps`.
+// - `lib/repositories/load_development_repository.dart` — CRUD over
+//   `LoadDevelopmentSessions`.
+// - Indirectly: every UI screen via the repositories above.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - `AppDatabase()` constructor opens (or creates) the `loadout` SQLite
+//   file in the OS application support directory, runs `onCreate` on
+//   fresh installs, runs `onUpgrade` when an installed app opens a
+//   build with a newer `schemaVersion`. This blocks the calling future
+//   until SQLite finishes initializing.
+// - `_seedStandardProcessSteps()` writes 8 rows into `UserProcessSteps`
+//   on fresh installs and v4 migrations.
+// - The v3 migration deletes every row in `Primers` and every
+//   primer-kind row in `Manufacturers` to force a re-seed.
+// - The schema version field controls one-shot migration writes that
+//   alter the on-disk shape. Bumping it without an accompanying
+//   migration block will cause SQLite errors on next launch.
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 import 'package:path_provider/path_provider.dart';

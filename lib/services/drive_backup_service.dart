@@ -1,3 +1,158 @@
+// FILE: lib/services/drive_backup_service.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// The cross-platform implementation of `CloudBackupProvider` backed by
+// Google Drive's special "appDataFolder". Works on iOS, Android, and any
+// other platform Flutter supports — wherever the user can sign in with
+// Google. Unlike `ICloudBackupService` which is iOS-only, this is the
+// "always available with a Google account" option.
+//
+// What is the Drive `appDataFolder`? It's a SPECIAL hidden folder Google
+// Drive provides to each Drive-using app. Files stored there:
+//   - Are scoped per-app — only the app that wrote them can read them.
+//   - Are scoped per-Google-account — different account = different folder.
+//   - Are HIDDEN from the user's normal drive.google.com UI. The user can
+//     see they exist (and revoke the app's access) via Google account
+//     settings, but they don't show up when browsing "My Drive".
+//   - Count against the user's standard Drive storage quota.
+// It's the perfect place for app-managed backups: invisible noise in the
+// user's Drive, no risk of accidental human deletion, and trivially
+// revocable.
+//
+// What is "OAuth"? OAuth is the protocol Google (and most other identity
+// providers) use to grant a third-party app permission to call their APIs
+// on behalf of a signed-in user. The user signs in once, sees a consent
+// sheet ("LoadOut wants to manage its own configuration data"), and the
+// app receives a short-lived "access token" it can include with each API
+// call. We don't see the user's password — Google handles that.
+//
+// AUTH FLOW (`google_sign_in` 7.x — the new singleton API):
+//   1. `GoogleSignIn.instance.initialize()` once per process.
+//   2. `attemptLightweightAuthentication()` first — returns null if the
+//      user has never signed in or has revoked us. NO UI.
+//   3. If null, `authenticate(scopeHint: ['email', 'profile'])` — full
+//      interactive sign-in.
+//   4. `authorizationForScopes([driveAppdataScope])` — silent check for
+//      the Drive scope. Null if not yet granted.
+//   5. If null, `authorizeScopes([driveAppdataScope])` — interactive
+//      grant. On iOS this is a separate consent sheet; on Android it can
+//      usually fold into the same flow as sign-in.
+//   6. `authorizationHeaders([driveAppdataScope])` — returns
+//      `{'Authorization': 'Bearer ya29...'}` headers.
+//
+// HOW THE HTTP CLIENT WORKS: the official `googleapis` package wants an
+// `http.Client` that injects the OAuth bearer token on every request.
+// There used to be a helper package called
+// `extension_google_sign_in_as_googleapis_auth` that produced one, but it
+// hasn't yet been updated for the `google_sign_in` 7.x singleton API.
+// So we hand-roll a minimal `_GoogleAuthClient` that does exactly that —
+// it's a `BaseClient` that wraps the package:http default client and
+// injects whatever headers the auth call returned. Lifted into its own
+// type so it stays testable.
+//
+// FILE NAMING: every uploaded blob carries a `.lo1` suffix
+// ("LoadOut format version 1"). `list()` filters on this so a future
+// scenario where this file's appDataFolder is shared with a sibling
+// LoadOut feature wouldn't show those files in the backup list.
+//
+// Public surface:
+//
+//   - `driveAppdataScope` — the OAuth scope string. PUBLIC constant.
+//   - `displayName` — `"Google Drive"`.
+//   - `isAvailable()` — calls `attemptLightweightAuthentication` (NO UI)
+//     and checks the scope grant. Returns false until the user has gone
+//     through interactive sign-in once. We deliberately don't trigger
+//     consent sheets here — surprise prompts are a bad UX.
+//   - `upload(blob, {filename})` — looks up an existing file by name
+//     and either creates or updates. Drive doesn't enforce unique names,
+//     so the lookup prevents duplicates piling up across re-uploads.
+//   - `list()` — `files.list(spaces: 'appDataFolder')`, filter to `.lo1`,
+//     sort newest-first.
+//   - `download(meta)` — `files.get(..., DownloadOptions.fullMedia)`. The
+//     response is a streamed `Media`; we stage it through the temp dir to
+//     give the OS a chance to swap if the blob is large, then read all
+//     bytes back in.
+//   - `delete(meta)` — `files.delete(fileId)`. Irreversible.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// One of two concrete implementations of `CloudBackupProvider`. The other
+// is `ICloudBackupService`. Drive is the cross-platform option — Android
+// users have nothing equivalent to iCloud, so Drive is their primary path,
+// and iOS users who don't use iCloud (or who want a backup that lives
+// outside Apple's ecosystem) can use Drive instead.
+//
+// In the layer cake:
+//
+//   Backup screen
+//     ↓ via CloudBackupProvider interface
+//   DriveBackupService                 ← this file
+//     ↓
+//   googleapis (drive/v3) + google_sign_in
+//     ↓ via _GoogleAuthClient (this file)
+//     ↓
+//   Google Drive REST API
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// 1. THE AUTH BRIDGE PACKAGE LAGS. As of this writing,
+//    `extension_google_sign_in_as_googleapis_auth` doesn't support
+//    `google_sign_in` 7.x. We rolled our own `_GoogleAuthClient` to
+//    bridge the gap. When the official bridge catches up, we should
+//    swap to it.
+// 2. NO SURPRISE CONSENT SHEETS. `isAvailable()` only does silent checks.
+//    Interactive sign-in happens lazily inside `_openSession`, which is
+//    called from each upload/list/download/delete entry point. The user
+//    therefore sees the sheet exactly when they tap a backup button —
+//    not on app launch, not on screen entry.
+// 3. SCOPE GRANULARITY. We use `drive.appdata` — the narrowest Drive
+//    scope, which only grants access to OUR appDataFolder. We
+//    deliberately don't request `drive.file` or `drive` (full Drive
+//    access). Privacy-by-default; if the user inspects the consent sheet
+//    they see we cannot read their other Drive files.
+// 4. SESSION LIFETIME. Every method opens a fresh `_DriveSession`,
+//    runs its work, and closes the underlying socket pool in a finally
+//    block. We deliberately don't cache a long-lived session — token
+//    refresh is handled by `google_sign_in`, and short-lived sessions
+//    are simpler to reason about.
+// 5. TEMP FILE STAGING ON DOWNLOAD. Drive returns the blob as a
+//    streaming `Media` object. We sink to disk first, then read the file
+//    back as bytes. The reason is memory pressure: large blobs streamed
+//    fully into memory can OOM low-end devices. Going through disk lets
+//    the OS swap if needed.
+// 6. DEDUPED UPSERT. The Drive REST API doesn't enforce unique filenames,
+//    so two `upload()` calls with the same filename would yield two
+//    distinct files. `_findByName` runs a `name = '<escaped>'` query
+//    inside the appDataFolder space and switches between `create` and
+//    `update` based on the result. We escape single quotes in the
+//    filename to keep the q parameter safe.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - The Backup screen instantiates this as one entry in its list of
+//   `CloudBackupProvider`s, on every platform.
+// - The hand-rolled `_GoogleAuthClient` is private to this file (leading
+//   underscore) and not re-exported.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Network: every method except `displayName` and the auth-flow init
+//   talks to Google servers (sign-in, OAuth refresh, Drive REST).
+// - UI: `_openSession` may surface a Google sign-in sheet and a separate
+//   Drive scope consent sheet on iOS the FIRST time the user backs up.
+//   Subsequent calls reuse cached credentials silently.
+// - Disk: download stages bytes in `path_provider.getTemporaryDirectory()`
+//   then deletes the staging file.
+// - Plugin: `google_sign_in`, `googleapis`, `http`.
+// - Persistence: `google_sign_in` caches its tokens internally; we don't
+//   write anything from this file.
+
 import 'dart:io' show File;
 
 import 'package:flutter/foundation.dart';

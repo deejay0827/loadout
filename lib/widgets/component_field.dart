@@ -1,3 +1,143 @@
+// FILE: lib/widgets/component_field.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Defines `ComponentField`, the autocomplete-style picker that the recipe
+// form (`load_form_screen.dart`) and the firearm form use whenever the
+// user has to choose a component from the catalog: cartridge, powder,
+// bullet, primer (legacy single-field path), or brass. Built on top of
+// Flutter's stock `Autocomplete<String>` widget — that's the widget the
+// SDK exposes for "type-to-search dropdown over a fixed list of options."
+//
+// Public API (the constructor parameters):
+//   - `kind`                — one of `'powder' | 'bullet' | 'primer' | 'brass'
+//                              | 'cartridge'`. Selects which catalog the
+//                              repository should hand back.
+//   - `label`               — the floating label that sits above the field
+//                              (e.g. "Cartridge / Caliber").
+//   - `controller`          — the parent form's `TextEditingController`. The
+//                              widget mirrors changes both directions so the
+//                              parent always has the user's current text.
+//   - `helper`              — optional helper text below the field.
+//   - `validator`           — optional `FormField` validator. Forwarded
+//                              straight through to the inner `TextFormField`.
+//   - `onSelected(label)`   — fires ONCE, when the user taps a row in the
+//                              dropdown. NOT a per-keystroke listener — for
+//                              that, watch `controller` directly. This is
+//                              what `load_form_screen.dart` hooks into to
+//                              auto-fill bullet diameter / primer size when
+//                              a known catalog item is picked.
+//
+// Matching algorithm (see `optionsBuilder`):
+// The user's query is lowercased, trimmed, and split on whitespace. Every
+// resulting token must appear (case-insensitively) somewhere in the option
+// label for that option to survive the filter. So `"6 GT"` matches
+// `"6mm GT"` and `"22 GT"` does NOT match `".30-06 Springfield"`. This is
+// deliberately looser than prefix-only matching — reloaders type cartridges
+// in many forms (`"6mm"`, `"6 mm"`, `".308"`, `"308 Win"`) and want them
+// all to find the right row.
+//
+// State tracked inside `_ComponentFieldState`:
+//   - `_futureOptions`     — the list of catalog labels for the configured
+//                             `kind`, fetched once during `initState` from
+//                             the `ComponentRepository`. Held as a Future so
+//                             we can render a `FutureBuilder` and rebuild
+//                             once the SQLite query completes.
+//   - `_innerController`   — the `TextEditingController` Flutter's
+//                             `Autocomplete` creates internally and hands to
+//                             us in `fieldViewBuilder`. We capture it the
+//                             first time so we can wire ONE listener.
+//   - `_innerListener`     — the `VoidCallback` that mirrors edits from the
+//                             autocomplete-owned controller back to the
+//                             parent's controller.
+//
+// Key methods:
+//   - `initState()`        — kicks off the SQLite query for `componentLabels`.
+//   - `dispose()`          — removes the listener so the autocomplete
+//                             controller doesn't keep us alive.
+//   - `_ensureWiring(ctrl)` — the critical helper. See WHY THIS IS HARDER
+//                             below. Wires the listener exactly once and
+//                             tears down the prior wiring if the autocomplete
+//                             ever swaps controllers.
+//   - `build()`            — wraps the `Autocomplete<String>` in a
+//                             `FutureBuilder` so the option list resolves
+//                             asynchronously without blocking first paint.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// LoadOut's recipe form has six identical-shaped picker rows (cartridge,
+// bullet, powder, primer, brass, plus optional ones). Without a shared
+// widget, every screen would re-implement the "fetch labels, filter as
+// the user types, mirror to a parent controller" dance. That's a lot of
+// drift opportunity — one variant treats `null` differently, one calls
+// `componentLabels` on every keystroke, one forgets to expose `onSelected`,
+// and the screens drift apart.
+//
+// `ComponentField` collapses all of that to a 5-line invocation, while
+// preserving the hook the parent needs (the `onSelected` callback) for the
+// "auto-fill bullet diameter when you pick from the catalog" affordance.
+// It is also the home of the autocorrect/suggestions OFF flags described
+// below; making sure those stay consistent across every component picker
+// is part of the "don't drift" payoff.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// 1. THE LISTENER LEAK. Flutter's `Autocomplete<String>` calls
+//    `fieldViewBuilder` on every rebuild — and rebuilds happen on every
+//    keystroke, every focus change, every parent setState. If you write
+//    `textCtrl.addListener(...)` directly inside `fieldViewBuilder`,
+//    you accumulate one listener per rebuild. Within a few seconds of
+//    typing, every keystroke is firing a hundred listeners. Symptom:
+//    typing in the field gets visibly laggy, and the controller mirrors
+//    fire repeatedly with the same value. The fix is `_ensureWiring`:
+//    capture the autocomplete-owned controller the first time we see it,
+//    wire ONE listener, and noop on subsequent builds (`identical` check).
+//    `_innerController` is null until the very first `fieldViewBuilder`
+//    call — that's why we capture it lazily there rather than in
+//    `initState`.
+// 2. TWO CONTROLLERS, ONE FIELD. The parent owns its `TextEditingController`
+//    (so it can read the value on submit). `Autocomplete<String>` insists
+//    on owning ITS OWN controller (it uses it internally to drive the
+//    options list). Both have to stay in sync, which is what the listener
+//    does in both directions: parent → autocomplete on the initial sync,
+//    autocomplete → parent on every keystroke.
+// 3. `onSelected` IS NOT `onChanged`. `onSelected` fires when the user
+//    picks a row from the dropdown, NOT when they keystroke their way to
+//    a string that happens to match a catalog entry. Per-keystroke logic
+//    (validation, etc.) belongs on a `controller.addListener` in the
+//    PARENT form, not here.
+// 4. AUTOCORRECT / KEYBOARD SUGGESTIONS OFF. iOS keyboards love to
+//    "fix" `"6mm"` to `"6 mm"`, `".308"` to `". 308"`, and `"GM205M"` to
+//    `"Gm205m"`. These transforms happen invisibly at the OS level and
+//    silently corrupt cataloged-component lookups. We therefore set
+//    `autocorrect: false`, `enableSuggestions: false`, and
+//    `textCapitalization: TextCapitalization.none` on the inner field.
+//    The in-app suggestions list is the source of truth.
+// 5. `take(60)` IS NOT A LIMIT, IT'S A PERFORMANCE GUARDRAIL. The
+//    cartridge catalog has 200+ rows; rendering all of them in a
+//    dropdown would be wasteful. Sixty is enough that any prefix the
+//    user types narrows the list to something visually reasonable, but
+//    doesn't drive O(N) layout cost on the first build.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - lib/screens/loads/load_form_screen.dart — recipe-form pickers for
+//   cartridge, bullet, powder, brass (primer uses `PrimerCascadeField` now).
+// - lib/screens/firearms/firearm_form_screen.dart — caliber picker on the
+//   firearm form.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads from SQLite via `ComponentRepository.componentLabels(kind)` once
+//   per mount. No writes.
+// - Mutates the `controller` passed in by the parent on every keystroke
+//   inside the autocomplete-owned text field, and on selection.
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

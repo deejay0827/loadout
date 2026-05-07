@@ -1,3 +1,107 @@
+// FILE: lib/screens/firearms/firearm_form_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// The firearm create / edit form. Captures every column the
+// `UserFirearms` Drift table exposes — name, manufacturer, model, type,
+// action, caliber, barrel length, twist rate, round count, optional
+// link to a reference firearm, and free-form notes.
+//
+// The form opens with a `SegmentedButton<bool>` toggle that controls how
+// the manufacturer / model / type / action fields are entered:
+//
+// * "Pick from Catalog" mode (`_useCatalog = true`) renders a
+//   `DropdownButtonFormField<_RefEntry>` populated from
+//   `ComponentRepository.allReferenceFirearms()`. Picking a row from the
+//   catalog calls `_applyReferenceSelection`, which:
+//     - records the row's id in `_referenceFirearmId` so it persists on
+//       save,
+//     - copies manufacturer / model / type / action into the read-only
+//       display tiles,
+//     - resets the caliber field if the previously-typed value isn't in
+//       the reference firearm's caliber list, and surfaces a nested
+//       caliber dropdown limited to that firearm's supported calibers.
+//
+// * "Custom" mode (`_useCatalog = false`) replaces the catalog dropdown
+//   with four free-form `TextFormField`s for manufacturer / model /
+//   type / action — the path used for unusual builds, wildcatters, and
+//   anything not in the bundled reference catalog.
+//
+// Below the toggle, common fields appear regardless of mode: caliber
+// (via the shared `ComponentField` widget so the dropdown surfaces both
+// reference and custom cartridges), barrel length, twist rate, the
+// shots-fired stepper (a number field flanked by `+`/`-` filled-tonal
+// IconButtons that bump the count by 1), and a multi-line notes field.
+//
+// On save (`_save`), a typed-in caliber that isn't in the
+// `ComponentRepository.componentLabels('cartridge')` set is persisted as
+// a `CustomComponent` so it appears in future dropdowns. Then a
+// `UserFirearmsCompanion` is built and routed through
+// `FirearmRepository.insert` (create) or `.update` (edit).
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reachable from `FirearmsListScreen` — both the FAB (create) and tile
+// taps (edit). The mode toggle exists because LoadOut ships a curated
+// reference catalog of common firearms (`FirearmsRef`), but no catalog
+// can be exhaustive. Letting users link to a catalog row when one fits
+// keeps their data normalised; letting them type a custom build avoids
+// blocking entries that don't have a catalog match.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The reference catalog dropdown carries a typed `_RefEntry` record
+// (firearm row + manufacturer row + decoded calibers list) rather than
+// a plain id. That was a deliberate ergonomic choice: the form needs
+// the manufacturer name and the calibers list right after a selection,
+// and joining all three at render time avoids per-selection async
+// gymnastics. The `_refsFuture` is cached on `initState` so the
+// dropdown can render synchronously the first time it's shown.
+//
+// The two-mode toggle has a subtle state-reset gotcha: switching from
+// catalog to custom clears `_selectedRef` and `_referenceFirearmId`
+// but does NOT clear the manufacturer / model / type / action text
+// controllers, so the user can edit on top of a catalog auto-fill.
+// Switching from custom to catalog leaves those text values alone too;
+// they're only overwritten when an actual catalog row is picked.
+//
+// `_bumpShots` clamps the round count between 0 and `1 << 31` so a
+// runaway tap can't overflow into a negative number, and the text
+// validator rejects negatives. Round-count edits inside the form do
+// not call `FirearmRepository.adjustShotsFired` — that's a separate
+// path used by per-recipe shot logging. The form path overwrites the
+// stored count outright.
+//
+// The "persist typed-in caliber as a custom cartridge" branch is
+// asymmetric with the rest of the form: it writes to
+// `CustomComponents` independently of the firearm save. If the user
+// types a caliber, then changes their mind and types a different one,
+// both end up in `CustomComponents` — that's harmless, just clutter
+// in future dropdowns.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/firearms/firearms_list_screen.dart` — pushes
+//   `FirearmFormScreen()` via the FAB and
+//   `FirearmFormScreen(existing: f)` via list-tile taps.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads `ComponentRepository.allReferenceFirearms()` for the catalog
+//   dropdown.
+// - Reads `ComponentRepository.componentLabels('cartridge')` to
+//   determine whether the typed-in caliber needs to be persisted.
+// - Calls `ComponentRepository.addCustomComponent('cartridge', ...)`
+//   for unrecognised typed-in calibers.
+// - Calls `FirearmRepository.insert` or `.update`.
+// - Shows a confirmation `SnackBar` on save.
+// - Pops the navigator on success.
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
