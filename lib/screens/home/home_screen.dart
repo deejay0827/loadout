@@ -94,6 +94,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/auth_service.dart';
+import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../theme/app_theme.dart';
 import '../ai_chat/ai_chat_screen.dart';
@@ -200,11 +201,27 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isPro = context.watch<EntitlementNotifier>().isPro;
+    final beginnerOn = context.watch<BeginnerModeService>().isEnabled;
     return Scaffold(
       drawer: const _MainDrawer(),
       appBar: AppBar(
         title: Text(_titles[_index]),
         actions: [
+          // Glossary shortcut. Pinned to the AppBar in Beginner Mode so a
+          // new reloader can look up "CBTO" or "shoulder bump" without
+          // hunting through the drawer. Power users find it in the drawer
+          // (and turn Beginner Mode off in Settings to declutter the
+          // AppBar).
+          if (beginnerOn)
+            IconButton(
+              tooltip: 'Glossary',
+              icon: const Icon(Icons.menu_book_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const GlossaryScreen(),
+                ),
+              ),
+            ),
           IconButton(
             tooltip: isPro ? 'LoadOut Pro' : 'Upgrade to Pro',
             icon: Icon(

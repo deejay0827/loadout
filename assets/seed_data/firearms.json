@@ -1,339 +1,339 @@
 {
   "manufacturers": [
     {"name":"Glock","country":"Austria","category":"pistol","products":[
-      {"model":"G17 Gen 5","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Full-size duty pistol, polymer frame, 17+1 capacity."},
-      {"model":"G19 Gen 5","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Compact carry/duty pistol, 15+1 capacity."},
-      {"model":"G19X","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Crossover pistol with G17 frame and G19 slide."},
-      {"model":"G26 Gen 5","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Subcompact concealed carry pistol, 10+1 capacity."},
-      {"model":"G34 Gen 5 MOS","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Competition-length slide, optic-ready."},
-      {"model":"G43X","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Slim subcompact, 10+1 capacity, popular EDC."},
-      {"model":"G48","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Slimline compact, 10+1 capacity."},
-      {"model":"G20 Gen 4","type":"pistol","action":"semi-auto","calibers":["10mm Auto"],"notes":"Full-size 10mm, popular for hunting."},
-      {"model":"G21 Gen 4","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"notes":"Full-size .45 ACP duty pistol."},
-      {"model":"G22 Gen 5","type":"pistol","action":"semi-auto","calibers":[".40 S&W"],"notes":"Full-size law enforcement pistol."},
-      {"model":"G40 Gen 4 MOS","type":"pistol","action":"semi-auto","calibers":["10mm Auto"],"notes":"Long-slide 10mm hunting pistol."},
-      {"model":"G44","type":"pistol","action":"semi-auto","calibers":[".22 LR"],"notes":"Rimfire trainer in G19-sized frame."}
+      {"model":"G17 Gen 5","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.49,"twistRate":"1:9.84","notes":"Full-size duty pistol, polymer frame, 17+1 capacity."},
+      {"model":"G19 Gen 5","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.02,"twistRate":"1:9.84","notes":"Compact carry/duty pistol, 15+1 capacity."},
+      {"model":"G19X","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.02,"twistRate":"1:9.84","notes":"Crossover pistol with G17 frame and G19 slide."},
+      {"model":"G26 Gen 5","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.43,"twistRate":"1:9.84","notes":"Subcompact concealed carry pistol, 10+1 capacity."},
+      {"model":"G34 Gen 5 MOS","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":5.31,"twistRate":"1:9.84","notes":"Competition-length slide, optic-ready."},
+      {"model":"G43X","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.41,"twistRate":"1:9.84","notes":"Slim subcompact, 10+1 capacity, popular EDC."},
+      {"model":"G48","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.17,"twistRate":"1:9.84","notes":"Slimline compact, 10+1 capacity."},
+      {"model":"G20 Gen 4","type":"pistol","action":"semi-auto","calibers":["10mm Auto"],"barrelLengthIn":4.61,"twistRate":"1:9.84","notes":"Full-size 10mm, popular for hunting."},
+      {"model":"G21 Gen 4","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"barrelLengthIn":4.61,"twistRate":"1:15.75","notes":"Full-size .45 ACP duty pistol."},
+      {"model":"G22 Gen 5","type":"pistol","action":"semi-auto","calibers":[".40 S&W"],"barrelLengthIn":4.49,"twistRate":"1:9.84","notes":"Full-size law enforcement pistol."},
+      {"model":"G40 Gen 4 MOS","type":"pistol","action":"semi-auto","calibers":["10mm Auto"],"barrelLengthIn":6.02,"twistRate":"1:9.84","notes":"Long-slide 10mm hunting pistol."},
+      {"model":"G44","type":"pistol","action":"semi-auto","calibers":[".22 LR"],"barrelLengthIn":4.02,"twistRate":"1:16","notes":"Rimfire trainer in G19-sized frame."}
     ]},
     {"name":"Sig Sauer","country":"USA/Germany","category":"multi","products":[
-      {"model":"P226","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".40 S&W",".357 SIG"],"notes":"Full-size DA/SA service pistol."},
-      {"model":"P229 Legion","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Compact alloy-frame, enhanced trigger."},
-      {"model":"P320","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".40 S&W",".45 ACP"],"notes":"Modular striker-fired, removable fire control unit."},
-      {"model":"P320 X-Five Legion","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Tungsten-infused grip, competition-tuned."},
-      {"model":"P365","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Micro-compact carry, 10+1 standard."},
-      {"model":"P365 XL","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Extended grip and slide, optic-ready."},
-      {"model":"P365-XMACRO","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"17+1 capacity in micro-compact format."},
-      {"model":"M17","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"U.S. Army issue MHS, full-size."},
-      {"model":"M18","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Compact MHS variant."},
-      {"model":"P210 Carry","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Modernized P210 with compact frame."},
-      {"model":"MCX Spear-LT","type":"rifle","action":"semi-auto","calibers":[".300 Blackout","5.56 NATO","7.62x39mm"],"notes":"Piston-driven AR alternative."},
-      {"model":"MCX Virtus Patrol","type":"rifle","action":"semi-auto","calibers":["5.56 NATO",".300 Blackout"],"notes":"Piston-operated patrol carbine."},
-      {"model":"Cross-PRS","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".277 SIG Fury"],"notes":"Lightweight precision/hunting bolt rifle."}
+      {"model":"P226","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".40 S&W",".357 SIG"],"barrelLengthIn":4.4,"twistRate":"1:10","notes":"Full-size DA/SA service pistol."},
+      {"model":"P229 Legion","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.9,"twistRate":"1:10","notes":"Compact alloy-frame, enhanced trigger."},
+      {"model":"P320","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".40 S&W",".45 ACP"],"barrelLengthIn":4.7,"twistRate":"1:10","notes":"Modular striker-fired, removable fire control unit."},
+      {"model":"P320 X-Five Legion","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":5.0,"twistRate":"1:10","notes":"Tungsten-infused grip, competition-tuned."},
+      {"model":"P365","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.1,"twistRate":"1:10","notes":"Micro-compact carry, 10+1 standard."},
+      {"model":"P365 XL","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.7,"twistRate":"1:10","notes":"Extended grip and slide, optic-ready."},
+      {"model":"P365-XMACRO","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.7,"twistRate":"1:10","notes":"17+1 capacity in micro-compact format."},
+      {"model":"M17","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.7,"twistRate":"1:10","notes":"U.S. Army issue MHS, full-size."},
+      {"model":"M18","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.9,"twistRate":"1:10","notes":"Compact MHS variant."},
+      {"model":"P210 Carry","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.1,"twistRate":"1:10","notes":"Modernized P210 with compact frame."},
+      {"model":"MCX Spear-LT","type":"rifle","action":"semi-auto","calibers":[".300 Blackout","5.56 NATO","7.62x39mm"],"barrelLengthIn":11.5,"twistRate":"1:7","notes":"Piston-driven AR alternative."},
+      {"model":"MCX Virtus Patrol","type":"rifle","action":"semi-auto","calibers":["5.56 NATO",".300 Blackout"],"barrelLengthIn":16.0,"twistRate":"1:7","notes":"Piston-operated patrol carbine."},
+      {"model":"Cross-PRS","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".277 SIG Fury"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Lightweight precision/hunting bolt rifle."}
     ]},
     {"name":"Smith & Wesson","country":"USA","category":"multi","products":[
-      {"model":"M&P9 M2.0","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Full-size striker-fired duty pistol."},
-      {"model":"M&P9 M2.0 Compact","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Compact duty/carry, 15+1 capacity."},
-      {"model":"M&P Shield Plus","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Micro-compact, 13+1 capacity."},
-      {"model":"M&P Shield EZ","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".380 ACP"],"notes":"Easy-rack slide and grip safety."},
-      {"model":"M&P5.7","type":"pistol","action":"semi-auto","calibers":["5.7x28mm"],"notes":"22+1 capacity, gas-operated."},
-      {"model":"Model 642 Airweight","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"notes":"J-frame snub-nose, hammerless."},
-      {"model":"Model 442","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"notes":"J-frame Airweight, matte black finish."},
-      {"model":"Model 686","type":"pistol","action":"revolver","calibers":[".357 Magnum",".38 Special"],"notes":"L-frame stainless, 4\" or 6\" barrel."},
-      {"model":"Model 629","type":"pistol","action":"revolver","calibers":[".44 Magnum",".44 Special"],"notes":"N-frame stainless, hunting and bear defense."},
-      {"model":"Model 19 Classic","type":"pistol","action":"revolver","calibers":[".357 Magnum"],"notes":"K-frame medium revolver."},
-      {"model":"Performance Center 929","type":"pistol","action":"revolver","calibers":["9mm Luger"],"notes":"8-shot competition revolver, moon-clip fed."},
-      {"model":"M&P15","type":"rifle","action":"semi-auto","calibers":["5.56 NATO",".223 Rem"],"notes":"Direct-impingement AR-15."},
-      {"model":"M&P15-22","type":"rifle","action":"semi-auto","calibers":[".22 LR"],"notes":"AR-style rimfire trainer."}
+      {"model":"M&P9 M2.0","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.25,"twistRate":"1:10","notes":"Full-size striker-fired duty pistol."},
+      {"model":"M&P9 M2.0 Compact","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.0,"twistRate":"1:10","notes":"Compact duty/carry, 15+1 capacity."},
+      {"model":"M&P Shield Plus","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.1,"twistRate":"1:10","notes":"Micro-compact, 13+1 capacity."},
+      {"model":"M&P Shield EZ","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".380 ACP"],"barrelLengthIn":3.675,"twistRate":"1:10","notes":"Easy-rack slide and grip safety."},
+      {"model":"M&P5.7","type":"pistol","action":"semi-auto","calibers":["5.7x28mm"],"barrelLengthIn":5.0,"twistRate":"1:8.6","notes":"22+1 capacity, gas-operated."},
+      {"model":"Model 642 Airweight","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"barrelLengthIn":1.875,"twistRate":"1:18.75","notes":"J-frame snub-nose, hammerless."},
+      {"model":"Model 442","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"barrelLengthIn":1.875,"twistRate":"1:18.75","notes":"J-frame Airweight, matte black finish."},
+      {"model":"Model 686","type":"pistol","action":"revolver","calibers":[".357 Magnum",".38 Special"],"barrelLengthIn":4.0,"twistRate":"1:18.75","notes":"L-frame stainless, 4\" or 6\" barrel."},
+      {"model":"Model 629","type":"pistol","action":"revolver","calibers":[".44 Magnum",".44 Special"],"barrelLengthIn":6.5,"twistRate":"1:20","notes":"N-frame stainless, hunting and bear defense."},
+      {"model":"Model 19 Classic","type":"pistol","action":"revolver","calibers":[".357 Magnum"],"barrelLengthIn":4.25,"twistRate":"1:18.75","notes":"K-frame medium revolver."},
+      {"model":"Performance Center 929","type":"pistol","action":"revolver","calibers":["9mm Luger"],"barrelLengthIn":6.5,"twistRate":"1:10","notes":"8-shot competition revolver, moon-clip fed."},
+      {"model":"M&P15","type":"rifle","action":"semi-auto","calibers":["5.56 NATO",".223 Rem"],"barrelLengthIn":16.0,"twistRate":"1:8","notes":"Direct-impingement AR-15."},
+      {"model":"M&P15-22","type":"rifle","action":"semi-auto","calibers":[".22 LR"],"barrelLengthIn":16.5,"twistRate":"1:15","notes":"AR-style rimfire trainer."}
     ]},
     {"name":"Beretta","country":"Italy","category":"multi","products":[
-      {"model":"92FS","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Iconic open-slide DA/SA, 15+1 capacity."},
-      {"model":"92X Performance","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Steel-frame competition variant."},
-      {"model":"M9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Former U.S. military service pistol."},
-      {"model":"M9A4","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Updated M9 with optic-ready slide."},
-      {"model":"APX A1 Full Size","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Striker-fired duty pistol, optic-ready."},
-      {"model":"APX A1 Carry","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Subcompact striker-fired."},
-      {"model":"Cheetah 80X","type":"pistol","action":"semi-auto","calibers":[".380 ACP"],"notes":"Modernized Model 85 successor."},
-      {"model":"A400 Xtreme Plus","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Inertia-driven waterfowl shotgun, 3.5\" chamber."},
-      {"model":"A400 Upland","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"notes":"Lightweight upland gas-operated semi-auto."},
-      {"model":"A300 Ultima","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Affordable gas semi-auto, 3\" chamber."},
-      {"model":"686 Silver Pigeon I","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga","28 ga",".410"],"notes":"Field over/under, blued receiver."},
-      {"model":"DT11","type":"shotgun","action":"break-action","calibers":["12 ga"],"notes":"Premium competition over/under."}
+      {"model":"92FS","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.9,"twistRate":"1:9.84","notes":"Iconic open-slide DA/SA, 15+1 capacity."},
+      {"model":"92X Performance","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.9,"twistRate":"1:9.84","notes":"Steel-frame competition variant."},
+      {"model":"M9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.9,"twistRate":"1:9.84","notes":"Former U.S. military service pistol."},
+      {"model":"M9A4","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":5.1,"twistRate":"1:9.84","notes":"Updated M9 with optic-ready slide."},
+      {"model":"APX A1 Full Size","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.25,"twistRate":"1:9.84","notes":"Striker-fired duty pistol, optic-ready."},
+      {"model":"APX A1 Carry","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.07,"twistRate":"1:9.84","notes":"Subcompact striker-fired."},
+      {"model":"Cheetah 80X","type":"pistol","action":"semi-auto","calibers":[".380 ACP"],"barrelLengthIn":3.9,"twistRate":"1:16","notes":"Modernized Model 85 successor."},
+      {"model":"A400 Xtreme Plus","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"Inertia-driven waterfowl shotgun, 3.5\" chamber."},
+      {"model":"A400 Upland","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"barrelLengthIn":26.0,"notes":"Lightweight upland gas-operated semi-auto."},
+      {"model":"A300 Ultima","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"Affordable gas semi-auto, 3\" chamber."},
+      {"model":"686 Silver Pigeon I","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga","28 ga",".410"],"barrelLengthIn":28.0,"notes":"Field over/under, blued receiver."},
+      {"model":"DT11","type":"shotgun","action":"break-action","calibers":["12 ga"],"barrelLengthIn":30.0,"notes":"Premium competition over/under."}
     ]},
     {"name":"CZ","country":"Czech Republic","category":"multi","products":[
-      {"model":"75 B","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Classic full-size all-steel DA/SA."},
-      {"model":"75 SP-01 Tactical","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Decocker variant, 18+1."},
-      {"model":"Shadow 2","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Steel-framed competition pistol."},
-      {"model":"P-09","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Full-size polymer frame, 19+1."},
-      {"model":"P-10 C","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Compact striker-fired, 15+1."},
-      {"model":"P-10 F","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Full-size striker-fired duty pistol."},
-      {"model":"457 American","type":"rifle","action":"bolt-action","calibers":[".22 LR",".22 WMR",".17 HMR"],"notes":"Modular rimfire bolt rifle."},
-      {"model":"557 Sporter","type":"rifle","action":"bolt-action","calibers":[".308 Win",".30-06"],"notes":"Walnut-stocked hunting rifle."},
-      {"model":"600 Trail","type":"rifle","action":"bolt-action","calibers":[".223 Rem","7.62x39mm"],"notes":"Compact takedown bolt-action."},
-      {"model":"1012","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Inertia-driven sporting/field shotgun."}
+      {"model":"75 B","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.6,"twistRate":"1:10","notes":"Classic full-size all-steel DA/SA."},
+      {"model":"75 SP-01 Tactical","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.6,"twistRate":"1:10","notes":"Decocker variant, 18+1."},
+      {"model":"Shadow 2","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.89,"twistRate":"1:9.84","notes":"Steel-framed competition pistol."},
+      {"model":"P-09","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.54,"twistRate":"1:10","notes":"Full-size polymer frame, 19+1."},
+      {"model":"P-10 C","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.02,"twistRate":"1:9.84","notes":"Compact striker-fired, 15+1."},
+      {"model":"P-10 F","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.5,"twistRate":"1:9.84","notes":"Full-size striker-fired duty pistol."},
+      {"model":"457 American","type":"rifle","action":"bolt-action","calibers":[".22 LR",".22 WMR",".17 HMR"],"barrelLengthIn":24.0,"twistRate":"1:16","notes":"Modular rimfire bolt rifle."},
+      {"model":"557 Sporter","type":"rifle","action":"bolt-action","calibers":[".308 Win",".30-06"],"barrelLengthIn":20.5,"twistRate":"1:11","notes":"Walnut-stocked hunting rifle."},
+      {"model":"600 Trail","type":"rifle","action":"bolt-action","calibers":[".223 Rem","7.62x39mm"],"barrelLengthIn":18.0,"twistRate":"1:9","notes":"Compact takedown bolt-action."},
+      {"model":"1012","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"Inertia-driven sporting/field shotgun."}
     ]},
     {"name":"FN America","country":"USA/Belgium","category":"multi","products":[
-      {"model":"Five-seveN MK3 MRD","type":"pistol","action":"semi-auto","calibers":["5.7x28mm"],"notes":"20+1 capacity, optic-ready."},
-      {"model":"509 Tactical","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Threaded barrel, suppressor-height sights."},
-      {"model":"509 Compact","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Concealed-carry striker-fired."},
-      {"model":"510 Tactical","type":"pistol","action":"semi-auto","calibers":["10mm Auto"],"notes":"High-capacity 10mm, 22+1."},
-      {"model":"Reflex","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Hammer-fired micro-compact."},
-      {"model":"FNX-45 Tactical","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"notes":"Threaded barrel, optic-ready."},
-      {"model":"SCAR 16S","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Piston-driven battle carbine."},
-      {"model":"SCAR 17S","type":"rifle","action":"semi-auto","calibers":["7.62 NATO"],"notes":"Battle rifle variant in 7.62."},
-      {"model":"SCAR 20S","type":"rifle","action":"semi-auto","calibers":["7.62 NATO","6.5 Creedmoor"],"notes":"Long-range precision SCAR variant."}
+      {"model":"Five-seveN MK3 MRD","type":"pistol","action":"semi-auto","calibers":["5.7x28mm"],"barrelLengthIn":4.8,"twistRate":"1:9","notes":"20+1 capacity, optic-ready."},
+      {"model":"509 Tactical","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.5,"twistRate":"1:10","notes":"Threaded barrel, suppressor-height sights."},
+      {"model":"509 Compact","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.7,"twistRate":"1:10","notes":"Concealed-carry striker-fired."},
+      {"model":"510 Tactical","type":"pistol","action":"semi-auto","calibers":["10mm Auto"],"barrelLengthIn":4.71,"twistRate":"1:16","notes":"High-capacity 10mm, 22+1."},
+      {"model":"Reflex","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.3,"twistRate":"1:10","notes":"Hammer-fired micro-compact."},
+      {"model":"FNX-45 Tactical","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"barrelLengthIn":5.3,"twistRate":"1:16","notes":"Threaded barrel, optic-ready."},
+      {"model":"SCAR 16S","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.25,"twistRate":"1:7","notes":"Piston-driven battle carbine."},
+      {"model":"SCAR 17S","type":"rifle","action":"semi-auto","calibers":["7.62 NATO"],"barrelLengthIn":16.25,"twistRate":"1:12","notes":"Battle rifle variant in 7.62."},
+      {"model":"SCAR 20S","type":"rifle","action":"semi-auto","calibers":["7.62 NATO","6.5 Creedmoor"],"barrelLengthIn":20.0,"twistRate":"1:11","notes":"Long-range precision SCAR variant."}
     ]},
     {"name":"Heckler & Koch","country":"Germany","category":"multi","products":[
-      {"model":"VP9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Striker-fired full-size."},
-      {"model":"VP9SK","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Subcompact carry variant."},
-      {"model":"P30L","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"DA/SA full-size with long slide."},
-      {"model":"USP 45","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"notes":"Polymer frame DA/SA."},
-      {"model":"MR556A1","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Civilian HK416, piston-operated."},
-      {"model":"MR762A1","type":"rifle","action":"semi-auto","calibers":["7.62 NATO"],"notes":"Civilian HK417, gas piston."}
+      {"model":"VP9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.09,"twistRate":"1:9.84","notes":"Striker-fired full-size."},
+      {"model":"VP9SK","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.39,"twistRate":"1:9.84","notes":"Subcompact carry variant."},
+      {"model":"P30L","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.45,"twistRate":"1:9.84","notes":"DA/SA full-size with long slide."},
+      {"model":"USP 45","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"barrelLengthIn":4.41,"twistRate":"1:16","notes":"Polymer frame DA/SA."},
+      {"model":"MR556A1","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.5,"twistRate":"1:7","notes":"Civilian HK416, piston-operated."},
+      {"model":"MR762A1","type":"rifle","action":"semi-auto","calibers":["7.62 NATO"],"barrelLengthIn":16.5,"twistRate":"1:11","notes":"Civilian HK417, gas piston."}
     ]},
     {"name":"Springfield Armory","country":"USA","category":"multi","products":[
-      {"model":"XD-M Elite 4.5\"","type":"pistol","action":"semi-auto","calibers":["9mm Luger","10mm Auto"],"notes":"Match-grade trigger."},
-      {"model":"XD-S Mod.2","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".45 ACP"],"notes":"Single-stack concealed carry."},
-      {"model":"Hellcat","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Micro-compact, 11+1/13+1."},
-      {"model":"Hellcat Pro","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"15+1 capacity, optic-ready."},
-      {"model":"Echelon","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Full-size striker-fired."},
-      {"model":"1911 Mil-Spec","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"notes":"Traditional GI-style 1911."},
-      {"model":"1911 TRP","type":"pistol","action":"semi-auto","calibers":[".45 ACP","10mm Auto"],"notes":"Tactical Response Pistol."},
-      {"model":"1911 Ronin","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".45 ACP","10mm Auto"],"notes":"Mid-tier custom-style 1911."},
-      {"model":"Prodigy","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"1911-style double-stack, 17+1/20+1."},
-      {"model":"SAINT Victor","type":"rifle","action":"semi-auto","calibers":["5.56 NATO",".308 Win"],"notes":"Direct-impingement AR-15/AR-10."},
-      {"model":"M1A Loaded","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"notes":"M14-pattern semi-auto."},
-      {"model":"Model 2020 Waypoint","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"notes":"Carbon-fiber stock, AICS magazine."}
+      {"model":"XD-M Elite 4.5\"","type":"pistol","action":"semi-auto","calibers":["9mm Luger","10mm Auto"],"barrelLengthIn":4.5,"twistRate":"1:10","notes":"Match-grade trigger."},
+      {"model":"XD-S Mod.2","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".45 ACP"],"barrelLengthIn":3.3,"twistRate":"1:16","notes":"Single-stack concealed carry."},
+      {"model":"Hellcat","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.0,"twistRate":"1:10","notes":"Micro-compact, 11+1/13+1."},
+      {"model":"Hellcat Pro","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.7,"twistRate":"1:10","notes":"15+1 capacity, optic-ready."},
+      {"model":"Echelon","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.5,"twistRate":"1:10","notes":"Full-size striker-fired."},
+      {"model":"1911 Mil-Spec","type":"pistol","action":"semi-auto","calibers":[".45 ACP"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Traditional GI-style 1911."},
+      {"model":"1911 TRP","type":"pistol","action":"semi-auto","calibers":[".45 ACP","10mm Auto"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Tactical Response Pistol."},
+      {"model":"1911 Ronin","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".45 ACP","10mm Auto"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Mid-tier custom-style 1911."},
+      {"model":"Prodigy","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":5.0,"twistRate":"1:10","notes":"1911-style double-stack, 17+1/20+1."},
+      {"model":"SAINT Victor","type":"rifle","action":"semi-auto","calibers":["5.56 NATO",".308 Win"],"barrelLengthIn":16.0,"twistRate":"1:8","notes":"Direct-impingement AR-15/AR-10."},
+      {"model":"M1A Loaded","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":22.0,"twistRate":"1:11","notes":"M14-pattern semi-auto."},
+      {"model":"Model 2020 Waypoint","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Carbon-fiber stock, AICS magazine."}
     ]},
     {"name":"Walther","country":"Germany","category":"pistol","products":[
-      {"model":"PDP F-Series","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Ergonomic grip optimized for smaller hands."},
-      {"model":"PDP Compact","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Striker-fired, 15+1."},
-      {"model":"PDP Pro SD","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Threaded barrel, suppressor-ready."},
-      {"model":"PPQ M2","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".45 ACP"],"notes":"Quick-defense trigger."},
-      {"model":"Q5 Match SF","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Steel-frame competition pistol."},
-      {"model":"P22","type":"pistol","action":"semi-auto","calibers":[".22 LR"],"notes":"Compact rimfire trainer."},
-      {"model":"WMP","type":"pistol","action":"semi-auto","calibers":[".22 WMR"],"notes":"Optic-ready .22 Magnum."}
+      {"model":"PDP F-Series","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.0,"twistRate":"1:9.84","notes":"Ergonomic grip optimized for smaller hands."},
+      {"model":"PDP Compact","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.0,"twistRate":"1:9.84","notes":"Striker-fired, 15+1."},
+      {"model":"PDP Pro SD","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.6,"twistRate":"1:9.84","notes":"Threaded barrel, suppressor-ready."},
+      {"model":"PPQ M2","type":"pistol","action":"semi-auto","calibers":["9mm Luger",".45 ACP"],"barrelLengthIn":4.0,"twistRate":"1:9.84","notes":"Quick-defense trigger."},
+      {"model":"Q5 Match SF","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":5.0,"twistRate":"1:9.84","notes":"Steel-frame competition pistol."},
+      {"model":"P22","type":"pistol","action":"semi-auto","calibers":[".22 LR"],"barrelLengthIn":3.4,"twistRate":"1:16","notes":"Compact rimfire trainer."},
+      {"model":"WMP","type":"pistol","action":"semi-auto","calibers":[".22 WMR"],"barrelLengthIn":4.5,"twistRate":"1:16","notes":"Optic-ready .22 Magnum."}
     ]},
     {"name":"Colt","country":"USA","category":"multi","products":[
-      {"model":"1911 Government","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger","10mm Auto"],"notes":"Original full-size 1911."},
-      {"model":"1911 Commander","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger"],"notes":"4.25\" barrel."},
-      {"model":"Python","type":"pistol","action":"revolver","calibers":[".357 Magnum",".38 Special"],"notes":"Reintroduced classic, stainless."},
-      {"model":"Anaconda","type":"pistol","action":"revolver","calibers":[".44 Magnum"],"notes":"Reintroduced large-frame."},
-      {"model":"King Cobra","type":"pistol","action":"revolver","calibers":[".357 Magnum"],"notes":"Mid-frame stainless 6-shot."},
-      {"model":"Cobra","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"notes":"Compact 6-shot snub revolver."},
-      {"model":"LE6920","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"M4-pattern AR-15."}
+      {"model":"1911 Government","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger","10mm Auto"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Original full-size 1911."},
+      {"model":"1911 Commander","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger"],"barrelLengthIn":4.25,"twistRate":"1:16","notes":"4.25\" barrel."},
+      {"model":"Python","type":"pistol","action":"revolver","calibers":[".357 Magnum",".38 Special"],"barrelLengthIn":4.25,"twistRate":"1:14","notes":"Reintroduced classic, stainless."},
+      {"model":"Anaconda","type":"pistol","action":"revolver","calibers":[".44 Magnum"],"barrelLengthIn":6.0,"twistRate":"1:18.75","notes":"Reintroduced large-frame."},
+      {"model":"King Cobra","type":"pistol","action":"revolver","calibers":[".357 Magnum"],"barrelLengthIn":3.0,"twistRate":"1:14","notes":"Mid-frame stainless 6-shot."},
+      {"model":"Cobra","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"barrelLengthIn":2.0,"twistRate":"1:14","notes":"Compact 6-shot snub revolver."},
+      {"model":"LE6920","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.1,"twistRate":"1:7","notes":"M4-pattern AR-15."}
     ]},
     {"name":"Ruger","country":"USA","category":"multi","products":[
-      {"model":"LCP Max","type":"pistol","action":"semi-auto","calibers":[".380 ACP"],"notes":"Pocket-sized, 10+1 capacity."},
-      {"model":"LCR","type":"pistol","action":"revolver","calibers":[".38 Special +P",".357 Magnum","9mm Luger",".22 LR"],"notes":"Polymer-frame snub-nose."},
-      {"model":"GP100","type":"pistol","action":"revolver","calibers":[".357 Magnum","10mm Auto",".44 Special"],"notes":"Stainless mid-frame revolver."},
-      {"model":"Super Redhawk","type":"pistol","action":"revolver","calibers":[".44 Magnum",".454 Casull",".480 Ruger","10mm Auto"],"notes":"Large-frame DA hunting revolver."},
-      {"model":"Mark IV Target","type":"pistol","action":"semi-auto","calibers":[".22 LR"],"notes":"Bull barrel target rimfire."},
-      {"model":"Wrangler","type":"pistol","action":"revolver","calibers":[".22 LR",".22 WMR"],"notes":"Affordable single-action rimfire."},
-      {"model":"SR1911","type":"pistol","action":"semi-auto","calibers":[".45 ACP","10mm Auto","9mm Luger"],"notes":"Stainless 1911."},
-      {"model":"Security-9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Hammer-fired, value-priced compact."},
-      {"model":"American Rifle Generation II","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"notes":"Three-lug bolt, AICS magazine."},
-      {"model":"Hawkeye Long-Range Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC",".300 Win Mag"],"notes":"Mauser-style controlled feed."},
-      {"model":"Precision Rifle (RPR)","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".300 Win Mag",".338 Lapua"],"notes":"Chassis-style PRS rifle."},
-      {"model":"10/22","type":"rifle","action":"semi-auto","calibers":[".22 LR"],"notes":"Iconic rimfire semi-auto."},
-      {"model":"AR-556","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Entry-level AR-15."},
-      {"model":"SFAR","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"notes":"Small-Frame Autoloading Rifle."},
-      {"model":"Mini-14 Ranch","type":"rifle","action":"semi-auto","calibers":["5.56 NATO","7.62x39mm"],"notes":"Garand-style action."},
-      {"model":"PC Carbine","type":"rifle","action":"semi-auto","calibers":["9mm Luger",".40 S&W"],"notes":"Pistol-caliber carbine, takedown."}
+      {"model":"LCP Max","type":"pistol","action":"semi-auto","calibers":[".380 ACP"],"barrelLengthIn":2.8,"twistRate":"1:16","notes":"Pocket-sized, 10+1 capacity."},
+      {"model":"LCR","type":"pistol","action":"revolver","calibers":[".38 Special +P",".357 Magnum","9mm Luger",".22 LR"],"barrelLengthIn":1.875,"twistRate":"1:16","notes":"Polymer-frame snub-nose."},
+      {"model":"GP100","type":"pistol","action":"revolver","calibers":[".357 Magnum","10mm Auto",".44 Special"],"barrelLengthIn":4.2,"twistRate":"1:18.75","notes":"Stainless mid-frame revolver."},
+      {"model":"Super Redhawk","type":"pistol","action":"revolver","calibers":[".44 Magnum",".454 Casull",".480 Ruger","10mm Auto"],"barrelLengthIn":7.5,"twistRate":"1:20","notes":"Large-frame DA hunting revolver."},
+      {"model":"Mark IV Target","type":"pistol","action":"semi-auto","calibers":[".22 LR"],"barrelLengthIn":5.5,"twistRate":"1:16","notes":"Bull barrel target rimfire."},
+      {"model":"Wrangler","type":"pistol","action":"revolver","calibers":[".22 LR",".22 WMR"],"barrelLengthIn":4.62,"twistRate":"1:14","notes":"Affordable single-action rimfire."},
+      {"model":"SR1911","type":"pistol","action":"semi-auto","calibers":[".45 ACP","10mm Auto","9mm Luger"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Stainless 1911."},
+      {"model":"Security-9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.0,"twistRate":"1:10","notes":"Hammer-fired, value-priced compact."},
+      {"model":"American Rifle Generation II","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Three-lug bolt, AICS magazine."},
+      {"model":"Hawkeye Long-Range Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Mauser-style controlled feed."},
+      {"model":"Precision Rifle (RPR)","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".300 Win Mag",".338 Lapua"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Chassis-style PRS rifle."},
+      {"model":"10/22","type":"rifle","action":"semi-auto","calibers":[".22 LR"],"barrelLengthIn":18.5,"twistRate":"1:16","notes":"Iconic rimfire semi-auto."},
+      {"model":"AR-556","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.1,"twistRate":"1:8","notes":"Entry-level AR-15."},
+      {"model":"SFAR","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":16.1,"twistRate":"1:10","notes":"Small-Frame Autoloading Rifle."},
+      {"model":"Mini-14 Ranch","type":"rifle","action":"semi-auto","calibers":["5.56 NATO","7.62x39mm"],"barrelLengthIn":18.5,"twistRate":"1:9","notes":"Garand-style action."},
+      {"model":"PC Carbine","type":"rifle","action":"semi-auto","calibers":["9mm Luger",".40 S&W"],"barrelLengthIn":16.12,"twistRate":"1:10","notes":"Pistol-caliber carbine, takedown."}
     ]},
     {"name":"Taurus","country":"Brazil","category":"multi","products":[
-      {"model":"G3","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Full-size striker-fired."},
-      {"model":"G3c","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Compact striker-fired."},
-      {"model":"GX4","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Micro-compact, 11+1."},
-      {"model":"Judge","type":"pistol","action":"revolver","calibers":[".45 Colt",".410 bore"],"notes":"5-shot revolver chambered for both .45 Colt and .410 shotshells."},
-      {"model":"Raging Hunter","type":"pistol","action":"revolver","calibers":[".44 Magnum",".454 Casull",".460 S&W",".357 Magnum"],"notes":"Hunting revolver with Picatinny top rail."},
-      {"model":"856","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"notes":"6-shot small-frame revolver."}
+      {"model":"G3","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.0,"twistRate":"1:10","notes":"Full-size striker-fired."},
+      {"model":"G3c","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.2,"twistRate":"1:10","notes":"Compact striker-fired."},
+      {"model":"GX4","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.0,"twistRate":"1:10","notes":"Micro-compact, 11+1."},
+      {"model":"Judge","type":"pistol","action":"revolver","calibers":[".45 Colt",".410 bore"],"barrelLengthIn":3.0,"notes":"5-shot revolver chambered for both .45 Colt and .410 shotshells."},
+      {"model":"Raging Hunter","type":"pistol","action":"revolver","calibers":[".44 Magnum",".454 Casull",".460 S&W",".357 Magnum"],"barrelLengthIn":6.75,"twistRate":"1:18.75","notes":"Hunting revolver with Picatinny top rail."},
+      {"model":"856","type":"pistol","action":"revolver","calibers":[".38 Special +P"],"barrelLengthIn":2.0,"twistRate":"1:18.75","notes":"6-shot small-frame revolver."}
     ]},
     {"name":"Kimber","country":"USA","category":"pistol","products":[
-      {"model":"Custom II","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger"],"notes":"Full-size 1911, fixed sights."},
-      {"model":"Stainless TLE/RL II","type":"pistol","action":"semi-auto","calibers":[".45 ACP","10mm Auto"],"notes":"Tactical 1911 with rail and night sights."},
-      {"model":"Micro 9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Compact 1911-style EDC."},
-      {"model":"K6s","type":"pistol","action":"revolver","calibers":[".357 Magnum",".38 Special"],"notes":"6-shot stainless snub-nose."},
-      {"model":"KDS9c","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Double-stack 1911-style compact."}
+      {"model":"Custom II","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Full-size 1911, fixed sights."},
+      {"model":"Stainless TLE/RL II","type":"pistol","action":"semi-auto","calibers":[".45 ACP","10mm Auto"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Tactical 1911 with rail and night sights."},
+      {"model":"Micro 9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.15,"twistRate":"1:16","notes":"Compact 1911-style EDC."},
+      {"model":"K6s","type":"pistol","action":"revolver","calibers":[".357 Magnum",".38 Special"],"barrelLengthIn":2.0,"twistRate":"1:14","notes":"6-shot stainless snub-nose."},
+      {"model":"KDS9c","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.0,"twistRate":"1:16","notes":"Double-stack 1911-style compact."}
     ]},
     {"name":"Wilson Combat","country":"USA","category":"multi","products":[
-      {"model":"CQB Elite","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger"],"notes":"Full custom 1911."},
-      {"model":"EDC X9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Double-stack 1911-style EDC."},
-      {"model":"SFX9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Subcompact 1911-style double-stack."}
+      {"model":"CQB Elite","type":"pistol","action":"semi-auto","calibers":[".45 ACP","9mm Luger"],"barrelLengthIn":5.0,"twistRate":"1:16","notes":"Full custom 1911."},
+      {"model":"EDC X9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.0,"twistRate":"1:16","notes":"Double-stack 1911-style EDC."},
+      {"model":"SFX9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":3.25,"twistRate":"1:16","notes":"Subcompact 1911-style double-stack."}
     ]},
     {"name":"Remington","country":"USA","category":"multi","products":[
-      {"model":"Model 700 SPS","type":"rifle","action":"bolt-action","calibers":[".308 Win",".30-06","6.5 Creedmoor",".300 Win Mag"],"notes":"Workhorse hunting bolt rifle."},
-      {"model":"Model 700 CDL","type":"rifle","action":"bolt-action","calibers":[".30-06","7mm Rem Mag",".270 Win"],"notes":"Walnut-stocked classic hunting variant."},
-      {"model":"Model 700 PCR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"notes":"Precision Chassis Rifle."},
-      {"model":"870 Wingmaster","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga",".410"],"notes":"Classic blued field pump shotgun."},
-      {"model":"870 Tactical","type":"shotgun","action":"pump-action","calibers":["12 ga"],"notes":"Defensive pump shotgun."},
-      {"model":"1100 Sporting","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"notes":"Gas-operated, target/field use."},
-      {"model":"V3 Field Pro","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"VersaPort gas system."}
+      {"model":"Model 700 SPS","type":"rifle","action":"bolt-action","calibers":[".308 Win",".30-06","6.5 Creedmoor",".300 Win Mag"],"barrelLengthIn":24.0,"twistRate":"1:10","notes":"Workhorse hunting bolt rifle."},
+      {"model":"Model 700 CDL","type":"rifle","action":"bolt-action","calibers":[".30-06","7mm Rem Mag",".270 Win"],"barrelLengthIn":24.0,"twistRate":"1:10","notes":"Walnut-stocked classic hunting variant."},
+      {"model":"Model 700 PCR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Precision Chassis Rifle."},
+      {"model":"870 Wingmaster","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga",".410"],"barrelLengthIn":28.0,"notes":"Classic blued field pump shotgun."},
+      {"model":"870 Tactical","type":"shotgun","action":"pump-action","calibers":["12 ga"],"barrelLengthIn":18.5,"notes":"Defensive pump shotgun."},
+      {"model":"1100 Sporting","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"barrelLengthIn":28.0,"notes":"Gas-operated, target/field use."},
+      {"model":"V3 Field Pro","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"VersaPort gas system."}
     ]},
     {"name":"Bergara","country":"Spain/USA","category":"rifle","products":[
-      {"model":"B-14 HMR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag","22 ARC"],"notes":"Hunting/Match Rifle."},
-      {"model":"B-14 Ridge","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"notes":"Synthetic-stocked hunting rifle, sub-MOA."},
-      {"model":"B-14 Wilderness Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Rugged hunting rifle."},
-      {"model":"Premier MgLite","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Carbon-fiber barrel, magnesium chassis."},
-      {"model":"BMP","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor",".308 Win","6mm Creedmoor"],"notes":"Aluminum chassis competition rifle."}
+      {"model":"B-14 HMR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag","22 ARC"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Hunting/Match Rifle."},
+      {"model":"B-14 Ridge","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Synthetic-stocked hunting rifle, sub-MOA."},
+      {"model":"B-14 Wilderness Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Rugged hunting rifle."},
+      {"model":"Premier MgLite","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Carbon-fiber barrel, magnesium chassis."},
+      {"model":"BMP","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor",".308 Win","6mm Creedmoor"],"barrelLengthIn":26.0,"twistRate":"1:8","notes":"Aluminum chassis competition rifle."}
     ]},
     {"name":"Christensen Arms","country":"USA","category":"rifle","products":[
-      {"model":"Modern Precision Rifle (MPR)","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 PRC",".338 Lapua"],"notes":"Chassis-style PRS rifle."},
-      {"model":"Ridgeline","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Carbon-fiber stock and barrel."},
-      {"model":"Ridgeline FFT","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Sub-6lb mountain rifle."},
-      {"model":"Mesa","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"notes":"Steel-barreled hunter, value-priced."},
-      {"model":"Modern Hunting Rifle (MHR)","type":"rifle","action":"bolt-action","calibers":["6.5 PRC","7mm PRC","7mm Rem Mag",".300 PRC"],"notes":"Modular chassis hunter."}
+      {"model":"Modern Precision Rifle (MPR)","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 PRC",".338 Lapua"],"barrelLengthIn":26.0,"twistRate":"1:8","notes":"Chassis-style PRS rifle."},
+      {"model":"Ridgeline","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Carbon-fiber stock and barrel."},
+      {"model":"Ridgeline FFT","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Sub-6lb mountain rifle."},
+      {"model":"Mesa","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Steel-barreled hunter, value-priced."},
+      {"model":"Modern Hunting Rifle (MHR)","type":"rifle","action":"bolt-action","calibers":["6.5 PRC","7mm PRC","7mm Rem Mag",".300 PRC"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Modular chassis hunter."}
     ]},
     {"name":"Tikka","country":"Finland","category":"rifle","products":[
-      {"model":"T3x Lite","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"notes":"Synthetic-stocked hunter, lightweight."},
-      {"model":"T3x Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".270 Win",".300 Win Mag"],"notes":"Walnut-stocked traditional hunting rifle."},
-      {"model":"T3x TAC A1","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".260 Rem"],"notes":"Tactical chassis rifle."},
-      {"model":"T3x CTR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".260 Rem"],"notes":"Compact Tactical Rifle."},
-      {"model":"T3x UPR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"notes":"Ultimate Precision Rifle, KRG chassis."}
+      {"model":"T3x Lite","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"barrelLengthIn":22.4,"twistRate":"1:8","notes":"Synthetic-stocked hunter, lightweight."},
+      {"model":"T3x Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".270 Win",".300 Win Mag"],"barrelLengthIn":22.4,"twistRate":"1:8","notes":"Walnut-stocked traditional hunting rifle."},
+      {"model":"T3x TAC A1","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".260 Rem"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Tactical chassis rifle."},
+      {"model":"T3x CTR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".260 Rem"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Compact Tactical Rifle."},
+      {"model":"T3x UPR","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Ultimate Precision Rifle, KRG chassis."}
     ]},
     {"name":"Sako","country":"Finland","category":"rifle","products":[
-      {"model":"S20 Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"notes":"Modular hybrid design."},
-      {"model":"S20 Precision","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"notes":"Adjustable chassis-style stock."},
-      {"model":"Model 85 Finnlight","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".270 Win",".300 Win Mag"],"notes":"Stainless lightweight controlled-feed."},
-      {"model":"TRG-22 A1","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor"],"notes":"Precision sniper rifle."},
-      {"model":"TRG-42 A1","type":"rifle","action":"bolt-action","calibers":[".300 Win Mag",".338 Lapua Magnum"],"notes":"Magnum precision rifle."}
+      {"model":"S20 Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Modular hybrid design."},
+      {"model":"S20 Precision","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Adjustable chassis-style stock."},
+      {"model":"Model 85 Finnlight","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".270 Win",".300 Win Mag"],"barrelLengthIn":20.25,"twistRate":"1:8","notes":"Stainless lightweight controlled-feed."},
+      {"model":"TRG-22 A1","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":26.0,"twistRate":"1:8","notes":"Precision sniper rifle."},
+      {"model":"TRG-42 A1","type":"rifle","action":"bolt-action","calibers":[".300 Win Mag",".338 Lapua Magnum"],"barrelLengthIn":27.0,"twistRate":"1:10","notes":"Magnum precision rifle."}
     ]},
     {"name":"Browning","country":"USA/Belgium","category":"multi","products":[
-      {"model":"X-Bolt Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag","7mm PRC"],"notes":"Walnut-stocked premium hunter."},
-      {"model":"X-Bolt Pro","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Carbon-fiber stock."},
-      {"model":"X-Bolt Mountain Pro","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Lightweight mountain hunter."},
-      {"model":"BLR Lightweight","type":"rifle","action":"lever-action","calibers":[".308 Win","7mm-08",".30-06",".300 Win Mag"],"notes":"Modern lever-gun, detachable mag."},
-      {"model":"Citori 725 Field","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga","28 ga",".410"],"notes":"Walnut field over/under."},
-      {"model":"A5 Sweet Sixteen","type":"shotgun","action":"semi-auto","calibers":["16 ga"],"notes":"Humpback recoil-operated semi-auto."},
-      {"model":"Maxus II","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Power Drive gas system."},
-      {"model":"BPS Field","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga","28 ga",".410"],"notes":"Bottom-eject pump."}
+      {"model":"X-Bolt Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".300 Win Mag","7mm PRC"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Walnut-stocked premium hunter."},
+      {"model":"X-Bolt Pro","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Carbon-fiber stock."},
+      {"model":"X-Bolt Mountain Pro","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Lightweight mountain hunter."},
+      {"model":"BLR Lightweight","type":"rifle","action":"lever-action","calibers":[".308 Win","7mm-08",".30-06",".300 Win Mag"],"barrelLengthIn":20.0,"twistRate":"1:10","notes":"Modern lever-gun, detachable mag."},
+      {"model":"Citori 725 Field","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga","28 ga",".410"],"barrelLengthIn":28.0,"notes":"Walnut field over/under."},
+      {"model":"A5 Sweet Sixteen","type":"shotgun","action":"semi-auto","calibers":["16 ga"],"barrelLengthIn":26.0,"notes":"Humpback recoil-operated semi-auto."},
+      {"model":"Maxus II","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"Power Drive gas system."},
+      {"model":"BPS Field","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga","28 ga",".410"],"barrelLengthIn":28.0,"notes":"Bottom-eject pump."}
     ]},
     {"name":"Winchester","country":"USA","category":"multi","products":[
-      {"model":"Model 70 Featherweight","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".270 Win",".300 Win Mag"],"notes":"Controlled round feed, walnut stock."},
-      {"model":"Model 70 Extreme Weather","type":"rifle","action":"bolt-action","calibers":["6.5 PRC",".308 Win",".300 Win Mag","7mm PRC"],"notes":"Stainless, carbon-fiber composite stock."},
-      {"model":"Model 1894 Sporter","type":"rifle","action":"lever-action","calibers":[".30-30 Win",".38-55 Win"],"notes":"Iconic American lever rifle."},
-      {"model":"Model 1873","type":"rifle","action":"lever-action","calibers":[".357 Magnum",".44-40 Win",".45 Colt"],"notes":"Reproduction of classic lever-action."},
-      {"model":"Model 1886","type":"rifle","action":"lever-action","calibers":[".45-70 Govt",".45-90"],"notes":"Big-bore lever rifle."},
-      {"model":"SX4 Field","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga"],"notes":"Active Valve gas system."},
-      {"model":"SXP Defender","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga"],"notes":"Inertia-assisted pump."}
+      {"model":"Model 70 Featherweight","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".270 Win",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:10","notes":"Controlled round feed, walnut stock."},
+      {"model":"Model 70 Extreme Weather","type":"rifle","action":"bolt-action","calibers":["6.5 PRC",".308 Win",".300 Win Mag","7mm PRC"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Stainless, carbon-fiber composite stock."},
+      {"model":"Model 1894 Sporter","type":"rifle","action":"lever-action","calibers":[".30-30 Win",".38-55 Win"],"barrelLengthIn":24.0,"twistRate":"1:12","notes":"Iconic American lever rifle."},
+      {"model":"Model 1873","type":"rifle","action":"lever-action","calibers":[".357 Magnum",".44-40 Win",".45 Colt"],"barrelLengthIn":20.0,"twistRate":"1:30","notes":"Reproduction of classic lever-action."},
+      {"model":"Model 1886","type":"rifle","action":"lever-action","calibers":[".45-70 Govt",".45-90"],"barrelLengthIn":24.0,"twistRate":"1:20","notes":"Big-bore lever rifle."},
+      {"model":"SX4 Field","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga"],"barrelLengthIn":28.0,"notes":"Active Valve gas system."},
+      {"model":"SXP Defender","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga"],"barrelLengthIn":18.0,"notes":"Inertia-assisted pump."}
     ]},
     {"name":"Howa","country":"Japan","category":"rifle","products":[
-      {"model":"1500 Hogue","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"notes":"Hogue overmolded stock."},
-      {"model":"1500 HS Precision","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"notes":"HS Precision aluminum-bedded stock."},
-      {"model":"1500 Mini Action","type":"rifle","action":"bolt-action","calibers":[".223 Rem","6.5 Grendel","7.62x39mm","350 Legend"],"notes":"Compact action."},
-      {"model":"M1500 Carbon Elevate","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"notes":"Carbon-fiber stock and barrel."}
+      {"model":"1500 Hogue","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Hogue overmolded stock."},
+      {"model":"1500 HS Precision","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"HS Precision aluminum-bedded stock."},
+      {"model":"1500 Mini Action","type":"rifle","action":"bolt-action","calibers":[".223 Rem","6.5 Grendel","7.62x39mm","350 Legend"],"barrelLengthIn":22.0,"twistRate":"1:9","notes":"Compact action."},
+      {"model":"M1500 Carbon Elevate","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Carbon-fiber stock and barrel."}
     ]},
     {"name":"Savage Arms","country":"USA","category":"rifle","products":[
-      {"model":"110 Apex Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"notes":"Combo with scope, AccuTrigger."},
-      {"model":"110 Tactical","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"notes":"Heavy threaded barrel."},
-      {"model":"110 Ultralite","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Carbon-wrapped barrel."},
-      {"model":"Axis II XP","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".223 Rem"],"notes":"Entry-level package rifle."},
-      {"model":"Impulse Mountain Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC","7mm PRC",".300 Win Mag"],"notes":"Straight-pull bolt action."},
-      {"model":"Mark II FV-SR","type":"rifle","action":"bolt-action","calibers":[".22 LR"],"notes":"Heavy threaded barrel rimfire."}
+      {"model":"110 Apex Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Combo with scope, AccuTrigger."},
+      {"model":"110 Tactical","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Heavy threaded barrel."},
+      {"model":"110 Ultralite","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Carbon-wrapped barrel."},
+      {"model":"Axis II XP","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".223 Rem"],"barrelLengthIn":22.0,"twistRate":"1:9","notes":"Entry-level package rifle."},
+      {"model":"Impulse Mountain Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 PRC","7mm PRC",".300 Win Mag"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Straight-pull bolt action."},
+      {"model":"Mark II FV-SR","type":"rifle","action":"bolt-action","calibers":[".22 LR"],"barrelLengthIn":16.5,"twistRate":"1:16","notes":"Heavy threaded barrel rimfire."}
     ]},
     {"name":"Weatherby","country":"USA","category":"rifle","products":[
-      {"model":"Mark V Backcountry 2.0","type":"rifle","action":"bolt-action","calibers":["6.5 Weatherby RPM","6.5-300 Wby Mag",".257 Wby Mag","7mm PRC","7mm Rem Mag"],"notes":"9-lug action, mountain hunter."},
-      {"model":"Mark V Hunter","type":"rifle","action":"bolt-action","calibers":[".257 Wby Mag","6.5 Wby RPM","7mm Rem Mag",".300 Wby Mag"],"notes":"Synthetic stock, threaded barrel hunter."},
-      {"model":"Vanguard Synthetic","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"notes":"Howa-action based hunter."},
-      {"model":"Model 307 Adventure SD","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".308 Win"],"notes":"New action platform."}
+      {"model":"Mark V Backcountry 2.0","type":"rifle","action":"bolt-action","calibers":["6.5 Weatherby RPM","6.5-300 Wby Mag",".257 Wby Mag","7mm PRC","7mm Rem Mag"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"9-lug action, mountain hunter."},
+      {"model":"Mark V Hunter","type":"rifle","action":"bolt-action","calibers":[".257 Wby Mag","6.5 Wby RPM","7mm Rem Mag",".300 Wby Mag"],"barrelLengthIn":26.0,"twistRate":"1:10","notes":"Synthetic stock, threaded barrel hunter."},
+      {"model":"Vanguard Synthetic","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".30-06",".300 Win Mag"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Howa-action based hunter."},
+      {"model":"Model 307 Adventure SD","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6.5 PRC","7mm PRC",".308 Win"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"New action platform."}
     ]},
     {"name":"Barrett","country":"USA","category":"rifle","products":[
-      {"model":"MRAD","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".300 Win Mag",".338 Lapua",".300 PRC"],"notes":"Multi-Role Adaptive Design, US Army MK22."},
-      {"model":"M82A1","type":"rifle","action":"semi-auto","calibers":[".50 BMG"],"notes":"Iconic anti-materiel/long-range semi-auto."},
-      {"model":"M107A1","type":"rifle","action":"semi-auto","calibers":[".50 BMG"],"notes":"Updated lightweight M82."},
-      {"model":"REC7 DI","type":"rifle","action":"semi-auto","calibers":["5.56 NATO","6.8 SPC"],"notes":"Direct-impingement AR-pattern."}
+      {"model":"MRAD","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".300 Win Mag",".338 Lapua",".300 PRC"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Multi-Role Adaptive Design, US Army MK22."},
+      {"model":"M82A1","type":"rifle","action":"semi-auto","calibers":[".50 BMG"],"barrelLengthIn":29.0,"twistRate":"1:15","notes":"Iconic anti-materiel/long-range semi-auto."},
+      {"model":"M107A1","type":"rifle","action":"semi-auto","calibers":[".50 BMG"],"barrelLengthIn":29.0,"twistRate":"1:15","notes":"Updated lightweight M82."},
+      {"model":"REC7 DI","type":"rifle","action":"semi-auto","calibers":["5.56 NATO","6.8 SPC"],"barrelLengthIn":16.0,"twistRate":"1:7","notes":"Direct-impingement AR-pattern."}
     ]},
     {"name":"Accuracy International","country":"UK","category":"rifle","products":[
-      {"model":"AT","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor"],"notes":"Tactical/PRS rifle, folding chassis."},
-      {"model":"AX","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".300 Win Mag",".338 Lapua"],"notes":"Premium tactical rifle, replaceable barrel."},
-      {"model":"AXSR","type":"rifle","action":"bolt-action","calibers":[".300 Norma Mag",".338 Norma Mag",".338 Lapua"],"notes":"Switch-barrel long-range platform."},
-      {"model":"AT-X","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6mm Creedmoor",".308 Win"],"notes":"Competition-focused chassis rifle."}
+      {"model":"AT","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":20.0,"twistRate":"1:10","notes":"Tactical/PRS rifle, folding chassis."},
+      {"model":"AX","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".300 Win Mag",".338 Lapua"],"barrelLengthIn":20.0,"twistRate":"1:10","notes":"Premium tactical rifle, replaceable barrel."},
+      {"model":"AXSR","type":"rifle","action":"bolt-action","calibers":[".300 Norma Mag",".338 Norma Mag",".338 Lapua"],"barrelLengthIn":27.0,"twistRate":"1:9.35","notes":"Switch-barrel long-range platform."},
+      {"model":"AT-X","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6mm Creedmoor",".308 Win"],"barrelLengthIn":20.0,"twistRate":"1:8","notes":"Competition-focused chassis rifle."}
     ]},
     {"name":"Daniel Defense","country":"USA","category":"rifle","products":[
-      {"model":"DDM4 V7","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Mid-length gas system, M-LOK rail."},
-      {"model":"DDM4 V7 Pro","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"18\" rifle-length gas system."},
-      {"model":"DDM4 PDW","type":"rifle","action":"semi-auto","calibers":[".300 Blackout"],"notes":"7\" barrel personal-defense weapon."},
-      {"model":"DDM5 V7","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"notes":"AR-15-sized 7.62 platform."},
-      {"model":"DD5 V4","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"notes":"Premium 7.62 AR-10-pattern rifle."},
-      {"model":"Delta 5 Pro","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"notes":"Modular precision bolt rifle."},
-      {"model":"H9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"notes":"Hudson-design striker-fired."}
+      {"model":"DDM4 V7","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.0,"twistRate":"1:7","notes":"Mid-length gas system, M-LOK rail."},
+      {"model":"DDM4 V7 Pro","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":18.0,"twistRate":"1:7","notes":"18\" rifle-length gas system."},
+      {"model":"DDM4 PDW","type":"rifle","action":"semi-auto","calibers":[".300 Blackout"],"barrelLengthIn":7.0,"twistRate":"1:7","notes":"7\" barrel personal-defense weapon."},
+      {"model":"DDM5 V7","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":16.0,"twistRate":"1:11","notes":"AR-15-sized 7.62 platform."},
+      {"model":"DD5 V4","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":16.0,"twistRate":"1:11","notes":"Premium 7.62 AR-10-pattern rifle."},
+      {"model":"Delta 5 Pro","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Modular precision bolt rifle."},
+      {"model":"H9","type":"pistol","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":4.28,"twistRate":"1:16","notes":"Hudson-design striker-fired."}
     ]},
     {"name":"Bravo Company Manufacturing (BCM)","country":"USA","category":"rifle","products":[
-      {"model":"RECCE-14 MCMR","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Mid-length gas, MCMR M-LOK handguard."},
-      {"model":"RECCE-16 MCMR","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"16\" mid-length carbine."},
-      {"model":"MK2 Standard","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Forged mid-length AR-15 carbine."}
+      {"model":"RECCE-14 MCMR","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":14.5,"twistRate":"1:7","notes":"Mid-length gas, MCMR M-LOK handguard."},
+      {"model":"RECCE-16 MCMR","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.0,"twistRate":"1:7","notes":"16\" mid-length carbine."},
+      {"model":"MK2 Standard","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":14.5,"twistRate":"1:7","notes":"Forged mid-length AR-15 carbine."}
     ]},
     {"name":"LWRC International","country":"USA","category":"rifle","products":[
-      {"model":"IC-DI","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Direct impingement individual carbine."},
-      {"model":"IC-A5","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Short-stroke gas piston."},
-      {"model":"REPR MKII","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"notes":"Rapid Engagement Precision Rifle."},
-      {"model":"SIX8 IC","type":"rifle","action":"semi-auto","calibers":["6.8 SPC"],"notes":"Piston-driven 6.8 SPC AR variant."}
+      {"model":"IC-DI","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.1,"twistRate":"1:7","notes":"Direct impingement individual carbine."},
+      {"model":"IC-A5","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.1,"twistRate":"1:7","notes":"Short-stroke gas piston."},
+      {"model":"REPR MKII","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":16.0,"twistRate":"1:10","notes":"Rapid Engagement Precision Rifle."},
+      {"model":"SIX8 IC","type":"rifle","action":"semi-auto","calibers":["6.8 SPC"],"barrelLengthIn":16.0,"twistRate":"1:11","notes":"Piston-driven 6.8 SPC AR variant."}
     ]},
     {"name":"Aero Precision","country":"USA","category":"rifle","products":[
-      {"model":"M4E1","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Enhanced AR-15 receiver set."},
-      {"model":"M5","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"notes":"AR-10-pattern .308 platform."},
-      {"model":"Solus Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"notes":"Modular hunter, switch-barrel-capable."},
-      {"model":"Solus Competition","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6mm Creedmoor",".308 Win"],"notes":"PRS chassis bolt rifle."}
+      {"model":"M4E1","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.0,"twistRate":"1:7","notes":"Enhanced AR-15 receiver set."},
+      {"model":"M5","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"barrelLengthIn":18.0,"twistRate":"1:10","notes":"AR-10-pattern .308 platform."},
+      {"model":"Solus Hunter","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Modular hunter, switch-barrel-capable."},
+      {"model":"Solus Competition","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6mm Creedmoor",".308 Win"],"barrelLengthIn":26.0,"twistRate":"1:8","notes":"PRS chassis bolt rifle."}
     ]},
     {"name":"JP Enterprises","country":"USA","category":"rifle","products":[
-      {"model":"LRP-07","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"notes":"Long-Range Precision AR-10."},
-      {"model":"GMR-15","type":"rifle","action":"semi-auto","calibers":["9mm Luger"],"notes":"Pistol-caliber competition carbine, Glock-mag."},
-      {"model":"PCC-19","type":"rifle","action":"semi-auto","calibers":["9mm Luger"],"notes":"Pistol-caliber carbine for USPSA."},
-      {"model":"JP-15","type":"rifle","action":"semi-auto","calibers":["5.56 NATO","6mm ARC",".223 Wylde"],"notes":"Match-grade AR-15."}
+      {"model":"LRP-07","type":"rifle","action":"semi-auto","calibers":[".308 Win","6.5 Creedmoor","6mm Creedmoor"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Long-Range Precision AR-10."},
+      {"model":"GMR-15","type":"rifle","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":16.0,"twistRate":"1:10","notes":"Pistol-caliber competition carbine, Glock-mag."},
+      {"model":"PCC-19","type":"rifle","action":"semi-auto","calibers":["9mm Luger"],"barrelLengthIn":16.0,"twistRate":"1:10","notes":"Pistol-caliber carbine for USPSA."},
+      {"model":"JP-15","type":"rifle","action":"semi-auto","calibers":["5.56 NATO","6mm ARC",".223 Wylde"],"barrelLengthIn":18.0,"twistRate":"1:7.5","notes":"Match-grade AR-15."}
     ]},
     {"name":"Knight's Armament","country":"USA","category":"rifle","products":[
-      {"model":"SR-15 E3 Mod 2","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"notes":"Premier AR-15 with E3 bolt."},
-      {"model":"SR-25 ECC","type":"rifle","action":"semi-auto","calibers":["7.62 NATO"],"notes":"Enhanced Combat Carbine 7.62 platform."},
-      {"model":"SR-30","type":"rifle","action":"semi-auto","calibers":[".300 Blackout"],"notes":".300 BLK suppressor-host AR."}
+      {"model":"SR-15 E3 Mod 2","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.0,"twistRate":"1:7","notes":"Premier AR-15 with E3 bolt."},
+      {"model":"SR-25 ECC","type":"rifle","action":"semi-auto","calibers":["7.62 NATO"],"barrelLengthIn":16.0,"twistRate":"1:11.25","notes":"Enhanced Combat Carbine 7.62 platform."},
+      {"model":"SR-30","type":"rifle","action":"semi-auto","calibers":[".300 Blackout"],"barrelLengthIn":9.5,"twistRate":"1:7","notes":".300 BLK suppressor-host AR."}
     ]},
     {"name":"Henry Repeating Arms","country":"USA","category":"rifle","products":[
-      {"model":"Big Boy Steel","type":"rifle","action":"lever-action","calibers":[".357 Magnum",".44 Magnum",".45 Colt","327 Federal"],"notes":"Pistol-caliber lever-action."},
-      {"model":"Lever Action X-Model .45-70","type":"rifle","action":"lever-action","calibers":[".45-70 Govt"],"notes":"Tactical-style lever, M-LOK polymer stock."},
-      {"model":"Long Ranger","type":"rifle","action":"lever-action","calibers":[".223 Rem",".243 Win",".308 Win","6.5 Creedmoor"],"notes":"Modern lever with rotary bolt."},
-      {"model":"Classic Lever Action .22","type":"rifle","action":"lever-action","calibers":[".22 LR",".22 WMR",".17 HMR"],"notes":"Tube-fed rimfire lever."}
+      {"model":"Big Boy Steel","type":"rifle","action":"lever-action","calibers":[".357 Magnum",".44 Magnum",".45 Colt","327 Federal"],"barrelLengthIn":20.0,"twistRate":"1:38","notes":"Pistol-caliber lever-action."},
+      {"model":"Lever Action X-Model .45-70","type":"rifle","action":"lever-action","calibers":[".45-70 Govt"],"barrelLengthIn":19.8,"twistRate":"1:20","notes":"Tactical-style lever, M-LOK polymer stock."},
+      {"model":"Long Ranger","type":"rifle","action":"lever-action","calibers":[".223 Rem",".243 Win",".308 Win","6.5 Creedmoor"],"barrelLengthIn":20.0,"twistRate":"1:8","notes":"Modern lever with rotary bolt."},
+      {"model":"Classic Lever Action .22","type":"rifle","action":"lever-action","calibers":[".22 LR",".22 WMR",".17 HMR"],"barrelLengthIn":18.5,"twistRate":"1:16","notes":"Tube-fed rimfire lever."}
     ]},
     {"name":"Marlin (Ruger)","country":"USA","category":"rifle","products":[
-      {"model":"1895 SBL","type":"rifle","action":"lever-action","calibers":[".45-70 Govt"],"notes":"Stainless big-bore lever, large loop."},
-      {"model":"1895 Trapper","type":"rifle","action":"lever-action","calibers":[".45-70 Govt"],"notes":"16\" barrel compact lever-action."},
-      {"model":"1894 Classic","type":"rifle","action":"lever-action","calibers":[".357 Magnum",".44 Magnum"],"notes":"Pistol-caliber lever, walnut stock."},
-      {"model":"336 Classic","type":"rifle","action":"lever-action","calibers":[".30-30 Win"],"notes":"Reintroduced classic deer-hunter lever."}
+      {"model":"1895 SBL","type":"rifle","action":"lever-action","calibers":[".45-70 Govt"],"barrelLengthIn":18.63,"twistRate":"1:20","notes":"Stainless big-bore lever, large loop."},
+      {"model":"1895 Trapper","type":"rifle","action":"lever-action","calibers":[".45-70 Govt"],"barrelLengthIn":16.17,"twistRate":"1:20","notes":"16\" barrel compact lever-action."},
+      {"model":"1894 Classic","type":"rifle","action":"lever-action","calibers":[".357 Magnum",".44 Magnum"],"barrelLengthIn":20.0,"twistRate":"1:38","notes":"Pistol-caliber lever, walnut stock."},
+      {"model":"336 Classic","type":"rifle","action":"lever-action","calibers":[".30-30 Win"],"barrelLengthIn":20.25,"twistRate":"1:12","notes":"Reintroduced classic deer-hunter lever."}
     ]},
     {"name":"Mossberg","country":"USA","category":"multi","products":[
-      {"model":"500 Field","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga",".410"],"notes":"Iconic budget pump shotgun."},
-      {"model":"590A1","type":"shotgun","action":"pump-action","calibers":["12 ga"],"notes":"Heavy-walled barrel, military-grade."},
-      {"model":"590 Shockwave","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga",".410"],"notes":"Non-NFA firearm with bird's-head grip."},
-      {"model":"940 Pro Tactical","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Optic-ready defensive autoloader."},
-      {"model":"940 JM Pro","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Jerry Miculek competition variant."},
-      {"model":"930 SPX","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Tactical gas-operated semi-auto."},
-      {"model":"Patriot Predator","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".223 Rem"],"notes":"Hunting bolt rifle, threaded barrel."},
-      {"model":"464 Lever Action","type":"rifle","action":"lever-action","calibers":[".30-30 Win",".22 LR"],"notes":"Traditional-styled lever rifle."}
+      {"model":"500 Field","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga",".410"],"barrelLengthIn":28.0,"notes":"Iconic budget pump shotgun."},
+      {"model":"590A1","type":"shotgun","action":"pump-action","calibers":["12 ga"],"barrelLengthIn":20.0,"notes":"Heavy-walled barrel, military-grade."},
+      {"model":"590 Shockwave","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga",".410"],"barrelLengthIn":14.375,"notes":"Non-NFA firearm with bird's-head grip."},
+      {"model":"940 Pro Tactical","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":18.5,"notes":"Optic-ready defensive autoloader."},
+      {"model":"940 JM Pro","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":24.0,"notes":"Jerry Miculek competition variant."},
+      {"model":"930 SPX","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":18.5,"notes":"Tactical gas-operated semi-auto."},
+      {"model":"Patriot Predator","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor","6.5 PRC",".223 Rem"],"barrelLengthIn":22.0,"twistRate":"1:8","notes":"Hunting bolt rifle, threaded barrel."},
+      {"model":"464 Lever Action","type":"rifle","action":"lever-action","calibers":[".30-30 Win",".22 LR"],"barrelLengthIn":20.0,"twistRate":"1:12","notes":"Traditional-styled lever rifle."}
     ]},
     {"name":"Benelli","country":"Italy","category":"shotgun","products":[
-      {"model":"M2 Field","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga"],"notes":"Inertia-driven, lightweight all-around shotgun."},
-      {"model":"M4 Tactical","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"ARGO gas-operated combat shotgun."},
-      {"model":"Super Black Eagle 3 (SBE3)","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"notes":"Premier inertia waterfowl gun."},
-      {"model":"Ethos Sport","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"notes":"Inertia-driven sporting clays."},
-      {"model":"828U","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga"],"notes":"Mid-tier over/under."},
-      {"model":"Vinci","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Modular inertia design."},
-      {"model":"Nova","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga"],"notes":"Polymer one-piece receiver/stock."}
+      {"model":"M2 Field","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga"],"barrelLengthIn":28.0,"notes":"Inertia-driven, lightweight all-around shotgun."},
+      {"model":"M4 Tactical","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":18.5,"notes":"ARGO gas-operated combat shotgun."},
+      {"model":"Super Black Eagle 3 (SBE3)","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"barrelLengthIn":28.0,"notes":"Premier inertia waterfowl gun."},
+      {"model":"Ethos Sport","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"barrelLengthIn":28.0,"notes":"Inertia-driven sporting clays."},
+      {"model":"828U","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga"],"barrelLengthIn":28.0,"notes":"Mid-tier over/under."},
+      {"model":"Vinci","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"Modular inertia design."},
+      {"model":"Nova","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga"],"barrelLengthIn":28.0,"notes":"Polymer one-piece receiver/stock."}
     ]},
     {"name":"Stoeger","country":"Italy/USA","category":"shotgun","products":[
-      {"model":"M3000","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"Inertia-driven value semi-auto."},
-      {"model":"M3500","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"3.5\" chamber inertia waterfowl gun."},
-      {"model":"P3500","type":"shotgun","action":"pump-action","calibers":["12 ga"],"notes":"3.5\" chamber pump shotgun."},
-      {"model":"Coach Gun","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga",".410"],"notes":"Side-by-side double, Cowboy Action staple."}
+      {"model":"M3000","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"Inertia-driven value semi-auto."},
+      {"model":"M3500","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"3.5\" chamber inertia waterfowl gun."},
+      {"model":"P3500","type":"shotgun","action":"pump-action","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"3.5\" chamber pump shotgun."},
+      {"model":"Coach Gun","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga",".410"],"barrelLengthIn":20.0,"notes":"Side-by-side double, Cowboy Action staple."}
     ]},
     {"name":"Franchi","country":"Italy","category":"shotgun","products":[
-      {"model":"Affinity 3","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"notes":"Inertia-driven autoloader."},
-      {"model":"Affinity 3.5","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"notes":"3.5\" chamber waterfowl variant."},
-      {"model":"Instinct SL","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga","28 ga"],"notes":"Lightweight aluminum-receiver over/under."}
+      {"model":"Affinity 3","type":"shotgun","action":"semi-auto","calibers":["12 ga","20 ga","28 ga"],"barrelLengthIn":28.0,"notes":"Inertia-driven autoloader."},
+      {"model":"Affinity 3.5","type":"shotgun","action":"semi-auto","calibers":["12 ga"],"barrelLengthIn":28.0,"notes":"3.5\" chamber waterfowl variant."},
+      {"model":"Instinct SL","type":"shotgun","action":"break-action","calibers":["12 ga","20 ga","28 ga"],"barrelLengthIn":28.0,"notes":"Lightweight aluminum-receiver over/under."}
     ]},
     {"name":"Stevens","country":"USA","category":"shotgun","products":[
-      {"model":"320 Field","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga"],"notes":"Value-priced field pump shotgun."},
-      {"model":"320 Security","type":"shotgun","action":"pump-action","calibers":["12 ga"],"notes":"Defensive pump configuration."}
+      {"model":"320 Field","type":"shotgun","action":"pump-action","calibers":["12 ga","20 ga"],"barrelLengthIn":28.0,"notes":"Value-priced field pump shotgun."},
+      {"model":"320 Security","type":"shotgun","action":"pump-action","calibers":["12 ga"],"barrelLengthIn":18.5,"notes":"Defensive pump configuration."}
     ]},
     {"name":"Big Horn Armory","country":"USA","category":"rifle","products":[
-      {"model":"Model 89","type":"rifle","action":"lever-action","calibers":[".500 S&W Magnum"],"notes":"Big-bore lever, dangerous-game capable."},
-      {"model":"Model 90","type":"rifle","action":"lever-action","calibers":[".454 Casull",".460 S&W"],"notes":"Lighter big-bore lever."},
-      {"model":"AR500","type":"rifle","action":"semi-auto","calibers":[".500 Auto Max"],"notes":"AR-platform big-bore semi-auto."}
+      {"model":"Model 89","type":"rifle","action":"lever-action","calibers":[".500 S&W Magnum"],"barrelLengthIn":18.0,"twistRate":"1:24","notes":"Big-bore lever, dangerous-game capable."},
+      {"model":"Model 90","type":"rifle","action":"lever-action","calibers":[".454 Casull",".460 S&W"],"barrelLengthIn":18.0,"twistRate":"1:24","notes":"Lighter big-bore lever."},
+      {"model":"AR500","type":"rifle","action":"semi-auto","calibers":[".500 Auto Max"],"barrelLengthIn":18.0,"twistRate":"1:24","notes":"AR-platform big-bore semi-auto."}
     ]}
   ]
 }

@@ -162,6 +162,8 @@ import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/beginner_mode_service.dart';
+import '../../services/recipe_print_service.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
@@ -372,6 +374,7 @@ class _FieldDef {
     required this.level,
     required this.aliases,
     required this.builder,
+    this.beginnerTooltip,
   });
 
   /// Stable id used for filter matching, section membership and keys.
@@ -391,6 +394,12 @@ class _FieldDef {
   /// Builds the editor widget. Receives the current [BuildContext] so
   /// builders can reach providers (e.g. `ComponentRepository`).
   final Widget Function(BuildContext context) builder;
+
+  /// Plain-language explainer shown next to the field when Beginner
+  /// Mode is on (see [BeginnerModeService]). Tooltips explain *why* a
+  /// field matters, not just what it is — see CLAUDE.md beginner-first
+  /// guidance. Null on basic-level fields where the label is enough.
+  final String? beginnerTooltip;
 }
 
 /// Declarative description of one collapsible section on the form.
@@ -856,6 +865,16 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getString(DetailLevel._prefsKey);
     if (!mounted) return;
+    // Beginner Mode anchors the form to Basic — even if the user (or a
+    // prior session) set a higher level explicitly, beginners see the
+    // basics first. They can still flip the segmented toggle in-screen
+    // to see more, but the default is the on-ramp value. Power users
+    // turn Beginner Mode off in Settings to get the prior behaviour.
+    final beginner = context.read<BeginnerModeService>();
+    if (beginner.isEnabled && stored == null) {
+      setState(() => _detailLevel = DetailLevel.basic);
+      return;
+    }
     setState(() => _detailLevel = DetailLevel.fromPrefs(stored));
   }
 
@@ -911,6 +930,46 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     final mapped = _primerSizeLabelForSeedKey(row.size);
     if (mapped != null) {
       setState(() => _primerSize = mapped);
+    }
+  }
+
+  /// Print-to-paper. Flushes any pending autosave so the printed copy
+  /// matches the current screen, then re-reads the row from the DB and
+  /// hands it to `RecipePrintService.share`. Errors fall through to a
+  /// snackbar — print failure is rarely fatal so we don't want to lock
+  /// the form.
+  Future<void> _printRecipe() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final repo = context.read<RecipeRepository>();
+    setState(() => _busy = true);
+    try {
+      // Make sure autosave has committed any in-flight edits before we
+      // read the row back. Without this, recently-typed values wouldn't
+      // appear on the printed page.
+      await _autoSave.flush();
+      var rowId = _autoSave.currentRowId ?? widget.existing?.id;
+      if (rowId == null) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Save the recipe first, then print.'),
+          ),
+        );
+        return;
+      }
+      final row = await repo.getById(rowId);
+      if (row == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Could not find this recipe.')),
+        );
+        return;
+      }
+      await RecipePrintService().share(row);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Print failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -1181,6 +1240,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
+        beginnerTooltip:
+            'How far each thrown charge can wander from your target, '
+            'in grains. Tighter tolerance gives more consistent '
+            'velocity but takes longer to weigh.',
       ),
 
       // ─────── Primer ───────
@@ -1539,6 +1602,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
+        beginnerTooltip:
+            'CBTO measures from the case base to the bullet\'s ogive — '
+            'more reproducible than COAL across bullets with different '
+            'tip lengths. Most reloaders measure with a comparator insert.',
       ),
 
       // ─────── Brass ───────
@@ -1595,6 +1662,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Shoulder Bump',
         level: DetailLevel.detailed,
         aliases: const ['bump', 'sizing', 'headspace'],
+        beginnerTooltip:
+            'How far you push the case shoulder back during sizing. '
+            'Most reloaders aim for 0.001"-0.002" of bump for '
+            'reliable chambering and case life.',
         builder: (ctx) => TextFormField(
           controller: _shoulderBump,
           decoration: const InputDecoration(
@@ -1653,6 +1724,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Distance to Lands',
         level: DetailLevel.all,
         aliases: const ['lands', 'jam', 'distance', 'touch'],
+        beginnerTooltip:
+            'How far the bullet sits from the start of the rifling '
+            '(the lands). Affects pressure and accuracy. Most '
+            'beginners can ignore this until they\'re tuning loads.',
         builder: (ctx) => TextFormField(
           controller: _distanceToLands,
           decoration: const InputDecoration(
@@ -1695,6 +1770,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Bullet Runout / TIR',
         level: DetailLevel.all,
         aliases: const ['runout', 'tir', 'concentricity', 'bullet'],
+        beginnerTooltip:
+            'How off-center the seated bullet is, measured by total '
+            'indicator runout. Lower is better for accuracy. Skip '
+            'unless you have a runout gauge.',
         builder: (ctx) => TextFormField(
           controller: _bulletRunout,
           decoration: const InputDecoration(
@@ -1725,6 +1804,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Bolt Lift',
         level: DetailLevel.all,
         aliases: const ['bolt', 'lift', 'pressure', 'sticky', 'normal'],
+        beginnerTooltip:
+            'How the bolt feels when lifting after firing. Sticky lift '
+            'is a sign of high pressure — back the charge down before '
+            'firing more.',
         builder: (ctx) => DropdownButtonFormField<String>(
           initialValue: _boltLift,
           isExpanded: true,
@@ -2119,6 +2202,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     final tokens = _queryTokens;
     final isSearching = tokens.isNotEmpty;
     final autoSaveOn = context.watch<AutoSaveService>().isEnabled;
+    final beginnerOn = context.watch<BeginnerModeService>().isEnabled;
 
     return PopScope(
       canPop: true,
@@ -2126,7 +2210,22 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         await _autoSave.flush();
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(isEdit ? 'Edit Recipe' : 'New Recipe')),
+        appBar: AppBar(
+          title: Text(isEdit ? 'Edit Recipe' : 'New Recipe'),
+          actions: [
+            // Print / share-as-paper action. Only available once the
+            // recipe has been saved at least once — there's nothing to
+            // print before then. Saves any pending edits via the
+            // autosave controller before formatting so the printed copy
+            // matches what's on screen.
+            if (isEdit || _autoSave.currentRowId != null)
+              IconButton(
+                tooltip: 'Print recipe',
+                icon: const Icon(Icons.print_outlined),
+                onPressed: _busy ? null : _printRecipe,
+              ),
+          ],
+        ),
         body: AutoSaveFirstTimeHint(
           child: Column(
             children: [
@@ -2211,6 +2310,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                       defs: defs,
                       tokens: tokens,
                       isSearching: isSearching,
+                      beginnerOn: beginnerOn,
                     ),
                   if (isSearching && _noVisibleFields(defs, tokens))
                     Padding(
@@ -2271,6 +2371,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     required Map<_FieldId, _FieldDef> defs,
     required List<String> tokens,
     required bool isSearching,
+    required bool beginnerOn,
   }) {
     if (section.id == _customFieldsSectionId) {
       return _buildCustomFieldsSection(
@@ -2334,7 +2435,11 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               if (i > 0) const SizedBox(height: 12),
               KeyedSubtree(
                 key: ValueKey('field_${visibleFields[i].id.name}'),
-                child: visibleFields[i].builder(context),
+                child: _BeginnerWrap(
+                  showTooltip: beginnerOn,
+                  tooltip: visibleFields[i].beginnerTooltip,
+                  child: visibleFields[i].builder(context),
+                ),
               ),
             ],
             if (visibleFields.isEmpty)
@@ -3564,6 +3669,60 @@ class _NameAutocompleteFieldState extends State<_NameAutocompleteField> {
           },
         );
       },
+    );
+  }
+}
+
+/// Optional wrapper that adds a small "Why does this matter?" explainer
+/// below a recipe-form field when Beginner Mode is on. The wrapper is a
+/// no-op when [showTooltip] is false or [tooltip] is null — the field
+/// renders unchanged. That way every form field can sit inside one of
+/// these without extra branching.
+class _BeginnerWrap extends StatelessWidget {
+  const _BeginnerWrap({
+    required this.showTooltip,
+    required this.tooltip,
+    required this.child,
+  });
+
+  final bool showTooltip;
+  final String? tooltip;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = tooltip;
+    if (!showTooltip || t == null || t.isEmpty) return child;
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        child,
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(left: 4, top: 2),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.school_outlined,
+                size: 14,
+                color: theme.colorScheme.primary.withValues(alpha: 0.8),
+              ),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  t,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

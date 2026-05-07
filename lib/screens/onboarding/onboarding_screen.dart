@@ -138,13 +138,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ],
     ),
     _OnboardingPage(
+      icon: Icons.bolt,
+      title: 'From Your Notebook to LoadOut in 60 Seconds',
+      bullets: const [
+        'Quick Add lets you type a load like you\'d write it: name, caliber, '
+            'powder, charge, bullet, weight, COAL.',
+        'Add detail later — every recipe can grow into a full record with '
+            'CBTO, primer, brass, pressure indicators, and more.',
+        'Take it with you — your data stays on your phone. You can also back '
+            'up to your own iCloud or Google Drive, encrypted with a '
+            'passphrase only you know.',
+      ],
+    ),
+    _OnboardingPage(
       icon: Icons.receipt_long,
       title: 'Track Your Recipes',
       bullets: const [
-        "A 'recipe' is your specific load formula: caliber, powder, charge, "
+        "A 'recipe' is your specific load: caliber, powder, charge, "
             'bullet, primer, brass.',
         'Use the Recipes tab (bottom-left) to add, edit, and search your '
-            'loads.',
+            'loads. Already have an Excel sheet? Bring it across with '
+            "'Import from CSV' on the Backup screen.",
         "Toggle 'Detailed' or 'All' to see advanced fields like CBTO, seating "
             'depth, and shoulder bump.',
       ],

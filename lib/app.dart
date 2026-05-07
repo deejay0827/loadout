@@ -136,6 +136,7 @@ import 'screens/disclaimer/disclaimer_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'services/auth_service.dart';
 import 'services/auto_save_service.dart';
+import 'services/beginner_mode_service.dart';
 import 'services/entitlement_notifier.dart';
 import 'services/purchases_service.dart';
 import 'theme/app_theme.dart';
@@ -186,6 +187,9 @@ class LoadOutApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<AutoSaveService>(
           create: (_) => AutoSaveService(),
+        ),
+        ChangeNotifierProvider<BeginnerModeService>(
+          create: (_) => BeginnerModeService(),
         ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),

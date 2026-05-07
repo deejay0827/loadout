@@ -62,6 +62,7 @@ import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
 import '../../repositories/recipe_repository.dart';
+import 'quick_add_recipe_screen.dart';
 import 'recipe_form_screen.dart';
 
 class RecipesListScreen extends StatelessWidget {
@@ -140,11 +141,74 @@ class RecipesListScreen extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const RecipeFormScreen()),
-        ),
+        onPressed: () => _showAddOptions(context),
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  /// Bottom-sheet "Quick Add" / "Detailed Recipe" picker. Shown in place
+  /// of an instant push so beginners default into Quick Add but power
+  /// users can reach the full form in one extra tap.
+  void _showAddOptions(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetCtx) {
+        final theme = Theme.of(sheetCtx);
+        return SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: Text(
+                  'Add a Recipe',
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.bolt,
+                  color: theme.colorScheme.primary,
+                ),
+                title: const Text('Quick Add'),
+                subtitle: const Text(
+                  'Just the basics — like a notebook line',
+                ),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const QuickAddRecipeScreen(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.tune,
+                  color: theme.colorScheme.primary,
+                ),
+                title: const Text('Detailed Recipe'),
+                subtitle: const Text(
+                  'Every field — CBTO, primer, brass lots, pressure, more',
+                ),
+                onTap: () {
+                  Navigator.of(sheetCtx).pop();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const RecipeFormScreen(),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
     );
   }
 }

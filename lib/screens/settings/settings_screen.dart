@@ -60,6 +60,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../database/database.dart';
 import '../../services/auth_service.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/purchases_service.dart';
 import '../backup/backup_screen.dart';
@@ -87,12 +88,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final service = context.watch<AutoSaveService>();
+    final beginner = context.watch<BeginnerModeService>();
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: AbsorbPointer(
         absorbing: _busy,
         child: ListView(
           children: [
+            const _SectionHeader('Experience'),
+            SwitchListTile(
+              secondary: const Icon(Icons.school_outlined),
+              title: const Text('Beginner Mode'),
+              subtitle: const Text(
+                'Recipe forms open with just the basics, less-common '
+                'fields show short explainers, and the Glossary stays one '
+                'tap away. Turn off for the full power-user view.',
+              ),
+              value: beginner.isEnabled,
+              onChanged: (v) {
+                // ignore: discarded_futures
+                beginner.setEnabled(v);
+              },
+            ),
             const _SectionHeader('Editing'),
             SwitchListTile(
               secondary: const Icon(Icons.bolt_outlined),

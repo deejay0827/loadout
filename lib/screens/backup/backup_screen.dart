@@ -83,8 +83,10 @@
 // EntitlementNotifier read for paywall gating.
 
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:convert';
+import 'dart:io' show File, Platform;
 
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -92,8 +94,10 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../database/database.dart';
+import '../../repositories/recipe_repository.dart';
 import '../../services/backup_crypto.dart';
 import '../../services/cloud_backup.dart';
+import '../../services/csv_import_service.dart';
 import '../../services/drive_backup_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/export_service.dart';
@@ -188,6 +192,11 @@ class _BackupScreenState extends State<BackupScreen> {
               onShare: _runLocalExport,
             ),
             const SizedBox(height: 16),
+            _CsvImportCard(
+              busy: _busy,
+              onImport: _runCsvImport,
+            ),
+            const SizedBox(height: 16),
             if (!isPro) ...[
               _ProUpsellCard(onUpgrade: _openPaywall),
             ] else ...[
@@ -248,6 +257,79 @@ class _BackupScreenState extends State<BackupScreen> {
         'Export ready — pick a destination from the share sheet.',
       );
     }, errorPrefix: 'Export failed');
+  }
+
+  /// "Import from CSV" entry. Opens the OS file picker, reads the
+  /// chosen `.csv`, shows a preview dialog, and on confirm walks the
+  /// rows inserting recipes via `CsvImportService`. Errors are surfaced
+  /// in the status banner; partial imports are normal (rows missing a
+  /// recipe name are skipped).
+  Future<void> _runCsvImport() async {
+    // Resolve the repository BEFORE the first await so we never reach
+    // into the BuildContext after an async gap — keeps the analyzer's
+    // `use_build_context_synchronously` lint quiet without needing a
+    // mounted guard.
+    final repo = context.read<RecipeRepository>();
+
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['csv'],
+      withData: false,
+    );
+    if (picked == null || picked.files.isEmpty) return;
+    final path = picked.files.single.path;
+    if (path == null) {
+      _setStatus('Could not read the selected file path.');
+      return;
+    }
+
+    await _withBusy(() async {
+      final file = File(path);
+      String content;
+      try {
+        content = await file.readAsString();
+      } catch (_) {
+        // Fall back to latin-1 if utf-8 fails — Excel often saves CSVs
+        // in CP-1252.
+        content = await file.readAsString(encoding: latin1);
+      }
+
+      final service = CsvImportService(repo);
+      final preview = service.parsePreview(content);
+
+      if (preview.hasFatalError) {
+        _setStatus(preview.fatalError!);
+        return;
+      }
+      if (!preview.canImport) {
+        _setStatus(
+          'No recipe-name column was detected. Add a column called '
+          '"Name" or "Recipe Name" and try again.',
+        );
+        return;
+      }
+      if (!mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => _CsvImportPreviewDialog(preview: preview),
+      );
+      if (confirmed != true) return;
+
+      final result = await service.import(content);
+      final pieces = <String>[
+        '${result.imported} recipes imported.',
+        if (result.skipped > 0)
+          '${result.skipped} rows skipped due to missing recipe name.',
+        if (result.hasErrors)
+          '${result.errors.length} row issue(s) — see logs.',
+      ];
+      if (kDebugMode && result.hasErrors) {
+        for (final e in result.errors) {
+          debugPrint('CSV import warning: $e');
+        }
+      }
+      _setStatus(pieces.join(' '));
+    }, errorPrefix: 'CSV import failed');
   }
 
   Future<void> _runCloudBackup(CloudBackupProvider provider) async {
@@ -1063,6 +1145,162 @@ class _CloudBackupListScreenState extends State<_CloudBackupListScreen> {
           );
         },
       ),
+    );
+  }
+}
+
+/// "Import from CSV" tile on the Backup screen. Always free — the goal
+/// is to make it dead simple for an Excel reloader to bring their data
+/// across.
+class _CsvImportCard extends StatelessWidget {
+  const _CsvImportCard({required this.busy, required this.onImport});
+
+  final bool busy;
+  final VoidCallback onImport;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.table_chart_outlined,
+                    color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text('Import from CSV',
+                    style: theme.textTheme.titleMedium),
+                const Spacer(),
+                Chip(
+                  label: const Text('Free'),
+                  visualDensity: VisualDensity.compact,
+                  backgroundColor: theme.colorScheme.primary.withValues(
+                    alpha: 0.12,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Already track your loads in Excel? Export the sheet to '
+              'CSV and bring it across in one tap. Common column names '
+              'like "Recipe Name", "Caliber", "Powder", "Charge", '
+              '"Bullet", and "COAL" are recognised automatically.',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.icon(
+                onPressed: busy ? null : onImport,
+                icon: const Icon(Icons.upload_file),
+                label: const Text('Import from CSV'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Pre-import preview dialog. Shows the user the detected column
+/// mapping and any unrecognised headers, then asks them to confirm
+/// before any rows are written.
+class _CsvImportPreviewDialog extends StatelessWidget {
+  const _CsvImportPreviewDialog({required this.preview});
+
+  final CsvImportPreview preview;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: const Text('Confirm Import'),
+      content: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Found ${preview.totalRows} row'
+              '${preview.totalRows == 1 ? '' : 's'} in the CSV.',
+              style: theme.textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Detected columns:',
+              style: theme.textTheme.labelLarge,
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final c in preview.detectedColumns)
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    avatar: Icon(
+                      Icons.check,
+                      color: theme.colorScheme.primary,
+                      size: 16,
+                    ),
+                    label: Text(c.field.label),
+                  ),
+              ],
+            ),
+            if (preview.unrecognisedHeaders.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Ignored columns:',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final h in preview.unrecognisedHeaders)
+                    Chip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text(
+                        h.isEmpty ? '(blank)' : h,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              'Rows missing a recipe name will be skipped. Numeric '
+              'cells with extra text like "41.5gr" will still be '
+              'imported. You can edit any field afterwards.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text('Import ${preview.totalRows}'),
+        ),
+      ],
     );
   }
 }

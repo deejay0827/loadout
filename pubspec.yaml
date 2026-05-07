@@ -241,6 +241,15 @@ dependencies:
   # only the user's coarse coordinates leave the device.
   geolocator: ^13.0.0
 
+  # CSV import (feature: convert Excel reloaders).
+  # `file_picker` exposes the OS file picker so the user can hand us a
+  # `.csv` from anywhere on the device. Cross-platform on iOS, Android,
+  # macOS, Windows. CSV parsing itself is hand-rolled inside
+  # `lib/services/csv_import_service.dart` — small enough to avoid
+  # pulling in a third-party CSV package for the dozen lines it would
+  # save.
+  file_picker: ^8.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
