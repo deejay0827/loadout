@@ -1,3 +1,82 @@
+// FILE: lib/screens/privacy/privacy_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the in-app privacy policy as a scrollable text screen. Reachable
+// from the privacy dialog on the home screen and from the
+// "Local-First & Privacy" topic CTA on `HowItWorksScreen`. The screen has
+// no input or interactive state — just headings, paragraphs, bullet
+// lists, and one "Effective date" line.
+//
+// The policy was last revised on 2026-05-07 to handle the introduction of
+// optional cloud backup without weakening the headline "we don't track
+// you" promise. The structure of the page is:
+//
+//   - Title + effective date
+//   - "What this app is" — one paragraph orienting the reader
+//   - "The short version" — four-bullet TL;DR
+//   - "Data we store on your device" — the local SQLite DB
+//   - "Data we send to a server" — Firebase Auth ONLY (email, OAuth tokens,
+//     hashed password if email/password sign-in)
+//   - "Backups & exports" — two subsections:
+//       * Local export (free) — JSON file written to Files / Downloads
+//       * Cloud backup (Pro, opt-in) — passphrase-encrypted on-device
+//         BEFORE upload, written to the user's OWN iCloud Drive or Google
+//         Drive. LoadOut never sees the encrypted blob.
+//   - "What we don't do" — explicit list of negatives (no analytics, no
+//     ads, no third-party sharing, etc.)
+//   - "Sign-in providers" — links to each provider's policy
+//   - "Children" — disclaim minors
+//   - "Your rights" — delete, export, GDPR/CCPA contact path
+//   - "Changes to this policy" — re-prompt on material changes
+//   - "Contact" — Johnson Digital Systems support address
+//
+// `_BulletList` and `_NumberedList` are file-private helpers that lay
+// out a list of strings as `•` or `1.`-prefixed rows, with text wrapping
+// correctly under the marker.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// LoadOut's marketing positioning rests on the claim that user reloading
+// data never leaves the device unless the user opts in to cloud backup.
+// That promise has to be reinforced in three places — the App Store /
+// Play Store privacy disclosures, the `PRIVACY_POLICY.md` file in the
+// repo root, and this screen — and the three must stay aligned. This
+// file is the user-facing surface of that policy.
+//
+// Leading with "we don't run a backend that stores your reloading data"
+// sets the right mental frame before the cloud-backup section explains
+// the opt-in flow. The point is to make the cloud-backup-supports-iCloud-
+// /-Drive paragraph land as "convenience for the user without weakening
+// the privacy posture" rather than as "wait, so they DO have my data?"
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The hard part isn't the code — the code is a pile of `Text`s in a
+// `ListView`. The hard part is keeping the legal copy synchronized
+// across this file, `PRIVACY_POLICY.md`, and the platform-specific
+// privacy disclosures in App Store Connect / Play Console. Bumping the
+// `_effectiveDate` constant signals a meaningful policy change; the
+// in-app re-prompt of the disclaimer dialog is what actually surfaces
+// it to existing users.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/home/home_screen.dart` — the privacy dialog's "Read
+//   the full policy" link pushes this screen.
+// - `lib/screens/how_it_works/how_it_works_screen.dart` — the
+//   "Local-First & Privacy" topic CTA pushes this screen.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None — pure rendering of `const` strings. No I/O, no network, no
+// plugin calls.
+
 import 'package:flutter/material.dart';
 
 /// Full-text privacy policy. Reachable from the privacy dialog on the home
@@ -109,6 +188,24 @@ class PrivacyScreen extends StatelessWidget {
             'We do not see, store, or transmit any of your reloading data — '
             'recipes, firearms, components, or inventory. LoadOut does not '
             'operate any backend that receives or stores reloading data.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 24),
+
+          Text('Data we download from a server', style: headingStyle),
+          const SizedBox(height: 8),
+          Text(
+            'When the app starts, it makes a one-way read request to Firebase '
+            'Storage to check whether the bundled reference catalog '
+            '(cartridges, powders, bullets, primers, brass, firearms, parts) '
+            'has been corrected or expanded since the version of the app you '
+            'installed. If a newer version is available, the updated catalog '
+            'file is downloaded and cached on your device. This is a '
+            'download-only, server-to-device flow — we do not upload anything '
+            'about you, your device, or your reloading data when this check '
+            'runs. The catalog files are the same for every user and contain '
+            'no personal information. The check happens in the background '
+            'and is skipped silently if you are offline.',
             style: bodyStyle,
           ),
           const SizedBox(height: 24),

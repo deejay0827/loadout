@@ -90,6 +90,8 @@
 //   stays black until the first widget builds, so the steps above are the
 //   "splash duration" the user perceives.
 
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -98,6 +100,7 @@ import 'database/database.dart';
 import 'database/seed_loader.dart';
 import 'firebase_options.dart';
 import 'services/purchases_service.dart';
+import 'services/seed_updater.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -108,6 +111,14 @@ Future<void> main() async {
 
   final purchases = PurchasesService();
   await purchases.initialize();
+
+  // Fire-and-forget pull of the latest reference catalog from Firebase
+  // Storage. We deliberately do NOT await this — the user should see the
+  // UI immediately on cold start, even on a slow network. Any updates
+  // downloaded here are persisted to the documents directory and applied
+  // by the next launch's SeedLoader.seedIfNeeded(). See
+  // `lib/services/seed_updater.dart` for the full flow.
+  unawaited(SeedUpdater(db).checkForUpdates());
 
   runApp(LoadOutApp(database: db, purchases: purchases));
 }

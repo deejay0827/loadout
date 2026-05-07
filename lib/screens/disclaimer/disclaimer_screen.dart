@@ -1,3 +1,109 @@
+// FILE: lib/screens/disclaimer/disclaimer_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the BLOCKING first-launch disclaimer. Until the user has
+// scrolled to the bottom of the long-form safety text, ticked the "I
+// understand and accept" checkbox, AND tapped the "Accept and Continue"
+// button, the app refuses to advance to the auth gate or any feature
+// screen. There is no "skip" button and the OS back button is suppressed
+// (`PopScope(canPop: false)` — Flutter's modern way to disable popping
+// the route off the navigator stack).
+//
+// `DisclaimerScreen` is a `StatefulWidget` because it tracks two pieces
+// of UI state across the lifetime of the screen:
+//
+//   - `_scrolledToBottom` — flips to `true` once the user has scrolled
+//     to within 24 pixels of the bottom of the disclaimer body. The
+//     scroll listener (`_onScroll`) latches this once and never flips
+//     it back. There's also a `WidgetsBinding.instance.addPostFrameCallback`
+//     that flips it immediately if the content is short enough that no
+//     scrolling is needed at all (otherwise the gate would be unreachable
+//     on a tablet where everything fits on one screen).
+//   - `_accepted` — tracks the checkbox value. The checkbox is greyed
+//     out (`onChanged: null`) until `_scrolledToBottom` is true, so the
+//     user physically cannot tick it without scrolling.
+//
+// The "Accept and Continue" `FilledButton` is enabled only when both
+// flags are true (`canAccept = _accepted && _scrolledToBottom`). On tap
+// it calls the `widget.onAccept` callback handed in by the parent;
+// persistence (the SharedPreferences key) is the parent's job, not this
+// file's.
+//
+// The disclaimer body is a `_DisclaimerBody` private widget that lays
+// out plain `Text` chunks in a `DefaultTextStyle.merge`. It covers:
+// "reloading is dangerous," "verify every recipe against current
+// manuals," "no warranty," "your data stays on your device," "your
+// responsibility" with a five-bullet `_Bullet` list, "no professional
+// relationship," and "liability." It ends with "If you do not accept
+// these terms, do not use this app."
+//
+// Three visual affordances reinforce that the screen is scrollable:
+//
+//   - A sticky info banner at the top reads "Scroll through the full
+//     disclaimer below before accepting."
+//   - A `Scrollbar` with `thumbVisibility: true` so the scroll position
+//     is always visible.
+//   - A bottom fade gradient + "Scroll for more ↓" label that
+//     auto-hides once `_scrolledToBottom` is true.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// LoadOut's safety/liability posture (see CLAUDE.md and the project's
+// privacy policy) requires the user to be informed BEFORE they can use
+// the app, every time, on every device, until the disclaimer version
+// changes. The persistence is keyed by a versioned preference name —
+// the parent that hosts this screen uses `disclaimer_accepted_v1`. To
+// force re-acceptance on a meaningful policy change, that suffix can be
+// bumped to `_v2` etc. and existing users will be re-prompted.
+//
+// The "scroll to the bottom before the checkbox enables" pattern is
+// industry-standard for binding consent flows — a court is more likely
+// to accept that the user actually read the terms if they had to pass
+// through the entire body of text on the way to the accept button.
+//
+// This screen is the FIRST of the two disclaimer surfaces in the app.
+// The other is `lib/widgets/disclaimer_overlay.dart`, which is the
+// short per-launch reminder dialog. Don't confuse them.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Two subtle problems handled here:
+//
+//   1. On large screens (tablets, big phones in landscape), the entire
+//      disclaimer might fit without any scrolling at all. With a naive
+//      "must scroll" implementation the gate would be permanently
+//      unreachable. The `addPostFrameCallback` after layout checks
+//      `pos.maxScrollExtent <= 0` and short-circuits the flag in that
+//      case.
+//   2. `PopScope(canPop: false)` blocks the Android system back button
+//      and any iOS swipe-to-go-back gesture. Without it, the user
+//      could back-button their way past the gate on Android.
+//
+// The 24-pixel slack on the "is bottom?" check (`pos.pixels >=
+// pos.maxScrollExtent - 24`) tolerates the tiny rendering imprecision
+// of physics-driven scroll views — the user shouldn't have to slam the
+// scroll exactly to the last pixel for the checkbox to enable.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/app.dart` — the `_DisclaimerGate` widget renders this screen
+//   on first launch (when the SharedPreferences flag is unset) and
+//   provides an `onAccept` callback that flips the flag and advances
+//   to the auth gate.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None directly — this file does not persist anything itself. The
+// `onAccept` callback is the file's only output, and the parent decides
+// what to do with it (currently: write `disclaimer_accepted_v1` to
+// SharedPreferences, then rebuild). Pure UI plus a single callback.
+
 import 'package:flutter/material.dart';
 
 /// Full-screen, blocking disclaimer shown on first launch. The user must

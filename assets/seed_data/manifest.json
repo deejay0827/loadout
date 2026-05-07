@@ -1,0 +1,14 @@
+{
+  "manifest_version": 1,
+  "generated_at": "2026-05-07T00:00:00Z",
+  "files": {
+    "cartridges":    {"version": 1, "filename": "cartridges.json"},
+    "powders":       {"version": 1, "filename": "powders.json"},
+    "bullets":       {"version": 1, "filename": "bullets.json"},
+    "primers":       {"version": 1, "filename": "primers.json"},
+    "brass":         {"version": 1, "filename": "brass.json"},
+    "firearms":      {"version": 1, "filename": "firearms.json"},
+    "firearm_parts": {"version": 1, "filename": "firearm_parts.json"},
+    "optics":        {"version": 1, "filename": "optics.json"}
+  }
+}

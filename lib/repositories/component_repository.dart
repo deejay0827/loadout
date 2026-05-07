@@ -126,6 +126,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../database/database.dart';
+import '../utils/natural_sort.dart';
 
 /// Reads reference + custom components and exposes them as flat option lists
 /// for dropdowns. Also writes user-added custom components.
@@ -228,6 +229,13 @@ class ComponentRepository {
           ..orderBy([(c) => OrderingTerm.asc(c.name)]))
         .get();
     results.addAll(customs.map((c) => c.name));
+    // Replace the SQL-side lexicographic ordering with a natural-numeric
+    // sort applied to the FINAL composite labels. Without this, "10mm"
+    // would sort before "8mm", and ".30-06" before ".308". See
+    // `lib/utils/natural_sort.dart` for the full rule set (leading-dot
+    // strip, decimal-aware chunking, numbers-before-text on mixed
+    // chunks).
+    results.sort(naturalCompare);
     return results;
   }
 
@@ -239,6 +247,97 @@ class ComponentRepository {
               notes: Value(notes),
             ),
           );
+
+  /// Distinct manufacturer names from the seeded reference catalog for the
+  /// given component [kind] (`'powder' | 'bullet' | 'primer' | 'brass'`),
+  /// alphabetized. Used by the lot-creation dialogs to drive the
+  /// Manufacturer autocomplete.
+  Future<List<String>> manufacturersForKind(String kind) async {
+    final rows = await (db.select(db.manufacturers)
+          ..where((m) => m.kind.equals(kind)))
+        .get();
+    return rows.map((m) => m.name).toList()..sort(naturalCompare);
+  }
+
+  /// Product names for a given manufacturer, scoped to a component [kind]
+  /// (`'powder' | 'bullet' | 'primer' | 'brass'`). The product label
+  /// excludes the manufacturer prefix because the dialog already has a
+  /// dedicated Manufacturer field. For bullets the trailing weight suffix
+  /// (e.g. `"105gr"`) is preserved so callers can use the label as-is.
+  /// Returns an empty list when the manufacturer is unknown or has no
+  /// matching products.
+  Future<List<String>> productsForManufacturer(
+      String kind, String manufacturer) async {
+    final mfgName = manufacturer.trim();
+    if (mfgName.isEmpty) return const <String>[];
+    final results = <String>[];
+    switch (kind) {
+      case 'powder':
+        final rows = await (db.select(db.powders).join([
+          innerJoin(db.manufacturers,
+              db.manufacturers.id.equalsExp(db.powders.manufacturerId)),
+        ])
+              ..where(db.manufacturers.name.equals(mfgName))
+              ..orderBy([OrderingTerm.asc(db.powders.name)]))
+            .get();
+        for (final row in rows) {
+          results.add(row.readTable(db.powders).name);
+        }
+        break;
+      case 'bullet':
+        final rows = await (db.select(db.bullets).join([
+          innerJoin(db.manufacturers,
+              db.manufacturers.id.equalsExp(db.bullets.manufacturerId)),
+        ])
+              ..where(db.manufacturers.name.equals(mfgName))
+              ..orderBy([
+                OrderingTerm.asc(db.bullets.line),
+                OrderingTerm.asc(db.bullets.weightGr),
+              ]))
+            .get();
+        for (final row in rows) {
+          final b = row.readTable(db.bullets);
+          final wt = b.weightGr.toStringAsFixed(
+              b.weightGr.truncateToDouble() == b.weightGr ? 0 : 1);
+          results.add('${b.line} ${wt}gr');
+        }
+        break;
+      case 'primer':
+        final rows = await (db.select(db.primers).join([
+          innerJoin(db.manufacturers,
+              db.manufacturers.id.equalsExp(db.primers.manufacturerId)),
+        ])
+              ..where(db.manufacturers.name.equals(mfgName))
+              ..orderBy([OrderingTerm.asc(db.primers.name)]))
+            .get();
+        for (final row in rows) {
+          results.add(row.readTable(db.primers).name);
+        }
+        break;
+      case 'brass':
+        // Brass products are scoped per-manufacturer but the seed data
+        // names them by manufacturer + tier; we return distinct tier
+        // strings (e.g. `"Match"`, `"Range"`) to keep the dropdown
+        // useful. Manufacturers without a tier yield an empty list.
+        final rows = await (db.select(db.brassProducts).join([
+          innerJoin(db.manufacturers,
+              db.manufacturers.id.equalsExp(db.brassProducts.manufacturerId)),
+        ])
+              ..where(db.manufacturers.name.equals(mfgName)))
+            .get();
+        for (final row in rows) {
+          final b = row.readTable(db.brassProducts);
+          final tier = b.tier;
+          if (tier != null && tier.isNotEmpty) results.add(tier);
+        }
+        break;
+    }
+    // Natural sort over the final composite labels — handles "10gr" vs
+    // "8gr" vs "75gr" weight suffixes on bullets, "GM205M" vs "GM215M"
+    // primer SKUs, etc.
+    results.sort(naturalCompare);
+    return results;
+  }
 
   /// Look up a primer reference row by a fully-formatted label of the form
   /// `"<Manufacturer> #<PrimerId>"` (e.g. `"Federal #210M"`). Returns
@@ -266,31 +365,33 @@ class ComponentRepository {
 
   // ───── Primer cascading dropdown helpers ─────
 
-  /// All primer manufacturer names, alphabetical. Used to populate the
-  /// brand dropdown of the cascading primer field.
+  /// All primer manufacturer names, naturally sorted. Used to populate
+  /// the brand dropdown of the cascading primer field.
   Future<List<String>> primerManufacturers() async {
     final rows = await (db.select(db.manufacturers)
-          ..where((m) => m.kind.equals('primer'))
-          ..orderBy([(m) => OrderingTerm.asc(m.name)]))
+          ..where((m) => m.kind.equals('primer')))
         .get();
-    return rows.map((m) => m.name).toList();
+    return rows.map((m) => m.name).toList()..sort(naturalCompare);
   }
 
-  /// All primer products from a given manufacturer, sorted by product line
-  /// then model number. Used to populate the product dropdown of the
-  /// cascading primer field once a brand is chosen.
+  /// All primer products from a given manufacturer, naturally sorted by
+  /// the user-visible compound label (`primerProductLabel(p)`). Without
+  /// this sort, primers would render in size-enum order
+  /// ("large-pistol" → "large-rifle" → "shotshell" → "small-pistol" →
+  /// "small-rifle") which doesn't match alphabetical user expectation.
+  /// Natural-sort by display label puts "Magnum Large Rifle #215" right
+  /// next to "Magnum Large Rifle Match #215M", and "Premium Small Rifle
+  /// #205" before "Premium Small Rifle Match #205M".
   Future<List<PrimerRow>> primersByManufacturer(String manufacturerName) async {
     final rows = await (db.select(db.primers).join([
       innerJoin(db.manufacturers,
           db.manufacturers.id.equalsExp(db.primers.manufacturerId)),
-    ])
-          ..where(db.manufacturers.name.equals(manufacturerName))
-          ..orderBy([
-            OrderingTerm.asc(db.primers.size),
-            OrderingTerm.asc(db.primers.name),
-          ]))
+    ])..where(db.manufacturers.name.equals(manufacturerName)))
         .get();
-    return rows.map((r) => r.readTable(db.primers)).toList();
+    final list = rows.map((r) => r.readTable(db.primers)).toList();
+    list.sort((a, b) =>
+        naturalCompare(primerProductLabel(a), primerProductLabel(b)));
+    return list;
   }
 
   /// Build the canonical user-facing label for a primer product.
@@ -326,6 +427,36 @@ class ComponentRepository {
     return (manufacturer: mfg, primerName: name);
   }
 
+  // ───── Reference bullets ─────
+
+  /// Returns every bullet from the reference catalog joined with its
+  /// manufacturer, ordered by manufacturer name then line then weight.
+  /// Used by the ballistics calculator's bullet picker, which needs the
+  /// raw `BulletRow` (for `bcG1`/`bcG7`/`diameterIn`/`weightGr`) plus the
+  /// manufacturer name to format the dropdown label.
+  Future<List<({BulletRow bullet, ManufacturerRow mfg})>>
+      allBulletsWithManufacturer() async {
+    final rows = await (db.select(db.bullets).join([
+      innerJoin(db.manufacturers,
+          db.manufacturers.id.equalsExp(db.bullets.manufacturerId)),
+    ])).get();
+    final list = rows.map((row) {
+      final bullet = row.readTable(db.bullets);
+      final mfg = row.readTable(db.manufacturers);
+      return (bullet: bullet, mfg: mfg);
+    }).toList();
+    // Natural sort across the composite "Mfg Line Caliber Weightgr"
+    // label so 8gr, 10gr, 75gr, 105gr, 168gr line up numerically rather
+    // than the SQL-side lexicographic 105gr → 10gr → 168gr → 75gr → 8gr.
+    String key(({BulletRow bullet, ManufacturerRow mfg}) r) {
+      final wt = r.bullet.weightGr.toStringAsFixed(
+          r.bullet.weightGr.truncateToDouble() == r.bullet.weightGr ? 0 : 1);
+      return '${r.mfg.name} ${r.bullet.line} ${r.bullet.diameterIn} ${wt}gr';
+    }
+    list.sort((a, b) => naturalCompare(key(a), key(b)));
+    return list;
+  }
+
   // ───── Reference firearms ─────
 
   Future<List<({FirearmRefRow firearm, ManufacturerRow manufacturer, List<String> calibers})>>
@@ -333,18 +464,19 @@ class ComponentRepository {
     final rows = await (db.select(db.firearmsRef).join([
       innerJoin(db.manufacturers,
           db.manufacturers.id.equalsExp(db.firearmsRef.manufacturerId)),
-    ])
-          ..orderBy([
-            OrderingTerm.asc(db.manufacturers.name),
-            OrderingTerm.asc(db.firearmsRef.model),
-          ]))
-        .get();
-    return rows.map((row) {
+    ])).get();
+    final list = rows.map((row) {
       final firearm = row.readTable(db.firearmsRef);
       final mfg = row.readTable(db.manufacturers);
       final calibers = (json.decode(firearm.calibersJson) as List<dynamic>)
           .cast<String>();
       return (firearm: firearm, manufacturer: mfg, calibers: calibers);
     }).toList();
+    list.sort((a, b) {
+      final mfgCmp = naturalCompare(a.manufacturer.name, b.manufacturer.name);
+      if (mfgCmp != 0) return mfgCmp;
+      return naturalCompare(a.firearm.model, b.firearm.model);
+    });
+    return list;
   }
 }

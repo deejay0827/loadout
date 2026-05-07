@@ -110,6 +110,7 @@ import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/firearm_repository.dart';
+import '../../repositories/optics_repository.dart';
 import '../../widgets/component_field.dart';
 
 typedef _RefEntry = ({
@@ -140,6 +141,10 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   late final TextEditingController _twistRate;
   late final TextEditingController _shotsFired;
   late final TextEditingController _notes;
+  // Ballistics defaults — pre-fill the ballistics calculator from this firearm.
+  late final TextEditingController _defaultMuzzleVelocityFps;
+  late final TextEditingController _defaultZeroRangeYd;
+  late final TextEditingController _sightHeightIn;
 
   bool _useCatalog = false;
   bool _busy = false;
@@ -147,6 +152,13 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   Future<List<_RefEntry>>? _refsFuture;
   _RefEntry? _selectedRef;
   int? _referenceFirearmId;
+
+  // Optics dropdown state. The dropdown only sets `_opticsId`; sight
+  // height stays a separate user-edited field because it depends on
+  // rings/mount, not the optic.
+  Future<List<OpticEntry>>? _opticsFuture;
+  OpticEntry? _selectedOptic;
+  int? _opticsId;
 
   @override
   void initState() {
@@ -163,10 +175,21 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     _twistRate = TextEditingController(text: e?.twistRate ?? '');
     _shotsFired = TextEditingController(text: (e?.shotsFired ?? 0).toString());
     _notes = TextEditingController(text: e?.notes ?? '');
+    _defaultMuzzleVelocityFps = TextEditingController(
+      text: e?.defaultMuzzleVelocityFps?.toString() ?? '',
+    );
+    _defaultZeroRangeYd = TextEditingController(
+      text: e?.defaultZeroRangeYd?.toString() ?? '',
+    );
+    _sightHeightIn = TextEditingController(
+      text: e?.sightHeightIn?.toString() ?? '',
+    );
     _referenceFirearmId = e?.referenceFirearmId;
     _useCatalog = _referenceFirearmId != null;
     _refsFuture =
         context.read<ComponentRepository>().allReferenceFirearms();
+    _opticsId = e?.opticsId;
+    _opticsFuture = context.read<OpticsRepository>().allOptics();
   }
 
   @override
@@ -182,6 +205,9 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       _twistRate,
       _shotsFired,
       _notes,
+      _defaultMuzzleVelocityFps,
+      _defaultZeroRangeYd,
+      _sightHeightIn,
     ]) {
       c.dispose();
     }
@@ -192,6 +218,12 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     final t = c.text.trim();
     if (t.isEmpty) return null;
     return double.tryParse(t);
+  }
+
+  int? _parseInt(TextEditingController c) {
+    final t = c.text.trim();
+    if (t.isEmpty) return null;
+    return int.tryParse(t);
   }
 
   int _parseShots() {
@@ -258,6 +290,11 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       referenceFirearmId:
           drift.Value(_useCatalog ? _referenceFirearmId : null),
       notes: drift.Value(nullIfEmpty(_notes)),
+      defaultMuzzleVelocityFps:
+          drift.Value(_parseDouble(_defaultMuzzleVelocityFps)),
+      defaultZeroRangeYd: drift.Value(_parseInt(_defaultZeroRangeYd)),
+      sightHeightIn: drift.Value(_parseDouble(_sightHeightIn)),
+      opticsId: drift.Value(_opticsId),
     );
 
     if (widget.existing == null) {
@@ -333,6 +370,10 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
             ),
             const SizedBox(height: 16),
             _shotsFiredField(context),
+            const SizedBox(height: 16),
+            _opticsSection(context),
+            const SizedBox(height: 16),
+            _ballisticsDefaultsSection(context),
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
@@ -516,6 +557,217 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           tooltip: 'Increment',
         ),
       ],
+    );
+  }
+
+  /// Optics dropdown — lets the user record which scope/red-dot is mounted
+  /// on this firearm. The selection only sets `opticsId`; sight height
+  /// stays a separate user-edited field on the ballistics defaults card
+  /// because it depends on the rings/mount, not the optic itself.
+  Widget _opticsSection(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.visibility_outlined,
+                    size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'Optics',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Optional. Pick the scope or red dot mounted on this firearm. '
+              'Sight height (centerline above bore) is on the Ballistics '
+              'defaults card below — it depends on your rings/mount, not '
+              'the optic.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            FutureBuilder<List<OpticEntry>>(
+              future: _opticsFuture,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: LinearProgressIndicator(),
+                  );
+                }
+                final optics = snap.data ?? const <OpticEntry>[];
+                if (optics.isEmpty) {
+                  return const Text(
+                    'No optics in the catalog. Reinstall to re-seed reference '
+                    'data, or skip this field.',
+                  );
+                }
+                // Resolve the saved opticsId to the current entry once the
+                // future has loaded (mirrors the catalog dropdown pattern).
+                if (_selectedOptic == null && _opticsId != null) {
+                  for (final o in optics) {
+                    if (o.optic.id == _opticsId) {
+                      _selectedOptic = o;
+                      break;
+                    }
+                  }
+                }
+                return DropdownButtonFormField<OpticEntry?>(
+                  initialValue: _selectedOptic,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Mounted Optic',
+                    helperText:
+                        'Select "None" if no optic, or pick your scope.',
+                  ),
+                  items: <DropdownMenuItem<OpticEntry?>>[
+                    const DropdownMenuItem<OpticEntry?>(
+                      value: null,
+                      child: Text('None / iron sights'),
+                    ),
+                    for (final o in optics)
+                      DropdownMenuItem<OpticEntry?>(
+                        value: o,
+                        child: Text(
+                          '${o.manufacturer.name} ${o.optic.model}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (o) {
+                    setState(() {
+                      _selectedOptic = o;
+                      _opticsId = o?.optic.id;
+                    });
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Optional ballistics defaults block. Three nullable fields that the
+  /// ballistics calculator's rifle picker can pre-fill once the user picks
+  /// this firearm. Wrapped in a small card so the section reads as a
+  /// distinct grouping rather than just three loose inputs.
+  Widget _ballisticsDefaultsSection(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.gps_fixed_outlined,
+                    size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'Ballistics defaults',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Optional. Pre-fills the ballistics calculator when this '
+              'firearm is selected.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _defaultMuzzleVelocityFps,
+              decoration: const InputDecoration(
+                labelText: 'Default Muzzle Velocity (fps)',
+                helperText: 'Last measured / preferred MV',
+                suffixText: 'fps',
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              autocorrect: false,
+              enableSuggestions: false,
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null;
+                final n = double.tryParse(t);
+                if (n == null || n <= 0) {
+                  return 'Must be a positive number';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _defaultZeroRangeYd,
+              decoration: const InputDecoration(
+                labelText: 'Default Zero Range (yd)',
+                helperText: 'Typical: 100-200 yd',
+                suffixText: 'yd',
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              autocorrect: false,
+              enableSuggestions: false,
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null;
+                final n = int.tryParse(t);
+                if (n == null || n <= 0) {
+                  return 'Must be a positive integer';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _sightHeightIn,
+              decoration: const InputDecoration(
+                labelText: 'Sight Height (in)',
+                helperText:
+                    'Center of optic above bore axis, typically 1.5–2.0 in',
+                suffixText: 'in',
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              autocorrect: false,
+              enableSuggestions: false,
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null;
+                final n = double.tryParse(t);
+                if (n == null || n <= 0) {
+                  return 'Must be a positive number';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

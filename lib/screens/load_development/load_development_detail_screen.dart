@@ -843,7 +843,9 @@ class _RungEditorState extends State<_RungEditor> {
       margin: const EdgeInsets.symmetric(vertical: 6),
       child: ExpansionTile(
         tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        // 12px top padding gives the first child's M3 floating label
+        // room to render without clipping under the rung row above.
+        childrenPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         title: Row(
           children: [
             Container(

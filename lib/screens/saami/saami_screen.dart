@@ -114,11 +114,57 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../database/database.dart';
+import '../../utils/natural_sort.dart';
 import '../../repositories/component_repository.dart';
 import '../../widgets/cartridge_diagram.dart';
 import '../../widgets/pro_gate.dart';
+
+// Public PDF URLs for the four ANSI/SAAMI standard documents. Anything
+// outside this map (or a malformed value) falls back to the SAAMI
+// standards index page.
+const String _saamiStandardsIndexUrl =
+    'https://saami.org/technical-information/ansi-saami-standards/';
+const Map<String, String> _saamiDocUrls = <String, String>{
+  'Z299.1':
+      'https://saami.org/wp-content/uploads/2026/04/SAAMI-Z299.1-R2026-Rimfire-FINAL-Approved-2026-04-10.pdf',
+  'Z299.2':
+      'https://saami.org/wp-content/uploads/2025/09/ANSI-SAAMI-Z299.2-Shotshell-2019-Approved-2025-09-23.pdf',
+  'Z299.3':
+      'https://saami.org/wp-content/uploads/2025/05/SAAMI-Z299.3-2022-Centerfire-Pistol-Revolver-Approved-12-13-2022.pdf',
+  'Z299.4':
+      'https://saami.org/wp-content/uploads/2026/04/SAAMI-Z299.4-CFR-2025-Centerfire-Rifle-Approved-2-10-2025-2026-04-27.pdf',
+};
+
+/// Returns the PDF URL for a SAAMI doc string, or the standards index page
+/// when the doc isn't recognized. Trims whitespace and is case-sensitive
+/// against the known set (the catalog produces canonical `Z299.x` strings).
+String _saamiUrlForDoc(String? doc) {
+  final key = doc?.trim() ?? '';
+  return _saamiDocUrls[key] ?? _saamiStandardsIndexUrl;
+}
+
+/// Open [url] in the platform browser / PDF viewer. Falls back to the
+/// standards index page if the platform cannot launch the original URL.
+Future<void> _openSaamiUrl(String url) async {
+  final uri = Uri.parse(url);
+  try {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+      return;
+    }
+  } catch (_) {
+    // fall through to the index URL
+  }
+  final fallback = Uri.parse(_saamiStandardsIndexUrl);
+  // Best-effort. If even the index cannot open we silently no-op rather
+  // than throwing inside an onTap.
+  try {
+    await launchUrl(fallback, mode: LaunchMode.externalApplication);
+  } catch (_) {}
+}
 
 /// SAAMI/CIP reference screen. Pick a cartridge, then see a richly detailed
 /// breakdown of its dimensions, pressure / priming spec, bore + rifling info,
@@ -143,9 +189,12 @@ class _SaamiScreenState extends State<SaamiScreen> {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          // Natural sort so cartridge calibers order numerically:
+          // .22 LR < 5.56 NATO < 6mm < 6.5 < 8mm < 9mm < 10mm < .30-06 …
+          // Pure lexicographic sort would put "10mm" before "8mm" and
+          // ".30-06" right next to ".308".
           final cartridges = [...?snap.data]
-            ..sort(
-                (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+            ..sort((a, b) => naturalCompare(a.name, b.name));
 
           if (cartridges.isEmpty) {
             return const Center(child: Text('No cartridge data available.'));
@@ -277,17 +326,90 @@ class _CartridgePicker extends StatefulWidget {
 }
 
 class _CartridgePickerState extends State<_CartridgePicker> {
-  /// Tokenize a query: split on whitespace, drop empties. Each token must
-  /// appear (case-insensitively) in the cartridge name OR any alias for
-  /// the cartridge to match. So `"6 GT"` matches `"6mm GT"` because tokens
-  /// `"6"` and `"gt"` both appear in `"6mm gt"`.
-  bool _matches(CartridgeRow c, List<String> tokens) {
-    if (tokens.isEmpty) return true;
-    final haystack = '${c.name} ${c.aliasesJson}'.toLowerCase();
-    for (final t in tokens) {
-      if (!haystack.contains(t)) return false;
+  /// Maximum number of suggestions to show. The relevance scorer below
+  /// will TECHNICALLY match many low-quality candidates (e.g. ".50 BMG"
+  /// for the query "9 mm" via the substring "99mm" in an alias) — capping
+  /// keeps those off-screen.
+  static const int _maxResults = 30;
+
+  /// Score a cartridge against a query for relevance ranking.
+  ///
+  /// Bug #5 background: a naïve "every token must appear in the
+  /// haystack" filter makes "9 mm" match anything whose name or alias
+  /// contains both a "9" and an "mm" anywhere — `.50 BMG` (via the
+  /// `12.7x99mm` alias), `.357 Magnum` (via `9x33mmR`), `.380 ACP`
+  /// (via `9mm Browning Short`), `.44 Magnum` (via `10.9x33mmR`),
+  /// etc. The user expected "9 mm" to surface 9mm Luger first, not
+  /// 16 unrelated cartridges.
+  ///
+  /// Returns 0 for "no match"; cartridges with score 0 are filtered
+  /// out. Higher scores come first. Capped at the top [_maxResults]
+  /// to keep the dropdown manageable.
+  int _score(CartridgeRow c, String fullQuery, List<String> tokens) {
+    if (tokens.isEmpty) return 1;
+    final name = c.name.toLowerCase();
+    final aliases = c.aliasesJson.toLowerCase();
+    final fullQueryNoSpaces = fullQuery.replaceAll(RegExp(r'\s+'), '');
+
+    var score = 0;
+
+    // Highest-priority: name starts with the FULL query as typed.
+    if (fullQuery.isNotEmpty && name.startsWith(fullQuery)) {
+      score += 1000;
     }
-    return true;
+    // Name contains the full query as a continuous substring.
+    if (fullQuery.isNotEmpty && name.contains(fullQuery)) {
+      score += 500;
+    }
+    // The whitespace-stripped boosts only fire when the query
+    // actually contained whitespace — otherwise they double-count
+    // with the boosts above.
+    if (fullQueryNoSpaces.isNotEmpty && fullQueryNoSpaces != fullQuery) {
+      // Name starts with the whitespace-stripped query — covers
+      // "9 mm" → "9mm Luger" / "9mm Makarov" preference.
+      if (name.startsWith(fullQueryNoSpaces)) {
+        score += 300;
+      }
+      // Name contains the query with whitespace removed — so "9 mm"
+      // matches "9mm" inside "9mm Luger" or "7.62x39mm".
+      if (name.contains(fullQueryNoSpaces)) {
+        score += 200;
+      }
+    }
+
+    // Every token appears anywhere in the name.
+    final allTokensInName = tokens.every(name.contains);
+    if (allTokensInName) {
+      score += 100;
+    }
+
+    // Aliases — counted when there's no strong name match, to keep
+    // things like ".50 BMG" (alias `12.7x99mm`) from outranking
+    // `9mm Luger` for a "9 mm" query. We do still award an alias
+    // exact / contains bonus even when the name matched, because an
+    // alias-exact match (e.g. "6 GT" → 6mm GT) is a legitimate
+    // signal worth ranking above same-name-score peers.
+    if (fullQuery.isNotEmpty && aliases.contains(fullQuery)) {
+      score += 80;
+    }
+    if (!allTokensInName) {
+      final allTokensInAliases = tokens.every(aliases.contains);
+      if (allTokensInAliases) {
+        score += 50;
+      } else {
+        // Partial alias matches earn a small score — used as tie
+        // breaker for partial matches on rare cartridges.
+        var partial = 0;
+        for (final t in tokens) {
+          if (aliases.contains(t)) partial++;
+        }
+        if (partial > 0 && partial < tokens.length) {
+          score += partial * 10;
+        }
+      }
+    }
+
+    return score;
   }
 
   @override
@@ -304,7 +426,21 @@ class _CartridgePickerState extends State<_CartridgePicker> {
             .toList(growable: false);
         // No query → show all cartridges (already alphabetized upstream).
         if (tokens.isEmpty) return widget.cartridges;
-        return widget.cartridges.where((c) => _matches(c, tokens));
+
+        // Score every cartridge against the query, drop zeros, sort
+        // descending, then cap to keep the dropdown manageable.
+        final scored = <({CartridgeRow row, int score})>[];
+        for (final c in widget.cartridges) {
+          final s = _score(c, query, tokens);
+          if (s > 0) scored.add((row: c, score: s));
+        }
+        scored.sort((a, b) {
+          final cmp = b.score.compareTo(a.score);
+          if (cmp != 0) return cmp;
+          // Tie-break with natural sort so .22 < 5.56 < 6mm < 9mm < 10mm.
+          return naturalCompare(a.row.name, b.row.name);
+        });
+        return scored.take(_maxResults).map((e) => e.row);
       },
       fieldViewBuilder: (context, textCtrl, focusNode, onFieldSubmitted) {
         return TextFormField(
@@ -417,7 +553,14 @@ class _HeaderCard extends StatelessWidget {
       if (cartridge.caseSubtype != null)
         _ChipData(_humanizeSubtype(cartridge.caseSubtype!), Icons.straighten),
       if (cartridge.saamiDoc != null)
-        _ChipData(cartridge.saamiDoc!, Icons.description_outlined),
+        _ChipData(
+          cartridge.saamiDoc!,
+          Icons.description_outlined,
+          // Tapping the SAAMI doc chip opens the relevant ANSI/SAAMI
+          // standards PDF in the platform browser. Unrecognized values
+          // fall back to the standards index page.
+          onTap: () => _openSaamiUrl(_saamiUrlForDoc(cartridge.saamiDoc)),
+        ),
       if (cartridge.parentCase != null)
         _ChipData('Parent: ${cartridge.parentCase}',
             Icons.account_tree_outlined),
@@ -474,9 +617,15 @@ class _HeaderCard extends StatelessWidget {
 }
 
 class _ChipData {
-  const _ChipData(this.label, this.icon);
+  const _ChipData(this.label, this.icon, {this.onTap});
   final String label;
   final IconData icon;
+
+  /// When non-null the chip becomes tappable (used for the SAAMI doc
+  /// link). The chip also gains a small `open_in_new` glyph + an
+  /// underlined label so it is visually distinguishable from the static
+  /// chips next to it.
+  final VoidCallback? onTap;
 }
 
 class _Chip extends StatelessWidget {
@@ -486,28 +635,55 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
+    final isLink = data.onTap != null;
+    final borderRadius = BorderRadius.circular(8);
+    final textStyle = theme.textTheme.labelMedium?.copyWith(
+      color: theme.colorScheme.primary,
+      fontWeight: FontWeight.w500,
+      decoration: isLink ? TextDecoration.underline : null,
+      decorationColor: isLink ? theme.colorScheme.primary : null,
+    );
+
+    final content = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.35),
-        ),
-      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(data.icon, size: 14, color: theme.colorScheme.primary),
           const SizedBox(width: 6),
-          Text(
-            data.label,
-            style: theme.textTheme.labelMedium?.copyWith(
+          Text(data.label, style: textStyle),
+          if (isLink) ...[
+            const SizedBox(width: 6),
+            Icon(
+              Icons.open_in_new,
+              size: 12,
               color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w500,
             ),
-          ),
+          ],
         ],
+      ),
+    );
+
+    final decorated = DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.12),
+        borderRadius: borderRadius,
+        border: Border.all(
+          color: theme.colorScheme.primary.withValues(alpha: 0.35),
+        ),
+      ),
+      child: content,
+    );
+
+    if (!isLink) return decorated;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: borderRadius,
+      child: InkWell(
+        borderRadius: borderRadius,
+        onTap: data.onTap,
+        child: decorated,
       ),
     );
   }

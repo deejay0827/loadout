@@ -78,6 +78,51 @@ this updated as new items come up.
   Domains entitlements). Build compiles clean without code signing as of
   this commit.
 
+## Live catalog updates (Firebase Storage)
+
+The reference catalog (cartridges, powders, bullets, primers, brass,
+firearms, parts) is pulled on cold start from Firebase Storage so we can
+ship JSON corrections without a store release. See
+`lib/services/seed_updater.dart` and `docs/seed-data-deployment.md`.
+
+- [ ] **Enable Firebase Storage on the project** — Firebase Console →
+  Storage → Get started. Choose the same region as the rest of the
+  project. The default bucket is
+  `loadout-precision-reloading.firebasestorage.app`.
+- [ ] **Deploy the storage rules** — `storage.rules` is checked into the
+  repo and wired into `firebase.json`. Deploy with:
+  ```sh
+  firebase deploy --only storage
+  ```
+  These rules grant `read: if true` for `seed_data/*` (so unauthenticated
+  installs can fetch updates) and `write: if request.auth != null` (so
+  only signed-in developers can mutate the bucket from the console /
+  CLI).
+- [ ] **Initial bucket population** — upload the seed JSON files to
+  `gs://loadout-precision-reloading.firebasestorage.app/seed_data/`:
+  - `manifest.json` (copy of `assets/seed_data/manifest.json`)
+  - `cartridges.json`, `powders.json`, `bullets.json`, `primers.json`,
+    `brass.json`, `firearms.json`, `firearm_parts.json` (one-for-one
+    copies of `assets/seed_data/*.json`).
+
+  Easiest path: Firebase Console → Storage → Upload folder. Or via
+  `gsutil`:
+  ```sh
+  gsutil -m cp assets/seed_data/*.json \
+    gs://loadout-precision-reloading.firebasestorage.app/seed_data/
+  ```
+- [ ] **Verify the round-trip** — run the app on a fresh simulator with
+  the network on, kill it, edit (say) a cartridge name in a copy of
+  `cartridges.json`, bump `cartridges.version` from `1` to `2` in the
+  bucket's `manifest.json`, re-upload both, and relaunch the app twice
+  (first launch downloads + flags; second launch re-seeds).
+- [ ] **Document in `REVENUECAT_SETUP.md` / onboarding** that the seed
+  JSON files in `assets/` are the source-of-truth and the bucket should
+  always be uploaded from there — never edited in place in the bucket.
+- [ ] **Decide on Spark vs Blaze plan.** Firebase Storage is included in
+  the Spark plan up to a small free quota that is more than enough for
+  text JSON downloads at our user volume.
+
 ## Local data store (drift / SQLite)
 
 - [x] **Migrated from Firestore to local SQLite via `drift`.** User reload

@@ -1,3 +1,160 @@
+# =============================================================================
+# FILE: pubspec.yaml
+# =============================================================================
+# This file is the **package manifest** for the LoadOut Flutter app. If you
+# come from the JavaScript world, it's the rough equivalent of `package.json`.
+# If you come from Rust, it plays the role of `Cargo.toml`. Every Dart and
+# Flutter project has exactly one `pubspec.yaml` at its root, and the Dart
+# pub tool (`flutter pub get`, `flutter pub upgrade`, `dart pub ...`) reads it
+# to figure out:
+#
+#   - the package's identity (name, description, version),
+#   - which Dart SDK / Flutter SDK versions it is allowed to compile against,
+#   - the runtime dependencies it needs to download from pub.dev,
+#   - the dev-only dependencies (testing, lints, code generation),
+#   - which on-disk asset directories Flutter should bake into the app bundle,
+#   - which fonts to register, and
+#   - any platform-specific tooling configuration (icons, splash screens, etc.).
+#
+# The format is YAML — whitespace-significant; two-space indentation; no tabs.
+# Every time you edit this file, run `flutter pub get` afterwards to resolve
+# the new dependency graph and regenerate `pubspec.lock`. Do not edit
+# `pubspec.lock` by hand; it's machine-generated.
+#
+# -----------------------------------------------------------------------------
+# Top-level keys, in the order they appear below
+# -----------------------------------------------------------------------------
+#
+# - `name`                 The package's import name (lowercase, snake_case).
+#                          Other Dart files import this package as
+#                          `package:<name>/...`, so changing it is a breaking
+#                          change.
+# - `description`          One-line human description. Required by pub.dev,
+#                          irrelevant to private apps but kept for tooling.
+# - `publish_to: 'none'`   Belt-and-suspenders prevention against accidentally
+#                          running `flutter pub publish` and uploading the
+#                          private codebase to pub.dev.
+# - `version`              Semantic version + build number. Format is
+#                          `MAJOR.MINOR.PATCH+BUILD`. The `+BUILD` part
+#                          maps to iOS `CFBundleVersion` and Android
+#                          `versionCode` — App Store / Play Store will
+#                          reject a binary whose build number isn't strictly
+#                          greater than the previous upload.
+# - `environment`          SDK constraints. `sdk: ^3.11.5` means "Dart
+#                          version 3.11.5 or later, but stay on the same
+#                          major version (3.x.x)". The Flutter SDK is not
+#                          listed here separately — its version is implied
+#                          by which `flutter` CLI you have installed.
+# - `dependencies`         Runtime dependencies: anything imported from
+#                          `lib/`. Bundled into the production app.
+# - `dev_dependencies`     Build- and test-only dependencies. Stripped from
+#                          release builds. Linters, code generators, and the
+#                          test harness live here.
+# - `flutter:`             Flutter-specific configuration. Lists asset
+#                          directories (`assets:`), font families
+#                          (`fonts:`), and platform options. Anything inside
+#                          this block is read by the Flutter build pipeline,
+#                          not by the Dart pub tool.
+#
+# Other top-level blocks (`flutter_launcher_icons:` further down) are
+# read by individual packages — `flutter_launcher_icons` looks for its own
+# top-level key when you run `dart run flutter_launcher_icons`.
+#
+# -----------------------------------------------------------------------------
+# Why each runtime dependency below is here
+# -----------------------------------------------------------------------------
+#
+# Storage and state:
+# - `drift` / `drift_flutter` — typed SQLite ORM (Object-Relational Mapper).
+#   `drift` provides the table-class API and the build-time code generator
+#   that emits `database.g.dart`; `drift_flutter` provides the Flutter-aware
+#   helpers that open the database file from the application support
+#   directory. SQLite is the single source of truth for ALL user data —
+#   loads, firearms, brass lots, batches, test sessions — see
+#   `lib/database/database.dart`.
+# - `sqlite3_flutter_libs` — bundles the prebuilt SQLite native library
+#   inside the iOS / Android app so we don't depend on the OS-shipped one
+#   (which can vary in version and feature flags).
+# - `path` / `path_provider` — `path` is platform-agnostic path
+#   manipulation; `path_provider` returns OS-specific directories
+#   (application support, temp, documents). Used both by drift to find the
+#   DB file and by the backup/export feature to write archives.
+# - `shared_preferences` — OS key/value store for tiny app preferences
+#   (UI detail level, AI quota counter, the email-link sign-in pending
+#   address, etc.). Do not put anything large or sensitive here — use
+#   SQLite for that.
+# - `provider` — dependency injection / state management. The `AppDatabase`,
+#   `AuthService`, `EntitlementNotifier`, and every repository are
+#   provided via `MultiProvider` at the root in `lib/app.dart`, then
+#   pulled out by descendants with `context.read<T>()` /
+#   `context.watch<T>()`. This is what lets every screen share one SQLite
+#   handle and one auth listener.
+#
+# Authentication (Firebase Auth is the ONLY Firebase service used at
+# runtime; there is no Firestore, Storage, or Functions in this app):
+# - `firebase_core` — bootstrap that initializes the Firebase iOS/Android
+#   SDKs from `lib/firebase_options.dart`.
+# - `firebase_auth` — the Firebase Authentication SDK. Backs all seven
+#   sign-in providers wired up in `lib/services/auth_service.dart`.
+# - `google_sign_in` — native Google sign-in flow (Apple equivalent
+#   uses a separate package).
+# - `sign_in_with_apple` — Apple's required native "Sign in with Apple"
+#   sheet on iOS. Without this package, the iOS App Store will reject the
+#   app under guideline 4.8 if any third-party login is offered.
+# - `app_links` — registers the app as a handler for HTTPS deep links
+#   (Universal Links on iOS, App Links on Android) so that Firebase email-link
+#   sign-ins can return to the app after the user clicks the verification
+#   link in their email.
+#
+# Monetization:
+# - `purchases_flutter` — RevenueCat SDK. Wraps Apple StoreKit and Google
+#   Play Billing behind a single cross-platform API and gives us the
+#   "entitlement" abstraction we use to gate Pro features. See
+#   `lib/services/purchases_service.dart` and
+#   `lib/services/entitlement_notifier.dart`. Subscription SKUs and
+#   entitlement IDs live in `REVENUECAT_SETUP.md`.
+#
+# Backup and export (feature #5):
+# - `share_plus` — exposes the OS share sheet (AirDrop on iOS, ACTION_SEND
+#   on Android, system share on macOS/Windows). Lets the user export their
+#   local JSON backup to email, Files, AirDrop, etc.
+# - `cryptography` — pure-Dart AES-256-GCM and PBKDF2. Used to encrypt
+#   the cloud-backup blob ON-DEVICE before it is uploaded, so neither
+#   iCloud nor Google Drive ever sees plaintext. Pure-Dart on purpose
+#   so the same code path works on every platform without native deps.
+# - `icloud_storage` — iOS-only iCloud Drive backup target. Falls back
+#   to "unavailable" gracefully when the iCloud capability isn't enabled
+#   on the App ID, so dev builds and CI don't break for the absence.
+# - `googleapis` / `googleapis_auth` — Google's official client libs for
+#   the Drive REST API. We write to the `appDataFolder` scope, which is
+#   private to the LoadOut app — not visible in the user's main Drive UI.
+#   Cross-platform; ships on iOS, Android, and (eventually) desktop.
+#
+# Network:
+# - `http` — the standard cross-platform HTTP client. Used to call the
+#   Anthropic Claude API for the AI chat / load-development assistant
+#   features.
+#
+# UI:
+# - `cupertino_icons` — Apple-style iOS glyphs. Required by Flutter's
+#   `CupertinoIcons` set.
+# - `font_awesome_flutter` — Font Awesome icon set. Used wherever the
+#   Material / Cupertino sets don't have what we need (firearms, calibers,
+#   reloading-specific glyphs).
+#
+# -----------------------------------------------------------------------------
+# After editing this file
+# -----------------------------------------------------------------------------
+#
+#   flutter pub get        # resolve dependencies and refresh pubspec.lock
+#   flutter analyze        # static-analysis sanity check
+#
+# If you change `dependencies:` or `dev_dependencies:`, both commands must
+# pass before the change is considered complete. If you only edit comments
+# (like this header) `flutter pub get` is still recommended because it
+# normalizes formatting.
+# =============================================================================
+
 name: loadout
 description: "Ammo reloading tracker and calculator"
 # The following line prevents the package from being accidentally published to
@@ -36,6 +193,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
+  # Pulls reference-catalog updates (cartridges, powders, primers, etc.) from
+  # Firebase Storage on launch so the team can ship JSON fixes without an
+  # App Store / Play Store release. User reloading data is never uploaded —
+  # this is one-way, server-to-device, reference-only. See
+  # `lib/services/seed_updater.dart` for the read-and-cache flow.
+  firebase_storage: ^13.0.0
   provider: ^6.1.5+1
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.0.0
@@ -49,6 +212,10 @@ dependencies:
   path: ^1.9.1
   purchases_flutter: ^9.4.0
   http: ^1.1.0
+
+  # url_launcher — opens external URLs (e.g. SAAMI cartridge spec PDFs from
+  # the SAAMI Specs tab) in the platform's browser / PDF viewer.
+  url_launcher: ^6.3.0
 
   # Backup & export (feature #5).
   # share_plus  — system share sheet for the local JSON export.

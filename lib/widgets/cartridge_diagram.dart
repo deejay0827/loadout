@@ -478,9 +478,53 @@ class _CartridgeDiagramPainter extends CustomPainter {
     // For cartridge mode, append the bullet (ogive + meplat).
     if (mode == DiagramMode.cartridge) {
       final bulletYTop = centerY - half(bulletDia);
-      // Step from neck/mouth diameter to bullet diameter (handles cases where
-      // the bullet is slightly fatter than neck ID — keep it visible).
-      top.lineTo(x(caseLen), bulletYTop);
+
+      // The "case-mouth Y" — the inside-of-neck level at the mouth. For
+      // bottleneck cases that's neckYTop; for straight-wall it's
+      // bodyYTop.
+      final mouthYTop = hasShoulder
+          ? centerY - half(neckDia)
+          : centerY - half(bodyDia);
+
+      // Real-cartridge geometry: the bullet's bearing surface sits INSIDE
+      // the case neck; only the ogive sticks out past the case mouth.
+      // We model that by back-tracking the path from the case mouth into
+      // the neck before stepping radially to the bullet's outer wall —
+      // so the bullet's base step gets hidden inside the case silhouette
+      // instead of appearing as a "floating" feature at the mouth.
+      //
+      // We only do this when the bullet is NARROWER than the case mouth
+      // (the typical case — e.g. 6mm GT 0.243" bullet in a 0.273" neck).
+      // If the bullet is wider than the mouth (rare), keep the old
+      // behaviour of stepping outward at `caseLen` so the silhouette
+      // closes correctly.
+      final bulletNarrowerThanMouth = bulletYTop > mouthYTop;
+      if (bulletNarrowerThanMouth) {
+        // Approximate seating depth — most rifle / pistol bullets seat
+        // 0.10 to 0.30" deep in the neck.
+        final approxSeatingDepth =
+            (bulletDia * 0.6).clamp(0.10, 0.30);
+        // The bullet's base sits this far back from the case mouth.
+        // Don't let it back-track past the start of the neck.
+        final bulletBaseX =
+            (caseLen - approxSeatingDepth).clamp(0.0, caseLen);
+
+        // Path is currently at (caseLen, mouthYTop) — the top of the
+        // case mouth. Back-track along the neck's top wall to the
+        // bullet's base, step radially DOWN to the bullet's outer wall
+        // (this step is now BEHIND the case mouth, hidden inside the
+        // neck silhouette), then advance forward along the bullet body
+        // to the case mouth where the bullet emerges.
+        top.lineTo(x(bulletBaseX), mouthYTop);
+        top.lineTo(x(bulletBaseX), bulletYTop);
+        top.lineTo(x(caseLen), bulletYTop);
+      } else {
+        // Bullet wider than neck (rare). Step outward at the case mouth
+        // — the bullet body wraps the neck OD. Path was already at
+        // (caseLen, mouthYTop); step radially OUT to bulletYTop.
+        top.lineTo(x(caseLen), bulletYTop);
+      }
+
       // Ogive curve up to the tip at maxCoal.
       final tipX = maxCoal ?? (caseLen + bulletDia * 3);
       final ogiveStartX = caseLen;

@@ -1,3 +1,98 @@
+// FILE: lib/screens/glossary/glossary_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the in-app reloading glossary: a searchable, alphabetized list
+// of terms grouped by topic (cartridge anatomy, ballistics, powder, etc.).
+// Reachable from the side drawer entry "Glossary."
+//
+// All content is held in the file-private `const List<_GlossaryTerm>
+// _terms = [...]` at the top of the file. Each `_GlossaryTerm` carries a
+// term, an optional acronym, a category string, and a definition.
+// `_GlossaryTerm.matches(query)` does case-insensitive substring search
+// across all three text fields.
+//
+// The seven category tags (`_catCartridge`, `_catBallistics`, `_catPowder`,
+// `_catPrimers`, `_catBrass`, `_catProcess`, `_catFirearm`) are defined as
+// `const String`s so they appear by reference in every term and have one
+// canonical spelling. The `_categoryOrder` list locks display order across
+// the screen.
+//
+// `GlossaryScreen` is a `StatefulWidget` with two pieces of state:
+//
+//   - `_searchController` — drives the search text field
+//   - `_query` — the current trimmed query string
+//
+// Rebuilds on every keystroke. `_filterAndGroup()` filters `_terms` by
+// matching against `_query`, groups the survivors into a
+// `Map<category, List<_GlossaryTerm>>`, sorts terms alphabetically inside
+// each group, and returns the map.
+//
+// The body renders the search field at the top (with a clear-button
+// suffix when non-empty), an optional match-count line ("12 matches"),
+// and either an empty-state placeholder or a list of `_CategorySection`
+// cards. Each section card has a tinted header (category name + count)
+// and a list of `_GlossaryTermTile`s — `ExpansionTile`s that show the
+// term + acronym in their tile and reveal the definition on tap.
+//
+// When the user is actively searching (`isSearching == true`),
+// `_GlossaryTermTile`s render with `initiallyExpanded: true` so the
+// matching definitions are visible without an extra tap. The
+// `PageStorageKey` builds a fresh key whenever the expansion default
+// changes, which forces the `ExpansionTile` to rebuild and pick up the
+// new state.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Reloading has a dense vocabulary (CBTO, headspace, shoulder bump,
+// freebore, BC G1 vs G7, MOA vs Mil, etc.) and the rest of the app
+// uses these terms freely in field labels and tooltips. The glossary
+// is the in-app safety net for users who haven't memorized every piece
+// of jargon — they can swipe out the side drawer, search for a term,
+// and read a plain-English definition without leaving the app.
+//
+// Several other screens in the codebase use this file as a layout
+// pattern reference for the search-then-grouped-cards UX: a top
+// `TextField`, a count-of-matches line, and `Card`-wrapped sections
+// with a tinted header. If you're building a similar screen, this is
+// the canonical template.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Two mildly subtle things:
+//
+//   1. The `PageStorageKey` on `_GlossaryTermTile` includes the
+//      `initiallyExpanded` flag in its key string. That's deliberate:
+//      `ExpansionTile` only honors `initiallyExpanded` once, when the
+//      tile first builds. When the user starts searching, we want the
+//      previously-built tiles to expand; the only reliable way to make
+//      that happen is to give them a fresh widget identity, which a
+//      different `PageStorageKey` does. Without this, terms wouldn't
+//      auto-expand on search-to-search transitions.
+//   2. The "no matches" empty-state and the search-clear button both
+//      need to gracefully handle the user mid-typing. Trimming the
+//      query (`value.trim()`) keeps a leading-space keystroke from
+//      collapsing the entire result set.
+//
+// Otherwise this is a straightforward filter-and-render screen.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/home/home_screen.dart` — the side drawer's "Glossary"
+//   entry pushes this screen.
+// - `lib/screens/how_it_works/how_it_works_screen.dart` — the
+//   "Glossary" topic CTA pushes this screen.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None — pure rendering of compile-time `const` data. No I/O, no
+// network, no plugin calls.
+
 import 'package:flutter/material.dart';
 
 /// A single glossary entry. Acronym is optional; not every term abbreviates.
@@ -823,7 +918,9 @@ class _GlossaryTermTile extends StatelessWidget {
       ),
       initiallyExpanded: initiallyExpanded,
       tilePadding: const EdgeInsets.symmetric(horizontal: 16),
-      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      // 12px top padding so the first definition row isn't visually
+      // clipped by the term-row above it.
+      childrenPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       title: Text(
         term.term,
         style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),

@@ -1,3 +1,132 @@
+// FILE: lib/services/ai_chat_service.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Implements the network and policy layer for the Reloading Assistant chat.
+// This is the only file that talks to Anthropic's Messages API. The chat
+// screen calls one method here — `AiChatService.sendMessage` — and gets
+// back a sealed result describing success, an error, or a quota-exceeded
+// state.
+//
+// Three things the file ships:
+//
+//   1. `kReloadingAssistantSystemPrompt` — a const string that becomes the
+//      `system` field of every API request. This is the FIRST liability
+//      rail: the model is told in absolute terms not to share charge
+//      weights, COAL targets, primer recommendations, or any other "load
+//      data" — and to redirect users to current published manuals from the
+//      named manufacturers.
+//   2. `ChatMessage` and `AiChatResult` — small immutable value types. A
+//      `ChatMessage` carries one turn (role + content + an `isError` flag
+//      the UI uses to style refusal bubbles). An `AiChatResult` is the
+//      sum-type returned by `sendMessage`: success, error string, or
+//      quota-exceeded.
+//   3. `AiChatService` — the actual workhorse. Tracks the monthly quota in
+//      SharedPreferences, makes the HTTP call, parses the response, runs
+//      the safety filter, and increments the counter only after a
+//      successful (non-network-error) reply.
+//
+// The Anthropic Messages API request shape `sendMessage` builds:
+//
+//     POST https://api.anthropic.com/v1/messages
+//     headers: { x-api-key, anthropic-version: '2023-06-01', content-type }
+//     body: {
+//       "model":      "<from AiChatConfig.model>",
+//       "max_tokens": <from AiChatConfig.maxOutputTokens>,
+//       "system":     "<the system prompt above>",
+//       "messages":   [ { role: "user"|"assistant", content: "..." }, ... ]
+//     }
+//
+// The response payload's `content` is a JSON array of typed blocks; we
+// pull `content[0].text` and treat that as the assistant turn.
+//
+// The SECOND liability rail is `looksLikeLoadData(text)` — a static method
+// that scans the model's reply with a regex (`\d+(\.\d+)? gr|grains?`)
+// and two long lower-cased word lists (`_powderNames`, `_cartridgeNames`).
+// It returns `true` only when ALL three signals are present (charge weight
+// AND a known powder name AND a known cartridge name). Two-of-three is not
+// enough — that lets phrases like "Varget is popular for the .308" pass
+// untouched while still catching anything resembling a complete recipe.
+// When it trips, the model's reply is replaced with `kSafetyRefusal` and
+// the message is marked `isError: true` so the UI styles it as a refusal
+// bubble. The quota is still incremented on a refusal, so a determined
+// adversary can't get free retries by gaming the model into leaking.
+//
+// Quota tracking lives in two SharedPreferences keys:
+//
+//   - `ai_chat_count_period`           = "YYYY-MM" tag of the current period.
+//   - `ai_chat_count_<YYYY>_<MM>`      = integer counter for that period.
+//
+// On every read, `getQuestionsUsedThisMonth` compares the current period
+// to the stored one. If the calendar month rolled over, the counter is
+// reset to zero and the new period is recorded. Old period keys are NOT
+// deleted — they're harmless and would let us add month-over-month
+// diagnostics later if we wanted.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// Anthropic's API is the kind of dependency we want firewalled behind one
+// file. `ai_chat_screen.dart` should not know what the response shape
+// looks like, what the auth header is, or how the safety filter is
+// implemented. Concentrating all of that here means we can later replace
+// the in-app HTTP call with a backend proxy (Firebase ID token + RevenueCat
+// entitlement check + server-side Anthropic forwarder) by editing this one
+// file — the screen keeps calling `service.sendMessage(...)` and
+// everything still works.
+//
+// The third liability rail — the visible italic disclaimer banner the
+// user sees above the message list — lives in the screen file. Together
+// with the system prompt and the regex output filter, that's the
+// three-of-three defense the codebase commits to.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The trickiest design decision is the quota-on-refusal behavior: when
+// the safety filter catches a leaked recipe, we still increment the
+// counter. The reasoning is that the user already paid the network cost,
+// the model already thought hard about the question, and giving them a
+// "free retry" would let an adversary repeatedly probe for an output that
+// happens to slip through both rails. Burning the quota on a refusal is
+// the conservative choice.
+//
+// Network-level errors (DNS failure, non-2xx response, JSON parse failure)
+// do NOT increment the quota. We only burn quota when we're confident a
+// useful reply was generated — successful or filtered.
+//
+// The `_powderNames` and `_cartridgeNames` lists are deliberately not
+// exhaustive. False negatives are acceptable in the regex filter because
+// the system prompt is the primary guard; the filter is just a backstop
+// for cases where the model decides to ignore the system prompt. Adding
+// every obscure wildcat would bloat the binary without meaningfully
+// reducing risk.
+//
+// `http.Client` is injectable via the constructor. That's the only reason
+// it's a parameter — it lets unit tests pass a mock client without
+// reaching into static state. Production callers pass nothing and get a
+// real `http.Client()`.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/ai_chat/ai_chat_screen.dart` — instantiates an
+//   `AiChatService` in `initState`, calls `getQuestionsUsedThisMonth()` to
+//   render the quota pill, and calls `sendMessage(userText, history)` on
+//   every Send tap.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - HTTPS POST to `api.anthropic.com` from `sendMessage` (via the
+//   injectable `http.Client`).
+// - Reads/writes two `SharedPreferences` keys (period tag + count) for
+//   quota tracking.
+// - `debugPrint` on network/parse errors and on safety-filter trips, for
+//   developer console diagnostics. No PII or load-recipe content is ever
+//   sent off-device by this file beyond the Anthropic API call itself.
+
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';

@@ -1,6 +1,119 @@
+// FILE: lib/screens/ballistics/ballistics_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the Pro-gated Ballistics Calculator. The user types in inputs
+// describing a bullet, the rifle's zero, atmospheric conditions, and the
+// list of ranges they want a solution at; tapping "Calculate Trajectory"
+// runs the external-ballistics solver and renders a drop/wind table plus
+// a small chart. There is also a "Export DOPE card to clipboard" button
+// that formats the table as plain text. ("DOPE" is shooter slang for
+// "Data On Previous Engagements" — the table you read off when dialing
+// elevation/wind for a known range.)
+//
+// External ballistics is the physics of a bullet AFTER it leaves the
+// muzzle: gravity drops the bullet, drag from the air slows it, crosswind
+// pushes it sideways, the bullet's own spin pushes it slightly sideways
+// too (spin drift / yaw of repose), and at extreme range the Earth's
+// rotation matters (Coriolis). The solver computes all of those.
+//
+// The screen is laid out in four collapsible "Section" cards (built by
+// the file-private `_SectionCard` widget):
+//
+//   1. Projectile  — diameter (in), weight (gr — grains), optional length
+//      (in) and twist rate (1:N inches), ballistic coefficient (BC), and
+//      a drag-model dropdown (`DragModel.g1` or `DragModel.g7` — the two
+//      reference projectile shapes BCs are quoted against).
+//   2. Muzzle / Zero — muzzle velocity (fps), sight height above bore
+//      (in), zero range (yd), shot azimuth (° from north — used by
+//      Coriolis), target elevation Δ (ft).
+//   3. Environment — temperature (°F), station pressure (inHg, NOT
+//      sea-level corrected — important distinction), humidity (%),
+//      altitude (ft), wind speed (mph), wind direction (° "from"),
+//      latitude (°N — Coriolis input).
+//   4. Output — comma-separated list of sample ranges (yd), unit toggle
+//      (Inch / MOA / Mil — the three angular conventions for scope
+//      adjustment), the rendered DOPE table, the trajectory chart, and
+//      the Export-to-clipboard button.
+//
+// The `AngleUnit` enum (`inches`, `moa`, `mil`) drives a `SegmentedButton`
+// and the `_DopeTable._fmtAngle()` formatter. MOA = "minutes of angle"
+// (1/60 of a degree, ≈ 1.047" at 100yd). Mil = milliradian (1/1000 of a
+// radian, ≈ 3.6" at 100yd).
+//
+// On Calculate, `_compute()` parses the controllers, builds the input
+// records (`Projectile`, `Atmosphere.station`, `Environment.fromImperial`,
+// `ShotInputs`), and calls `solveTrajectory(...)`. On parse error or
+// solver failure, an `_error` string is rendered in a red error card.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// The ballistics calculator is a Pro-tier feature. Wrapping the body in
+// `ProGate(feature: 'Ballistics Calculator', child: ...)` ensures the
+// content is only rendered when the user has the `pro` entitlement; non-
+// Pro users see the gated UI from `lib/widgets/pro_gate.dart` instead.
+//
+// All of the actual ballistics math lives in `lib/services/ballistics/`
+// — this file is purely the form-and-render shell. Keeping inputs and
+// outputs here, but the solver in a pure-Dart library, lets the solver
+// be unit-tested in isolation and lets the formula stay self-contained
+// rather than bleed into widget code.
+//
+// The solver this screen drives is a Modified Point-Mass (MPM) Level-3
+// model with G1/G7 drag tables and Litz-style spin-drift correction. The
+// "modified" part is the spin-drift and Coriolis terms layered on top of
+// the simpler point-mass integration. The italic disclaimer at the bottom
+// of the screen says exactly this.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Three rough edges:
+//
+//   1. Unit confusion. Reloaders use grains (mass, 1/7000 lb), inches,
+//      yards, feet per second, inches of mercury for pressure. Field
+//      labels like "Pressure (inHg) — station, not corrected" matter:
+//      most weather apps report SEA-LEVEL pressure ("altimeter setting"),
+//      and feeding that to the solver will silently produce wrong drops
+//      because the air is denser at altitude than the same-pressure-
+//      corrected reading suggests. The helper text in the form is the
+//      only thing keeping the user from this trap.
+//   2. Wind direction convention. The wind input is the direction the
+//      wind is blowing FROM, in degrees clockwise from north — same
+//      convention as a weather report. "0 = tail" / "90 = right" in the
+//      helper text translates that to the shooter's frame.
+//   3. The DOPE export uses fixed-width formatting via `padLeft`. It
+//      relies on `FontFeature.tabularFigures()` in the on-screen table
+//      to make digits monospaced; the clipboard text is plain ASCII
+//      and will look ragged if the user pastes it into a proportional
+//      font, which is something to live with.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/home/home_screen.dart` — adds a `BallisticsScreen()` as
+//   one of the bottom-nav tab screens.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Reads from many `TextEditingController`s (form state, in-memory).
+// - Calls into the pure-Dart ballistics solver in
+//   `lib/services/ballistics/solver.dart`. No network, no DB.
+// - Writes the formatted DOPE card to the system clipboard via
+//   `Clipboard.setData(...)`. Triggered only on the user tapping
+//   "Export DOPE card to clipboard."
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../database/database.dart';
+import '../../repositories/component_repository.dart';
+import '../../repositories/firearm_repository.dart';
 import '../../services/ballistics/atmosphere.dart';
 import '../../services/ballistics/drag_functions.dart';
 import '../../services/ballistics/environment.dart';
@@ -9,6 +122,36 @@ import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart';
 import '../../widgets/pro_gate.dart';
 import 'widgets/trajectory_chart.dart';
+
+/// SharedPreferences keys for the range increment / min / max persistence.
+const _kRangeIncrementKey = 'ballistics_range_increment_yd';
+const _kRangeMinKey = 'ballistics_range_min_yd';
+const _kRangeMaxKey = 'ballistics_range_max_yd';
+
+/// Allowed bounds for the user-typed start / end ranges.
+const _kRangeMinMin = 0;
+const _kRangeMinMax = 1900;
+const _kRangeMaxMin = 100;
+const _kRangeMaxMax = 2000;
+
+/// Default start range when no preference is stored. The solver treats
+/// 0 yd as invalid (the first non-zero ladder rung is what gets sent),
+/// so 0 here just means "start the ladder at the increment".
+const _kRangeMinDefault = 0;
+
+/// Default end range when no preference is stored. Matches the value
+/// pre-filled in the End-range field on a fresh install.
+const _kRangeMaxDefault = 1000;
+
+/// Default range increment when nothing is selected yet — used so the
+/// trajectory ladder always has a sensible default before the user
+/// taps a chip. 100 yd matches the historical comma-separated default.
+const _kRangeIncrementDefault = 100;
+
+/// Cap on the number of ladder rungs a chip preset will produce. Above
+/// roughly fifty rows, the DOPE table & chart get sluggish on phones,
+/// and 50 rows already covers a 10-yd ladder out to 500 yd.
+const _kRangeLadderCap = 50;
 
 /// Top-level ballistics screen. Pro-gated.
 ///
@@ -27,6 +170,22 @@ class BallisticsScreen extends StatefulWidget {
 enum AngleUnit { inches, moa, mil }
 
 class _BallisticsScreenState extends State<BallisticsScreen> {
+  // ─────────────────────── Rifle picker ───────────────────────
+  /// One-shot list of the user's firearms, fetched on initState. Null until
+  /// the future resolves; empty list means the user has no firearms saved.
+  Future<List<UserFirearmRow>>? _firearmsFuture;
+  UserFirearmRow? _selectedFirearm;
+  /// Set when the rifle the user picked has no twist rate field — the UI
+  /// shows a small inline hint to make this obvious without forcing a
+  /// fallback value.
+  bool _twistMissingFromFirearm = false;
+
+  // ─────────────────────── Bullet picker ───────────────────────
+  /// One-shot list of every bullet in the reference catalog, joined with
+  /// its manufacturer. Null until the future resolves.
+  Future<List<({BulletRow bullet, ManufacturerRow mfg})>>? _bulletsFuture;
+  ({BulletRow bullet, ManufacturerRow mfg})? _selectedBullet;
+
   // ─────────────────────── Projectile ───────────────────────
   final _diameterCtrl = TextEditingController(text: '0.264');
   final _weightCtrl = TextEditingController(text: '140');
@@ -52,12 +211,47 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   final _latitudeCtrl = TextEditingController(text: '40');
 
   // ─────────────────────── Output settings ───────────────────────
-  final _rangesCtrl = TextEditingController(
-      text: '100, 200, 300, 400, 500, 600, 700, 800, 900, 1000');
+  final _rangeMinCtrl =
+      TextEditingController(text: _kRangeMinDefault.toString());
+  final _rangeMaxCtrl =
+      TextEditingController(text: _kRangeMaxDefault.toString());
   AngleUnit _unit = AngleUnit.moa;
+
+  /// Selected range increment for the quick-fill chips. Defaults to
+  /// `_kRangeIncrementDefault` so the trajectory ladder is well-defined
+  /// from a fresh install — the chips only shape it, they don't gate it.
+  int _rangeIncrement = _kRangeIncrementDefault;
 
   List<TrajectorySample> _samples = const [];
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _firearmsFuture = context.read<FirearmRepository>().allFirearms();
+    _bulletsFuture =
+        context.read<ComponentRepository>().allBulletsWithManufacturer();
+    _restoreRangePreferences();
+  }
+
+  Future<void> _restoreRangePreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final inc = prefs.getInt(_kRangeIncrementKey);
+    final min = prefs.getInt(_kRangeMinKey);
+    final max = prefs.getInt(_kRangeMaxKey);
+    if (!mounted) return;
+    setState(() {
+      if (inc != null && inc > 0) {
+        _rangeIncrement = inc;
+      }
+      if (min != null && min >= _kRangeMinMin && min <= _kRangeMinMax) {
+        _rangeMinCtrl.text = min.toString();
+      }
+      if (max != null && max >= _kRangeMaxMin && max <= _kRangeMaxMax) {
+        _rangeMaxCtrl.text = max.toString();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -79,7 +273,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       _windSpeedCtrl,
       _windDirCtrl,
       _latitudeCtrl,
-      _rangesCtrl,
+      _rangeMinCtrl,
+      _rangeMaxCtrl,
     ]) {
       c.dispose();
     }
@@ -113,9 +308,11 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       final latitude = double.tryParse(_latitudeCtrl.text.trim()) ?? 0;
       final tgtElev = double.tryParse(_targetElevationCtrl.text.trim()) ?? 0;
 
-      final ranges = _parseRanges(_rangesCtrl.text);
+      final ranges = _buildRangeLadder();
       if (ranges.isEmpty) {
-        throw const FormatException('Add at least one output range.');
+        throw const FormatException(
+            'Set min, max, and increment so the trajectory ladder has at '
+            'least one range.');
       }
 
       final projectile = Projectile(
@@ -191,14 +388,190 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     return double.tryParse(t);
   }
 
-  List<double> _parseRanges(String s) {
-    final out = <double>{};
-    for (final part in s.split(RegExp(r'[,\s]+'))) {
-      if (part.isEmpty) continue;
-      final v = double.tryParse(part);
-      if (v != null && v > 0) out.add(v);
+  /// Build the list of sample-range yardages the solver will be called
+  /// with, derived from the Min Yardage / Max Yardage / increment chip.
+  ///
+  /// Rules:
+  /// - The first rung is `min` if `min > 0`, else the increment (the
+  ///   solver rejects 0-yard ranges).
+  /// - Every subsequent rung adds `increment`, stopping at or below
+  ///   `max`. We always cap at `_kRangeLadderCap` rungs.
+  /// - If `max <= min` we return an empty list — `_compute` surfaces a
+  ///   user-facing FormatException in that case.
+  List<double> _buildRangeLadder() {
+    final inc = _rangeIncrement;
+    if (inc <= 0) return const [];
+    final minYd = _readClampedMinRange();
+    final maxYd = _readClampedMaxRange();
+    if (maxYd <= minYd) return const [];
+    final start = minYd > 0 ? minYd : inc;
+    if (start > maxYd) return const [];
+    final out = <double>[];
+    for (var v = start; v <= maxYd; v += inc) {
+      out.add(v.toDouble());
+      if (out.length >= _kRangeLadderCap) break;
     }
-    return out.toList()..sort();
+    return out;
+  }
+
+  // ─────────────────────── Pickers ───────────────────────
+
+  /// Format a bullet for the dropdown:
+  /// `"Hornady ELD-Match 6.5mm 140gr"`.
+  String _bulletLabel(BulletRow b, ManufacturerRow mfg) {
+    final wt = b.weightGr.toStringAsFixed(
+        b.weightGr.truncateToDouble() == b.weightGr ? 0 : 1);
+    return '${mfg.name} ${b.line} ${_caliberDisplay(b.diameterIn)} ${wt}gr';
+  }
+
+  /// Convert a bullet diameter in inches to a colloquial caliber label
+  /// (e.g. `0.264` → `"6.5mm"`, `0.308` → `".308"`). Falls back to the raw
+  /// inch value if the diameter doesn't match a common cartridge family.
+  String _caliberDisplay(double diameterIn) {
+    // Tolerance-based matching — seed values have small rounding variations.
+    bool nearly(double a, double b) => (a - b).abs() < 0.0015;
+    if (nearly(diameterIn, 0.172)) return '.17';
+    if (nearly(diameterIn, 0.204)) return '.204';
+    if (nearly(diameterIn, 0.224)) return '.224';
+    if (nearly(diameterIn, 0.243)) return '6mm';
+    if (nearly(diameterIn, 0.257)) return '.257';
+    if (nearly(diameterIn, 0.264)) return '6.5mm';
+    if (nearly(diameterIn, 0.277)) return '.277';
+    if (nearly(diameterIn, 0.284)) return '7mm';
+    if (nearly(diameterIn, 0.308)) return '.308';
+    if (nearly(diameterIn, 0.338)) return '.338';
+    if (nearly(diameterIn, 0.355) || nearly(diameterIn, 0.356)) return '9mm';
+    if (nearly(diameterIn, 0.358)) return '.358';
+    if (nearly(diameterIn, 0.400)) return '.40';
+    if (nearly(diameterIn, 0.451) || nearly(diameterIn, 0.452)) return '.45';
+    return diameterIn.toStringAsFixed(3);
+  }
+
+  void _applyBulletSelection(({BulletRow bullet, ManufacturerRow mfg}) sel) {
+    setState(() {
+      _selectedBullet = sel;
+      _diameterCtrl.text = sel.bullet.diameterIn.toStringAsFixed(3);
+      // Pretty-print weight without a trailing ".0" when it's already integral.
+      _weightCtrl.text = sel.bullet.weightGr.truncateToDouble() ==
+              sel.bullet.weightGr
+          ? sel.bullet.weightGr.toStringAsFixed(0)
+          : sel.bullet.weightGr.toString();
+      // Prefer G7 BC when available (better fit for VLD-style boat-tail
+      // bullets); fall back to G1 otherwise. Switch the drag model to
+      // match so the BC and the curve agree.
+      final g7 = sel.bullet.bcG7;
+      final g1 = sel.bullet.bcG1;
+      if (g7 != null) {
+        _bcCtrl.text = g7.toStringAsFixed(3);
+        _dragModel = DragModel.g7;
+      } else if (g1 != null) {
+        _bcCtrl.text = g1.toStringAsFixed(3);
+        _dragModel = DragModel.g1;
+      }
+      // The Bullets table doesn't track length — leave the field alone so
+      // the user can fill it in for stability calculations if they have
+      // the spec sheet handy.
+    });
+  }
+
+  void _clearBulletSelection() {
+    setState(() {
+      _selectedBullet = null;
+    });
+  }
+
+  /// Format a firearm row for the rifle picker dropdown:
+  /// `"<name> — <caliber>"`.
+  String _firearmLabel(UserFirearmRow f) {
+    final cal = (f.caliber ?? '').trim();
+    if (cal.isEmpty) return f.name;
+    return '${f.name} — $cal';
+  }
+
+  /// Parse a twist-rate string like `"1:8"`, `"8"`, or `"1 in 8"` into an
+  /// integer (e.g. `8`). Returns null if no integer can be recovered.
+  int? _parseTwistRate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return null;
+    // Pull out the last integer in the string — handles "1:8", "1 in 8",
+    // "8", "8.5" (rounded to 8) consistently.
+    final matches = RegExp(r'(\d+(?:\.\d+)?)').allMatches(raw);
+    if (matches.isEmpty) return null;
+    final last = matches.last.group(1)!;
+    final asDouble = double.tryParse(last);
+    if (asDouble == null) return null;
+    return asDouble.round();
+  }
+
+  void _applyFirearmSelection(UserFirearmRow f) {
+    setState(() {
+      _selectedFirearm = f;
+      // Twist rate.
+      final twist = _parseTwistRate(f.twistRate);
+      if (twist != null) {
+        _twistCtrl.text = twist.toString();
+        _twistMissingFromFirearm = false;
+      } else {
+        _twistMissingFromFirearm = true;
+      }
+      // MV / zero range / sight height — only overwrite when the firearm
+      // has a value, so we never blow away whatever the user typed manually.
+      if (f.defaultMuzzleVelocityFps != null) {
+        _muzzleVelCtrl.text = f.defaultMuzzleVelocityFps!.toStringAsFixed(0);
+      }
+      if (f.defaultZeroRangeYd != null) {
+        _zeroRangeCtrl.text = f.defaultZeroRangeYd!.toString();
+      }
+      if (f.sightHeightIn != null) {
+        _sightHeightCtrl.text = f.sightHeightIn!.toString();
+      }
+    });
+  }
+
+  void _clearFirearmSelection() {
+    setState(() {
+      _selectedFirearm = null;
+      _twistMissingFromFirearm = false;
+    });
+  }
+
+  // ─────────────────────── Range chips ───────────────────────
+
+  Future<void> _selectRangeIncrement(int incrementYd) async {
+    setState(() {
+      _rangeIncrement = incrementYd;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kRangeIncrementKey, incrementYd);
+  }
+
+  /// Reads the start-range field, clamps to [_kRangeMinMin]…[_kRangeMinMax],
+  /// and falls back to [_kRangeMinDefault] if empty / non-numeric.
+  int _readClampedMinRange() {
+    final raw = int.tryParse(_rangeMinCtrl.text.trim()) ?? _kRangeMinDefault;
+    return raw.clamp(_kRangeMinMin, _kRangeMinMax);
+  }
+
+  /// Reads the end-range field, clamps to [_kRangeMaxMin]…[_kRangeMaxMax],
+  /// and falls back to [_kRangeMaxDefault] if empty / non-numeric.
+  int _readClampedMaxRange() {
+    final raw = int.tryParse(_rangeMaxCtrl.text.trim()) ?? _kRangeMaxDefault;
+    return raw.clamp(_kRangeMaxMin, _kRangeMaxMax);
+  }
+
+  /// Persists the start-range field on edit so the user's preference
+  /// survives across launches.
+  Future<void> _onRangeMinChanged() async {
+    final minYd = _readClampedMinRange();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kRangeMinKey, minYd);
+  }
+
+  /// Persists the end-range field on edit so the user's preference
+  /// survives across launches.
+  Future<void> _onRangeMaxChanged() async {
+    final maxYd = _readClampedMaxRange();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kRangeMaxKey, maxYd);
   }
 
   // ─────────────────────── Export ───────────────────────
@@ -266,32 +639,13 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              _firearmSection(),
+              const SizedBox(height: 8),
               _projectileSection(),
               const SizedBox(height: 8),
               _muzzleZeroSection(),
               const SizedBox(height: 8),
               _environmentSection(),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: _compute,
-                icon: const Icon(Icons.calculate_outlined),
-                label: const Text('Calculate Trajectory'),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Card(
-                  color: Theme.of(context).colorScheme.errorContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
               const SizedBox(height: 8),
               _outputSection(),
               const SizedBox(height: 16),
@@ -305,12 +659,135 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
 
   // ─────────────────────── Sections ───────────────────────
 
+  Widget _firearmSection() {
+    return _SectionCard(
+      title: 'Rifle / Firearm',
+      icon: Icons.handshake_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FutureBuilder<List<UserFirearmRow>>(
+            future: _firearmsFuture,
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: LinearProgressIndicator(),
+                );
+              }
+              final firearms = snap.data ?? const <UserFirearmRow>[];
+              if (firearms.isEmpty) {
+                return Text(
+                  'No firearms saved yet. Add one on the Firearms tab to '
+                  'pre-fill twist, MV, zero range, and sight height here.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Autocomplete<UserFirearmRow>(
+                    initialValue: TextEditingValue(
+                      text: _selectedFirearm == null
+                          ? ''
+                          : _firearmLabel(_selectedFirearm!),
+                    ),
+                    displayStringForOption: _firearmLabel,
+                    optionsBuilder: (te) {
+                      final q = te.text.trim().toLowerCase();
+                      if (q.isEmpty) return firearms;
+                      return firearms.where(
+                          (f) => _firearmLabel(f).toLowerCase().contains(q));
+                    },
+                    fieldViewBuilder: (
+                      context,
+                      textCtrl,
+                      focusNode,
+                      onFieldSubmitted,
+                    ) {
+                      return TextField(
+                        controller: textCtrl,
+                        focusNode: focusNode,
+                        autocorrect: false,
+                        enableSuggestions: false,
+                        textCapitalization: TextCapitalization.none,
+                        decoration: InputDecoration(
+                          labelText: 'Pick a firearm',
+                          prefixIcon: const Icon(Icons.search),
+                          helperText:
+                              'Pre-fills twist, MV, zero range, sight height',
+                          suffixIcon: textCtrl.text.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.close),
+                                  tooltip: 'Clear',
+                                  onPressed: () {
+                                    textCtrl.clear();
+                                    _clearFirearmSelection();
+                                  },
+                                ),
+                        ),
+                        onSubmitted: (_) => onFieldSubmitted(),
+                      );
+                    },
+                    onSelected: _applyFirearmSelection,
+                    optionsViewBuilder: (context, onSelected, options) {
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4,
+                          child: ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(maxHeight: 360),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              itemCount: options.length,
+                              itemBuilder: (context, i) {
+                                final f = options.elementAt(i);
+                                return ListTile(
+                                  dense: true,
+                                  title: Text(_firearmLabel(f)),
+                                  onTap: () => onSelected(f),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (_twistMissingFromFirearm) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Twist not set on this firearm — enter manually.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _projectileSection() {
     return _SectionCard(
       title: 'Projectile',
       icon: Icons.album_outlined,
       child: Column(
         children: [
+          _bulletPicker(),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -403,6 +880,108 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _bulletPicker() {
+    return FutureBuilder<List<({BulletRow bullet, ManufacturerRow mfg})>>(
+      future: _bulletsFuture,
+      builder: (context, snap) {
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: LinearProgressIndicator(),
+          );
+        }
+        final entries = snap.data ?? const [];
+        return Row(
+          children: [
+            Expanded(
+              child: Autocomplete<({BulletRow bullet, ManufacturerRow mfg})>(
+                initialValue: TextEditingValue(
+                  text: _selectedBullet == null
+                      ? ''
+                      : _bulletLabel(_selectedBullet!.bullet,
+                          _selectedBullet!.mfg),
+                ),
+                displayStringForOption: (e) =>
+                    _bulletLabel(e.bullet, e.mfg),
+                optionsBuilder: (te) {
+                  final q = te.text.trim().toLowerCase();
+                  if (q.isEmpty) return entries;
+                  return entries.where((e) {
+                    final label =
+                        _bulletLabel(e.bullet, e.mfg).toLowerCase();
+                    return label.contains(q);
+                  });
+                },
+                fieldViewBuilder: (
+                  context,
+                  textCtrl,
+                  focusNode,
+                  onFieldSubmitted,
+                ) {
+                  return TextField(
+                    controller: textCtrl,
+                    focusNode: focusNode,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
+                    decoration: InputDecoration(
+                      labelText: 'Pick from catalog',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: textCtrl.text.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.close),
+                              tooltip: 'Clear',
+                              onPressed: () {
+                                textCtrl.clear();
+                                _clearBulletSelection();
+                              },
+                            ),
+                    ),
+                    onSubmitted: (_) => onFieldSubmitted(),
+                  );
+                },
+                onSelected: _applyBulletSelection,
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxHeight: 360),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          itemCount: options.length,
+                          itemBuilder: (context, i) {
+                            final e = options.elementAt(i);
+                            return ListTile(
+                              dense: true,
+                              title: Text(_bulletLabel(e.bullet, e.mfg)),
+                              onTap: () => onSelected(e),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed:
+                  _selectedBullet == null ? null : _clearBulletSelection,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('Clear'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -580,6 +1159,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   Widget _outputSection() {
+    final theme = Theme.of(context);
     return _SectionCard(
       title: 'Output',
       icon: Icons.table_rows_outlined,
@@ -587,40 +1167,89 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Range-increment chip group on its own line.
+          _rangeIncrementChips(),
+          const SizedBox(height: 12),
+          // Min yardage on its own line.
           TextField(
-            controller: _rangesCtrl,
+            controller: _rangeMinCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            autocorrect: false,
+            enableSuggestions: false,
             decoration: const InputDecoration(
-              labelText: 'Sample ranges (yd, comma-separated)',
+              labelText: 'Min Yardage',
+              helperText:
+                  'Trajectory ladder starts here (0 = first increment)',
+              suffixText: 'yd',
             ),
+            onSubmitted: (_) => _onRangeMinChanged(),
+            onEditingComplete: _onRangeMinChanged,
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: SegmentedButton<AngleUnit>(
-                  segments: const [
-                    ButtonSegment(
-                      value: AngleUnit.inches,
-                      label: Text('Inch'),
-                    ),
-                    ButtonSegment(
-                      value: AngleUnit.moa,
-                      label: Text('MOA'),
-                    ),
-                    ButtonSegment(
-                      value: AngleUnit.mil,
-                      label: Text('Mil'),
-                    ),
-                  ],
-                  selected: {_unit},
-                  onSelectionChanged: (s) {
-                    setState(() => _unit = s.first);
-                  },
-                  showSelectedIcon: false,
-                ),
+          // Max yardage on its own line.
+          TextField(
+            controller: _rangeMaxCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            autocorrect: false,
+            enableSuggestions: false,
+            decoration: const InputDecoration(
+              labelText: 'Max Yardage',
+              helperText: 'Trajectory ladder ends at or before this range',
+              suffixText: 'yd',
+            ),
+            onSubmitted: (_) => _onRangeMaxChanged(),
+            onEditingComplete: _onRangeMaxChanged,
+          ),
+          const SizedBox(height: 12),
+          // Angle unit selector on its own line.
+          SegmentedButton<AngleUnit>(
+            segments: const [
+              ButtonSegment(
+                value: AngleUnit.inches,
+                label: Text('Inch'),
+              ),
+              ButtonSegment(
+                value: AngleUnit.moa,
+                label: Text('MOA'),
+              ),
+              ButtonSegment(
+                value: AngleUnit.mil,
+                label: Text('Mil'),
               ),
             ],
+            selected: {_unit},
+            onSelectionChanged: (s) {
+              setState(() => _unit = s.first);
+            },
+            showSelectedIcon: false,
           ),
+          const SizedBox(height: 20),
+          // Prominent full-width Calculate button below all inputs and
+          // above the chart / DOPE table. This is the primary CTA on the
+          // screen, so we lean into the FilledButton "primary brass"
+          // styling rather than burying it in the form.
+          FilledButton.icon(
+            onPressed: _compute,
+            icon: const Icon(Icons.calculate_outlined),
+            label: const Text('Calculate Trajectory'),
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Card(
+              color: theme.colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  _error!,
+                  style: TextStyle(
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           if (_samples.isEmpty)
             Padding(
@@ -628,16 +1257,18 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               child: Text(
                 'Run "Calculate Trajectory" to generate the drop table.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                       fontStyle: FontStyle.italic,
                     ),
               ),
             )
           else ...[
-            _DopeTable(samples: _samples, unit: _unit),
-            const SizedBox(height: 16),
+            // Chart first, then DOPE table — the user asked for visual
+            // flow: inputs → Calculate → chart → trajectory table.
             TrajectoryChart(samples: _samples),
+            const SizedBox(height: 16),
+            _DopeTable(samples: _samples, unit: _unit),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: _exportDope,
@@ -645,6 +1276,25 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               label: const Text('Export DOPE card to clipboard'),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _rangeIncrementChips() {
+    const presets = [10, 25, 50, 100];
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: [
+          for (final inc in presets)
+            ChoiceChip(
+              label: Text('$inc yd'),
+              selected: _rangeIncrement == inc,
+              onSelected: (_) => _selectRangeIncrement(inc),
+            ),
         ],
       ),
     );
@@ -674,7 +1324,13 @@ class _SectionCard extends StatelessWidget {
       child: ExpansionTile(
         initiallyExpanded: initiallyExpanded,
         tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        // Top padding here is load-bearing: without it, the floating
+        // label of the first TextField in each section visually clips
+        // behind the bottom edge of the title row above. Material's
+        // floating-label position sits half-inside / half-above the
+        // input's top border, so the label needs ~8 px of breathing
+        // room between the section header and the first field.
+        childrenPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         title: Row(
           children: [
             Container(

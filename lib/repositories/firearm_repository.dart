@@ -105,14 +105,34 @@
 import 'package:drift/drift.dart';
 
 import '../database/database.dart';
+import '../utils/natural_sort.dart';
 
 class FirearmRepository {
   FirearmRepository(this.db);
   final AppDatabase db;
 
-  Stream<List<UserFirearmRow>> watchAll() =>
-      (db.select(db.userFirearms)..orderBy([(f) => OrderingTerm.asc(f.name)]))
-          .watch();
+  /// Streams every user firearm, naturally sorted by name (so
+  /// "AR-10 #2" comes after "AR-10 #1" and "Tikka T3x" comes after
+  /// "Bergara HMR" rather than between "Bergara A" and "Bergara B").
+  /// Drift can't express the natural-sort comparator in SQL, so we
+  /// fetch unordered and sort in Dart.
+  Stream<List<UserFirearmRow>> watchAll() {
+    return db.select(db.userFirearms).watch().map((rows) {
+      final list = [...rows];
+      list.sort((a, b) => naturalCompare(a.name, b.name));
+      return list;
+    });
+  }
+
+  /// One-shot read of every user firearm, naturally sorted by name.
+  /// Used by callers (e.g. ballistics calculator's rifle picker) that
+  /// just need a snapshot rather than a live stream.
+  Future<List<UserFirearmRow>> allFirearms() async {
+    final rows = await db.select(db.userFirearms).get();
+    final list = [...rows];
+    list.sort((a, b) => naturalCompare(a.name, b.name));
+    return list;
+  }
 
   Future<UserFirearmRow?> getById(int id) =>
       (db.select(db.userFirearms)..where((f) => f.id.equals(id)))

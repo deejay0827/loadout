@@ -1,3 +1,127 @@
+// FILE: lib/screens/ai_chat/ai_chat_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the Pro-gated "Reloading Assistant" chat screen — a
+// conversational front-end onto Anthropic's Messages API, with strict
+// safety rails so the model never slips into prescriptive load data.
+//
+// `AiChatScreen` itself is a thin wrapper that wraps the body in a
+// `ProGate(feature: 'AI Reloading Assistant', child: _AiChatScaffold())`.
+// Non-Pro users see the gated-feature UI from `lib/widgets/pro_gate.dart`
+// and never reach the network code.
+//
+// `_AiChatScaffold` is the real screen, with state for:
+//
+//   - `_history`        — the in-memory list of `ChatMessage`s for this
+//     session. NEVER persisted. When the screen pops, the conversation
+//     is gone.
+//   - `_used`           — the running questions-this-month count, fetched
+//     once at `initState` from `AiChatService.getQuestionsUsedThisMonth`
+//     and updated after every successful send.
+//   - `_quotaLoaded`    — false until the initial quota read returns,
+//     so the AppBar pill renders "… / 30" instead of a misleading
+//     "0 / 30".
+//   - `_sending`        — disables the input bar and shows a typing
+//     bubble while a request is in flight.
+//
+// The visible structure of the screen, top to bottom:
+//
+//   1. AppBar with a brass `_QuotaPill` ("12 / 30 this month"). When
+//      `_used >= quota`, the pill flips to error-coloured.
+//   2. A pinned brass-italic `_DisclaimerBanner` reminding the user
+//      "AI is reference only. Always verify against current published
+//      manuals before producing live ammunition." This is the THIRD
+//      and most visible of the three liability rails (the system
+//      prompt and the regex output filter live in `ai_chat_service.dart`).
+//   3. If `AiChatConfig.isPlaceholder`, a `_ComingSoonNotice` card.
+//   4. The message list. Empty state shows `_EmptyState` ("Ask me
+//      anything"). Otherwise a `ListView.builder` of `_MessageBubble`s
+//      — user bubbles right-aligned with brass tint, assistant bubbles
+//      left-aligned. When `message.isError` is true (a refusal from
+//      the safety filter, or a network error), the bubble uses the
+//      theme's error red. While `_sending`, a `_TypingBubble` is
+//      appended after the last message.
+//   5. EITHER the `_ChatInputBar` (multiline `TextField` + circular
+//      send button) OR, when the quota is exhausted, a "You've used
+//      your 30 questions this month. Resets on the 1st." panel
+//      replacing the input bar entirely.
+//
+// The `TextField` in `_ChatInputBar` deliberately turns off
+// `autocorrect` and `enableSuggestions` — same UX choice as the SAAMI
+// search field, so the OS doesn't rewrite niche reloading jargon while
+// the user types.
+//
+// `_send()` is the call-site for the service. It snapshots the prior
+// `_history`, optimistically appends the new user turn, calls
+// `_service.sendMessage(userText, history)`, and on completion either
+// appends the assistant reply, updates the count, shows a snackbar
+// for `quotaExceeded`, or appends an error bubble. The new text is
+// cleared from the input on send. After every state transition,
+// `_scrollToBottomSoon()` posts a frame callback to animate the list
+// to the bottom.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// All of the network plumbing, quota tracking, and safety filtering
+// lives in `lib/services/ai_chat_service.dart`. This file is purely the
+// rendering and orchestration shell — it has no business decisions in
+// it beyond "send this when the user taps Send" and "clear the input
+// after a successful enqueue."
+//
+// History is kept in memory only, by design. CLAUDE.md §13 commits to
+// "your reloading data stays on this device" and "we don't operate a
+// backend that stores reloading data." Persisting chat transcripts —
+// which routinely include question fragments like "what's a good powder
+// for..." — would weaken that commitment, and the value of restoring
+// a chat across launches is small enough that we just throw it away.
+//
+// The placeholder-mode UI exists so that we can ship the screen and
+// the navigation entry independently of when the real Anthropic key
+// is dropped in. Until `AiChatConfig.isPlaceholder` flips to false,
+// the input bar is disabled and a "coming soon" notice replaces the
+// hopeful empty state.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Three rough edges:
+//
+//   1. The quota pill must visibly distinguish "still loading the
+//      initial count" from "you've sent zero messages this month."
+//      The `_quotaLoaded` flag drives a "… / 30" placeholder until
+//      the SharedPreferences read returns, otherwise users would briefly
+//      see "0 / 30" and assume the counter had reset.
+//   2. The post-send scroll must use `addPostFrameCallback` rather than
+//      a synchronous `animateTo`. The new message hasn't been laid
+//      out yet at the time `setState` returns; `maxScrollExtent` would
+//      still report the pre-message value, and the list would scroll
+//      one bubble short of the bottom.
+//   3. Refusal bubbles (returned by the regex output filter when the
+//      model leaks a recipe) come back wrapped in a `ChatMessage` with
+//      `isError: true`. The bubble styling switches on that, NOT on
+//      the role — the role is still `assistant`. Distinguishing those
+//      two assistant codepaths visually is what tells the user "this
+//      is the safety filter speaking, not Claude."
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/home/home_screen.dart` — the bottom-nav "Assistant"
+//   tab (or its drawer-opened variant) hosts this screen.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Indirectly: HTTPS POST to api.anthropic.com via the
+//   `AiChatService` it constructs.
+// - Indirectly: SharedPreferences reads/writes for quota tracking via
+//   the same service.
+// - The screen itself does no I/O, no DB writes, no clipboard, no
+//   plugins. Persistent state lives entirely behind the service.
+
 import 'package:flutter/material.dart';
 
 import '../../services/ai_chat_config.dart';

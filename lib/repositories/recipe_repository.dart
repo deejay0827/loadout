@@ -147,6 +147,7 @@
 import 'package:drift/drift.dart';
 
 import '../database/database.dart';
+import '../utils/natural_sort.dart';
 
 /// Repository for user-saved recipes (load records).
 ///
@@ -186,13 +187,16 @@ class RecipeRepository {
 
   // ─────────────────────── Powder Lots ───────────────────────
 
-  Future<List<PowderLotRow>> allPowderLots() =>
-      (db.select(db.powderLots)
-            ..orderBy([
-              (l) => OrderingTerm.asc(l.manufacturer),
-              (l) => OrderingTerm.asc(l.name),
-            ]))
-          .get();
+  Future<List<PowderLotRow>> allPowderLots() async {
+    final rows = await db.select(db.powderLots).get();
+    final list = [...rows];
+    list.sort((a, b) {
+      final c = naturalCompare(a.manufacturer ?? '', b.manufacturer ?? '');
+      if (c != 0) return c;
+      return naturalCompare(a.name, b.name);
+    });
+    return list;
+  }
 
   Future<int> createPowderLot({
     String? manufacturer,
@@ -213,13 +217,16 @@ class RecipeRepository {
 
   // ─────────────────────── Bullet Lots ───────────────────────
 
-  Future<List<BulletLotRow>> allBulletLots() =>
-      (db.select(db.bulletLots)
-            ..orderBy([
-              (l) => OrderingTerm.asc(l.manufacturer),
-              (l) => OrderingTerm.asc(l.name),
-            ]))
-          .get();
+  Future<List<BulletLotRow>> allBulletLots() async {
+    final rows = await db.select(db.bulletLots).get();
+    final list = [...rows];
+    list.sort((a, b) {
+      final c = naturalCompare(a.manufacturer ?? '', b.manufacturer ?? '');
+      if (c != 0) return c;
+      return naturalCompare(a.name, b.name);
+    });
+    return list;
+  }
 
   Future<int> createBulletLot({
     String? manufacturer,
@@ -240,13 +247,16 @@ class RecipeRepository {
 
   // ─────────────────────── Primer Lots ───────────────────────
 
-  Future<List<PrimerLotRow>> allPrimerLots() =>
-      (db.select(db.primerLots)
-            ..orderBy([
-              (l) => OrderingTerm.asc(l.manufacturer),
-              (l) => OrderingTerm.asc(l.name),
-            ]))
-          .get();
+  Future<List<PrimerLotRow>> allPrimerLots() async {
+    final rows = await db.select(db.primerLots).get();
+    final list = [...rows];
+    list.sort((a, b) {
+      final c = naturalCompare(a.manufacturer ?? '', b.manufacturer ?? '');
+      if (c != 0) return c;
+      return naturalCompare(a.name, b.name);
+    });
+    return list;
+  }
 
   Future<int> createPrimerLot({
     String? manufacturer,
@@ -267,13 +277,16 @@ class RecipeRepository {
 
   // ─────────────────────── Brass Lots ───────────────────────
 
-  Future<List<BrassLotRow>> allBrassLots() =>
-      (db.select(db.brassLots)
-            ..orderBy([
-              (l) => OrderingTerm.asc(l.manufacturer),
-              (l) => OrderingTerm.asc(l.name),
-            ]))
-          .get();
+  Future<List<BrassLotRow>> allBrassLots() async {
+    final rows = await db.select(db.brassLots).get();
+    final list = [...rows];
+    list.sort((a, b) {
+      final c = naturalCompare(a.manufacturer ?? '', b.manufacturer ?? '');
+      if (c != 0) return c;
+      return naturalCompare(a.name, b.name);
+    });
+    return list;
+  }
 
   /// Inline brass-lot creation from the recipe form. Full BrassLots CRUD
   /// (count, firing count, anneal history, neck wall thickness, etc.) lives

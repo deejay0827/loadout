@@ -127,6 +127,7 @@ import 'repositories/brass_lot_repository.dart';
 import 'repositories/component_repository.dart';
 import 'repositories/firearm_repository.dart';
 import 'repositories/load_development_repository.dart';
+import 'repositories/optics_repository.dart';
 import 'repositories/process_step_repository.dart';
 import 'repositories/recipe_repository.dart';
 import 'screens/auth/login_screen.dart';
@@ -165,6 +166,9 @@ class LoadOutApp extends StatelessWidget {
         Provider<ComponentRepository>(
           create: (_) => ComponentRepository(database),
         ),
+        Provider<OpticsRepository>(
+          create: (_) => OpticsRepository(database),
+        ),
         Provider<BrassLotRepository>(
           create: (_) => BrassLotRepository(database),
         ),
@@ -178,9 +182,29 @@ class LoadOutApp extends StatelessWidget {
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),
         ),
+        // Seed the auth-state stream with `FirebaseAuth.instance.currentUser`,
+        // which is the SYNCHRONOUSLY-available cached user from the prior
+        // session. Without this seeding, `initialData: null` made every
+        // already-logged-in user briefly see `LoginScreen` on cold start
+        // because `authStateChanges` first emits asynchronously (~100-300ms
+        // after the SDK rehydrates the cached token). The flash was visible
+        // and confusing — it looked like the app was about to ask for
+        // re-login and then jumped past the screen.
+        //
+        // With the seed:
+        //   - Returning users (cached session) → initialData is the cached
+        //     User, _AuthGate routes straight to HomeScreen, no LoginScreen
+        //     flash.
+        //   - Brand-new users / signed-out users → initialData is null,
+        //     _AuthGate shows LoginScreen and stays there until they log in.
+        //   - Edge case: a stale cached user whose token was revoked
+        //     server-side will briefly see HomeScreen before
+        //     authStateChanges emits null and bounces them back to
+        //     LoginScreen. This is a very rare event and an acceptable
+        //     trade for fixing the every-launch flash.
         StreamProvider<User?>(
           create: (context) => context.read<AuthService>().authStateChanges,
-          initialData: null,
+          initialData: FirebaseAuth.instance.currentUser,
         ),
       ],
       child: MaterialApp(

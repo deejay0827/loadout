@@ -990,6 +990,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           onChanged: (v) => setState(() => _powderLotId = v),
           onCreate: () => _showCreateLotDialog(
             type: 'powder',
+            parentLabel: _powder.text,
             onCreate: (m, n, lot) async {
               final repo = context.read<RecipeRepository>();
               final id = await repo.createPowderLot(
@@ -1094,6 +1095,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           onChanged: (v) => setState(() => _primerLotId = v),
           onCreate: () => _showCreateLotDialog(
             type: 'primer',
+            parentLabel: _primer.text,
             onCreate: (m, n, lot) async {
               final repo = context.read<RecipeRepository>();
               final id = await repo.createPrimerLot(
@@ -1170,6 +1172,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           onChanged: (v) => setState(() => _bulletLotId = v),
           onCreate: () => _showCreateLotDialog(
             type: 'bullet',
+            parentLabel: _bullet.text,
             onCreate: (m, n, lot) async {
               final repo = context.read<RecipeRepository>();
               final id = await repo.createBulletLot(
@@ -1378,7 +1381,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           itemLabel: (row) => _composeBrassLotLabel(row),
           itemId: (row) => row.id,
           onChanged: (v) => setState(() => _brassLotId = v),
-          onCreate: () => _showCreateBrassLotDialog(),
+          onCreate: () => _showCreateBrassLotDialog(parentLabel: _brass.text),
         ),
       ),
       _FieldId.primerPocketSize: _FieldDef(
@@ -2075,8 +2078,20 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         child: ExpansionTile(
           key: tileKey,
           initiallyExpanded: initiallyExpanded,
+          // Keep children mounted across collapse/expand. Two reasons:
+          //   1. Pickers wrapping `Autocomplete<String>` (recipe name,
+          //      caliber, powder, etc.) own internal controllers and an
+          //      overlay; tearing them down on collapse and re-mounting
+          //      on expand has historically tripped a
+          //      `_elements.contains(element)` framework assertion.
+          //   2. UX: typing in a field, collapsing, then expanding
+          //      should preserve scroll/focus state — `maintainState`
+          //      makes that intrinsic instead of relying on controllers.
+          maintainState: true,
           tilePadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          // 12px top breathing room so the first field's M3 floating
+          // label isn't visually clipped by the section header.
+          childrenPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           title: _SectionHeader(
             title: section.title,
             count: visibleFields.length,
@@ -2151,9 +2166,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             return ExpansionTile(
               key: tileKey,
               initiallyExpanded: initiallyExpanded,
+              // See sibling section above for why `maintainState: true`
+              // and the 12px top padding are paired.
+              maintainState: true,
               tilePadding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              childrenPadding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
               title: _SectionHeader(
                 title: 'Custom Fields',
                 count: visible.length,
@@ -2282,16 +2300,34 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   /// Pops a small two-or-three field dialog used for inline lot creation
   /// from any of the powder/primer/bullet pickers. Brass lots use
   /// [_showCreateBrassLotDialog] instead because they require a caliber.
+  ///
+  /// [parentLabel] is the parent recipe's currently-selected component label
+  /// (e.g. `"Hodgdon Varget"` for powder, `"Federal #210M"` for primer). When
+  /// non-empty it pre-fills the Manufacturer + Name autocompletes so the
+  /// user doesn't have to retype what they just picked.
+  ///
+  /// IMPORTANT (Bug #9 — `_dependents.isEmpty` crash): the previous flow
+  /// closed the dialog with `Navigator.pop()` and then `await`ed
+  /// `onCreate(...)`. When the caller's `onCreate` callback then called
+  /// `setState` on the parent State, the framework asserted because the
+  /// dialog's Element was being torn down while other Elements still
+  /// depended on inherited widgets that the same frame was rebuilding.
+  /// Fix: run the work BEFORE popping the dialog, capture the dialog's
+  /// `Navigator` and the parent's mounted-state up front, and only pop
+  /// after the await resolves.
   Future<void> _showCreateLotDialog({
     required String type,
+    String parentLabel = '',
     required Future<void> Function(String? mfg, String name, String? lot)
         onCreate,
   }) async {
-    final mfgCtrl = TextEditingController();
-    final nameCtrl = TextEditingController();
+    final parsed = _parseParentLabel(type, parentLabel);
+    final mfgCtrl = TextEditingController(text: parsed.manufacturer);
+    final nameCtrl = TextEditingController(text: parsed.name);
     final lotCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
     final theme = Theme.of(context);
+    final componentRepo = context.read<ComponentRepository>();
 
     await showDialog<void>(
       context: context,
@@ -2304,17 +2340,26 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(
+                  _ManufacturerAutocompleteField(
                     controller: mfgCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Manufacturer'),
-                    autocorrect: false,
+                    kind: type,
+                    repo: componentRepo,
+                    // Re-bind nothing here — the `_NameAutocompleteField`
+                    // re-reads `mfgCtrl.text` on each rebuild, and the
+                    // listener on mfgCtrl wired below triggers that
+                    // rebuild whenever the manufacturer changes.
+                    onChanged: () {
+                      // Force the parent dialog StatefulBuilder to
+                      // rebuild so the Name autocomplete refreshes its
+                      // option list. We achieve this via the wrapping
+                      // StatefulBuilder below.
+                    },
                   ),
-                  TextFormField(
+                  _NameAutocompleteField(
                     controller: nameCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Name *'),
-                    autocorrect: false,
+                    kind: type,
+                    manufacturerController: mfgCtrl,
+                    repo: componentRepo,
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Required'
                         : null,
@@ -2324,6 +2369,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                     decoration:
                         const InputDecoration(labelText: 'Lot Number'),
                     autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
                   ),
                 ],
               ),
@@ -2337,12 +2384,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             FilledButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-                Navigator.of(ctx).pop();
+                // Capture the dialog's Navigator BEFORE the await so we
+                // never reach for `ctx` once the await resumes.
+                final dialogNav = Navigator.of(ctx);
+                // Run the create + parent setState first…
                 await onCreate(
                   mfgCtrl.text.trim().isEmpty ? null : mfgCtrl.text.trim(),
                   nameCtrl.text.trim(),
                   lotCtrl.text.trim().isEmpty ? null : lotCtrl.text.trim(),
                 );
+                // …then close the dialog. If the dialog was already
+                // disposed (e.g. user navigated away mid-await), do
+                // nothing.
+                if (dialogNav.mounted) {
+                  dialogNav.pop();
+                }
               },
               style: FilledButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
@@ -2359,14 +2415,30 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     lotCtrl.dispose();
   }
 
-  Future<void> _showCreateBrassLotDialog() async {
-    final nameCtrl = TextEditingController();
-    final mfgCtrl = TextEditingController();
+  /// Brass-lot version of [_showCreateLotDialog]. Same crash-shape fix:
+  /// capture references (the parent-state's `RecipeRepository`, the
+  /// dialog's `Navigator`) BEFORE any await, run the DB write +
+  /// parent-state mutation first, then close the dialog only after the
+  /// await resumes — and only if the dialog hasn't already been disposed.
+  ///
+  /// [parentLabel] is the parent recipe's currently-selected brass label
+  /// (e.g. `"Lapua"`). When non-empty it pre-fills the Manufacturer
+  /// autocomplete so the user doesn't have to retype what they just picked.
+  Future<void> _showCreateBrassLotDialog({String parentLabel = ''}) async {
+    final parsed = _parseParentLabel('brass', parentLabel);
+    final nameCtrl = TextEditingController(text: parsed.name);
+    final mfgCtrl = TextEditingController(text: parsed.manufacturer);
     final caliberCtrl = TextEditingController(text: _caliber.text.trim());
     final headstampCtrl = TextEditingController();
     final countCtrl = TextEditingController(text: '0');
     final formKey = GlobalKey<FormState>();
     final theme = Theme.of(context);
+    // Capture the parent's repo BEFORE we `await showDialog` so we
+    // never reach into the parent's BuildContext after the dialog's
+    // future resumes. (`context.read` is an inherited-element lookup;
+    // doing it once here is safe.)
+    final repo = context.read<RecipeRepository>();
+    final componentRepo = context.read<ComponentRepository>();
 
     await showDialog<void>(
       context: context,
@@ -2379,26 +2451,29 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextFormField(
+                  _NameAutocompleteField(
                     controller: nameCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Lot Name *'),
-                    autocorrect: false,
+                    kind: 'brass',
+                    manufacturerController: mfgCtrl,
+                    repo: componentRepo,
+                    label: 'Lot Name *',
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Required'
                         : null,
                   ),
-                  TextFormField(
+                  _ManufacturerAutocompleteField(
                     controller: mfgCtrl,
-                    decoration:
-                        const InputDecoration(labelText: 'Manufacturer'),
-                    autocorrect: false,
+                    kind: 'brass',
+                    repo: componentRepo,
+                    onChanged: () {},
                   ),
                   TextFormField(
                     controller: caliberCtrl,
                     decoration:
                         const InputDecoration(labelText: 'Caliber *'),
                     autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
                     validator: (v) => (v == null || v.trim().isEmpty)
                         ? 'Required'
                         : null,
@@ -2409,6 +2484,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                       labelText: 'Headstamp / Lot Marking',
                     ),
                     autocorrect: false,
+                    enableSuggestions: false,
+                    textCapitalization: TextCapitalization.none,
                   ),
                   TextFormField(
                     controller: countCtrl,
@@ -2428,8 +2505,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             FilledButton(
               onPressed: () async {
                 if (!formKey.currentState!.validate()) return;
-                Navigator.of(ctx).pop();
-                final repo = context.read<RecipeRepository>();
+                // Capture the dialog's Navigator BEFORE any await.
+                final dialogNav = Navigator.of(ctx);
                 final id = await repo.createBrassLot(
                   name: nameCtrl.text.trim(),
                   manufacturer: mfgCtrl.text.trim().isEmpty
@@ -2441,11 +2518,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                       : headstampCtrl.text.trim(),
                   count: int.tryParse(countCtrl.text.trim()) ?? 0,
                 );
-                if (!mounted) return;
-                setState(() {
-                  _brassLotsFuture = repo.allBrassLots();
-                  _brassLotId = id;
-                });
+                // Update parent state first, while the dialog is still
+                // mounted (so its inherited-widget dependents are still
+                // hooked up).
+                if (mounted) {
+                  setState(() {
+                    _brassLotsFuture = repo.allBrassLots();
+                    _brassLotId = id;
+                  });
+                }
+                if (dialogNav.mounted) {
+                  dialogNav.pop();
+                }
               },
               style: FilledButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
@@ -2462,6 +2546,53 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     caliberCtrl.dispose();
     headstampCtrl.dispose();
     countCtrl.dispose();
+  }
+
+  /// Parses the parent recipe form's currently-selected component label
+  /// into a `(manufacturer, name)` pair so the new-lot dialog can pre-fill
+  /// its inputs. The parsing rules mirror how each kind is rendered by
+  /// [ComponentRepository.componentLabels]:
+  ///
+  /// * powder   — `"Hodgdon Varget"` → mfg=`"Hodgdon"`, name=`"Varget"`
+  /// * primer   — `"Federal #210M"`  → mfg=`"Federal"`, name=`"210M"`
+  /// * bullet   — `"Berger Long Range Hybrid Target 109gr"` →
+  ///              mfg=`"Berger"`, name=`"Long Range Hybrid Target 109gr"`
+  /// * brass    — `"Lapua"` (single token) → mfg=`"Lapua"`, name=`""`
+  ///
+  /// Empty input → empty fields. Defensive against malformed labels: never
+  /// throws.
+  ({String manufacturer, String name}) _parseParentLabel(
+      String type, String label) {
+    final raw = label.trim();
+    if (raw.isEmpty) return (manufacturer: '', name: '');
+    switch (type) {
+      case 'primer':
+        // Split on " #" or "#" — accept either form.
+        final hashIdx = raw.indexOf('#');
+        if (hashIdx <= 0) {
+          // No '#' (or the '#' is the first char): treat as
+          // manufacturer-only.
+          return (manufacturer: raw, name: '');
+        }
+        final mfg = raw.substring(0, hashIdx).trim();
+        final name = raw.substring(hashIdx + 1).trim();
+        return (manufacturer: mfg, name: name);
+      case 'brass':
+        // Brass labels are usually a single manufacturer token.
+        // If it contains whitespace, treat the first token as the mfg
+        // and leave the name blank — the user can fill in a tier.
+        final ws = raw.indexOf(RegExp(r'\s'));
+        if (ws < 0) return (manufacturer: raw, name: '');
+        return (manufacturer: raw.substring(0, ws), name: '');
+      case 'powder':
+      case 'bullet':
+      default:
+        final ws = raw.indexOf(RegExp(r'\s'));
+        if (ws < 0) return (manufacturer: raw, name: '');
+        final mfg = raw.substring(0, ws).trim();
+        final rest = raw.substring(ws + 1).trim();
+        return (manufacturer: mfg, name: rest);
+    }
   }
 
   String _typeLabel(String type) {
@@ -2892,6 +3023,306 @@ class _PrimerFlatnessField extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────── Lot-dialog autocomplete fields ───────────────────────
+//
+// Both fields below are hybrid autocomplete + free-form text fields
+// driven by Flutter's stock `Autocomplete<String>` widget. They follow
+// the same listener-leak-avoidance pattern as `lib/widgets/component_field.dart`
+// (capture the autocomplete-owned controller exactly once, mirror to the
+// caller-provided controller). Unlike `ComponentField`, these don't fetch
+// labels for an entire kind — the manufacturer field shows the seeded
+// manufacturers for the kind, and the name field re-resolves its option
+// list based on the manufacturer the user has currently picked.
+
+/// Manufacturer autocomplete used inside the lot-creation dialogs.
+/// Pulls the seeded manufacturer list for the given component [kind] and
+/// lets the user either pick one or type a custom value.
+class _ManufacturerAutocompleteField extends StatefulWidget {
+  const _ManufacturerAutocompleteField({
+    required this.controller,
+    required this.kind,
+    required this.repo,
+    this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final String kind;
+  final ComponentRepository repo;
+  final VoidCallback? onChanged;
+
+  @override
+  State<_ManufacturerAutocompleteField> createState() =>
+      _ManufacturerAutocompleteFieldState();
+}
+
+class _ManufacturerAutocompleteFieldState
+    extends State<_ManufacturerAutocompleteField> {
+  late Future<List<String>> _futureOptions;
+
+  TextEditingController? _innerController;
+  VoidCallback? _innerListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureOptions = widget.repo.manufacturersForKind(widget.kind);
+  }
+
+  @override
+  void dispose() {
+    if (_innerController != null && _innerListener != null) {
+      _innerController!.removeListener(_innerListener!);
+    }
+    super.dispose();
+  }
+
+  void _ensureWiring(TextEditingController autocompleteCtrl) {
+    if (identical(_innerController, autocompleteCtrl)) return;
+    if (_innerController != null && _innerListener != null) {
+      _innerController!.removeListener(_innerListener!);
+    }
+    _innerController = autocompleteCtrl;
+    if (autocompleteCtrl.text != widget.controller.text) {
+      autocompleteCtrl.text = widget.controller.text;
+    }
+    _innerListener = () {
+      if (widget.controller.text != autocompleteCtrl.text) {
+        widget.controller.text = autocompleteCtrl.text;
+        widget.onChanged?.call();
+      }
+    };
+    autocompleteCtrl.addListener(_innerListener!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<String>>(
+      future: _futureOptions,
+      builder: (context, snap) {
+        final options = snap.data ?? const <String>[];
+        return Autocomplete<String>(
+          initialValue: TextEditingValue(text: widget.controller.text),
+          optionsBuilder: (te) {
+            final query = te.text.trim().toLowerCase();
+            if (query.isEmpty) return options.take(60);
+            final tokens = query
+                .split(RegExp(r'\s+'))
+                .where((t) => t.isNotEmpty)
+                .toList(growable: false);
+            if (tokens.isEmpty) return options.take(60);
+            return options.where((o) {
+              final lower = o.toLowerCase();
+              for (final t in tokens) {
+                if (!lower.contains(t)) return false;
+              }
+              return true;
+            }).take(60);
+          },
+          fieldViewBuilder: (context, textCtrl, focusNode, _) {
+            _ensureWiring(textCtrl);
+            return TextFormField(
+              controller: textCtrl,
+              focusNode: focusNode,
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.none,
+              decoration: const InputDecoration(
+                labelText: 'Manufacturer',
+                helperText: 'Pick from list or type your own',
+              ),
+            );
+          },
+          onSelected: (sel) {
+            widget.controller.text = sel;
+            widget.onChanged?.call();
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 240),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: options.length,
+                    itemBuilder: (context, i) {
+                      final opt = options.elementAt(i);
+                      return ListTile(
+                        dense: true,
+                        title: Text(opt),
+                        onTap: () => onSelected(opt),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// Product-name autocomplete used inside the lot-creation dialogs. Reads
+/// the manufacturer from [manufacturerController] (subscribing to changes
+/// so the option list refreshes whenever the user picks a new
+/// manufacturer) and queries the seed catalog for matching products.
+class _NameAutocompleteField extends StatefulWidget {
+  const _NameAutocompleteField({
+    required this.controller,
+    required this.kind,
+    required this.manufacturerController,
+    required this.repo,
+    this.label = 'Name *',
+    this.validator,
+  });
+
+  final TextEditingController controller;
+  final String kind;
+  final TextEditingController manufacturerController;
+  final ComponentRepository repo;
+  final String label;
+  final String? Function(String?)? validator;
+
+  @override
+  State<_NameAutocompleteField> createState() => _NameAutocompleteFieldState();
+}
+
+class _NameAutocompleteFieldState extends State<_NameAutocompleteField> {
+  Future<List<String>> _futureOptions = Future.value(const <String>[]);
+  String _lastMfg = '';
+
+  TextEditingController? _innerController;
+  VoidCallback? _innerListener;
+  late VoidCallback _mfgListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshOptions();
+    _mfgListener = () {
+      final mfg = widget.manufacturerController.text.trim();
+      if (mfg == _lastMfg) return;
+      _refreshOptions();
+    };
+    widget.manufacturerController.addListener(_mfgListener);
+  }
+
+  void _refreshOptions() {
+    _lastMfg = widget.manufacturerController.text.trim();
+    final f = _lastMfg.isEmpty
+        ? Future.value(const <String>[])
+        : widget.repo.productsForManufacturer(widget.kind, _lastMfg);
+    if (mounted) {
+      setState(() {
+        _futureOptions = f;
+      });
+    } else {
+      _futureOptions = f;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.manufacturerController.removeListener(_mfgListener);
+    if (_innerController != null && _innerListener != null) {
+      _innerController!.removeListener(_innerListener!);
+    }
+    super.dispose();
+  }
+
+  void _ensureWiring(TextEditingController autocompleteCtrl) {
+    if (identical(_innerController, autocompleteCtrl)) return;
+    if (_innerController != null && _innerListener != null) {
+      _innerController!.removeListener(_innerListener!);
+    }
+    _innerController = autocompleteCtrl;
+    if (autocompleteCtrl.text != widget.controller.text) {
+      autocompleteCtrl.text = widget.controller.text;
+    }
+    _innerListener = () {
+      if (widget.controller.text != autocompleteCtrl.text) {
+        widget.controller.text = autocompleteCtrl.text;
+      }
+    };
+    autocompleteCtrl.addListener(_innerListener!);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<String>>(
+      future: _futureOptions,
+      builder: (context, snap) {
+        final options = snap.data ?? const <String>[];
+        return Autocomplete<String>(
+          initialValue: TextEditingValue(text: widget.controller.text),
+          optionsBuilder: (te) {
+            final query = te.text.trim().toLowerCase();
+            if (query.isEmpty) return options.take(60);
+            final tokens = query
+                .split(RegExp(r'\s+'))
+                .where((t) => t.isNotEmpty)
+                .toList(growable: false);
+            if (tokens.isEmpty) return options.take(60);
+            return options.where((o) {
+              final lower = o.toLowerCase();
+              for (final t in tokens) {
+                if (!lower.contains(t)) return false;
+              }
+              return true;
+            }).take(60);
+          },
+          fieldViewBuilder: (context, textCtrl, focusNode, _) {
+            _ensureWiring(textCtrl);
+            return TextFormField(
+              controller: textCtrl,
+              focusNode: focusNode,
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.none,
+              decoration: InputDecoration(
+                labelText: widget.label,
+                helperText: 'Pick from list or type your own',
+              ),
+              validator: widget.validator,
+            );
+          },
+          onSelected: (sel) {
+            widget.controller.text = sel;
+          },
+          optionsViewBuilder: (context, onSelected, options) {
+            return Align(
+              alignment: Alignment.topLeft,
+              child: Material(
+                elevation: 4,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 240),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: options.length,
+                    itemBuilder: (context, i) {
+                      final opt = options.elementAt(i);
+                      return ListTile(
+                        dense: true,
+                        title: Text(opt),
+                        onTap: () => onSelected(opt),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

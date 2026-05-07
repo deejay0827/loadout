@@ -1,3 +1,105 @@
+// FILE: lib/screens/onboarding/onboarding_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the "Quick Tour" — an eight-page horizontal walkthrough that
+// introduces LoadOut's features. Reachable as the Quick Tour target from
+// `HowItWorksScreen` and from the legacy "How To Use LoadOut" drawer
+// entry. The screen is intentionally linear: swipe (or tap "Next")
+// forward, swipe back, or tap "Skip" / "Get Started" at any point to
+// dismiss.
+//
+// The eight pages, in order:
+//
+//   1. Welcome to LoadOut
+//   2. Track Your Recipes
+//   3. Catalog Your Firearms
+//   4. Cartridge Specifications (SAAMI / CIP)
+//   5. Reloading Glossary
+//   6. LoadOut Pro                 (has a "View Pro Plans" inline CTA)
+//   7. Safety First
+//   8. Ready to Reload             ("Get Started" CTA, dismisses)
+//
+// Each page is described by the file-private `_OnboardingPage` data
+// class — icon, title, list of bullet strings, and an optional
+// `actionLabel` + `_PageActionType` pair. `_PageActionType.viewPro`
+// pushes `PaywallScreen` as a fullscreen dialog. `_PageActionType.finish`
+// closes the onboarding flow.
+//
+// Layout pieces:
+//
+//   - `PageView.builder` drives the horizontal swipe behaviour.
+//   - `_OnboardingPageView` renders one page: a 96px brass-coloured
+//     hero icon, a centered title, a list of bullets (each bullet is
+//     a small brass dot + body-large text), and the optional inline
+//     action button.
+//   - `_DotIndicator` is a custom-painted page indicator. The active
+//     dot animates wider via `AnimatedContainer`. Implemented inline
+//     to avoid pulling in a third-party indicator package for what's
+//     essentially a few `Container`s in a `Row`.
+//   - The bottom bar has a "Back" button (disabled on page 0) and a
+//     primary "Next" / "Get Started" button (label flips on the last
+//     page). The AppBar has a "Skip" text button on the right.
+//
+// On dismiss (via "Skip", "Get Started", or the action-finish
+// callback), `_markSeenAndClose` writes `true` to the
+// `OnboardingScreen.seenPrefKey` SharedPreferences key
+// (`'onboarding_seen_v1'`) fire-and-forget — the disk write is not
+// awaited because it doesn't need to block the pop. Future versions
+// of the app can re-show the tour on a major UX change by bumping the
+// suffix to `_v2` etc.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// The onboarding flow gives a brand-new user a guided overview of
+// LoadOut's primary surfaces (Recipes, Firearms, SAAMI, Glossary, Pro,
+// Safety) before they start tapping around the home screen. It's
+// optional — the user can skip out — but it's the easiest entry-point
+// for someone who downloaded the app on a recommendation and doesn't
+// know what reloading software is supposed to look like.
+//
+// `HowItWorksScreen` exposes this screen as the "Quick Tour" card at
+// the top of its topical menu. Reaching the tour through the topical
+// menu rather than auto-launching it on first run is deliberate — we
+// preserve the user's ability to immediately start using the app, with
+// the tour available as an opt-in refresher.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Two things worth knowing:
+//
+//   1. The custom `_DotIndicator` exists to avoid a `smooth_page_indicator`
+//      style dependency just for one screen. The three `AnimatedContainer`s
+//      in a `Row` give us a perfectly fine animated indicator without
+//      pinning another package. If you find yourself reaching for a
+//      package, ask first whether the same effect can be done in a few
+//      `Container`s.
+//   2. The `assert((actionLabel == null) == (actionType == null), ...)`
+//      in `_OnboardingPage` protects the data-class invariant that
+//      action label and action type are either both set or both null.
+//      Forgetting one of the two would compile but produce a card
+//      with no action.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/how_it_works/how_it_works_screen.dart` — the Quick
+//   Tour card pushes this screen as a `MaterialPageRoute(fullscreenDialog:
+//   true)`.
+// - `lib/screens/home/home_screen.dart` — the legacy "How To Use
+//   LoadOut" drawer entry pushes this screen.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// - Writes `true` to the SharedPreferences key
+//   `OnboardingScreen.seenPrefKey` ('onboarding_seen_v1') on dismiss.
+// - Indirectly: pushes `PaywallScreen` for the `viewPro` action,
+//   which has its own RevenueCat-driven side effects.
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

@@ -1,0 +1,286 @@
+{
+  "manufacturers": [
+    {
+      "name": "Vortex",
+      "country": "USA",
+      "products": [
+        {"model":"Razor HD Gen III 6-36x56","category":"rifle-scope","magnification":"6-36x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"EBR-7D MOA/MRAD","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":45.7,"notes":"Flagship long-range FFP scope. Also available in MOA."},
+        {"model":"Razor HD Gen II 4.5-27x56","category":"rifle-scope","magnification":"4.5-27x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"EBR-7C MRAD","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":48.5,"notes":"Workhorse FFP precision rifle scope."},
+        {"model":"Razor HD Gen II 3-18x50","category":"rifle-scope","magnification":"3-18x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"EBR-7C MRAD","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":42.7,"notes":"Lighter Gen II for hunting and PRS-light."},
+        {"model":"Razor HD Gen II-E 1-6x24","category":"lpvo","magnification":"1-6x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"VMR-2 MOA","adjustmentUnit":"MOA","weightOz":21.5,"notes":"True 1x SFP LPVO."},
+        {"model":"Razor LHT 3-15x42","category":"rifle-scope","magnification":"3-15x","objectiveMm":42,"tubeMm":30,"focalPlane":"first","reticle":"HSR-5i MOA","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":21.5,"notes":"Lightweight FFP hunting scope."},
+        {"model":"Razor LHT 4.5-22x50","category":"rifle-scope","magnification":"4.5-22x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"XLR-2 MRAD","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":24.0,"notes":"Lightweight long-range FFP."},
+        {"model":"Viper PST Gen II 5-25x50","category":"rifle-scope","magnification":"5-25x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"EBR-7C MRAD","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":31.2,"notes":"Mid-tier FFP precision scope."},
+        {"model":"Viper PST Gen II 3-15x44","category":"rifle-scope","magnification":"3-15x","objectiveMm":44,"tubeMm":30,"focalPlane":"first","reticle":"EBR-2C MOA","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":24.7,"notes":"Versatile mid-tier FFP."},
+        {"model":"Viper PST Gen II 1-6x24","category":"lpvo","magnification":"1-6x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"VMR-2 MOA","adjustmentUnit":"MOA","weightOz":22.7,"notes":"Illuminated SFP LPVO."},
+        {"model":"Diamondback Tactical 6-24x50 FFP","category":"rifle-scope","magnification":"6-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"EBR-2C MRAD","adjustmentUnit":"MRAD","parallaxMin":20,"weightOz":24.0,"notes":"Budget FFP option."},
+        {"model":"Diamondback Tactical 4-16x44 FFP","category":"rifle-scope","magnification":"4-16x","objectiveMm":44,"tubeMm":30,"focalPlane":"first","reticle":"EBR-2C MOA","adjustmentUnit":"MOA","parallaxMin":20,"weightOz":21.8,"notes":"Entry FFP precision scope."},
+        {"model":"Strike Eagle 1-8x24","category":"lpvo","magnification":"1-8x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"AR-BDC3 MOA","adjustmentUnit":"MOA","weightOz":17.6,"notes":"Affordable LPVO for AR platforms."},
+        {"model":"Strike Eagle 5-25x56 FFP","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"EBR-7C MRAD","adjustmentUnit":"MRAD","parallaxMin":20,"weightOz":29.6,"notes":"Affordable FFP long-range option."},
+        {"model":"Crossfire II 4-12x44","category":"rifle-scope","magnification":"4-12x","objectiveMm":44,"tubeMm":25.4,"focalPlane":"second","reticle":"Dead-Hold BDC","adjustmentUnit":"MOA","parallaxMin":10,"weightOz":15.2,"notes":"Entry-level hunting scope."}
+      ]
+    },
+    {
+      "name": "Leupold",
+      "country": "USA",
+      "products": [
+        {"model":"Mark 5HD 7-35x56","category":"rifle-scope","magnification":"7-35x","objectiveMm":56,"tubeMm":35,"focalPlane":"first","reticle":"PR2-MOA / TMR / H59","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":30.0,"notes":"Top-tier US-made precision scope."},
+        {"model":"Mark 5HD 5-25x56","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":35,"focalPlane":"first","reticle":"TMR / PR1-MIL / H59","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":30.0,"notes":"Workhorse Mark 5HD configuration."},
+        {"model":"Mark 5HD 3.6-18x44","category":"rifle-scope","magnification":"3.6-18x","objectiveMm":44,"tubeMm":35,"focalPlane":"first","reticle":"PR1-MIL / TMR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":27.0,"notes":"Lighter Mark 5HD for field use."},
+        {"model":"Mark 4HD 6-24x52","category":"rifle-scope","magnification":"6-24x","objectiveMm":52,"tubeMm":34,"focalPlane":"first","reticle":"PR2-MIL / PR1-MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":31.0,"notes":"Mid-tier successor to Mark 4."},
+        {"model":"Mark 4HD 2.5-10x42","category":"rifle-scope","magnification":"2.5-10x","objectiveMm":42,"tubeMm":30,"focalPlane":"first","reticle":"FFP TMR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":21.5,"notes":"DMR / patrol-style optic."},
+        {"model":"VX-5HD 3-15x44","category":"rifle-scope","magnification":"3-15x","objectiveMm":44,"tubeMm":30,"focalPlane":"second","reticle":"Duplex / FireDot Duplex","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":18.5,"notes":"Premium hunting scope, SFP."},
+        {"model":"VX-5HD 4-20x52","category":"rifle-scope","magnification":"4-20x","objectiveMm":52,"tubeMm":30,"focalPlane":"second","reticle":"Boone & Crockett / TMOA","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":21.5,"notes":"Premium hunting / long-range crossover."},
+        {"model":"VX-6HD 2-12x42","category":"rifle-scope","magnification":"2-12x","objectiveMm":42,"tubeMm":30,"focalPlane":"second","reticle":"FireDot Duplex","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":17.0,"notes":"Versatile premium hunting scope."},
+        {"model":"VX-6HD 3-18x44","category":"rifle-scope","magnification":"3-18x","objectiveMm":44,"tubeMm":30,"focalPlane":"second","reticle":"FireDot 4","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":18.5,"notes":"Top hunter / mountain rifle scope."},
+        {"model":"VX-3HD 3.5-10x40","category":"rifle-scope","magnification":"3.5-10x","objectiveMm":40,"tubeMm":25.4,"focalPlane":"second","reticle":"Duplex / CDS-ZL","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":12.6,"notes":"Lightweight all-around hunter."},
+        {"model":"VX-3HD 4.5-14x40","category":"rifle-scope","magnification":"4.5-14x","objectiveMm":40,"tubeMm":25.4,"focalPlane":"second","reticle":"Duplex / CDS-ZL","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":13.6,"notes":"Classic varmint / deer scope."},
+        {"model":"VX-Freedom 3-9x40","category":"rifle-scope","magnification":"3-9x","objectiveMm":40,"tubeMm":25.4,"focalPlane":"second","reticle":"Duplex","adjustmentUnit":"MOA","weightOz":12.2,"notes":"Entry-level hunter."},
+        {"model":"VX-Freedom 4-12x40","category":"rifle-scope","magnification":"4-12x","objectiveMm":40,"tubeMm":25.4,"focalPlane":"second","reticle":"Tri-MOA","adjustmentUnit":"MOA","parallaxMin":60,"weightOz":13.5,"notes":"Affordable big-game scope."}
+      ]
+    },
+    {
+      "name": "Nightforce",
+      "country": "USA",
+      "products": [
+        {"model":"ATACR 7-35x56 F1","category":"rifle-scope","magnification":"7-35x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MIL-XT / Mil-C","adjustmentUnit":"MRAD","parallaxMin":10,"weightOz":39.0,"notes":"Premium ELR / PRS scope."},
+        {"model":"ATACR 5-25x56 F1","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MIL-XT / TReMoR3 / H59","adjustmentUnit":"MRAD","parallaxMin":10,"weightOz":36.0,"notes":"Long-range / military configuration."},
+        {"model":"ATACR 4-16x42 F1","category":"rifle-scope","magnification":"4-16x","objectiveMm":42,"tubeMm":30,"focalPlane":"first","reticle":"MIL-R / MOAR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.0,"notes":"Compact precision scope."},
+        {"model":"ATACR 1-8x24 F1","category":"lpvo","magnification":"1-8x","objectiveMm":24,"tubeMm":30,"focalPlane":"first","reticle":"FC-Mil / FC-DMx","adjustmentUnit":"MRAD","weightOz":21.2,"notes":"Premium FFP LPVO."},
+        {"model":"NX8 4-32x50 F1","category":"rifle-scope","magnification":"4-32x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"MIL-XT / Mil-C","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.6,"notes":"8x erector, compact ELR-capable."},
+        {"model":"NX8 2.5-20x50 F1","category":"rifle-scope","magnification":"2.5-20x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"MIL-XT","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":27.5,"notes":"Compact 8x precision scope."},
+        {"model":"NX8 1-8x24 F1","category":"lpvo","magnification":"1-8x","objectiveMm":24,"tubeMm":30,"focalPlane":"first","reticle":"FC-Mil / FC-DMx","adjustmentUnit":"MRAD","weightOz":17.0,"notes":"FFP LPVO, smaller package than ATACR."},
+        {"model":"NXS 5.5-22x56","category":"rifle-scope","magnification":"5.5-22x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"MOAR / MIL-R","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":32.0,"notes":"Long-running SFP precision optic."},
+        {"model":"NXS 3.5-15x50","category":"rifle-scope","magnification":"3.5-15x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"MOAR / MIL-R","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":30.0,"notes":"Versatile SFP option."},
+        {"model":"SHV 4-14x56","category":"rifle-scope","magnification":"4-14x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"MOAR / IHR","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":30.5,"notes":"Hunter / shooter / varminter line."},
+        {"model":"SHV 5-20x56","category":"rifle-scope","magnification":"5-20x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"MOAR / IHR","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":31.0,"notes":"Higher-magnification SHV variant."},
+        {"model":"BEAST 5-25x56 F1","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"H59 / MIL-R / TReMoR2","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":40.0,"notes":"Heavy-duty ELR / military scope."}
+      ]
+    },
+    {
+      "name": "Schmidt & Bender",
+      "country": "Germany",
+      "products": [
+        {"model":"PM II 5-25x56","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"H2CMR / P4F / Tremor3","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":36.5,"notes":"Iconic German precision rifle scope."},
+        {"model":"PM II 5-45x56","category":"rifle-scope","magnification":"5-45x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"GR2ID / Tremor3 / MSR2","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":40.0,"notes":"Ultra-high magnification PM II."},
+        {"model":"PM II 3-20x50","category":"rifle-scope","magnification":"3-20x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"P4F / H59 / Tremor3","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":34.0,"notes":"Versatile lower-power PM II."},
+        {"model":"PM II 1-8x24","category":"lpvo","magnification":"1-8x","objectiveMm":24,"tubeMm":30,"focalPlane":"first","reticle":"CQB1 / FlashDot","adjustmentUnit":"MRAD","weightOz":21.5,"notes":"Premium German FFP LPVO."},
+        {"model":"Polar T96 3-20x50","category":"rifle-scope","magnification":"3-20x","objectiveMm":50,"tubeMm":34,"focalPlane":"second","reticle":"D7 / L7","adjustmentUnit":"MRAD","parallaxMin":40,"weightOz":29.0,"notes":"Premium hunting / mountain scope."},
+        {"model":"Klassik 8x56","category":"rifle-scope","magnification":"8x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"L7 / A8","adjustmentUnit":"MOA","weightOz":21.5,"notes":"Fixed-power classic European hunting."},
+        {"model":"Stratos 2.5-13x56","category":"rifle-scope","magnification":"2.5-13x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"L7 / A8","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":24.0,"notes":"All-around hunting scope."},
+        {"model":"Stratos 1.5-8x42","category":"rifle-scope","magnification":"1.5-8x","objectiveMm":42,"tubeMm":30,"focalPlane":"second","reticle":"FlashDot L7","adjustmentUnit":"MRAD","weightOz":21.0,"notes":"Driven-hunt / DGR scope."}
+      ]
+    },
+    {
+      "name": "Trijicon",
+      "country": "USA",
+      "products": [
+        {"model":"Tenmile 5-50x56 ED/FFP","category":"rifle-scope","magnification":"5-50x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MRAD Long Range","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":36.7,"notes":"ELR-capable FFP precision scope."},
+        {"model":"Tenmile HX 6-24x50","category":"rifle-scope","magnification":"6-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"MOA Ranging","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":24.0,"notes":"Hunter / shooter SFP scope."},
+        {"model":"Tenmile 4.5-30x56 FFP","category":"rifle-scope","magnification":"4.5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MRAD / MOA Long Range","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":33.0,"notes":"Versatile FFP precision scope."},
+        {"model":"AccuPoint 2.5-12.5x42","category":"rifle-scope","magnification":"2.5-12.5x","objectiveMm":42,"tubeMm":30,"focalPlane":"second","reticle":"BAC Triangle / Mil-Dot","adjustmentUnit":"MOA","weightOz":17.4,"notes":"Tritium-illuminated hunting scope."},
+        {"model":"AccuPoint 1-6x24","category":"lpvo","magnification":"1-6x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"BAC Triangle / German #4","adjustmentUnit":"MOA","weightOz":17.4,"notes":"Tritium-illuminated LPVO."},
+        {"model":"Credo 1-8x28","category":"lpvo","magnification":"1-8x","objectiveMm":28,"tubeMm":34,"focalPlane":"first","reticle":"MRAD Segmented Circle","adjustmentUnit":"MRAD","weightOz":21.0,"notes":"Premium FFP LPVO."},
+        {"model":"Credo HX 2.5-15x56","category":"rifle-scope","magnification":"2.5-15x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"MOA Center Dot","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":21.0,"notes":"Hunter / shooter SFP scope."},
+        {"model":"ACOG TA31F 4x32","category":"prism","magnification":"4x","objectiveMm":32,"tubeMm":0,"focalPlane":"second","reticle":"Tritium/Fiber Chevron","adjustmentUnit":"MOA","weightOz":9.9,"notes":"Iconic 4x ACOG, fixed-power prism optic."},
+        {"model":"ACOG TA02 4x32 LED","category":"prism","magnification":"4x","objectiveMm":32,"tubeMm":0,"focalPlane":"second","reticle":"LED Chevron","adjustmentUnit":"MOA","weightOz":13.4,"notes":"Battery-powered ACOG variant."}
+      ]
+    },
+    {
+      "name": "Burris",
+      "country": "USA",
+      "products": [
+        {"model":"Veracity PH 4-20x50","category":"rifle-scope","magnification":"4-20x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"PEK / Wind MOA","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":24.5,"notes":"Programmable Elevation Knob heads-up display scope."},
+        {"model":"Veracity PH 3-15x44","category":"rifle-scope","magnification":"3-15x","objectiveMm":44,"tubeMm":30,"focalPlane":"first","reticle":"PEK","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":22.6,"notes":"Hunter / mountain configuration of PH."},
+        {"model":"XTR III 5.5-30x56","category":"rifle-scope","magnification":"5.5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"SCR 2 MIL / SCR 2 MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":35.4,"notes":"PRS-popular FFP scope."},
+        {"model":"XTR III 3.3-18x50","category":"rifle-scope","magnification":"3.3-18x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"SCR 2 MIL","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":31.7,"notes":"Mid-mag XTR III precision scope."},
+        {"model":"XTR Pro 5.5-30x56","category":"rifle-scope","magnification":"5.5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"SCR 2 MIL / Tremor3","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":36.0,"notes":"Top-tier Burris precision scope."},
+        {"model":"Eliminator 6 4-20x52","category":"rifle-scope","magnification":"4-20x","objectiveMm":52,"tubeMm":30,"focalPlane":"second","reticle":"Eliminator 6 X96","adjustmentUnit":"MOA","weightOz":31.0,"notes":"Built-in laser rangefinder + ballistics."},
+        {"model":"Fullfield IV 4-16x50","category":"rifle-scope","magnification":"4-16x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"E3 / Ballistic Plex E1","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":21.0,"notes":"Mid-tier hunting / shooting scope."},
+        {"model":"Fullfield IV 3-12x42","category":"rifle-scope","magnification":"3-12x","objectiveMm":42,"tubeMm":30,"focalPlane":"second","reticle":"Ballistic Plex E1","adjustmentUnit":"MOA","weightOz":18.0,"notes":"Versatile hunter."}
+      ]
+    },
+    {
+      "name": "Bushnell",
+      "country": "USA",
+      "products": [
+        {"model":"Match Pro ED 5-30x56","category":"rifle-scope","magnification":"5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"DM2 MIL / Deploy MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":34.6,"notes":"PRS-friendly value precision scope."},
+        {"model":"Match Pro 6-24x50","category":"rifle-scope","magnification":"6-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"Deploy MIL","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.7,"notes":"Mid-tier FFP value scope."},
+        {"model":"Elite Tactical XRS3 6-36x56","category":"rifle-scope","magnification":"6-36x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"G4P MIL","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":37.9,"notes":"Top-tier Bushnell ELR scope."},
+        {"model":"Elite Tactical DMR3 3.5-21x50","category":"rifle-scope","magnification":"3.5-21x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"G3 MIL / EQL","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":36.5,"notes":"Versatile FFP precision scope."},
+        {"model":"Forge 4.5-27x50","category":"rifle-scope","magnification":"4.5-27x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"Deploy MOA","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":29.6,"notes":"Hunter / shooter SFP scope."},
+        {"model":"Engage 3-9x40","category":"rifle-scope","magnification":"3-9x","objectiveMm":40,"tubeMm":25.4,"focalPlane":"second","reticle":"Deploy MOA","adjustmentUnit":"MOA","weightOz":15.6,"notes":"Affordable hunting scope."},
+        {"model":"Engage 4-16x44","category":"rifle-scope","magnification":"4-16x","objectiveMm":44,"tubeMm":25.4,"focalPlane":"second","reticle":"Deploy MOA","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":17.5,"notes":"Affordable mid-mag hunter."}
+      ]
+    },
+    {
+      "name": "Sig Sauer",
+      "country": "USA/Germany",
+      "products": [
+        {"model":"Sierra3 BDX 4.5-14x44","category":"rifle-scope","magnification":"4.5-14x","objectiveMm":44,"tubeMm":30,"focalPlane":"second","reticle":"BDX-R1 Digital","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":21.0,"notes":"BDX system pairs with Sig rangefinder for solutions."},
+        {"model":"Sierra6 BDX 5-30x56","category":"rifle-scope","magnification":"5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MOA Milling","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":30.5,"notes":"BDX-equipped FFP scope."},
+        {"model":"Sierra10 BDX 5-50x56","category":"rifle-scope","magnification":"5-50x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"BDX-R3 Digital","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":40.0,"notes":"ELR-capable BDX flagship."},
+        {"model":"Tango4 6-24x50","category":"rifle-scope","magnification":"6-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"MRAD Milling 2.0","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.5,"notes":"Mid-tier FFP precision scope."},
+        {"model":"Tango6 5-30x56","category":"rifle-scope","magnification":"5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MOA Milling 2.0","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":34.0,"notes":"PRS-class FFP scope."},
+        {"model":"Tango6T 1-6x24","category":"lpvo","magnification":"1-6x","objectiveMm":24,"tubeMm":30,"focalPlane":"first","reticle":"DWLR556 / Hellfire","adjustmentUnit":"MRAD","weightOz":17.7,"notes":"DOD-approved FFP LPVO."},
+        {"model":"Tango8 1-8x28","category":"lpvo","magnification":"1-8x","objectiveMm":28,"tubeMm":34,"focalPlane":"first","reticle":"DWLR-MOA / DWLR8 MIL","adjustmentUnit":"MRAD","weightOz":21.0,"notes":"Top-tier FFP LPVO."},
+        {"model":"Whiskey3 4-12x40","category":"rifle-scope","magnification":"4-12x","objectiveMm":40,"tubeMm":25.4,"focalPlane":"second","reticle":"Quadplex","adjustmentUnit":"MOA","weightOz":14.5,"notes":"Entry hunting scope."},
+        {"model":"Whiskey5 3-15x44","category":"rifle-scope","magnification":"3-15x","objectiveMm":44,"tubeMm":30,"focalPlane":"second","reticle":"HellFire MOA Milling","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":22.5,"notes":"Mid-tier hunting scope."}
+      ]
+    },
+    {
+      "name": "Athlon",
+      "country": "USA/Taiwan",
+      "products": [
+        {"model":"Cronus BTR Gen2 4.5-29x56","category":"rifle-scope","magnification":"4.5-29x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"APRS6 MIL / APLR6 MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":36.5,"notes":"Athlon flagship FFP scope."},
+        {"model":"Cronus BTR 4.5-29x56","category":"rifle-scope","magnification":"4.5-29x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"APRS1 MIL / APLR1 MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":35.4,"notes":"PRS-popular FFP scope."},
+        {"model":"Ares ETR UHD 4.5-30x56","category":"rifle-scope","magnification":"4.5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"APRS3 MIL / APLR3 MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":33.6,"notes":"High-mag FFP precision."},
+        {"model":"Ares BTR Gen2 2.5-15x50","category":"rifle-scope","magnification":"2.5-15x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"APRS3 MIL / APLR3 MOA","adjustmentUnit":"MRAD","parallaxMin":15,"weightOz":29.7,"notes":"Versatile FFP scope."},
+        {"model":"Helos BTR Gen2 2-12x42","category":"rifle-scope","magnification":"2-12x","objectiveMm":42,"tubeMm":30,"focalPlane":"first","reticle":"APRS6 MIL / APLR6 MOA","adjustmentUnit":"MRAD","parallaxMin":15,"weightOz":24.5,"notes":"Lightweight FFP."},
+        {"model":"Argos BTR Gen2 6-24x50","category":"rifle-scope","magnification":"6-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"APMR2 MIL / APMR2 MOA","adjustmentUnit":"MRAD","parallaxMin":15,"weightOz":29.6,"notes":"Budget FFP precision."},
+        {"model":"Midas TAC HD 6-24x50","category":"rifle-scope","magnification":"6-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"APRS3 MIL / APLR3 MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.5,"notes":"Mid-tier FFP scope."},
+        {"model":"Midas BTR Gen2 4.5-27x50","category":"rifle-scope","magnification":"4.5-27x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"APRS3 MIL / APLR3 MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":27.6,"notes":"Mid-tier FFP precision."}
+      ]
+    },
+    {
+      "name": "Primary Arms",
+      "country": "USA",
+      "products": [
+        {"model":"PLx 6-30x56 FFP","category":"rifle-scope","magnification":"6-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"ACSS Apollo / Athena BPR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":33.6,"notes":"Top-tier PA precision scope."},
+        {"model":"PLx 1-8x24 FFP","category":"lpvo","magnification":"1-8x","objectiveMm":24,"tubeMm":30,"focalPlane":"first","reticle":"ACSS Raptor M8 / Griffin","adjustmentUnit":"MRAD","weightOz":18.4,"notes":"Premium PA FFP LPVO."},
+        {"model":"GLx 4-16x50 FFP","category":"rifle-scope","magnification":"4-16x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"ACSS Athena BPR / Apollo","adjustmentUnit":"MRAD","parallaxMin":15,"weightOz":29.0,"notes":"Mid-tier PA precision."},
+        {"model":"GLx 2.5-10x44","category":"rifle-scope","magnification":"2.5-10x","objectiveMm":44,"tubeMm":30,"focalPlane":"first","reticle":"ACSS Griffin Mil","adjustmentUnit":"MRAD","parallaxMin":15,"weightOz":25.0,"notes":"DMR-style FFP."},
+        {"model":"GLx 1-6x24","category":"lpvo","magnification":"1-6x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"ACSS Raptor","adjustmentUnit":"MRAD","weightOz":17.5,"notes":"Mid-tier LPVO."},
+        {"model":"SLx 4-14x44 FFP","category":"rifle-scope","magnification":"4-14x","objectiveMm":44,"tubeMm":30,"focalPlane":"first","reticle":"ACSS HUD DMR","adjustmentUnit":"MRAD","parallaxMin":10,"weightOz":24.4,"notes":"Affordable FFP precision."},
+        {"model":"SLx 1-6x24 Gen IV","category":"lpvo","magnification":"1-6x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"ACSS Raptor / Griffin","adjustmentUnit":"MRAD","weightOz":17.4,"notes":"Best-selling budget LPVO."},
+        {"model":"SLx 1-8x24","category":"lpvo","magnification":"1-8x","objectiveMm":24,"tubeMm":30,"focalPlane":"first","reticle":"ACSS Raptor M8","adjustmentUnit":"MRAD","weightOz":18.6,"notes":"Affordable FFP LPVO."}
+      ]
+    },
+    {
+      "name": "Maven",
+      "country": "USA",
+      "products": [
+        {"model":"RS.1 2.5-15x44","category":"rifle-scope","magnification":"2.5-15x","objectiveMm":44,"tubeMm":30,"focalPlane":"second","reticle":"SHR-MOA / CSHR","adjustmentUnit":"MOA","parallaxMin":25,"weightOz":18.4,"notes":"Versatile premium hunter SFP."},
+        {"model":"RS.2 2-10x38","category":"rifle-scope","magnification":"2-10x","objectiveMm":38,"tubeMm":30,"focalPlane":"second","reticle":"CSHR","adjustmentUnit":"MOA","weightOz":15.6,"notes":"Lightweight hunter."},
+        {"model":"RS.3 5-30x50","category":"rifle-scope","magnification":"5-30x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"MOA-1 / MOA-2 / MIL-1 / MIL-2","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":31.8,"notes":"Premium FFP long-range."},
+        {"model":"RS.4 5-30x56 FFP","category":"rifle-scope","magnification":"5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MOA-2 / MIL-2","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":35.0,"notes":"Top-tier Maven precision scope."},
+        {"model":"RS.5 4-24x50 FFP","category":"rifle-scope","magnification":"4-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"CFR-MIL / CFR-MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.0,"notes":"FFP all-rounder."}
+      ]
+    },
+    {
+      "name": "US Optics",
+      "country": "USA",
+      "products": [
+        {"model":"TS-20X 5-25x50","category":"rifle-scope","magnification":"5-25x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"MIL Scale / GenIIXR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":34.2,"notes":"Mid-tier FFP precision scope."},
+        {"model":"TS-12X 4-12x44","category":"rifle-scope","magnification":"4-12x","objectiveMm":44,"tubeMm":30,"focalPlane":"first","reticle":"MIL Scale / Mil-D","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":24.5,"notes":"Compact FFP scope."},
+        {"model":"B-EAST 5-25x52","category":"rifle-scope","magnification":"5-25x","objectiveMm":52,"tubeMm":34,"focalPlane":"first","reticle":"MGR / MPR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":36.0,"notes":"Mid-tier USO precision optic."},
+        {"model":"Foundation 25X 5-25x52","category":"rifle-scope","magnification":"5-25x","objectiveMm":52,"tubeMm":34,"focalPlane":"first","reticle":"MGR / MPR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":38.0,"notes":"Mil-spec USO flagship."},
+        {"model":"Foundation 17X 3.2-17x50","category":"rifle-scope","magnification":"3.2-17x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"MGR / MPR","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":36.0,"notes":"Lower-mag mil-spec USO."}
+      ]
+    },
+    {
+      "name": "Kahles",
+      "country": "Austria",
+      "products": [
+        {"model":"K525i 5-25x56","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"SKMR3 / MSR2 / SKMR4","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":35.5,"notes":"PRS-favorite Austrian FFP scope."},
+        {"model":"K318i 3.5-18x50","category":"rifle-scope","magnification":"3.5-18x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"SKMR3 / MSR / SKMR4","adjustmentUnit":"MRAD","parallaxMin":35,"weightOz":31.7,"notes":"Versatile FFP precision scope."},
+        {"model":"K624i 6-24x56","category":"rifle-scope","magnification":"6-24x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"SKMR3 / MSR","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":34.5,"notes":"Long-running Austrian precision optic."}
+      ]
+    },
+    {
+      "name": "Steiner",
+      "country": "Germany",
+      "products": [
+        {"model":"M5Xi 5-25x56","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MSR / MSR2 / SCR","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":34.7,"notes":"German military-spec precision scope."},
+        {"model":"M7Xi 4-28x56","category":"rifle-scope","magnification":"4-28x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MSR / MSR2","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":36.0,"notes":"Higher-mag mil-grade scope."},
+        {"model":"T6Xi 3-18x56","category":"rifle-scope","magnification":"3-18x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MSR2 / SCR","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":31.7,"notes":"Tactical 6x erector scope."},
+        {"model":"T6Xi 5-30x56","category":"rifle-scope","magnification":"5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MSR2 / SCR","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":34.0,"notes":"Higher-mag T6Xi configuration."},
+        {"model":"P4Xi 1-4x24","category":"lpvo","magnification":"1-4x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"P3TR","adjustmentUnit":"MRAD","weightOz":15.7,"notes":"Affordable European LPVO."},
+        {"model":"P4Xi 4-16x56","category":"rifle-scope","magnification":"4-16x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"SCR-Mil / Plex S1","adjustmentUnit":"MRAD","parallaxMin":50,"weightOz":24.9,"notes":"Tactical SFP scope."}
+      ]
+    },
+    {
+      "name": "Swarovski",
+      "country": "Austria",
+      "products": [
+        {"model":"X5i 5-25x56","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"4WX / 4WXi / BRH","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":31.2,"notes":"Premium Austrian SFP precision scope."},
+        {"model":"X5i 3.5-18x50","category":"rifle-scope","magnification":"3.5-18x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"4WX / 4WXi","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":29.5,"notes":"Premium hunting / long-range."},
+        {"model":"dS Gen II 5-25x52","category":"rifle-scope","magnification":"5-25x","objectiveMm":52,"tubeMm":30,"focalPlane":"second","reticle":"Smart reticle (digital)","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":35.3,"notes":"Integrated rangefinder/ballistics digital scope."},
+        {"model":"Z8i 1-8x24","category":"lpvo","magnification":"1-8x","objectiveMm":24,"tubeMm":30,"focalPlane":"second","reticle":"BRT-I","adjustmentUnit":"MOA","weightOz":16.6,"notes":"Premium European LPVO."},
+        {"model":"Z8i 2-16x50","category":"rifle-scope","magnification":"2-16x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"4A-IF / BRX-I","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":24.0,"notes":"Versatile hunting scope."},
+        {"model":"Z6i 2.5-15x56","category":"rifle-scope","magnification":"2.5-15x","objectiveMm":56,"tubeMm":30,"focalPlane":"second","reticle":"4A-I / BRX","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":24.4,"notes":"Classic Z6i hunter."}
+      ]
+    },
+    {
+      "name": "Zeiss",
+      "country": "Germany",
+      "products": [
+        {"model":"LRP S5 5-25x56","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"ZF-MRi / ZF-MOAi","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":36.7,"notes":"Premium FFP precision rifle scope."},
+        {"model":"LRP S5 3.6-18x50","category":"rifle-scope","magnification":"3.6-18x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"ZF-MRi / ZF-MOAi","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":33.5,"notes":"Versatile FFP."},
+        {"model":"LRP S3 6-36x56","category":"rifle-scope","magnification":"6-36x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"ZF-MRi","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":34.0,"notes":"High-mag FFP for ELR."},
+        {"model":"LRP S3 4-25x50","category":"rifle-scope","magnification":"4-25x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"ZF-MRi / ZF-MOAi","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":33.0,"notes":"FFP precision scope."},
+        {"model":"Conquest V4 6-24x50","category":"rifle-scope","magnification":"6-24x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"ZBR-1 / ZMOAi","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":24.7,"notes":"Mid-tier German SFP scope."},
+        {"model":"Conquest V4 4-16x44","category":"rifle-scope","magnification":"4-16x","objectiveMm":44,"tubeMm":30,"focalPlane":"second","reticle":"Plex / ZBR-1","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":21.2,"notes":"Versatile hunter."},
+        {"model":"Conquest V6 3-18x50","category":"rifle-scope","magnification":"3-18x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"ZBi / ZMOA","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":23.5,"notes":"6x erector hunting scope."},
+        {"model":"Victory V8 2.8-20x56","category":"rifle-scope","magnification":"2.8-20x","objectiveMm":56,"tubeMm":36,"focalPlane":"second","reticle":"60 / ASV","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":33.5,"notes":"Premium German hunter (V8 not V6/V4)."}
+      ]
+    },
+    {
+      "name": "Hawke",
+      "country": "UK",
+      "products": [
+        {"model":"Frontier 30 SF 5-30x56","category":"rifle-scope","magnification":"5-30x","objectiveMm":56,"tubeMm":30,"focalPlane":"first","reticle":"Mil Pro / MOA Pro","adjustmentUnit":"MRAD","parallaxMin":10,"weightOz":29.5,"notes":"FFP UK-designed precision scope."},
+        {"model":"Frontier 34 FFP 5-30x56","category":"rifle-scope","magnification":"5-30x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"MOA Pro Ext / Mil Pro Ext","adjustmentUnit":"MRAD","parallaxMin":15,"weightOz":33.6,"notes":"Top-tier Hawke FFP scope."},
+        {"model":"Sidewinder 30 FFP 4-16x50","category":"rifle-scope","magnification":"4-16x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"MOA / Half Mil","adjustmentUnit":"MRAD","parallaxMin":10,"weightOz":29.5,"notes":"Mid-tier FFP scope."},
+        {"model":"Vantage 4-12x50 AO","category":"rifle-scope","magnification":"4-12x","objectiveMm":50,"tubeMm":25.4,"focalPlane":"second","reticle":"Mil Dot","adjustmentUnit":"MOA","parallaxMin":10,"weightOz":17.4,"notes":"Affordable airgun / .22 scope."},
+        {"model":"Endurance 30 4-16x50","category":"rifle-scope","magnification":"4-16x","objectiveMm":50,"tubeMm":30,"focalPlane":"second","reticle":"LR Dot","adjustmentUnit":"MOA","parallaxMin":10,"weightOz":24.0,"notes":"Mid-tier hunting scope."}
+      ]
+    },
+    {
+      "name": "Riton",
+      "country": "USA",
+      "products": [
+        {"model":"X7 Conquer 5-25x56","category":"rifle-scope","magnification":"5-25x","objectiveMm":56,"tubeMm":34,"focalPlane":"first","reticle":"PSR Mil / PSR MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":35.5,"notes":"Riton flagship FFP precision scope."},
+        {"model":"X7 Conquer 3-24x50","category":"rifle-scope","magnification":"3-24x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"PSR Mil","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":32.0,"notes":"8x erector premium FFP."},
+        {"model":"X5 Conquer 5-25x50","category":"rifle-scope","magnification":"5-25x","objectiveMm":50,"tubeMm":30,"focalPlane":"first","reticle":"PSR Mil / PSR MOA","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.0,"notes":"Mid-tier FFP scope."},
+        {"model":"X3 Primal 3-15x44","category":"rifle-scope","magnification":"3-15x","objectiveMm":44,"tubeMm":30,"focalPlane":"second","reticle":"OSR","adjustmentUnit":"MOA","parallaxMin":50,"weightOz":21.2,"notes":"Hunter SFP."}
+      ]
+    },
+    {
+      "name": "EOTech",
+      "country": "USA",
+      "products": [
+        {"model":"EXPS3-0 Holographic","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"68 MOA Ring / 1 MOA Dot","adjustmentUnit":"MOA","weightOz":11.2,"notes":"Iconic combat holographic sight."},
+        {"model":"XPS2-0 Holographic","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"68 MOA Ring / 1 MOA Dot","adjustmentUnit":"MOA","weightOz":9.0,"notes":"Compact AA-powered holographic sight."},
+        {"model":"512 Holographic","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"65 MOA Ring / 1 MOA Dot","adjustmentUnit":"MOA","weightOz":11.2,"notes":"AA-battery economical holosight."},
+        {"model":"VUDU 1-6x24 FFP","category":"lpvo","magnification":"1-6x","objectiveMm":24,"tubeMm":30,"focalPlane":"first","reticle":"HC3 / SR1 / SR2","adjustmentUnit":"MRAD","weightOz":17.7,"notes":"FFP LPVO from EOTech."},
+        {"model":"VUDU 5-25x50 FFP","category":"rifle-scope","magnification":"5-25x","objectiveMm":50,"tubeMm":34,"focalPlane":"first","reticle":"H59 / MD3 / MD4","adjustmentUnit":"MRAD","parallaxMin":25,"weightOz":29.0,"notes":"FFP precision scope."}
+      ]
+    },
+    {
+      "name": "Aimpoint",
+      "country": "Sweden",
+      "products": [
+        {"model":"CompM5","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":30,"focalPlane":"n/a","reticle":"2 MOA Dot","adjustmentUnit":"MOA","weightOz":5.2,"notes":"Compact mil-spec red dot, AAA powered."},
+        {"model":"CompM5s","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":30,"focalPlane":"n/a","reticle":"2 MOA Dot","adjustmentUnit":"MOA","weightOz":5.0,"notes":"Slimmer M5 variant."},
+        {"model":"PRO Patrol Rifle Optic","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":30,"focalPlane":"n/a","reticle":"2 MOA Dot","adjustmentUnit":"MOA","weightOz":7.8,"notes":"Patrol-grade red dot."},
+        {"model":"Micro T-2","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"2 MOA Dot","adjustmentUnit":"MOA","weightOz":3.4,"notes":"Compact 30mm-tube reflex sight."},
+        {"model":"Micro H-2","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"2 MOA Dot","adjustmentUnit":"MOA","weightOz":3.4,"notes":"Hunter-friendly Micro H-2."},
+        {"model":"Acro P-2","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"3.5 MOA Dot","adjustmentUnit":"MOA","weightOz":2.1,"notes":"Closed-emitter handgun / pistol red dot."},
+        {"model":"CompM4s","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":30,"focalPlane":"n/a","reticle":"2 MOA Dot","adjustmentUnit":"MOA","weightOz":11.6,"notes":"Original AA-powered Aimpoint."}
+      ]
+    },
+    {
+      "name": "Holosun",
+      "country": "China",
+      "products": [
+        {"model":"AEMS","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"2 MOA Dot / 65 MOA Ring","adjustmentUnit":"MOA","weightOz":4.3,"notes":"Enclosed-emitter AR red dot."},
+        {"model":"AEMS Core","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"2 MOA Dot","adjustmentUnit":"MOA","weightOz":4.3,"notes":"Stripped-down AEMS, dot-only."},
+        {"model":"HS503CU","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":20,"focalPlane":"n/a","reticle":"2 MOA Dot / 65 MOA Ring","adjustmentUnit":"MOA","weightOz":4.6,"notes":"Solar / battery red dot."},
+        {"model":"HS510C","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"2 MOA Dot / 65 MOA Ring","adjustmentUnit":"MOA","weightOz":7.0,"notes":"Open reflex with solar failsafe."},
+        {"model":"HM3X Magnifier","category":"red-dot","magnification":"3x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"n/a (passive magnifier)","adjustmentUnit":"MOA","weightOz":11.5,"notes":"Flip-to-side red-dot magnifier."},
+        {"model":"HE509T-RD X2","category":"red-dot","magnification":"1x","objectiveMm":0,"tubeMm":0,"focalPlane":"n/a","reticle":"2 MOA Dot / 32 MOA Ring","adjustmentUnit":"MOA","weightOz":1.8,"notes":"Closed-emitter pistol red dot."}
+      ]
+    }
+  ]
+}

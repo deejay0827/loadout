@@ -114,6 +114,7 @@
 import 'package:drift/drift.dart';
 
 import '../database/database.dart';
+import '../utils/natural_sort.dart';
 
 /// CRUD + lifecycle helpers for [BrassLots].
 ///
@@ -130,19 +131,28 @@ class BrassLotRepository {
   BrassLotRepository(this.db);
   final AppDatabase db;
 
-  Stream<List<BrassLotRow>> watchAll() => (db.select(db.brassLots)
-        ..orderBy([
-          (l) => OrderingTerm.asc(l.caliber),
-          (l) => OrderingTerm.asc(l.name),
-        ]))
-      .watch();
+  /// Streams every brass lot, naturally sorted by caliber then name.
+  /// "9mm Luger" sorts before "10mm Auto" before ".30-06 Springfield"
+  /// rather than the lexicographic ".30-06" → "10mm" → "9mm" order
+  /// SQLite's `ORDER BY` would produce.
+  Stream<List<BrassLotRow>> watchAll() {
+    return db.select(db.brassLots).watch().map(_naturalSorted);
+  }
 
-  Future<List<BrassLotRow>> getAll() => (db.select(db.brassLots)
-        ..orderBy([
-          (l) => OrderingTerm.asc(l.caliber),
-          (l) => OrderingTerm.asc(l.name),
-        ]))
-      .get();
+  Future<List<BrassLotRow>> getAll() async {
+    final rows = await db.select(db.brassLots).get();
+    return _naturalSorted(rows);
+  }
+
+  static List<BrassLotRow> _naturalSorted(List<BrassLotRow> rows) {
+    final list = [...rows];
+    list.sort((a, b) {
+      final c = naturalCompare(a.caliber, b.caliber);
+      if (c != 0) return c;
+      return naturalCompare(a.name, b.name);
+    });
+    return list;
+  }
 
   Future<BrassLotRow?> getById(int id) =>
       (db.select(db.brassLots)..where((l) => l.id.equals(id)))

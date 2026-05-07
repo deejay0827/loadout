@@ -47,6 +47,20 @@ We do not see, store, or transmit any of your reloading data — recipes,
 firearms, components, or inventory. LoadOut does not operate any backend
 that receives or stores reloading data.
 
+## Data we download from a server
+
+When the app starts, it makes a one-way read request to Firebase Storage to
+check whether the bundled reference catalog (cartridges, powders, bullets,
+primers, brass, firearms, parts) has been corrected or expanded since the
+version of the app you installed. If a newer version is available, the
+updated catalog file is downloaded and cached on your device.
+
+This is a download-only, server-to-device flow. We do not upload anything
+about you, your device, or your reloading data when this check runs. The
+catalog files are the same for every user and contain no personal
+information. The check happens in the background and is skipped silently
+if you are offline.
+
 ## Backups & exports
 
 You have two ways to get your data off your device. Both are designed so

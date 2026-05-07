@@ -36,7 +36,7 @@
 // methods plus generated companions like `UserLoadsCompanion` for
 // constructing rows.
 //
-// `schemaVersion` is currently 5. The `MigrationStrategy` defines two
+// `schemaVersion` is currently 7. The `MigrationStrategy` defines two
 // callbacks: `onCreate` runs on a fresh install (creates every table, then
 // seeds the 8 standard reloading process steps), and `onUpgrade` runs
 // when an installed user opens a build with a newer `schemaVersion`. The
@@ -100,7 +100,8 @@
 // `CURRENT_TIMESTAMP` under the hood.
 //
 // The migration sequence in `onUpgrade` is `if (from < 2) { ... }
-// if (from < 3) { ... } if (from < 4) { ... } if (from < 5) { ... }` —
+// if (from < 3) { ... } if (from < 4) { ... } if (from < 5) { ... }
+// if (from < 6) { ... } if (from < 7) { ... }` —
 // drift gives you the user's old schema version and you fall through
 // every gap that needs catching up. Don't use `else if`: a user three
 // versions behind needs every block to run in order.
@@ -170,7 +171,7 @@ class Manufacturers extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   TextColumn get country => text().nullable()();
-  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts'
+  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts' | 'optics'
   TextColumn get kind => text()();
 
   @override
@@ -293,6 +294,39 @@ class FirearmParts extends Table {
   TextColumn get name => text()();
   TextColumn get category => text()();
   TextColumn get compatibleWithJson => text().withDefault(const Constant('[]'))();
+  TextColumn get notes => text().nullable()();
+}
+
+/// Reference catalog of rifle scopes / optics. Seeded from
+/// `assets/seed_data/optics.json` (added schema v7). The dropdown on the
+/// firearm form lets the user pick the optic mounted on a given rifle so
+/// the ballistics calculator can later surface the make/model alongside
+/// the rifle name. Sight height is intentionally NOT stored here — it's a
+/// function of the rings/mount the user chooses, not the optic, so it
+/// remains a per-firearm field on `UserFirearms.sightHeightIn`.
+@DataClassName('OpticRow')
+class Optics extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get manufacturerId => integer().references(Manufacturers, #id)();
+  TextColumn get model => text()();
+  /// 'rifle-scope' | 'lpvo' | 'red-dot' | 'prism' | 'spotting'
+  TextColumn get category => text()();
+  /// e.g. "6-36x" or "1-6x" or "1x".
+  TextColumn get magnification => text()();
+  /// Objective lens diameter in mm. 0 for non-objective optics (most red dots).
+  IntColumn get objectiveMm => integer()();
+  /// Main tube diameter in mm (30, 34, 35, 36 etc.). 0 for tubeless reflex sights.
+  IntColumn get tubeMm => integer()();
+  /// 'first' | 'second' | 'n/a'
+  TextColumn get focalPlane => text()();
+  /// Free-form reticle name / family.
+  TextColumn get reticle => text()();
+  /// 'MOA' | 'MIL' (turret adjustment unit).
+  TextColumn get adjustmentUnit => text()();
+  /// Minimum side-focus / parallax setting in yards (nullable; rare on red dots).
+  IntColumn get parallaxMinYd => integer().nullable()();
+  /// Optic weight in ounces (nullable).
+  RealColumn get weightOz => real().nullable()();
   TextColumn get notes => text().nullable()();
 }
 
@@ -521,6 +555,21 @@ class UserFirearms extends Table {
   /// Current CBTO-to-touch — drifts as the throat erodes.
   RealColumn get throatErosionCbtoIn => real().nullable()();
   DateTimeColumn get lastThroatMeasurementDate => dateTime().nullable()();
+
+  // ── Ballistics defaults (added schema v6) ──
+  /// Last-measured / preferred muzzle velocity for this firearm.
+  /// Used by the ballistics calculator's rifle picker to pre-fill MV.
+  RealColumn get defaultMuzzleVelocityFps => real().nullable()();
+  /// Typical zero range in yards (e.g. 100 or 200).
+  IntColumn get defaultZeroRangeYd => integer().nullable()();
+  /// Center of optic above bore axis, typically 1.5–2.0 in.
+  RealColumn get sightHeightIn => real().nullable()();
+
+  // ── Optic link (added schema v7) ──
+  /// Optional link to a row in `Optics` representing the scope mounted on
+  /// this firearm. Setting it does NOT auto-populate `sightHeightIn`
+  /// because sight height depends on the rings/mount, not the optic.
+  IntColumn get opticsId => integer().nullable()();
 }
 
 // ─────────────────────── Batches (user, schema v4, feature #12) ───────────────────────
@@ -693,6 +742,8 @@ class UserCustomFieldValues extends Table {
     UserCustomFieldValues,
     // Schema v5 additions.
     LoadDevelopmentSessions,
+    // Schema v7 additions.
+    Optics,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -701,7 +752,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -826,6 +877,26 @@ class AppDatabase extends _$AppDatabase {
             // ladder recipes into one experiment.
             await m.createTable(loadDevelopmentSessions);
           }
+          if (from < 6) {
+            // v6 — Ballistics defaults on UserFirearms. Three nullable
+            // columns let the user save per-firearm muzzle velocity, zero
+            // range, and sight height so the ballistics calculator's
+            // rifle picker can pre-fill those fields.
+            await m.addColumn(
+                userFirearms, userFirearms.defaultMuzzleVelocityFps);
+            await m.addColumn(userFirearms, userFirearms.defaultZeroRangeYd);
+            await m.addColumn(userFirearms, userFirearms.sightHeightIn);
+          }
+          if (from < 7) {
+            // v7 — Optics catalog + per-firearm opticsId link. Adds the
+            // `Optics` reference table (seeded from optics.json) and a
+            // nullable `opticsId` column on UserFirearms so a user can
+            // record which scope/red-dot is mounted on each rifle. Sight
+            // height stays a per-firearm field because it depends on the
+            // rings/mount the user picks, not the optic itself.
+            await m.createTable(optics);
+            await m.addColumn(userFirearms, userFirearms.opticsId);
+          }
         },
       );
 
@@ -948,5 +1019,61 @@ class AppDatabase extends _$AppDatabase {
         .getSingleOrNull();
     if (row == null) return false; // empty DB; needsSeed handles that path
     return row.bodyDiameterIn == null;
+  }
+
+  // ── Per-table emptiness getters (used by SeedLoader on first run /
+  //    after a SeedUpdater download). Each one mirrors `primersAreEmpty`
+  //    above — small but explicit, so we don't need a generic helper that
+  //    has to fight Dart's type system over `selectOnly(...)` inputs. ──
+
+  /// True when the powders catalog is empty.
+  Future<bool> get powdersAreEmpty async {
+    final count = await (selectOnly(powders)..addColumns([powders.id.count()]))
+        .map((row) => row.read(powders.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the bullets catalog is empty.
+  Future<bool> get bulletsAreEmpty async {
+    final count = await (selectOnly(bullets)..addColumns([bullets.id.count()]))
+        .map((row) => row.read(bullets.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the brass-products catalog is empty.
+  Future<bool> get brassProductsAreEmpty async {
+    final count = await (selectOnly(brassProducts)
+          ..addColumns([brassProducts.id.count()]))
+        .map((row) => row.read(brassProducts.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the firearms reference catalog is empty.
+  Future<bool> get firearmsRefAreEmpty async {
+    final count = await (selectOnly(firearmsRef)
+          ..addColumns([firearmsRef.id.count()]))
+        .map((row) => row.read(firearmsRef.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the aftermarket-parts catalog is empty.
+  Future<bool> get firearmPartsAreEmpty async {
+    final count = await (selectOnly(firearmParts)
+          ..addColumns([firearmParts.id.count()]))
+        .map((row) => row.read(firearmParts.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the optics catalog is empty.
+  Future<bool> get opticsAreEmpty async {
+    final count = await (selectOnly(optics)..addColumns([optics.id.count()]))
+        .map((row) => row.read(optics.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
   }
 }

@@ -1,0 +1,29 @@
+rules_version = '2';
+
+// LoadOut Firebase Storage rules.
+//
+// The only objects we serve out of Storage are reference catalog files
+// (cartridges, powders, bullets, primers, brass, firearms, parts) and the
+// manifest that describes their current version numbers. The app pulls
+// these on cold-start to refresh the on-device SQLite reference tables
+// without requiring an App Store / Play Store release.
+//
+// `seed_data/*` is therefore PUBLIC READ — every install, signed in or
+// not, anonymous or anonymous-elevated, must be able to GET these files.
+// Writes are restricted to authenticated developers; in practice, uploads
+// are done from the Firebase Console or `gsutil` by a project member.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /seed_data/{file} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Default-deny everything else. Reference data is the only thing
+    // LoadOut stores in Firebase Storage; user reloading data stays on
+    // the device.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

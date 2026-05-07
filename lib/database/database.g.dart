@@ -133,7 +133,7 @@ class ManufacturerRow extends DataClass implements Insertable<ManufacturerRow> {
   final String name;
   final String? country;
 
-  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts'
+  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts' | 'optics'
   final String kind;
   const ManufacturerRow({
     required this.id,
@@ -11225,6 +11225,49 @@ class $UserFirearmsTable extends UserFirearms
         type: DriftSqlType.dateTime,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _defaultMuzzleVelocityFpsMeta =
+      const VerificationMeta('defaultMuzzleVelocityFps');
+  @override
+  late final GeneratedColumn<double> defaultMuzzleVelocityFps =
+      GeneratedColumn<double>(
+        'default_muzzle_velocity_fps',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _defaultZeroRangeYdMeta =
+      const VerificationMeta('defaultZeroRangeYd');
+  @override
+  late final GeneratedColumn<int> defaultZeroRangeYd = GeneratedColumn<int>(
+    'default_zero_range_yd',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sightHeightInMeta = const VerificationMeta(
+    'sightHeightIn',
+  );
+  @override
+  late final GeneratedColumn<double> sightHeightIn = GeneratedColumn<double>(
+    'sight_height_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _opticsIdMeta = const VerificationMeta(
+    'opticsId',
+  );
+  @override
+  late final GeneratedColumn<int> opticsId = GeneratedColumn<int>(
+    'optics_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -11247,6 +11290,10 @@ class $UserFirearmsTable extends UserFirearms
     cumulativeRoundCountSnapshot,
     throatErosionCbtoIn,
     lastThroatMeasurementDate,
+    defaultMuzzleVelocityFps,
+    defaultZeroRangeYd,
+    sightHeightIn,
+    opticsId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -11406,6 +11453,39 @@ class $UserFirearmsTable extends UserFirearms
         ),
       );
     }
+    if (data.containsKey('default_muzzle_velocity_fps')) {
+      context.handle(
+        _defaultMuzzleVelocityFpsMeta,
+        defaultMuzzleVelocityFps.isAcceptableOrUnknown(
+          data['default_muzzle_velocity_fps']!,
+          _defaultMuzzleVelocityFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('default_zero_range_yd')) {
+      context.handle(
+        _defaultZeroRangeYdMeta,
+        defaultZeroRangeYd.isAcceptableOrUnknown(
+          data['default_zero_range_yd']!,
+          _defaultZeroRangeYdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sight_height_in')) {
+      context.handle(
+        _sightHeightInMeta,
+        sightHeightIn.isAcceptableOrUnknown(
+          data['sight_height_in']!,
+          _sightHeightInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('optics_id')) {
+      context.handle(
+        _opticsIdMeta,
+        opticsId.isAcceptableOrUnknown(data['optics_id']!, _opticsIdMeta),
+      );
+    }
     return context;
   }
 
@@ -11495,6 +11575,22 @@ class $UserFirearmsTable extends UserFirearms
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_throat_measurement_date'],
       ),
+      defaultMuzzleVelocityFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}default_muzzle_velocity_fps'],
+      ),
+      defaultZeroRangeYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}default_zero_range_yd'],
+      ),
+      sightHeightIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sight_height_in'],
+      ),
+      opticsId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}optics_id'],
+      ),
     );
   }
 
@@ -11533,6 +11629,21 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
   /// Current CBTO-to-touch — drifts as the throat erodes.
   final double? throatErosionCbtoIn;
   final DateTime? lastThroatMeasurementDate;
+
+  /// Last-measured / preferred muzzle velocity for this firearm.
+  /// Used by the ballistics calculator's rifle picker to pre-fill MV.
+  final double? defaultMuzzleVelocityFps;
+
+  /// Typical zero range in yards (e.g. 100 or 200).
+  final int? defaultZeroRangeYd;
+
+  /// Center of optic above bore axis, typically 1.5–2.0 in.
+  final double? sightHeightIn;
+
+  /// Optional link to a row in `Optics` representing the scope mounted on
+  /// this firearm. Setting it does NOT auto-populate `sightHeightIn`
+  /// because sight height depends on the rings/mount, not the optic.
+  final int? opticsId;
   const UserFirearmRow({
     required this.id,
     required this.name,
@@ -11554,6 +11665,10 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     this.cumulativeRoundCountSnapshot,
     this.throatErosionCbtoIn,
     this.lastThroatMeasurementDate,
+    this.defaultMuzzleVelocityFps,
+    this.defaultZeroRangeYd,
+    this.sightHeightIn,
+    this.opticsId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -11612,6 +11727,20 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
         lastThroatMeasurementDate,
       );
     }
+    if (!nullToAbsent || defaultMuzzleVelocityFps != null) {
+      map['default_muzzle_velocity_fps'] = Variable<double>(
+        defaultMuzzleVelocityFps,
+      );
+    }
+    if (!nullToAbsent || defaultZeroRangeYd != null) {
+      map['default_zero_range_yd'] = Variable<int>(defaultZeroRangeYd);
+    }
+    if (!nullToAbsent || sightHeightIn != null) {
+      map['sight_height_in'] = Variable<double>(sightHeightIn);
+    }
+    if (!nullToAbsent || opticsId != null) {
+      map['optics_id'] = Variable<int>(opticsId);
+    }
     return map;
   }
 
@@ -11667,6 +11796,18 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           lastThroatMeasurementDate == null && nullToAbsent
           ? const Value.absent()
           : Value(lastThroatMeasurementDate),
+      defaultMuzzleVelocityFps: defaultMuzzleVelocityFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultMuzzleVelocityFps),
+      defaultZeroRangeYd: defaultZeroRangeYd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(defaultZeroRangeYd),
+      sightHeightIn: sightHeightIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sightHeightIn),
+      opticsId: opticsId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(opticsId),
     );
   }
 
@@ -11706,6 +11847,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       lastThroatMeasurementDate: serializer.fromJson<DateTime?>(
         json['lastThroatMeasurementDate'],
       ),
+      defaultMuzzleVelocityFps: serializer.fromJson<double?>(
+        json['defaultMuzzleVelocityFps'],
+      ),
+      defaultZeroRangeYd: serializer.fromJson<int?>(json['defaultZeroRangeYd']),
+      sightHeightIn: serializer.fromJson<double?>(json['sightHeightIn']),
+      opticsId: serializer.fromJson<int?>(json['opticsId']),
     );
   }
   @override
@@ -11736,6 +11883,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       'lastThroatMeasurementDate': serializer.toJson<DateTime?>(
         lastThroatMeasurementDate,
       ),
+      'defaultMuzzleVelocityFps': serializer.toJson<double?>(
+        defaultMuzzleVelocityFps,
+      ),
+      'defaultZeroRangeYd': serializer.toJson<int?>(defaultZeroRangeYd),
+      'sightHeightIn': serializer.toJson<double?>(sightHeightIn),
+      'opticsId': serializer.toJson<int?>(opticsId),
     };
   }
 
@@ -11760,6 +11913,10 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     Value<int?> cumulativeRoundCountSnapshot = const Value.absent(),
     Value<double?> throatErosionCbtoIn = const Value.absent(),
     Value<DateTime?> lastThroatMeasurementDate = const Value.absent(),
+    Value<double?> defaultMuzzleVelocityFps = const Value.absent(),
+    Value<int?> defaultZeroRangeYd = const Value.absent(),
+    Value<double?> sightHeightIn = const Value.absent(),
+    Value<int?> opticsId = const Value.absent(),
   }) => UserFirearmRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -11795,6 +11952,16 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     lastThroatMeasurementDate: lastThroatMeasurementDate.present
         ? lastThroatMeasurementDate.value
         : this.lastThroatMeasurementDate,
+    defaultMuzzleVelocityFps: defaultMuzzleVelocityFps.present
+        ? defaultMuzzleVelocityFps.value
+        : this.defaultMuzzleVelocityFps,
+    defaultZeroRangeYd: defaultZeroRangeYd.present
+        ? defaultZeroRangeYd.value
+        : this.defaultZeroRangeYd,
+    sightHeightIn: sightHeightIn.present
+        ? sightHeightIn.value
+        : this.sightHeightIn,
+    opticsId: opticsId.present ? opticsId.value : this.opticsId,
   );
   UserFirearmRow copyWithCompanion(UserFirearmsCompanion data) {
     return UserFirearmRow(
@@ -11838,6 +12005,16 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       lastThroatMeasurementDate: data.lastThroatMeasurementDate.present
           ? data.lastThroatMeasurementDate.value
           : this.lastThroatMeasurementDate,
+      defaultMuzzleVelocityFps: data.defaultMuzzleVelocityFps.present
+          ? data.defaultMuzzleVelocityFps.value
+          : this.defaultMuzzleVelocityFps,
+      defaultZeroRangeYd: data.defaultZeroRangeYd.present
+          ? data.defaultZeroRangeYd.value
+          : this.defaultZeroRangeYd,
+      sightHeightIn: data.sightHeightIn.present
+          ? data.sightHeightIn.value
+          : this.sightHeightIn,
+      opticsId: data.opticsId.present ? data.opticsId.value : this.opticsId,
     );
   }
 
@@ -11865,13 +12042,17 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
             'cumulativeRoundCountSnapshot: $cumulativeRoundCountSnapshot, ',
           )
           ..write('throatErosionCbtoIn: $throatErosionCbtoIn, ')
-          ..write('lastThroatMeasurementDate: $lastThroatMeasurementDate')
+          ..write('lastThroatMeasurementDate: $lastThroatMeasurementDate, ')
+          ..write('defaultMuzzleVelocityFps: $defaultMuzzleVelocityFps, ')
+          ..write('defaultZeroRangeYd: $defaultZeroRangeYd, ')
+          ..write('sightHeightIn: $sightHeightIn, ')
+          ..write('opticsId: $opticsId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     manufacturer,
@@ -11892,7 +12073,11 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     cumulativeRoundCountSnapshot,
     throatErosionCbtoIn,
     lastThroatMeasurementDate,
-  );
+    defaultMuzzleVelocityFps,
+    defaultZeroRangeYd,
+    sightHeightIn,
+    opticsId,
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -11917,7 +12102,11 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           other.cumulativeRoundCountSnapshot ==
               this.cumulativeRoundCountSnapshot &&
           other.throatErosionCbtoIn == this.throatErosionCbtoIn &&
-          other.lastThroatMeasurementDate == this.lastThroatMeasurementDate);
+          other.lastThroatMeasurementDate == this.lastThroatMeasurementDate &&
+          other.defaultMuzzleVelocityFps == this.defaultMuzzleVelocityFps &&
+          other.defaultZeroRangeYd == this.defaultZeroRangeYd &&
+          other.sightHeightIn == this.sightHeightIn &&
+          other.opticsId == this.opticsId);
 }
 
 class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
@@ -11941,6 +12130,10 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
   final Value<int?> cumulativeRoundCountSnapshot;
   final Value<double?> throatErosionCbtoIn;
   final Value<DateTime?> lastThroatMeasurementDate;
+  final Value<double?> defaultMuzzleVelocityFps;
+  final Value<int?> defaultZeroRangeYd;
+  final Value<double?> sightHeightIn;
+  final Value<int?> opticsId;
   const UserFirearmsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -11962,6 +12155,10 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.cumulativeRoundCountSnapshot = const Value.absent(),
     this.throatErosionCbtoIn = const Value.absent(),
     this.lastThroatMeasurementDate = const Value.absent(),
+    this.defaultMuzzleVelocityFps = const Value.absent(),
+    this.defaultZeroRangeYd = const Value.absent(),
+    this.sightHeightIn = const Value.absent(),
+    this.opticsId = const Value.absent(),
   });
   UserFirearmsCompanion.insert({
     this.id = const Value.absent(),
@@ -11984,6 +12181,10 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.cumulativeRoundCountSnapshot = const Value.absent(),
     this.throatErosionCbtoIn = const Value.absent(),
     this.lastThroatMeasurementDate = const Value.absent(),
+    this.defaultMuzzleVelocityFps = const Value.absent(),
+    this.defaultZeroRangeYd = const Value.absent(),
+    this.sightHeightIn = const Value.absent(),
+    this.opticsId = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserFirearmRow> custom({
     Expression<int>? id,
@@ -12006,6 +12207,10 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Expression<int>? cumulativeRoundCountSnapshot,
     Expression<double>? throatErosionCbtoIn,
     Expression<DateTime>? lastThroatMeasurementDate,
+    Expression<double>? defaultMuzzleVelocityFps,
+    Expression<int>? defaultZeroRangeYd,
+    Expression<double>? sightHeightIn,
+    Expression<int>? opticsId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -12033,6 +12238,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
         'throat_erosion_cbto_in': throatErosionCbtoIn,
       if (lastThroatMeasurementDate != null)
         'last_throat_measurement_date': lastThroatMeasurementDate,
+      if (defaultMuzzleVelocityFps != null)
+        'default_muzzle_velocity_fps': defaultMuzzleVelocityFps,
+      if (defaultZeroRangeYd != null)
+        'default_zero_range_yd': defaultZeroRangeYd,
+      if (sightHeightIn != null) 'sight_height_in': sightHeightIn,
+      if (opticsId != null) 'optics_id': opticsId,
     });
   }
 
@@ -12057,6 +12268,10 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Value<int?>? cumulativeRoundCountSnapshot,
     Value<double?>? throatErosionCbtoIn,
     Value<DateTime?>? lastThroatMeasurementDate,
+    Value<double?>? defaultMuzzleVelocityFps,
+    Value<int?>? defaultZeroRangeYd,
+    Value<double?>? sightHeightIn,
+    Value<int?>? opticsId,
   }) {
     return UserFirearmsCompanion(
       id: id ?? this.id,
@@ -12081,6 +12296,11 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       throatErosionCbtoIn: throatErosionCbtoIn ?? this.throatErosionCbtoIn,
       lastThroatMeasurementDate:
           lastThroatMeasurementDate ?? this.lastThroatMeasurementDate,
+      defaultMuzzleVelocityFps:
+          defaultMuzzleVelocityFps ?? this.defaultMuzzleVelocityFps,
+      defaultZeroRangeYd: defaultZeroRangeYd ?? this.defaultZeroRangeYd,
+      sightHeightIn: sightHeightIn ?? this.sightHeightIn,
+      opticsId: opticsId ?? this.opticsId,
     );
   }
 
@@ -12153,6 +12373,20 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
         lastThroatMeasurementDate.value,
       );
     }
+    if (defaultMuzzleVelocityFps.present) {
+      map['default_muzzle_velocity_fps'] = Variable<double>(
+        defaultMuzzleVelocityFps.value,
+      );
+    }
+    if (defaultZeroRangeYd.present) {
+      map['default_zero_range_yd'] = Variable<int>(defaultZeroRangeYd.value);
+    }
+    if (sightHeightIn.present) {
+      map['sight_height_in'] = Variable<double>(sightHeightIn.value);
+    }
+    if (opticsId.present) {
+      map['optics_id'] = Variable<int>(opticsId.value);
+    }
     return map;
   }
 
@@ -12180,7 +12414,11 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
             'cumulativeRoundCountSnapshot: $cumulativeRoundCountSnapshot, ',
           )
           ..write('throatErosionCbtoIn: $throatErosionCbtoIn, ')
-          ..write('lastThroatMeasurementDate: $lastThroatMeasurementDate')
+          ..write('lastThroatMeasurementDate: $lastThroatMeasurementDate, ')
+          ..write('defaultMuzzleVelocityFps: $defaultMuzzleVelocityFps, ')
+          ..write('defaultZeroRangeYd: $defaultZeroRangeYd, ')
+          ..write('sightHeightIn: $sightHeightIn, ')
+          ..write('opticsId: $opticsId')
           ..write(')'))
         .toString();
   }
@@ -17198,6 +17436,794 @@ class LoadDevelopmentSessionsCompanion
   }
 }
 
+class $OpticsTable extends Optics with TableInfo<$OpticsTable, OpticRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OpticsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerIdMeta = const VerificationMeta(
+    'manufacturerId',
+  );
+  @override
+  late final GeneratedColumn<int> manufacturerId = GeneratedColumn<int>(
+    'manufacturer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES manufacturers (id)',
+    ),
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _magnificationMeta = const VerificationMeta(
+    'magnification',
+  );
+  @override
+  late final GeneratedColumn<String> magnification = GeneratedColumn<String>(
+    'magnification',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _objectiveMmMeta = const VerificationMeta(
+    'objectiveMm',
+  );
+  @override
+  late final GeneratedColumn<int> objectiveMm = GeneratedColumn<int>(
+    'objective_mm',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _tubeMmMeta = const VerificationMeta('tubeMm');
+  @override
+  late final GeneratedColumn<int> tubeMm = GeneratedColumn<int>(
+    'tube_mm',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _focalPlaneMeta = const VerificationMeta(
+    'focalPlane',
+  );
+  @override
+  late final GeneratedColumn<String> focalPlane = GeneratedColumn<String>(
+    'focal_plane',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reticleMeta = const VerificationMeta(
+    'reticle',
+  );
+  @override
+  late final GeneratedColumn<String> reticle = GeneratedColumn<String>(
+    'reticle',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _adjustmentUnitMeta = const VerificationMeta(
+    'adjustmentUnit',
+  );
+  @override
+  late final GeneratedColumn<String> adjustmentUnit = GeneratedColumn<String>(
+    'adjustment_unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _parallaxMinYdMeta = const VerificationMeta(
+    'parallaxMinYd',
+  );
+  @override
+  late final GeneratedColumn<int> parallaxMinYd = GeneratedColumn<int>(
+    'parallax_min_yd',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weightOzMeta = const VerificationMeta(
+    'weightOz',
+  );
+  @override
+  late final GeneratedColumn<double> weightOz = GeneratedColumn<double>(
+    'weight_oz',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturerId,
+    model,
+    category,
+    magnification,
+    objectiveMm,
+    tubeMm,
+    focalPlane,
+    reticle,
+    adjustmentUnit,
+    parallaxMinYd,
+    weightOz,
+    notes,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'optics';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OpticRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer_id')) {
+      context.handle(
+        _manufacturerIdMeta,
+        manufacturerId.isAcceptableOrUnknown(
+          data['manufacturer_id']!,
+          _manufacturerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manufacturerIdMeta);
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('magnification')) {
+      context.handle(
+        _magnificationMeta,
+        magnification.isAcceptableOrUnknown(
+          data['magnification']!,
+          _magnificationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_magnificationMeta);
+    }
+    if (data.containsKey('objective_mm')) {
+      context.handle(
+        _objectiveMmMeta,
+        objectiveMm.isAcceptableOrUnknown(
+          data['objective_mm']!,
+          _objectiveMmMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_objectiveMmMeta);
+    }
+    if (data.containsKey('tube_mm')) {
+      context.handle(
+        _tubeMmMeta,
+        tubeMm.isAcceptableOrUnknown(data['tube_mm']!, _tubeMmMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_tubeMmMeta);
+    }
+    if (data.containsKey('focal_plane')) {
+      context.handle(
+        _focalPlaneMeta,
+        focalPlane.isAcceptableOrUnknown(data['focal_plane']!, _focalPlaneMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_focalPlaneMeta);
+    }
+    if (data.containsKey('reticle')) {
+      context.handle(
+        _reticleMeta,
+        reticle.isAcceptableOrUnknown(data['reticle']!, _reticleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reticleMeta);
+    }
+    if (data.containsKey('adjustment_unit')) {
+      context.handle(
+        _adjustmentUnitMeta,
+        adjustmentUnit.isAcceptableOrUnknown(
+          data['adjustment_unit']!,
+          _adjustmentUnitMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_adjustmentUnitMeta);
+    }
+    if (data.containsKey('parallax_min_yd')) {
+      context.handle(
+        _parallaxMinYdMeta,
+        parallaxMinYd.isAcceptableOrUnknown(
+          data['parallax_min_yd']!,
+          _parallaxMinYdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weight_oz')) {
+      context.handle(
+        _weightOzMeta,
+        weightOz.isAcceptableOrUnknown(data['weight_oz']!, _weightOzMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  OpticRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OpticRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}manufacturer_id'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      magnification: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}magnification'],
+      )!,
+      objectiveMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}objective_mm'],
+      )!,
+      tubeMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tube_mm'],
+      )!,
+      focalPlane: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}focal_plane'],
+      )!,
+      reticle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reticle'],
+      )!,
+      adjustmentUnit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}adjustment_unit'],
+      )!,
+      parallaxMinYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}parallax_min_yd'],
+      ),
+      weightOz: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weight_oz'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+    );
+  }
+
+  @override
+  $OpticsTable createAlias(String alias) {
+    return $OpticsTable(attachedDatabase, alias);
+  }
+}
+
+class OpticRow extends DataClass implements Insertable<OpticRow> {
+  final int id;
+  final int manufacturerId;
+  final String model;
+
+  /// 'rifle-scope' | 'lpvo' | 'red-dot' | 'prism' | 'spotting'
+  final String category;
+
+  /// e.g. "6-36x" or "1-6x" or "1x".
+  final String magnification;
+
+  /// Objective lens diameter in mm. 0 for non-objective optics (most red dots).
+  final int objectiveMm;
+
+  /// Main tube diameter in mm (30, 34, 35, 36 etc.). 0 for tubeless reflex sights.
+  final int tubeMm;
+
+  /// 'first' | 'second' | 'n/a'
+  final String focalPlane;
+
+  /// Free-form reticle name / family.
+  final String reticle;
+
+  /// 'MOA' | 'MIL' (turret adjustment unit).
+  final String adjustmentUnit;
+
+  /// Minimum side-focus / parallax setting in yards (nullable; rare on red dots).
+  final int? parallaxMinYd;
+
+  /// Optic weight in ounces (nullable).
+  final double? weightOz;
+  final String? notes;
+  const OpticRow({
+    required this.id,
+    required this.manufacturerId,
+    required this.model,
+    required this.category,
+    required this.magnification,
+    required this.objectiveMm,
+    required this.tubeMm,
+    required this.focalPlane,
+    required this.reticle,
+    required this.adjustmentUnit,
+    this.parallaxMinYd,
+    this.weightOz,
+    this.notes,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['manufacturer_id'] = Variable<int>(manufacturerId);
+    map['model'] = Variable<String>(model);
+    map['category'] = Variable<String>(category);
+    map['magnification'] = Variable<String>(magnification);
+    map['objective_mm'] = Variable<int>(objectiveMm);
+    map['tube_mm'] = Variable<int>(tubeMm);
+    map['focal_plane'] = Variable<String>(focalPlane);
+    map['reticle'] = Variable<String>(reticle);
+    map['adjustment_unit'] = Variable<String>(adjustmentUnit);
+    if (!nullToAbsent || parallaxMinYd != null) {
+      map['parallax_min_yd'] = Variable<int>(parallaxMinYd);
+    }
+    if (!nullToAbsent || weightOz != null) {
+      map['weight_oz'] = Variable<double>(weightOz);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    return map;
+  }
+
+  OpticsCompanion toCompanion(bool nullToAbsent) {
+    return OpticsCompanion(
+      id: Value(id),
+      manufacturerId: Value(manufacturerId),
+      model: Value(model),
+      category: Value(category),
+      magnification: Value(magnification),
+      objectiveMm: Value(objectiveMm),
+      tubeMm: Value(tubeMm),
+      focalPlane: Value(focalPlane),
+      reticle: Value(reticle),
+      adjustmentUnit: Value(adjustmentUnit),
+      parallaxMinYd: parallaxMinYd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parallaxMinYd),
+      weightOz: weightOz == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightOz),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+    );
+  }
+
+  factory OpticRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OpticRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturerId: serializer.fromJson<int>(json['manufacturerId']),
+      model: serializer.fromJson<String>(json['model']),
+      category: serializer.fromJson<String>(json['category']),
+      magnification: serializer.fromJson<String>(json['magnification']),
+      objectiveMm: serializer.fromJson<int>(json['objectiveMm']),
+      tubeMm: serializer.fromJson<int>(json['tubeMm']),
+      focalPlane: serializer.fromJson<String>(json['focalPlane']),
+      reticle: serializer.fromJson<String>(json['reticle']),
+      adjustmentUnit: serializer.fromJson<String>(json['adjustmentUnit']),
+      parallaxMinYd: serializer.fromJson<int?>(json['parallaxMinYd']),
+      weightOz: serializer.fromJson<double?>(json['weightOz']),
+      notes: serializer.fromJson<String?>(json['notes']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturerId': serializer.toJson<int>(manufacturerId),
+      'model': serializer.toJson<String>(model),
+      'category': serializer.toJson<String>(category),
+      'magnification': serializer.toJson<String>(magnification),
+      'objectiveMm': serializer.toJson<int>(objectiveMm),
+      'tubeMm': serializer.toJson<int>(tubeMm),
+      'focalPlane': serializer.toJson<String>(focalPlane),
+      'reticle': serializer.toJson<String>(reticle),
+      'adjustmentUnit': serializer.toJson<String>(adjustmentUnit),
+      'parallaxMinYd': serializer.toJson<int?>(parallaxMinYd),
+      'weightOz': serializer.toJson<double?>(weightOz),
+      'notes': serializer.toJson<String?>(notes),
+    };
+  }
+
+  OpticRow copyWith({
+    int? id,
+    int? manufacturerId,
+    String? model,
+    String? category,
+    String? magnification,
+    int? objectiveMm,
+    int? tubeMm,
+    String? focalPlane,
+    String? reticle,
+    String? adjustmentUnit,
+    Value<int?> parallaxMinYd = const Value.absent(),
+    Value<double?> weightOz = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+  }) => OpticRow(
+    id: id ?? this.id,
+    manufacturerId: manufacturerId ?? this.manufacturerId,
+    model: model ?? this.model,
+    category: category ?? this.category,
+    magnification: magnification ?? this.magnification,
+    objectiveMm: objectiveMm ?? this.objectiveMm,
+    tubeMm: tubeMm ?? this.tubeMm,
+    focalPlane: focalPlane ?? this.focalPlane,
+    reticle: reticle ?? this.reticle,
+    adjustmentUnit: adjustmentUnit ?? this.adjustmentUnit,
+    parallaxMinYd: parallaxMinYd.present
+        ? parallaxMinYd.value
+        : this.parallaxMinYd,
+    weightOz: weightOz.present ? weightOz.value : this.weightOz,
+    notes: notes.present ? notes.value : this.notes,
+  );
+  OpticRow copyWithCompanion(OpticsCompanion data) {
+    return OpticRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturerId: data.manufacturerId.present
+          ? data.manufacturerId.value
+          : this.manufacturerId,
+      model: data.model.present ? data.model.value : this.model,
+      category: data.category.present ? data.category.value : this.category,
+      magnification: data.magnification.present
+          ? data.magnification.value
+          : this.magnification,
+      objectiveMm: data.objectiveMm.present
+          ? data.objectiveMm.value
+          : this.objectiveMm,
+      tubeMm: data.tubeMm.present ? data.tubeMm.value : this.tubeMm,
+      focalPlane: data.focalPlane.present
+          ? data.focalPlane.value
+          : this.focalPlane,
+      reticle: data.reticle.present ? data.reticle.value : this.reticle,
+      adjustmentUnit: data.adjustmentUnit.present
+          ? data.adjustmentUnit.value
+          : this.adjustmentUnit,
+      parallaxMinYd: data.parallaxMinYd.present
+          ? data.parallaxMinYd.value
+          : this.parallaxMinYd,
+      weightOz: data.weightOz.present ? data.weightOz.value : this.weightOz,
+      notes: data.notes.present ? data.notes.value : this.notes,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OpticRow(')
+          ..write('id: $id, ')
+          ..write('manufacturerId: $manufacturerId, ')
+          ..write('model: $model, ')
+          ..write('category: $category, ')
+          ..write('magnification: $magnification, ')
+          ..write('objectiveMm: $objectiveMm, ')
+          ..write('tubeMm: $tubeMm, ')
+          ..write('focalPlane: $focalPlane, ')
+          ..write('reticle: $reticle, ')
+          ..write('adjustmentUnit: $adjustmentUnit, ')
+          ..write('parallaxMinYd: $parallaxMinYd, ')
+          ..write('weightOz: $weightOz, ')
+          ..write('notes: $notes')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manufacturerId,
+    model,
+    category,
+    magnification,
+    objectiveMm,
+    tubeMm,
+    focalPlane,
+    reticle,
+    adjustmentUnit,
+    parallaxMinYd,
+    weightOz,
+    notes,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OpticRow &&
+          other.id == this.id &&
+          other.manufacturerId == this.manufacturerId &&
+          other.model == this.model &&
+          other.category == this.category &&
+          other.magnification == this.magnification &&
+          other.objectiveMm == this.objectiveMm &&
+          other.tubeMm == this.tubeMm &&
+          other.focalPlane == this.focalPlane &&
+          other.reticle == this.reticle &&
+          other.adjustmentUnit == this.adjustmentUnit &&
+          other.parallaxMinYd == this.parallaxMinYd &&
+          other.weightOz == this.weightOz &&
+          other.notes == this.notes);
+}
+
+class OpticsCompanion extends UpdateCompanion<OpticRow> {
+  final Value<int> id;
+  final Value<int> manufacturerId;
+  final Value<String> model;
+  final Value<String> category;
+  final Value<String> magnification;
+  final Value<int> objectiveMm;
+  final Value<int> tubeMm;
+  final Value<String> focalPlane;
+  final Value<String> reticle;
+  final Value<String> adjustmentUnit;
+  final Value<int?> parallaxMinYd;
+  final Value<double?> weightOz;
+  final Value<String?> notes;
+  const OpticsCompanion({
+    this.id = const Value.absent(),
+    this.manufacturerId = const Value.absent(),
+    this.model = const Value.absent(),
+    this.category = const Value.absent(),
+    this.magnification = const Value.absent(),
+    this.objectiveMm = const Value.absent(),
+    this.tubeMm = const Value.absent(),
+    this.focalPlane = const Value.absent(),
+    this.reticle = const Value.absent(),
+    this.adjustmentUnit = const Value.absent(),
+    this.parallaxMinYd = const Value.absent(),
+    this.weightOz = const Value.absent(),
+    this.notes = const Value.absent(),
+  });
+  OpticsCompanion.insert({
+    this.id = const Value.absent(),
+    required int manufacturerId,
+    required String model,
+    required String category,
+    required String magnification,
+    required int objectiveMm,
+    required int tubeMm,
+    required String focalPlane,
+    required String reticle,
+    required String adjustmentUnit,
+    this.parallaxMinYd = const Value.absent(),
+    this.weightOz = const Value.absent(),
+    this.notes = const Value.absent(),
+  }) : manufacturerId = Value(manufacturerId),
+       model = Value(model),
+       category = Value(category),
+       magnification = Value(magnification),
+       objectiveMm = Value(objectiveMm),
+       tubeMm = Value(tubeMm),
+       focalPlane = Value(focalPlane),
+       reticle = Value(reticle),
+       adjustmentUnit = Value(adjustmentUnit);
+  static Insertable<OpticRow> custom({
+    Expression<int>? id,
+    Expression<int>? manufacturerId,
+    Expression<String>? model,
+    Expression<String>? category,
+    Expression<String>? magnification,
+    Expression<int>? objectiveMm,
+    Expression<int>? tubeMm,
+    Expression<String>? focalPlane,
+    Expression<String>? reticle,
+    Expression<String>? adjustmentUnit,
+    Expression<int>? parallaxMinYd,
+    Expression<double>? weightOz,
+    Expression<String>? notes,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturerId != null) 'manufacturer_id': manufacturerId,
+      if (model != null) 'model': model,
+      if (category != null) 'category': category,
+      if (magnification != null) 'magnification': magnification,
+      if (objectiveMm != null) 'objective_mm': objectiveMm,
+      if (tubeMm != null) 'tube_mm': tubeMm,
+      if (focalPlane != null) 'focal_plane': focalPlane,
+      if (reticle != null) 'reticle': reticle,
+      if (adjustmentUnit != null) 'adjustment_unit': adjustmentUnit,
+      if (parallaxMinYd != null) 'parallax_min_yd': parallaxMinYd,
+      if (weightOz != null) 'weight_oz': weightOz,
+      if (notes != null) 'notes': notes,
+    });
+  }
+
+  OpticsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? manufacturerId,
+    Value<String>? model,
+    Value<String>? category,
+    Value<String>? magnification,
+    Value<int>? objectiveMm,
+    Value<int>? tubeMm,
+    Value<String>? focalPlane,
+    Value<String>? reticle,
+    Value<String>? adjustmentUnit,
+    Value<int?>? parallaxMinYd,
+    Value<double?>? weightOz,
+    Value<String?>? notes,
+  }) {
+    return OpticsCompanion(
+      id: id ?? this.id,
+      manufacturerId: manufacturerId ?? this.manufacturerId,
+      model: model ?? this.model,
+      category: category ?? this.category,
+      magnification: magnification ?? this.magnification,
+      objectiveMm: objectiveMm ?? this.objectiveMm,
+      tubeMm: tubeMm ?? this.tubeMm,
+      focalPlane: focalPlane ?? this.focalPlane,
+      reticle: reticle ?? this.reticle,
+      adjustmentUnit: adjustmentUnit ?? this.adjustmentUnit,
+      parallaxMinYd: parallaxMinYd ?? this.parallaxMinYd,
+      weightOz: weightOz ?? this.weightOz,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturerId.present) {
+      map['manufacturer_id'] = Variable<int>(manufacturerId.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (magnification.present) {
+      map['magnification'] = Variable<String>(magnification.value);
+    }
+    if (objectiveMm.present) {
+      map['objective_mm'] = Variable<int>(objectiveMm.value);
+    }
+    if (tubeMm.present) {
+      map['tube_mm'] = Variable<int>(tubeMm.value);
+    }
+    if (focalPlane.present) {
+      map['focal_plane'] = Variable<String>(focalPlane.value);
+    }
+    if (reticle.present) {
+      map['reticle'] = Variable<String>(reticle.value);
+    }
+    if (adjustmentUnit.present) {
+      map['adjustment_unit'] = Variable<String>(adjustmentUnit.value);
+    }
+    if (parallaxMinYd.present) {
+      map['parallax_min_yd'] = Variable<int>(parallaxMinYd.value);
+    }
+    if (weightOz.present) {
+      map['weight_oz'] = Variable<double>(weightOz.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OpticsCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturerId: $manufacturerId, ')
+          ..write('model: $model, ')
+          ..write('category: $category, ')
+          ..write('magnification: $magnification, ')
+          ..write('objectiveMm: $objectiveMm, ')
+          ..write('tubeMm: $tubeMm, ')
+          ..write('focalPlane: $focalPlane, ')
+          ..write('reticle: $reticle, ')
+          ..write('adjustmentUnit: $adjustmentUnit, ')
+          ..write('parallaxMinYd: $parallaxMinYd, ')
+          ..write('weightOz: $weightOz, ')
+          ..write('notes: $notes')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -17230,6 +18256,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $UserCustomFieldValuesTable(this);
   late final $LoadDevelopmentSessionsTable loadDevelopmentSessions =
       $LoadDevelopmentSessionsTable(this);
+  late final $OpticsTable optics = $OpticsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -17256,6 +18283,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userCustomFields,
     userCustomFieldValues,
     loadDevelopmentSessions,
+    optics,
   ];
 }
 
@@ -17407,6 +18435,28 @@ final class $$ManufacturersTableReferences
     ).filter((f) => f.manufacturerId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_firearmPartsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$OpticsTable, List<OpticRow>> _opticsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.optics,
+    aliasName: $_aliasNameGenerator(
+      db.manufacturers.id,
+      db.optics.manufacturerId,
+    ),
+  );
+
+  $$OpticsTableProcessedTableManager get opticsRefs {
+    final manager = $$OpticsTableTableManager(
+      $_db,
+      $_db.optics,
+    ).filter((f) => f.manufacturerId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_opticsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -17583,6 +18633,31 @@ class $$ManufacturersTableFilterComposer
           }) => $$FirearmPartsTableFilterComposer(
             $db: $db,
             $table: $db.firearmParts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> opticsRefs(
+    Expression<bool> Function($$OpticsTableFilterComposer f) f,
+  ) {
+    final $$OpticsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.optics,
+      getReferencedColumn: (t) => t.manufacturerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OpticsTableFilterComposer(
+            $db: $db,
+            $table: $db.optics,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -17793,6 +18868,31 @@ class $$ManufacturersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> opticsRefs<T extends Object>(
+    Expression<T> Function($$OpticsTableAnnotationComposer a) f,
+  ) {
+    final $$OpticsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.optics,
+      getReferencedColumn: (t) => t.manufacturerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OpticsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.optics,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ManufacturersTableTableManager
@@ -17815,6 +18915,7 @@ class $$ManufacturersTableTableManager
             bool brassProductsRefs,
             bool firearmsRefRefs,
             bool firearmPartsRefs,
+            bool opticsRefs,
           })
         > {
   $$ManufacturersTableTableManager(_$AppDatabase db, $ManufacturersTable table)
@@ -17868,6 +18969,7 @@ class $$ManufacturersTableTableManager
                 brassProductsRefs = false,
                 firearmsRefRefs = false,
                 firearmPartsRefs = false,
+                opticsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -17878,6 +18980,7 @@ class $$ManufacturersTableTableManager
                     if (brassProductsRefs) db.brassProducts,
                     if (firearmsRefRefs) db.firearmsRef,
                     if (firearmPartsRefs) db.firearmParts,
+                    if (opticsRefs) db.optics,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -18008,6 +19111,27 @@ class $$ManufacturersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (opticsRefs)
+                        await $_getPrefetchedData<
+                          ManufacturerRow,
+                          $ManufacturersTable,
+                          OpticRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ManufacturersTableReferences
+                              ._opticsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ManufacturersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).opticsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.manufacturerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -18035,6 +19159,7 @@ typedef $$ManufacturersTableProcessedTableManager =
         bool brassProductsRefs,
         bool firearmsRefRefs,
         bool firearmPartsRefs,
+        bool opticsRefs,
       })
     >;
 typedef $$CartridgesTableCreateCompanionBuilder =
@@ -24926,6 +26051,10 @@ typedef $$UserFirearmsTableCreateCompanionBuilder =
       Value<int?> cumulativeRoundCountSnapshot,
       Value<double?> throatErosionCbtoIn,
       Value<DateTime?> lastThroatMeasurementDate,
+      Value<double?> defaultMuzzleVelocityFps,
+      Value<int?> defaultZeroRangeYd,
+      Value<double?> sightHeightIn,
+      Value<int?> opticsId,
     });
 typedef $$UserFirearmsTableUpdateCompanionBuilder =
     UserFirearmsCompanion Function({
@@ -24949,6 +26078,10 @@ typedef $$UserFirearmsTableUpdateCompanionBuilder =
       Value<int?> cumulativeRoundCountSnapshot,
       Value<double?> throatErosionCbtoIn,
       Value<DateTime?> lastThroatMeasurementDate,
+      Value<double?> defaultMuzzleVelocityFps,
+      Value<int?> defaultZeroRangeYd,
+      Value<double?> sightHeightIn,
+      Value<int?> opticsId,
     });
 
 final class $$UserFirearmsTableReferences
@@ -25130,6 +26263,26 @@ class $$UserFirearmsTableFilterComposer
 
   ColumnFilters<DateTime> get lastThroatMeasurementDate => $composableBuilder(
     column: $table.lastThroatMeasurementDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get defaultMuzzleVelocityFps => $composableBuilder(
+    column: $table.defaultMuzzleVelocityFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get defaultZeroRangeYd => $composableBuilder(
+    column: $table.defaultZeroRangeYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sightHeightIn => $composableBuilder(
+    column: $table.sightHeightIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get opticsId => $composableBuilder(
+    column: $table.opticsId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25318,6 +26471,26 @@ class $$UserFirearmsTableOrderingComposer
     column: $table.lastThroatMeasurementDate,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get defaultMuzzleVelocityFps => $composableBuilder(
+    column: $table.defaultMuzzleVelocityFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get defaultZeroRangeYd => $composableBuilder(
+    column: $table.defaultZeroRangeYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sightHeightIn => $composableBuilder(
+    column: $table.sightHeightIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get opticsId => $composableBuilder(
+    column: $table.opticsId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserFirearmsTableAnnotationComposer
@@ -25408,6 +26581,24 @@ class $$UserFirearmsTableAnnotationComposer
     column: $table.lastThroatMeasurementDate,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get defaultMuzzleVelocityFps => $composableBuilder(
+    column: $table.defaultMuzzleVelocityFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get defaultZeroRangeYd => $composableBuilder(
+    column: $table.defaultZeroRangeYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sightHeightIn => $composableBuilder(
+    column: $table.sightHeightIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get opticsId =>
+      $composableBuilder(column: $table.opticsId, builder: (column) => column);
 
   Expression<T> batchesRefs<T extends Object>(
     Expression<T> Function($$BatchesTableAnnotationComposer a) f,
@@ -25540,6 +26731,10 @@ class $$UserFirearmsTableTableManager
                 Value<double?> throatErosionCbtoIn = const Value.absent(),
                 Value<DateTime?> lastThroatMeasurementDate =
                     const Value.absent(),
+                Value<double?> defaultMuzzleVelocityFps = const Value.absent(),
+                Value<int?> defaultZeroRangeYd = const Value.absent(),
+                Value<double?> sightHeightIn = const Value.absent(),
+                Value<int?> opticsId = const Value.absent(),
               }) => UserFirearmsCompanion(
                 id: id,
                 name: name,
@@ -25561,6 +26756,10 @@ class $$UserFirearmsTableTableManager
                 cumulativeRoundCountSnapshot: cumulativeRoundCountSnapshot,
                 throatErosionCbtoIn: throatErosionCbtoIn,
                 lastThroatMeasurementDate: lastThroatMeasurementDate,
+                defaultMuzzleVelocityFps: defaultMuzzleVelocityFps,
+                defaultZeroRangeYd: defaultZeroRangeYd,
+                sightHeightIn: sightHeightIn,
+                opticsId: opticsId,
               ),
           createCompanionCallback:
               ({
@@ -25585,6 +26784,10 @@ class $$UserFirearmsTableTableManager
                 Value<double?> throatErosionCbtoIn = const Value.absent(),
                 Value<DateTime?> lastThroatMeasurementDate =
                     const Value.absent(),
+                Value<double?> defaultMuzzleVelocityFps = const Value.absent(),
+                Value<int?> defaultZeroRangeYd = const Value.absent(),
+                Value<double?> sightHeightIn = const Value.absent(),
+                Value<int?> opticsId = const Value.absent(),
               }) => UserFirearmsCompanion.insert(
                 id: id,
                 name: name,
@@ -25606,6 +26809,10 @@ class $$UserFirearmsTableTableManager
                 cumulativeRoundCountSnapshot: cumulativeRoundCountSnapshot,
                 throatErosionCbtoIn: throatErosionCbtoIn,
                 lastThroatMeasurementDate: lastThroatMeasurementDate,
+                defaultMuzzleVelocityFps: defaultMuzzleVelocityFps,
+                defaultZeroRangeYd: defaultZeroRangeYd,
+                sightHeightIn: sightHeightIn,
+                opticsId: opticsId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -29287,6 +30494,479 @@ typedef $$LoadDevelopmentSessionsTableProcessedTableManager =
         bool brassLotId,
       })
     >;
+typedef $$OpticsTableCreateCompanionBuilder =
+    OpticsCompanion Function({
+      Value<int> id,
+      required int manufacturerId,
+      required String model,
+      required String category,
+      required String magnification,
+      required int objectiveMm,
+      required int tubeMm,
+      required String focalPlane,
+      required String reticle,
+      required String adjustmentUnit,
+      Value<int?> parallaxMinYd,
+      Value<double?> weightOz,
+      Value<String?> notes,
+    });
+typedef $$OpticsTableUpdateCompanionBuilder =
+    OpticsCompanion Function({
+      Value<int> id,
+      Value<int> manufacturerId,
+      Value<String> model,
+      Value<String> category,
+      Value<String> magnification,
+      Value<int> objectiveMm,
+      Value<int> tubeMm,
+      Value<String> focalPlane,
+      Value<String> reticle,
+      Value<String> adjustmentUnit,
+      Value<int?> parallaxMinYd,
+      Value<double?> weightOz,
+      Value<String?> notes,
+    });
+
+final class $$OpticsTableReferences
+    extends BaseReferences<_$AppDatabase, $OpticsTable, OpticRow> {
+  $$OpticsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ManufacturersTable _manufacturerIdTable(_$AppDatabase db) =>
+      db.manufacturers.createAlias(
+        $_aliasNameGenerator(db.optics.manufacturerId, db.manufacturers.id),
+      );
+
+  $$ManufacturersTableProcessedTableManager get manufacturerId {
+    final $_column = $_itemColumn<int>('manufacturer_id')!;
+
+    final manager = $$ManufacturersTableTableManager(
+      $_db,
+      $_db.manufacturers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_manufacturerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$OpticsTableFilterComposer
+    extends Composer<_$AppDatabase, $OpticsTable> {
+  $$OpticsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get magnification => $composableBuilder(
+    column: $table.magnification,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get objectiveMm => $composableBuilder(
+    column: $table.objectiveMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tubeMm => $composableBuilder(
+    column: $table.tubeMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get focalPlane => $composableBuilder(
+    column: $table.focalPlane,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reticle => $composableBuilder(
+    column: $table.reticle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get adjustmentUnit => $composableBuilder(
+    column: $table.adjustmentUnit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get parallaxMinYd => $composableBuilder(
+    column: $table.parallaxMinYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weightOz => $composableBuilder(
+    column: $table.weightOz,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ManufacturersTableFilterComposer get manufacturerId {
+    final $$ManufacturersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.manufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManufacturersTableFilterComposer(
+            $db: $db,
+            $table: $db.manufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OpticsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OpticsTable> {
+  $$OpticsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get magnification => $composableBuilder(
+    column: $table.magnification,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get objectiveMm => $composableBuilder(
+    column: $table.objectiveMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tubeMm => $composableBuilder(
+    column: $table.tubeMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get focalPlane => $composableBuilder(
+    column: $table.focalPlane,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reticle => $composableBuilder(
+    column: $table.reticle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get adjustmentUnit => $composableBuilder(
+    column: $table.adjustmentUnit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get parallaxMinYd => $composableBuilder(
+    column: $table.parallaxMinYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weightOz => $composableBuilder(
+    column: $table.weightOz,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ManufacturersTableOrderingComposer get manufacturerId {
+    final $$ManufacturersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.manufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManufacturersTableOrderingComposer(
+            $db: $db,
+            $table: $db.manufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OpticsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OpticsTable> {
+  $$OpticsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get magnification => $composableBuilder(
+    column: $table.magnification,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get objectiveMm => $composableBuilder(
+    column: $table.objectiveMm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tubeMm =>
+      $composableBuilder(column: $table.tubeMm, builder: (column) => column);
+
+  GeneratedColumn<String> get focalPlane => $composableBuilder(
+    column: $table.focalPlane,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reticle =>
+      $composableBuilder(column: $table.reticle, builder: (column) => column);
+
+  GeneratedColumn<String> get adjustmentUnit => $composableBuilder(
+    column: $table.adjustmentUnit,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get parallaxMinYd => $composableBuilder(
+    column: $table.parallaxMinYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get weightOz =>
+      $composableBuilder(column: $table.weightOz, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  $$ManufacturersTableAnnotationComposer get manufacturerId {
+    final $$ManufacturersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.manufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManufacturersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.manufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OpticsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OpticsTable,
+          OpticRow,
+          $$OpticsTableFilterComposer,
+          $$OpticsTableOrderingComposer,
+          $$OpticsTableAnnotationComposer,
+          $$OpticsTableCreateCompanionBuilder,
+          $$OpticsTableUpdateCompanionBuilder,
+          (OpticRow, $$OpticsTableReferences),
+          OpticRow,
+          PrefetchHooks Function({bool manufacturerId})
+        > {
+  $$OpticsTableTableManager(_$AppDatabase db, $OpticsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OpticsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OpticsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OpticsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> manufacturerId = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<String> magnification = const Value.absent(),
+                Value<int> objectiveMm = const Value.absent(),
+                Value<int> tubeMm = const Value.absent(),
+                Value<String> focalPlane = const Value.absent(),
+                Value<String> reticle = const Value.absent(),
+                Value<String> adjustmentUnit = const Value.absent(),
+                Value<int?> parallaxMinYd = const Value.absent(),
+                Value<double?> weightOz = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+              }) => OpticsCompanion(
+                id: id,
+                manufacturerId: manufacturerId,
+                model: model,
+                category: category,
+                magnification: magnification,
+                objectiveMm: objectiveMm,
+                tubeMm: tubeMm,
+                focalPlane: focalPlane,
+                reticle: reticle,
+                adjustmentUnit: adjustmentUnit,
+                parallaxMinYd: parallaxMinYd,
+                weightOz: weightOz,
+                notes: notes,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int manufacturerId,
+                required String model,
+                required String category,
+                required String magnification,
+                required int objectiveMm,
+                required int tubeMm,
+                required String focalPlane,
+                required String reticle,
+                required String adjustmentUnit,
+                Value<int?> parallaxMinYd = const Value.absent(),
+                Value<double?> weightOz = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+              }) => OpticsCompanion.insert(
+                id: id,
+                manufacturerId: manufacturerId,
+                model: model,
+                category: category,
+                magnification: magnification,
+                objectiveMm: objectiveMm,
+                tubeMm: tubeMm,
+                focalPlane: focalPlane,
+                reticle: reticle,
+                adjustmentUnit: adjustmentUnit,
+                parallaxMinYd: parallaxMinYd,
+                weightOz: weightOz,
+                notes: notes,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) =>
+                    (e.readTable(table), $$OpticsTableReferences(db, table, e)),
+              )
+              .toList(),
+          prefetchHooksCallback: ({manufacturerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (manufacturerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.manufacturerId,
+                                referencedTable: $$OpticsTableReferences
+                                    ._manufacturerIdTable(db),
+                                referencedColumn: $$OpticsTableReferences
+                                    ._manufacturerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$OpticsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OpticsTable,
+      OpticRow,
+      $$OpticsTableFilterComposer,
+      $$OpticsTableOrderingComposer,
+      $$OpticsTableAnnotationComposer,
+      $$OpticsTableCreateCompanionBuilder,
+      $$OpticsTableUpdateCompanionBuilder,
+      (OpticRow, $$OpticsTableReferences),
+      OpticRow,
+      PrefetchHooks Function({bool manufacturerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -29336,4 +31016,6 @@ class $AppDatabaseManager {
         _db,
         _db.loadDevelopmentSessions,
       );
+  $$OpticsTableTableManager get optics =>
+      $$OpticsTableTableManager(_db, _db.optics);
 }

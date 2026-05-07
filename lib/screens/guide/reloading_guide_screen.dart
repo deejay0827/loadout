@@ -1,3 +1,91 @@
+// FILE: lib/screens/guide/reloading_guide_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the "Reloading Guide" — an eight-stage, click-through walkthrough
+// of the metallic-cartridge reloading process. Reachable from the side
+// drawer entry "Reloading Guide".
+//
+// The top-level `ReloadingGuideScreen` widget shows a scrollable list of
+// stage tiles. Each tile (`_StageTile`) is a numbered card with a title
+// and a one-line summary. Tapping a tile pushes a `_StageDetailScreen`
+// for that stage.
+//
+// The eight stages, in chronological order, are:
+//
+//   1. Inspect & Sort Brass
+//   2. Resize / Decap
+//   3. Trim, Chamfer, Deburr
+//   4. Anneal                  (optional — flagged with a label)
+//   5. Prime
+//   6. Charge with Powder
+//   7. Seat Bullet
+//   8. Final Inspection / Crimp (optional crimp — flagged similarly)
+//
+// Each stage detail page renders five sections backed by a `_Stage` data
+// record:
+//
+//   - "What This Stage Does"  — one paragraph describing the operation.
+//   - "Why It Matters"        — bulleted list of safety/quality reasons.
+//   - "Common Tools"          — bulleted list of typical equipment.
+//   - "Things To Watch For"   — bulleted list of failure modes.
+//   - "Before You Move On"    — bulleted list of "is this stage done?"
+//                                checks.
+//
+// Every detail page closes with a brass-italic "always cross-check
+// against published manuals" footer.
+//
+// All copy is held in the file-private `const List<_Stage> _stages = [...]`
+// at the bottom of the file. `_StageTile`, `_StageDetailScreen`,
+// `_Section`, `_BulletList`, `_Bullet`, `_StageDisclaimerFooter`, and
+// `_IndexFooter` are private layout primitives — none are exported.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// The Reloading Guide is the project's deliberately-high-level companion
+// to the Recipes/Firearms/SAAMI tabs. Where those tabs let a user record
+// and look up specific data, this screen teaches the workflow itself
+// without ever crossing into prescriptive territory.
+//
+// The single most important architectural rule about this file is what
+// it CANNOT contain: NO specific charge weights, NO COAL/CBTO targets,
+// NO primer recommendations for specific cartridges, NO pressure values.
+// That is the same liability rail enforced on the AI chat feature
+// (`lib/services/ai_chat_service.dart`) and the disclaimer screen — and
+// the same rail repeats here as plain text the user reads. Adding any of
+// the forbidden items to `_stages` would defeat the marketing claim that
+// LoadOut is "reference and organizational software, not load
+// instruction" and would expose the developer to liability for any
+// incident the user could plausibly tie back to data shown in the app.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// Not particularly tricky from a code perspective — this is a static
+// list of strings rendered as nested cards. The hard part is the
+// editorial discipline of writing every stage's copy in a way that's
+// genuinely useful while staying entirely above the line into "high
+// level reference." Phrases like "trim back to published trim-to length"
+// (no specific number) and "your published recipe" (no specific recipe)
+// are deliberate — they always defer to "go look it up in a manual."
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/app.dart` and the side drawer in `home_screen.dart` — push this
+//   screen as a `MaterialPageRoute` from the "Reloading Guide" drawer
+//   item.
+// - `lib/screens/how_it_works/how_it_works_screen.dart` — its
+//   "Reloading Guide" topic CTA also pushes this screen.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None — pure UI rendered from compile-time `const` data. No I/O, no
+// network, no plugin calls.
+
 import 'package:flutter/material.dart';
 
 /// Reloading Guide — top-level reference screen with one tile per stage.

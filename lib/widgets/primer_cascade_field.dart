@@ -350,20 +350,43 @@ class _PrimerCascadeFieldState extends State<PrimerCascadeField> {
                       break;
                     }
                   }
+                  // Open-menu items: two-line layout — marketing name on
+                  // top (wraps to 2 lines if long), SKU `#name` rendered as
+                  // a small brass-tinted chip below. Avoids the
+                  // "Premium Gold Medal Large Pistol Match #GM1..."
+                  // ellipsis-truncation problem entirely. `itemHeight: null`
+                  // lets each row size to its content instead of being
+                  // clamped to the default 48 px.
+                  //
+                  // Closed-state (selectedItemBuilder): a single-line
+                  // compact label so the field doesn't suddenly grow tall
+                  // when a long primer is selected. Truncates with ellipsis
+                  // on the closed field — that's fine because the user
+                  // chose it and just needs a quick "yes that's the one"
+                  // confirmation.
                   return DropdownButtonFormField<PrimerRow>(
                     initialValue: selected,
                     isExpanded: true,
+                    itemHeight: null,
                     decoration: const InputDecoration(
                       labelText: 'Primer Product',
                     ),
+                    selectedItemBuilder: (context) => [
+                      for (final p in products)
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            ComponentRepository.primerProductLabel(p),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ),
+                    ],
                     items: [
                       for (final p in products)
                         DropdownMenuItem<PrimerRow>(
                           value: p,
-                          child: Text(
-                            ComponentRepository.primerProductLabel(p),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          child: _PrimerProductRow(primer: p),
                         ),
                     ],
                     onChanged: _onProductChanged,
@@ -392,6 +415,73 @@ class _PlaceholderHint extends StatelessWidget {
           color: theme.colorScheme.onSurfaceVariant,
           fontStyle: FontStyle.italic,
         ),
+      ),
+    );
+  }
+}
+
+/// Two-line layout for one item in the primer-product dropdown:
+///
+///   Line 1: marketing name (`productLine`), allowed to wrap up to 2 lines
+///           so the longest names ("Premium Gold Medal Large Rifle Magnum
+///           Match") aren't truncated.
+///   Line 2: model number `#name` rendered as a small brass-tinted chip,
+///           shown for every primer regardless of whether the marketing
+///           name fits on one line. The chip becomes a quick scan target
+///           when the user is hunting for a specific SKU.
+///
+/// Layout uses `Padding` + `Column` rather than `ListTile`'s built-in
+/// title/subtitle slots because `ListTile` enforces its own internal
+/// padding and doesn't compose cleanly inside a `DropdownMenuItem`.
+class _PrimerProductRow extends StatelessWidget {
+  const _PrimerProductRow({required this.primer});
+
+  final PrimerRow primer;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final productLine = primer.productLine;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (productLine != null && productLine.isNotEmpty)
+            Text(
+              productLine,
+              softWrap: true,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          if (productLine != null && productLine.isNotEmpty)
+            const SizedBox(height: 4),
+          // Brass-tinted SKU chip — same style cue as the SAAMI doc /
+          // case-subtype chips on the spec screen, so the eye learns "brass
+          // chip = identifier" across the whole app.
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: theme.colorScheme.primary.withValues(alpha: 0.30),
+              ),
+            ),
+            child: Text(
+              '#${primer.name}',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

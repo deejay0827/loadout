@@ -4,7 +4,7 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // On launch (called from `main.dart` right after the database opens), this
-// class reads the bundled JSON catalog files in `assets/seed_data/` —
+// class reads the JSON catalog files in `assets/seed_data/` —
 // `cartridges.json`, `powders.json`, `bullets.json`, `primers.json`,
 // `brass.json`, `firearms.json`, `firearm_parts.json` — and inserts their
 // contents into the reference tables defined in `database.dart`. Those
@@ -13,25 +13,34 @@
 // are what populate every component dropdown the user sees in the
 // recipe form, the firearm form, and the SAAMI lookup screen.
 //
-// The seed data ships as part of the Flutter app bundle: at build time
-// the contents of `assets/` get copied into the iOS / Android binary,
-// and at runtime `rootBundle.loadString(path)` reads them back as a
-// `String`. `json.decode()` then parses that string into Dart maps and
-// lists. The seed methods (`_seedCartridges`, `_seedPowders`,
-// `_seedBullets`, `_seedPrimers`, `_seedBrass`, `_seedFirearms`,
-// `_seedFirearmParts`) walk the parsed structure and emit batched
-// drift inserts via the generated `*Companion.insert(...)` helpers.
+// As of the live-catalog-update feature, JSON content can come from one of
+// two locations, with the documents directory taking priority:
 //
-// `seedIfNeeded()` is the single public entry point. It checks three
-// flags exposed by `AppDatabase`: `firstRun` (the cartridge table is
-// empty, i.e. brand-new install), `primersMissing` (the primer table is
-// empty — happens after a v3 migration deliberately wipes primers to
-// force a re-seed with the new `productLine` column), and
-// `cartridgesNeedReseed` (the cartridges exist but are missing the v2
-// SAAMI/CIP dimensional fields, indicating an upgraded install that
-// needs a refresh). If none are true, the function returns immediately.
-// Otherwise the appropriate seed methods run inside one drift
-// transaction so the database is never half-populated.
+//   1. `<applicationDocumentsDirectory>/seed_data/<filename>` — written by
+//      `SeedUpdater` after a successful Firebase Storage download.
+//   2. `assets/seed_data/<filename>` — the bundled fallback that ships
+//      with every install.
+//
+// `_readSeedString(filename)` is the single helper that hides this
+// preference. Every `_seedX` method calls it instead of `rootBundle`
+// directly, so a brand-new install just reads bundled assets, an updated
+// install reads the freshly-downloaded copy, and an install that hit a
+// network failure falls back to bundled silently.
+//
+// `seedIfNeeded()` is the single public entry point. It checks two
+// classes of conditions:
+//
+//   - The legacy "the DB is empty / migrated and needs catch-up" flags
+//     (`firstRun`, `primersMissing`, `cartridgesNeedReseed`, plus per-table
+//     emptiness for the other reference tables).
+//   - The "an update was just downloaded; please re-seed" flags written by
+//     `SeedUpdater` to SharedPreferences (`seed_needs_reseed_<key>`).
+//
+// If any of these are true for a given table, the table is re-seeded
+// (deleting existing rows and orphan-cleaning the matching `Manufacturers`
+// rows where applicable, to avoid unique-constraint collisions). User
+// data tables (`UserLoads`, `UserFirearms`, `CustomComponents`, etc.) are
+// NEVER touched by this code — only the reference catalog moves.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -50,28 +59,30 @@
 // The JSON is the source-of-truth file the team edits; SQLite is the
 // query surface the running app uses.
 //
-// The conditional re-seed logic exists because the schema and the data
-// shape evolve over time. When v2 added SAAMI dimensions to existing
-// cartridges, the migration could only `ALTER TABLE` to add the
-// columns — populating them required re-running the seed. Rather than
-// blow away the database and ask users to re-enter their loads, the
-// re-seed pattern lets us refresh just the reference data while
-// leaving user data (`UserLoads`, `UserFirearms`, `CustomComponents`)
-// completely untouched.
+// The conditional re-seed logic also enables hot-fixes via Firebase
+// Storage. The team can ship a corrected powder name or a new cartridge
+// by uploading a new JSON + bumping its version in `manifest.json`.
+// `SeedUpdater` downloads it, sets `seed_needs_reseed_<key>`, and the
+// next launch's `seedIfNeeded()` swaps the rows in SQLite. No App Store
+// or Play Store release required.
 //
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
 // ============================================================================
-// The dispatch logic in `seedIfNeeded` is deliberately three-pronged:
-//   - If `firstRun` we seed everything.
-//   - If only `cartridgesNeedReseed` we re-seed cartridges (deleting
-//     existing rows first to avoid unique-constraint collisions on
-//     `name`).
-//   - If only `primersMissing` we re-seed primers.
-// Mixing those branches incorrectly would either skip data that needs
-// to be present (broken UI) or duplicate-insert and crash on unique
-// constraints. This is why the function reads all three flags up front
-// and gates each seed step explicitly.
+// The dispatch logic in `seedIfNeeded` is deliberately union-of-conditions:
+// for each reference table we OR together "the table is empty / stale" and
+// "an update was just downloaded." If either is true we re-seed that
+// table. Mixing the branches the wrong way would either leave the catalog
+// stale (broken UI) or duplicate-insert and crash on unique constraints.
+// This is why the function reads all flags up front and gates each seed
+// step explicitly.
+//
+// For tables other than `Cartridges` and `Primers` the re-seed path also
+// has to clean up `Manufacturers` rows of the matching `kind` — otherwise
+// re-running `_seedX()` would try to re-insert manufacturer rows whose
+// `(name, kind)` already exist and crash. The cleanup deletes only the
+// specific kind, so re-seeding bullets doesn't disturb powder or primer
+// manufacturer rows.
 //
 // The fall-back to `Value.absent()` for fields that may be missing from
 // older JSON shapes is critical. `Value.absent()` tells drift "leave
@@ -104,6 +115,8 @@
 // ============================================================================
 // - `lib/main.dart` — instantiates `SeedLoader(db)` and calls
 //   `seedIfNeeded()` on every launch, before `runApp()`.
+// - `lib/services/seed_updater.dart` — the producer side of the
+//   `seed_needs_reseed_<key>` flags this file consumes.
 // - Indirectly, every UI surface that reads from the seeded reference
 //   tables: `lib/screens/loads/load_form_screen.dart` (component
 //   dropdowns), `lib/screens/firearms/firearm_form_screen.dart`,
@@ -112,61 +125,182 @@
 // ============================================================================
 // SIDE EFFECTS
 // ============================================================================
-// - Reads up to 7 JSON files from the bundled `assets/seed_data/`
-//   directory via `rootBundle.loadString`.
+// - Reads up to 7 JSON files. Each read prefers
+//   `<applicationDocumentsDirectory>/seed_data/<filename>` (when
+//   `SeedUpdater` has cached an update) and falls back to
+//   `assets/seed_data/<filename>` (bundled).
 // - Writes potentially thousands of rows into SQLite (cartridges,
 //   manufacturers, powders, bullets, primers, brass products, firearms,
 //   firearm parts) inside one transaction.
-// - On v3 migrations + re-seed paths, deletes existing rows in the
-//   targeted reference table before re-inserting (to avoid unique
-//   constraint collisions on `name`).
-// - No network I/O. No cloud calls. Reference data stays entirely
-//   on-device.
+// - On re-seed paths, deletes existing rows in the targeted reference
+//   table (and orphan-cleans matching `Manufacturers` rows by kind)
+//   before re-inserting.
+// - Clears any `seed_needs_reseed_<key>` SharedPreferences flag once the
+//   corresponding re-seed completes.
+// - User data tables are NEVER read or written by this file.
 
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../services/seed_updater.dart' show seedNeedsReseedPrefix;
 import 'database.dart';
 
-/// Reads the bundled JSON files in `assets/seed_data/` and populates the
-/// reference tables on first run. Idempotent — checks `needsSeed` first.
+/// SharedPreferences key prefix matching `SeedUpdater`'s
+/// `seed_needs_reseed_<key>` flags.
+const _kReseedPrefix = seedNeedsReseedPrefix;
+
+/// Reads bundled / downloaded JSON files in `seed_data/` and populates the
+/// reference tables on first run, on table emptiness, or when an update
+/// has been downloaded by [SeedUpdater].
 class SeedLoader {
   SeedLoader(this.db);
   final AppDatabase db;
 
   Future<void> seedIfNeeded() async {
     final firstRun = await db.needsSeed;
-    final primersMissing = await db.primersAreEmpty;
-    final cartridgesNeedReseed = await db.cartridgesNeedReseed;
-    if (!firstRun && !primersMissing && !cartridgesNeedReseed) return;
+    final prefs = await SharedPreferences.getInstance();
+
+    bool flag(String key) =>
+        prefs.getBool('$_kReseedPrefix$key') == true;
+
+    final cartridgesReseed =
+        firstRun || await db.cartridgesNeedReseed || flag('cartridges');
+    final powdersReseed =
+        firstRun || await db.powdersAreEmpty || flag('powders');
+    final bulletsReseed =
+        firstRun || await db.bulletsAreEmpty || flag('bullets');
+    final primersReseed =
+        firstRun || await db.primersAreEmpty || flag('primers');
+    final brassReseed =
+        firstRun || await db.brassProductsAreEmpty || flag('brass');
+    final firearmsReseed =
+        firstRun || await db.firearmsRefAreEmpty || flag('firearms');
+    final firearmPartsReseed =
+        firstRun || await db.firearmPartsAreEmpty || flag('firearm_parts');
+    final opticsReseed =
+        firstRun || await db.opticsAreEmpty || flag('optics');
+
+    final any = cartridgesReseed ||
+        powdersReseed ||
+        bulletsReseed ||
+        primersReseed ||
+        brassReseed ||
+        firearmsReseed ||
+        firearmPartsReseed ||
+        opticsReseed;
+    if (!any) return;
 
     await db.transaction(() async {
       // Cartridges: re-seed when first run OR when an existing install is
-      // missing the v2 SAAMI/CIP dimension fields. The v2 migration only
-      // added the columns; without this re-seed users see "—" for body /
-      // shoulder / neck / rim dimensions even though the JSON has them.
-      if (firstRun || cartridgesNeedReseed) {
-        if (cartridgesNeedReseed && !firstRun) {
+      // missing the v2 SAAMI/CIP dimension fields OR when SeedUpdater
+      // flagged the file. The v2 migration only added the columns;
+      // without this re-seed users see "—" for body / shoulder / neck /
+      // rim dimensions even though the JSON has them.
+      if (cartridgesReseed) {
+        if (!firstRun) {
           await db.delete(db.cartridges).go();
         }
         await _seedCartridges();
       }
-      if (firstRun) {
+      // For the other reference tables we re-seed when the table is
+      // empty (firstRun, post-migration, or a force-reseed via
+      // SeedUpdater). Each branch wipes its own table + matching
+      // Manufacturers rows so re-inserts don't collide on unique keys.
+      if (powdersReseed) {
+        if (!firstRun) {
+          await db.delete(db.powders).go();
+          await (db.delete(db.manufacturers)
+                ..where((m) => m.kind.equals('powder')))
+              .go();
+        }
         await _seedPowders();
+      }
+      if (bulletsReseed) {
+        if (!firstRun) {
+          await db.delete(db.bullets).go();
+          await (db.delete(db.manufacturers)
+                ..where((m) => m.kind.equals('bullet')))
+              .go();
+        }
         await _seedBullets();
+      }
+      if (brassReseed) {
+        if (!firstRun) {
+          await db.delete(db.brassProducts).go();
+          await (db.delete(db.manufacturers)
+                ..where((m) => m.kind.equals('brass')))
+              .go();
+        }
         await _seedBrass();
+      }
+      if (firearmsReseed) {
+        if (!firstRun) {
+          await db.delete(db.firearmsRef).go();
+          await (db.delete(db.manufacturers)
+                ..where((m) => m.kind.equals('firearm')))
+              .go();
+        }
         await _seedFirearms();
+      }
+      if (firearmPartsReseed) {
+        if (!firstRun) {
+          await db.delete(db.firearmParts).go();
+          await (db.delete(db.manufacturers)
+                ..where((m) => m.kind.equals('parts')))
+              .go();
+        }
         await _seedFirearmParts();
+      }
+      if (opticsReseed) {
+        if (!firstRun) {
+          await db.delete(db.optics).go();
+          await (db.delete(db.manufacturers)
+                ..where((m) => m.kind.equals('optics')))
+              .go();
+        }
+        await _seedOptics();
       }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
-      // upgrading users without nuking the rest of the DB.
-      if (firstRun || primersMissing) {
+      // upgrading users without nuking the rest of the DB. The forced
+      // path also re-seeds when SeedUpdater downloaded a new
+      // primers.json.
+      if (primersReseed) {
+        // The v3 migration already wipes primers + primer manufacturers,
+        // so the empty case doesn't need cleanup. The force path does.
+        final primersEmpty = await db.primersAreEmpty;
+        if (!firstRun && !primersEmpty) {
+          await db.delete(db.primers).go();
+          await (db.delete(db.manufacturers)
+                ..where((m) => m.kind.equals('primer')))
+              .go();
+        }
         await _seedPrimers();
       }
     });
+
+    // Clear any "needs reseed" flags that we just satisfied. Only clear
+    // flags whose corresponding table actually got re-seeded above.
+    Future<void> clearIf(bool didReseed, String key) async {
+      if (didReseed && flag(key)) {
+        await prefs.remove('$_kReseedPrefix$key');
+      }
+    }
+
+    await clearIf(cartridgesReseed, 'cartridges');
+    await clearIf(powdersReseed, 'powders');
+    await clearIf(bulletsReseed, 'bullets');
+    await clearIf(primersReseed, 'primers');
+    await clearIf(brassReseed, 'brass');
+    await clearIf(firearmsReseed, 'firearms');
+    await clearIf(firearmPartsReseed, 'firearm_parts');
+    await clearIf(opticsReseed, 'optics');
   }
 
   Future<int> _manufacturerId(
@@ -187,18 +321,36 @@ class SeedLoader {
         );
   }
 
-  Future<List<dynamic>> _readJsonList(String path) async {
-    final raw = await rootBundle.loadString(path);
+  /// Reads a seed JSON file as a UTF-8 string, preferring the live-update
+  /// copy in `<docs>/seed_data/<filename>` over the bundled asset. Falls
+  /// back to the bundled copy whenever the local file is missing or
+  /// unreadable so we always have *something* to seed from.
+  Future<String> _readSeedString(String filename) async {
+    try {
+      final docsDir = await getApplicationDocumentsDirectory();
+      final localFile = File(p.join(docsDir.path, 'seed_data', filename));
+      if (await localFile.exists()) {
+        return await localFile.readAsString();
+      }
+    } catch (_) {
+      // If the documents directory is somehow unavailable, fall through
+      // to the bundled asset rather than crashing on launch.
+    }
+    return rootBundle.loadString('assets/seed_data/$filename');
+  }
+
+  Future<List<dynamic>> _readJsonList(String filename) async {
+    final raw = await _readSeedString(filename);
     return json.decode(raw) as List<dynamic>;
   }
 
-  Future<Map<String, dynamic>> _readJsonObject(String path) async {
-    final raw = await rootBundle.loadString(path);
+  Future<Map<String, dynamic>> _readJsonObject(String filename) async {
+    final raw = await _readSeedString(filename);
     return json.decode(raw) as Map<String, dynamic>;
   }
 
   Future<void> _seedCartridges() async {
-    final data = await _readJsonList('assets/seed_data/cartridges.json');
+    final data = await _readJsonList('cartridges.json');
     final batch = <CartridgesCompanion>[];
     for (final entry in data) {
       final m = entry as Map<String, dynamic>;
@@ -269,7 +421,7 @@ class SeedLoader {
   }
 
   Future<void> _seedPowders() async {
-    final root = await _readJsonObject('assets/seed_data/powders.json');
+    final root = await _readJsonObject('powders.json');
     for (final mfg in root['manufacturers'] as List<dynamic>) {
       final m = mfg as Map<String, dynamic>;
       final mid = await _manufacturerId(
@@ -294,7 +446,7 @@ class SeedLoader {
   }
 
   Future<void> _seedBullets() async {
-    final root = await _readJsonObject('assets/seed_data/bullets.json');
+    final root = await _readJsonObject('bullets.json');
     for (final mfg in root['manufacturers'] as List<dynamic>) {
       final m = mfg as Map<String, dynamic>;
       final mid = await _manufacturerId(
@@ -322,7 +474,7 @@ class SeedLoader {
   }
 
   Future<void> _seedPrimers() async {
-    final root = await _readJsonObject('assets/seed_data/primers.json');
+    final root = await _readJsonObject('primers.json');
     for (final mfg in root['manufacturers'] as List<dynamic>) {
       final m = mfg as Map<String, dynamic>;
       final mid = await _manufacturerId(
@@ -351,7 +503,7 @@ class SeedLoader {
   }
 
   Future<void> _seedBrass() async {
-    final root = await _readJsonObject('assets/seed_data/brass.json');
+    final root = await _readJsonObject('brass.json');
     for (final mfg in root['manufacturers'] as List<dynamic>) {
       final m = mfg as Map<String, dynamic>;
       final mid = await _manufacturerId(
@@ -369,7 +521,7 @@ class SeedLoader {
   }
 
   Future<void> _seedFirearms() async {
-    final root = await _readJsonObject('assets/seed_data/firearms.json');
+    final root = await _readJsonObject('firearms.json');
     for (final mfg in root['manufacturers'] as List<dynamic>) {
       final m = mfg as Map<String, dynamic>;
       final mid = await _manufacturerId(
@@ -393,7 +545,7 @@ class SeedLoader {
   }
 
   Future<void> _seedFirearmParts() async {
-    final root = await _readJsonObject('assets/seed_data/firearm_parts.json');
+    final root = await _readJsonObject('firearm_parts.json');
     for (final mfg in root['manufacturers'] as List<dynamic>) {
       final m = mfg as Map<String, dynamic>;
       final mid = await _manufacturerId(
@@ -413,6 +565,40 @@ class SeedLoader {
         );
       }).toList();
       await db.batch((b) => b.insertAll(db.firearmParts, batch));
+    }
+  }
+
+  Future<void> _seedOptics() async {
+    final root = await _readJsonObject('optics.json');
+    for (final mfg in root['manufacturers'] as List<dynamic>) {
+      final m = mfg as Map<String, dynamic>;
+      final mid = await _manufacturerId(
+        m['name'] as String,
+        m['country'] as String?,
+        'optics',
+      );
+      final batch = (m['products'] as List<dynamic>).map((p) {
+        final prod = p as Map<String, dynamic>;
+        return OpticsCompanion.insert(
+          manufacturerId: mid,
+          model: prod['model'] as String,
+          category: prod['category'] as String,
+          magnification: prod['magnification'] as String,
+          objectiveMm: (prod['objectiveMm'] as num).toInt(),
+          tubeMm: (prod['tubeMm'] as num).toInt(),
+          focalPlane: prod['focalPlane'] as String,
+          reticle: prod['reticle'] as String,
+          adjustmentUnit: prod['adjustmentUnit'] as String,
+          parallaxMinYd: prod.containsKey('parallaxMin')
+              ? Value((prod['parallaxMin'] as num?)?.toInt())
+              : const Value.absent(),
+          weightOz: prod.containsKey('weightOz')
+              ? Value((prod['weightOz'] as num?)?.toDouble())
+              : const Value.absent(),
+          notes: Value(prod['notes'] as String?),
+        );
+      }).toList();
+      await db.batch((b) => b.insertAll(db.optics, batch));
     }
   }
 }

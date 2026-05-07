@@ -1,3 +1,92 @@
+// FILE: lib/screens/how_it_works/how_it_works_screen.dart
+//
+// ============================================================================
+// WHAT THIS FILE DOES
+// ============================================================================
+// Renders the "How It Works" explainer screen — a topical menu of feature
+// explanations the user can browse at their own pace. Reachable from the
+// side drawer's "How It Works" entry. The screen replaces the older
+// approach of linking directly to the linear `OnboardingScreen`.
+//
+// The layout:
+//
+//   - Header lead-in ("Pick any topic — or start with the Quick Tour.")
+//   - A big highlighted `_QuickTourCard` that routes to the eight-page
+//     `OnboardingScreen` (the "Quick Tour" branding).
+//   - Section "THE BASICS" — Recipes, Firearms, SAAMI Specs, Glossary
+//   - Section "GOING DEEPER" — Reloading Guide, LoadOut Pro, Local-First
+//     & Privacy, Disclaimer & Safety
+//
+// Each topic is rendered as a `_TopicCard` (icon + title + tagline +
+// chevron). Tapping a card pushes a `_TopicDetailScreen`, which renders
+// a bigger view of the same `_Topic` data:
+//
+//   - Eyebrow line ("THE BASICS" / "GOING DEEPER" — small, uppercase,
+//     letter-spaced label above the hero)
+//   - Hero icon in a circular brass-tinted disc
+//   - Headline title
+//   - Body paragraph
+//   - Bulleted feature list (`_BulletRow` items with icon + text)
+//   - A primary `FilledButton.icon` CTA labeled per the topic
+//
+// The CTA dispatch lives in `_TopicDetailScreen._runCta`. CTAs either
+// (a) pop back to the home shell and switch its bottom-nav tab via
+// `HomeScreen.switchTab(navContext, index)`, or (b) pop back to home
+// and push a standalone screen as a `MaterialPageRoute`. The
+// `_popToHomeAndSwitchTab` and `_popToHomeAndPush` helpers handle the
+// pop-then-act sequence so the topic detail and the topics index are
+// torn down correctly before the destination renders.
+//
+// The "Read Disclaimer" CTA is a special case — it does NOT push the
+// blocking-acceptance `DisclaimerScreen`. It pushes a separate read-only
+// `DisclaimerViewerScreen` defined further down in this file. Same
+// body text, different chrome (no checkbox, no Accept button) so the
+// user can re-read the safety language without being asked to re-accept.
+//
+// ============================================================================
+// WHY IT EXISTS IN THE ARCHITECTURE
+// ============================================================================
+// `OnboardingScreen` is a linear PageView walkthrough — once a user
+// dismisses it, they have no obvious way back to a refresher about a
+// specific feature. This screen is the "browse anytime" complement: a
+// menu of bite-sized topic cards the user can dip into when they want
+// to remember how a particular subsystem works.
+//
+// Co-locating the read-only `DisclaimerViewerScreen` here (rather than
+// reusing the gating `DisclaimerScreen` as a dual-purpose view) keeps
+// the gating screen's contract simple — it always means "this is the
+// blocking acceptance step." Splitting the read-only path lets the
+// gating screen stay focused on its job.
+//
+// ============================================================================
+// WHY THIS IS HARDER THAN IT LOOKS
+// ============================================================================
+// The `_popToHomeAndSwitchTab` helper deliberately resolves the home
+// state via `Navigator.of(context).context` BEFORE calling
+// `popUntil((route) => route.isFirst)`. That's because `popUntil` tears
+// down the topic detail and the topics index, which would invalidate
+// the original `context` we were called with. Capturing the navigator's
+// own context up front gives us a context that survives the pop.
+//
+// The SAAMI tab index (4) is hard-coded in `_runCta`'s switch statement
+// and there's a comment to keep it in sync with `HomeScreenState._pages`.
+// If a new tab is inserted before SAAMI, both files must update
+// together. Not great, but the alternative — exposing tab indices as
+// a typed enum — is more boilerplate than a four-tab nav warrants.
+//
+// ============================================================================
+// WHO CONSUMES THIS FILE
+// ============================================================================
+// - `lib/screens/home/home_screen.dart` — the side drawer's "How It
+//   Works" entry pushes this screen.
+//
+// ============================================================================
+// SIDE EFFECTS
+// ============================================================================
+// None directly — pure routing UI on top of `const` topic data. The
+// CTAs trigger navigator pushes/pops; no I/O, no persistence, no
+// network.
+
 import 'package:flutter/material.dart';
 
 import '../disclaimer/disclaimer_screen.dart';
