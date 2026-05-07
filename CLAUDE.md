@@ -143,8 +143,9 @@ mint a new one.
 ## Monetization (RevenueCat)
 
 In-app purchases are handled via RevenueCat (`purchases_flutter`).
-Three SKUs: `loadout_pro_monthly`, `loadout_pro_yearly`,
-`loadout_pro_lifetime`. Single entitlement: `pro`.
+Two SKUs only: `loadout_pro_yearly` ($39.99/yr) and
+`loadout_pro_lifetime` ($79.99). Single entitlement: `pro`. The app is
+pre-launch — no monthly tier exists or ever existed in production.
 
 - **Code:**
   - `lib/services/purchases_service.dart` wraps the SDK.

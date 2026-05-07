@@ -1,9 +1,17 @@
 # RevenueCat setup — LoadOut
 
-LoadOut uses RevenueCat to handle in-app purchases (subscriptions and a
-lifetime SKU) on both iOS and Android. The Flutter code is already wired
-up via `purchases_flutter`. What's left is configuring the three pieces
-that have to be done outside the codebase.
+LoadOut uses RevenueCat to handle in-app purchases (a yearly subscription
+and a lifetime SKU) on both iOS and Android. The Flutter code is already
+wired up via `purchases_flutter`. What's left is configuring the three
+pieces that have to be done outside the codebase.
+
+> **Pricing decision (2026-05-07):** Two SKUs only — Yearly **$39.99/yr**
+> and Lifetime **$79.99**. Pricing matches the GUNR competitive reference.
+> Reasoning: reloading is a seasonal hobby with low open-app cadence;
+> monthly subscriptions churn hard. Yearly aligns with hunting/match
+> seasons; Lifetime captures committed users. The app is pre-launch — no
+> monthly tier exists or ever existed in production, so don't create one
+> in App Store Connect, Play Console, or RevenueCat.
 
 ## Identifiers we'll use
 
@@ -11,7 +19,7 @@ that have to be done outside the codebase.
 |---|---|
 | Bundle / package | `com.johnsondigital.loadout` |
 | Entitlement | `pro` |
-| Products | `loadout_pro_monthly`, `loadout_pro_yearly`, `loadout_pro_lifetime` |
+| Products | `loadout_pro_yearly`, `loadout_pro_lifetime` |
 
 ## Step 1 — App Store Connect (iOS)
 
@@ -25,16 +33,16 @@ that have to be done outside the codebase.
    - Save the `.p8` file. Note the Key ID and Issuer ID.
 6. Create the In-App Purchase products:
    - Features → In-App Purchases → +.
-   - Auto-Renewable Subscription:
-     - Reference name: "LoadOut Pro Monthly"
-     - Product ID: `loadout_pro_monthly`
+   - **Auto-Renewable Subscription (yearly):**
+     - Reference name: "LoadOut Pro Yearly"
+     - Product ID: `loadout_pro_yearly`
      - Subscription group: "LoadOut Pro" (create new)
-     - Subscription duration: 1 month
-     - Price: TBD (placeholder, e.g., $2.99)
-   - Repeat for Yearly: `loadout_pro_yearly`, 1 year, e.g., $19.99
-   - Non-Consumable for Lifetime:
+     - Subscription duration: 1 year
+     - Price: **$39.99** (USD; localize for other regions)
+   - **Non-Consumable (lifetime):**
+     - Reference name: "LoadOut Pro Lifetime"
      - Product ID: `loadout_pro_lifetime`
-     - Price: TBD (e.g., $49.99)
+     - Price: **$79.99**
 7. Add localized metadata (required by Apple before products can be
    approved): display name, description per locale.
 8. Generate an App-Specific Shared Secret:
@@ -47,11 +55,11 @@ that have to be done outside the codebase.
 2. Create the app entry if needed.
 3. Set up payments profile (Settings → Payments) — required before IAP.
 4. Monetize → Products → Subscriptions:
-   - Subscription product ID: `loadout_pro_monthly`, base plan: `monthly`,
-     auto-renewing, billing period 1 month.
-   - `loadout_pro_yearly`, base plan: `yearly`, billing period 1 year.
+   - Subscription product ID: `loadout_pro_yearly`, base plan: `yearly`,
+     auto-renewing, billing period 1 year, price **$39.99/yr**.
 5. Monetize → Products → In-app products:
-   - `loadout_pro_lifetime`, managed product, single one-time purchase.
+   - `loadout_pro_lifetime`, managed product, single one-time purchase,
+     price **$79.99**.
 6. Service account for RevenueCat:
    - In Google Cloud Console (linked from Play Console settings),
      create a service account.
@@ -78,11 +86,11 @@ that have to be done outside the codebase.
    - Entitlements → New: `pro`.
 6. Define products by attaching the App Store and Play Store products:
    - Products → Import from App Store / Play Store.
-   - Verify all three appear: monthly, yearly, lifetime.
+   - Verify both appear: yearly, lifetime.
    - Attach each product to the `pro` entitlement.
 7. Define an offering:
    - Offerings → New: "default".
-   - Add three packages: monthly, annual, lifetime; each linked to the
+   - Add two packages: annual, lifetime; each linked to the
      corresponding product.
 8. Get the API keys:
    - Project settings → API Keys.
@@ -133,16 +141,14 @@ RevenueCat's servers).
 
 ## Pricing
 
-Final prices are TBD. Working assumption:
+Set 2026-05-07, matching the GUNR competitive reference:
 
-| SKU | Tier | Range |
+| SKU | Tier | Price |
 |---|---|---|
-| `loadout_pro_monthly` | Monthly | $1.99 – $3.99 |
-| `loadout_pro_yearly` | Yearly | $14.99 – $24.99 |
-| `loadout_pro_lifetime` | Lifetime | $39.99 – $59.99 |
+| `loadout_pro_yearly` | Yearly | **$39.99/yr** |
+| `loadout_pro_lifetime` | Lifetime | **$79.99** |
 
-Calibrate based on competitor pricing review and a 14-day free trial
-on the subscriptions.
+Consider a 14-day free trial on the yearly subscription before launch.
 
 ## Going live
 

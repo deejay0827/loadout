@@ -250,8 +250,18 @@ class AppDatabase extends _$AppDatabase {
           if (from < 3) {
             // v3 added Primers.productLine — manufacturer marketing names
             // shown alongside the model number in the cascading primer
-            // dropdown. Existing rows get null; the next re-seed populates.
+            // dropdown.
             await m.addColumn(primers, primers.productLine);
+            // Wipe the primer catalog (and its manufacturer rows) so that
+            // next launch's `seedIfNeeded` re-runs the primer seed and
+            // populates the new productLine column. User data
+            // (custom_components, user_loads, user_firearms) is untouched.
+            // Note: cartridges is the canary `seedIfNeeded` checks, so we
+            // don't need to nuke cartridges to retrigger; we explicitly
+            // re-seed primers ourselves below at first opportunity.
+            await delete(primers).go();
+            await (delete(manufacturers)..where((m) => m.kind.equals('primer')))
+                .go();
           }
         },
       );
@@ -271,5 +281,29 @@ class AppDatabase extends _$AppDatabase {
         .map((row) => row.read(cartridges.id.count()) ?? 0)
         .getSingle();
     return count == 0;
+  }
+
+  /// True when the primer catalog is empty. Used by the v3 migration path
+  /// to re-seed primers (which gain the `productLine` column) without
+  /// touching the rest of the DB.
+  Future<bool> get primersAreEmpty async {
+    final count = await (selectOnly(primers)..addColumns([primers.id.count()]))
+        .map((row) => row.read(primers.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when an existing install is missing the v2 SAAMI/CIP dimension
+  /// fields (added in schema v2). The migration adds the columns but does
+  /// not re-seed; this getter detects that staleness by spot-checking a
+  /// known cartridge (9mm Luger) for a populated body diameter — if a
+  /// well-known seed value is null, the v2 data needs to be re-seeded.
+  Future<bool> get cartridgesNeedReseed async {
+    final row = await (select(cartridges)
+          ..where((c) => c.name.equals('9mm Luger'))
+          ..limit(1))
+        .getSingleOrNull();
+    if (row == null) return false; // empty DB; needsSeed handles that path
+    return row.bodyDiameterIn == null;
   }
 }

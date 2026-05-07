@@ -49,35 +49,55 @@ class _SaamiScreenState extends State<SaamiScreen> {
               ? null
               : cartridges.firstWhere((c) => c.name == _selectedName);
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              _CartridgePicker(
-                cartridges: cartridges,
-                selectedName: _selectedName,
-                onChanged: (name) => setState(() => _selectedName = name),
+          // The picker uses Autocomplete, which positions an overlay below
+          // the field. Wrapping it in a pinned SliverPersistentHeader breaks
+          // the overlay positioning and triggers a layout-loop assertion
+          // (`!semantics.parentDataDirty`). Keep the picker as a normal
+          // (non-pinned) sliver at the top, and only pin the small cartridge
+          // name chip — that one is static text with no overlay or focus
+          // concerns, so it's safe inside a SliverPersistentHeader.
+          return CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: _CartridgePicker(
+                    cartridges: cartridges,
+                    selectedName: _selectedName,
+                    onChanged: (name) => setState(() => _selectedName = name),
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              if (selected == null)
-                const _EmptyState()
-              else ...[
-                _HeaderCard(cartridge: selected),
-                const SizedBox(height: 12),
-                if (selected.type != 'shotgun') ...[
-                  _DimensionsCard(cartridge: selected),
-                  const SizedBox(height: 12),
-                  _BoreRiflingCard(cartridge: selected),
-                  const SizedBox(height: 12),
-                  _PressurePrimingCard(cartridge: selected),
-                  const SizedBox(height: 12),
-                ] else ...[
-                  _ShotgunCard(cartridge: selected),
-                  const SizedBox(height: 12),
-                ],
-                _DiagramsSection(cartridge: selected),
-                const SizedBox(height: 16),
-                const _DisclaimerFooter(),
-              ],
+              if (selected != null)
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SelectedNameHeaderDelegate(name: selected.name),
+                ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+                sliver: SliverList.list(
+                  children: selected == null
+                      ? [const _EmptyState()]
+                      : [
+                          _HeaderCard(cartridge: selected),
+                          const SizedBox(height: 12),
+                          if (selected.type != 'shotgun') ...[
+                            _DimensionsCard(cartridge: selected),
+                            const SizedBox(height: 12),
+                            _BoreRiflingCard(cartridge: selected),
+                            const SizedBox(height: 12),
+                            _PressurePrimingCard(cartridge: selected),
+                            const SizedBox(height: 12),
+                          ] else ...[
+                            _ShotgunCard(cartridge: selected),
+                            const SizedBox(height: 12),
+                          ],
+                          _DiagramsSection(cartridge: selected),
+                          const SizedBox(height: 16),
+                          const _DisclaimerFooter(),
+                        ],
+                ),
+              ),
             ],
           );
         },
@@ -86,9 +106,50 @@ class _SaamiScreenState extends State<SaamiScreen> {
   }
 }
 
+// ─────────────────────── Sticky header ───────────────────────
+
+class _SelectedNameHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _SelectedNameHeaderDelegate({required this.name});
+  final String name;
+
+  @override
+  double get minExtent => 44;
+  @override
+  double get maxExtent => 44;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.scaffoldBackgroundColor,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primary.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          name,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SelectedNameHeaderDelegate oldDelegate) =>
+      oldDelegate.name != name;
+}
+
 // ─────────────────────── Picker ───────────────────────
 
-class _CartridgePicker extends StatelessWidget {
+class _CartridgePicker extends StatefulWidget {
   const _CartridgePicker({
     required this.cartridges,
     required this.selectedName,
@@ -100,23 +161,89 @@ class _CartridgePicker extends StatelessWidget {
   final ValueChanged<String?> onChanged;
 
   @override
+  State<_CartridgePicker> createState() => _CartridgePickerState();
+}
+
+class _CartridgePickerState extends State<_CartridgePicker> {
+  /// Tokenize a query: split on whitespace, drop empties. Each token must
+  /// appear (case-insensitively) in the cartridge name OR any alias for
+  /// the cartridge to match. So `"6 GT"` matches `"6mm GT"` because tokens
+  /// `"6"` and `"gt"` both appear in `"6mm gt"`.
+  bool _matches(CartridgeRow c, List<String> tokens) {
+    if (tokens.isEmpty) return true;
+    final haystack = '${c.name} ${c.aliasesJson}'.toLowerCase();
+    for (final t in tokens) {
+      if (!haystack.contains(t)) return false;
+    }
+    return true;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return DropdownMenu<String>(
-          width: constraints.maxWidth,
-          initialSelection: selectedName,
-          enableSearch: true,
-          enableFilter: true,
-          requestFocusOnTap: true,
-          label: const Text('Cartridge'),
-          leadingIcon: const Icon(Icons.search),
-          menuHeight: 360,
-          onSelected: onChanged,
-          dropdownMenuEntries: [
-            for (final c in cartridges)
-              DropdownMenuEntry<String>(value: c.name, label: c.name),
-          ],
+    return Autocomplete<CartridgeRow>(
+      initialValue:
+          TextEditingValue(text: widget.selectedName ?? ''),
+      displayStringForOption: (c) => c.name,
+      optionsBuilder: (te) {
+        final query = te.text.trim().toLowerCase();
+        final tokens = query
+            .split(RegExp(r'\s+'))
+            .where((t) => t.isNotEmpty)
+            .toList(growable: false);
+        // No query → show all cartridges (already alphabetized upstream).
+        if (tokens.isEmpty) return widget.cartridges;
+        return widget.cartridges.where((c) => _matches(c, tokens));
+      },
+      fieldViewBuilder: (context, textCtrl, focusNode, onFieldSubmitted) {
+        return TextFormField(
+          controller: textCtrl,
+          focusNode: focusNode,
+          // Turn off the OS-level autocorrect / autocomplete suggestions
+          // ("get x" chip the user reported). Cartridge names are short
+          // technical strings that the OS shouldn't be guessing at.
+          autocorrect: false,
+          enableSuggestions: false,
+          textCapitalization: TextCapitalization.none,
+          decoration: InputDecoration(
+            labelText: 'Cartridge',
+            prefixIcon: const Icon(Icons.search),
+            // Clear button when there's text.
+            suffixIcon: textCtrl.text.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      textCtrl.clear();
+                      widget.onChanged(null);
+                    },
+                  ),
+          ),
+          onFieldSubmitted: (_) => onFieldSubmitted(),
+        );
+      },
+      onSelected: (c) => widget.onChanged(c.name),
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: options.length,
+                itemBuilder: (context, i) {
+                  final c = options.elementAt(i);
+                  return ListTile(
+                    dense: true,
+                    title: Text(c.name),
+                    onTap: () => onSelected(c),
+                  );
+                },
+              ),
+            ),
+          ),
         );
       },
     );

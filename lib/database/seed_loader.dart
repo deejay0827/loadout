@@ -12,15 +12,35 @@ class SeedLoader {
   final AppDatabase db;
 
   Future<void> seedIfNeeded() async {
-    if (!await db.needsSeed) return;
+    final firstRun = await db.needsSeed;
+    final primersMissing = await db.primersAreEmpty;
+    final cartridgesNeedReseed = await db.cartridgesNeedReseed;
+    if (!firstRun && !primersMissing && !cartridgesNeedReseed) return;
+
     await db.transaction(() async {
-      await _seedCartridges();
-      await _seedPowders();
-      await _seedBullets();
-      await _seedPrimers();
-      await _seedBrass();
-      await _seedFirearms();
-      await _seedFirearmParts();
+      // Cartridges: re-seed when first run OR when an existing install is
+      // missing the v2 SAAMI/CIP dimension fields. The v2 migration only
+      // added the columns; without this re-seed users see "—" for body /
+      // shoulder / neck / rim dimensions even though the JSON has them.
+      if (firstRun || cartridgesNeedReseed) {
+        if (cartridgesNeedReseed && !firstRun) {
+          await db.delete(db.cartridges).go();
+        }
+        await _seedCartridges();
+      }
+      if (firstRun) {
+        await _seedPowders();
+        await _seedBullets();
+        await _seedBrass();
+        await _seedFirearms();
+        await _seedFirearmParts();
+      }
+      // Re-seed primers if they're missing — the v3 migration intentionally
+      // clears them so the new productLine field gets populated for
+      // upgrading users without nuking the rest of the DB.
+      if (firstRun || primersMissing) {
+        await _seedPrimers();
+      }
     });
   }
 

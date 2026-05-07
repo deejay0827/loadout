@@ -38,14 +38,15 @@ this updated as new items come up.
 
 ## Monetization (RevenueCat / IAP)
 
+> **Pricing decision (2026-05-07):** Two SKUs only — Yearly + Lifetime. Reloading is a slow-cycle hobby; monthly subscriptions churn hard on hobby tools. Yearly matches seasonal usage; Lifetime captures committed users. Prices follow the GUNR competitive reference: **Yearly $39.99/yr, Lifetime $79.99**. The app is pre-launch, so there are no monthly subscribers to grandfather — never create the monthly product anywhere.
+
 - [ ] **Sign up for RevenueCat** at https://app.revenuecat.com and create the LoadOut project.
-- [ ] **Set up App Store Connect IAP** — create the LoadOut app entry, complete tax and banking, generate an App Store Connect API key (`.p8`) for RevenueCat, generate the App-Specific Shared Secret. Define the three products: `loadout_pro_monthly` (subscription), `loadout_pro_yearly` (subscription), `loadout_pro_lifetime` (non-consumable).
-- [ ] **Set up Google Play Console IAP** — complete the payments profile, create the service account JSON, define the same three products under Monetize.
-- [ ] **Connect both stores to RevenueCat** in the RevenueCat dashboard. Create the `pro` entitlement and attach all three products to it. Create a `default` offering with monthly/annual/lifetime packages.
+- [ ] **Set up App Store Connect IAP** — create the LoadOut app entry, complete tax and banking, generate an App Store Connect API key (`.p8`) for RevenueCat, generate the App-Specific Shared Secret. Define **two** products: `loadout_pro_yearly` (auto-renewing subscription, **$39.99/yr**), `loadout_pro_lifetime` (non-consumable, **$79.99**). Do NOT create `loadout_pro_monthly`.
+- [ ] **Set up Google Play Console IAP** — complete the payments profile, create the service account JSON, define the same two products under Monetize at the same prices.
+- [ ] **Connect both stores to RevenueCat** in the RevenueCat dashboard. Create the `pro` entitlement and attach both products to it. Create a `default` offering with **yearly + lifetime** packages only (no monthly).
 - [x] iOS RevenueCat key (`appl_*`) plugged into `lib/services/revenue_cat_config.dart`.
 - [ ] **Replace the Android RevenueCat key** in `lib/services/revenue_cat_config.dart` with the real `goog_*` key once the Android app is set up in RevenueCat (blocked on Google Play identity verification).
 - [ ] **Sandbox-test purchases** — at least one round-trip per platform (purchase, restore, cancel) before any TestFlight / internal-testing build goes out.
-- [ ] **Decide final prices** for monthly / yearly / lifetime. Current placeholders: $2.99 / $19.99 / $49.99. See REVENUECAT_SETUP.md for the working ranges.
 - [ ] **Add a Privacy Policy URL** to both store listings (required before IAP can ship).
 - [ ] **First Pro feature gate live** — at least one Pro feature actually behind `ProGate` so users can see what they get.
 

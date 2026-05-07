@@ -201,8 +201,9 @@ class _Hero extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Unlock cloud sync, smart import, photo backup, '
-          'the ballistics calculator, unlimited custom fields, and more.',
+          'Unlock technical cartridge drawings, the ballistics '
+          'calculator, cloud backup, and every future Pro feature. '
+          'Yearly subscription or one-time Lifetime purchase.',
           style: theme.textTheme.bodyMedium,
           textAlign: TextAlign.center,
         ),
@@ -276,12 +277,13 @@ class _PackageCard extends StatelessWidget {
   }
 
   /// Prefer the human-friendly title from the store product; fall back to
-  /// the RevenueCat package identifier (e.g. `$rc_monthly`).
+  /// the RevenueCat package identifier (e.g. `$rc_annual`). Only Yearly +
+  /// Lifetime ship — monthly was never offered to a real user, so no
+  /// grandfather case to handle.
   static String _packageTitle(Package p) {
     final title = p.storeProduct.title;
     if (title.isNotEmpty) return title;
     return switch (p.packageType) {
-      PackageType.monthly => 'Monthly',
       PackageType.annual => 'Yearly',
       PackageType.lifetime => 'Lifetime',
       _ => p.identifier,

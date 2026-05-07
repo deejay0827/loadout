@@ -6,6 +6,8 @@ import '../../services/entitlement_notifier.dart';
 import '../../theme/app_theme.dart';
 import '../firearms/firearms_list_screen.dart';
 import '../glossary/glossary_screen.dart';
+import '../guide/reloading_guide_screen.dart';
+import '../how_it_works/how_it_works_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../privacy/privacy_screen.dart';
 import '../recipes/recipes_list_screen.dart';
@@ -14,11 +16,23 @@ import '../saami/saami_screen.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
+  /// Switches the home shell's bottom-nav to [index] from anywhere in
+  /// the widget tree below it. Used by topic CTAs in
+  /// [HowItWorksScreen] that pop back to the shell and then jump to a
+  /// specific tab (Recipes, Firearms, SAAMI Specs).
+  ///
+  /// No-op if no [HomeScreen] ancestor is found, or if [index] is out
+  /// of range.
+  static void switchTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<HomeScreenState>();
+    state?.switchTab(index);
+  }
+
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   int _index = 0;
 
   static const _titles = ['Recipes', 'Firearms', 'SAAMI Specs'];
@@ -27,6 +41,14 @@ class _HomeScreenState extends State<HomeScreen> {
     FirearmsListScreen(),
     SaamiScreen(),
   ];
+
+  /// Public so [HowItWorksScreen] CTAs can jump to a tab via
+  /// [HomeScreen.switchTab]. Bounds-checked and a no-op if [index]
+  /// is out of range.
+  void switchTab(int index) {
+    if (index < 0 || index >= _pages.length) return;
+    setState(() => _index = index);
+  }
 
   void _openPaywall() {
     Navigator.of(context).push(
@@ -111,6 +133,30 @@ class _MainDrawer extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
+            ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: const Text('How It Works'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const HowItWorksScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_stories_outlined),
+              title: const Text('Reloading Guide'),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const ReloadingGuideScreen(),
+                  ),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.menu_book_outlined),
               title: const Text('Glossary'),

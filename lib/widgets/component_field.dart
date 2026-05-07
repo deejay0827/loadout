@@ -120,6 +120,13 @@ class _ComponentFieldState extends State<ComponentField> {
             return TextFormField(
               controller: textCtrl,
               focusNode: focusNode,
+              // Turn off OS-level autocorrect / autocomplete chips. Component
+              // names are technical strings ("6mm GT", "Federal #210M") that
+              // the keyboard should not be guessing at — the in-app
+              // suggestions list is the source of truth.
+              autocorrect: false,
+              enableSuggestions: false,
+              textCapitalization: TextCapitalization.none,
               decoration: InputDecoration(
                 labelText: widget.label,
                 helperText: widget.helper ?? 'Pick from list or type your own',
