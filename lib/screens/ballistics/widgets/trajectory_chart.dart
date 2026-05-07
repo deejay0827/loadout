@@ -97,8 +97,10 @@
 // painter draws lines and text into a Canvas; that's it.
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../services/ballistics/solver.dart';
+import '../../../services/unit_service.dart';
 
 /// Two-curve chart showing trajectory drop and wind drift over range.
 class TrajectoryChart extends StatelessWidget {
@@ -115,6 +117,11 @@ class TrajectoryChart extends StatelessWidget {
     if (samples.isEmpty) {
       return const SizedBox(height: 240);
     }
+    final units = context.watch<UnitService>();
+    final rangeUnit =
+        unitDisplayLabel(units.unitFor(UnitCategory.range));
+    final smallLenUnit =
+        unitDisplayLabel(units.unitFor(UnitCategory.smallLength));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -124,6 +131,10 @@ class TrajectoryChart extends StatelessWidget {
             size: Size.infinite,
             painter: _ChartPainter(
               samples: samples,
+              rangeUnit: rangeUnit,
+              smallLenUnit: smallLenUnit,
+              rangeConverter: units.convertRange,
+              smallLenConverter: units.convertSmallLength,
               gridColor: theme.colorScheme.outline.withValues(alpha: 0.3),
               dropColor: theme.colorScheme.primary,
               windColor: theme.colorScheme.secondary,
@@ -144,8 +155,14 @@ class TrajectoryChart extends StatelessWidget {
           spacing: 16,
           runSpacing: 6,
           children: [
-            _Legend(color: theme.colorScheme.primary, label: 'Drop (in)'),
-            _Legend(color: theme.colorScheme.secondary, label: 'Wind drift (in)'),
+            _Legend(
+              color: theme.colorScheme.primary,
+              label: 'Drop ($smallLenUnit)',
+            ),
+            _Legend(
+              color: theme.colorScheme.secondary,
+              label: 'Wind drift ($smallLenUnit)',
+            ),
           ],
         ),
       ],
@@ -177,6 +194,10 @@ class _Legend extends StatelessWidget {
 class _ChartPainter extends CustomPainter {
   _ChartPainter({
     required this.samples,
+    required this.rangeUnit,
+    required this.smallLenUnit,
+    required this.rangeConverter,
+    required this.smallLenConverter,
     required this.gridColor,
     required this.dropColor,
     required this.windColor,
@@ -185,6 +206,22 @@ class _ChartPainter extends CustomPainter {
   });
 
   final List<TrajectorySample> samples;
+
+  /// Display label appended to the X axis (e.g. `"yd"` or `"m"`).
+  final String rangeUnit;
+
+  /// Display label appended to the Y-axis tick values (e.g. `"in"` or
+  /// `"cm"`).
+  final String smallLenUnit;
+
+  /// Converts canonical yards into the user's range unit before
+  /// rendering tick labels.
+  final double Function(double) rangeConverter;
+
+  /// Converts canonical inches into the user's small-length unit
+  /// before rendering tick labels.
+  final double Function(double) smallLenConverter;
+
   final Color gridColor;
   final Color dropColor;
   final Color windColor;
@@ -242,8 +279,10 @@ class _ChartPainter extends CustomPainter {
 
     // Horizontal gridlines + intermediate y-axis tick labels. Drawing 4
     // lines (0, 33%, 66%, 100%) lets the user read off rough drop values
-    // without an axis legend. Drop is displayed as a negative inch value
-    // because that's how shooters refer to it ("the bullet is 200" low").
+    // without an axis legend. Drop is displayed as a negative small-
+    // length value because that's how shooters refer to it ("the bullet
+    // is 200" low"). The displayed unit follows the user's
+    // small-length preference.
     const yDivisions = 3;
     for (var i = 0; i <= yDivisions; i++) {
       final frac = i / yDivisions;
@@ -254,8 +293,9 @@ class _ChartPainter extends CustomPainter {
         gridPaint,
       );
       final inchesAtTick = -(yMax * frac);
+      final displayed = smallLenConverter(inchesAtTick);
       final label =
-          inchesAtTick == 0 ? '0' : '${inchesAtTick.toStringAsFixed(0)}"';
+          displayed == 0 ? '0' : '${displayed.toStringAsFixed(0)}$smallLenUnit';
       _drawLabel(
         canvas,
         label,
@@ -281,7 +321,10 @@ class _ChartPainter extends CustomPainter {
       // Tick label centred under the gridline; clamp the x offset so the
       // last label can't overflow off the right edge.
       final tp = TextPainter(
-        text: TextSpan(text: v.toStringAsFixed(0), style: tickLabelStyle),
+        text: TextSpan(
+          text: rangeConverter(v).toStringAsFixed(0),
+          style: tickLabelStyle,
+        ),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout();
@@ -292,11 +335,11 @@ class _ChartPainter extends CustomPainter {
 
     // Min-range tick at the y-axis baseline. When minRange is 0 this just
     // says "0"; for non-zero starts (e.g. 200-yd ladder) it shows the
-    // actual starting yardage so the user isn't left guessing.
+    // actual starting yardage (in the user's range unit) so the user
+    // isn't left guessing.
     {
-      final minLabel = minRange == 0
-          ? '0'
-          : minRange.toStringAsFixed(0);
+      final minDisplay = rangeConverter(minRange);
+      final minLabel = minRange == 0 ? '0' : minDisplay.toStringAsFixed(0);
       final tp = TextPainter(
         text: TextSpan(text: minLabel, style: tickLabelStyle),
         textDirection: TextDirection.ltr,
@@ -305,10 +348,11 @@ class _ChartPainter extends CustomPainter {
       tp.paint(canvas, Offset(padLeft - tp.width / 2, padTop + plotH + 6));
     }
 
-    // "yd" unit annotation centred below the x-axis ticks.
+    // Range-unit annotation (e.g. "yd" / "m") centred below the x-axis
+    // ticks.
     {
       final tp = TextPainter(
-        text: TextSpan(text: 'yd', style: tickLabelStyle),
+        text: TextSpan(text: rangeUnit, style: tickLabelStyle),
         textDirection: TextDirection.ltr,
         textAlign: TextAlign.center,
       )..layout();

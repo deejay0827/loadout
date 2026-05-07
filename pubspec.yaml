@@ -265,12 +265,24 @@ dependencies:
   # subsequent calls are fully offline. This keeps the photo-import flow
   # privacy-aligned: the captured photo never leaves the device.
   image_picker: ^1.1.0
-  google_mlkit_text_recognition: ^0.13.0
+  google_mlkit_text_recognition: ^0.15.0
 
   # Reads the app version + build number at runtime so the Settings
   # footer and Help & Support mailto body don't have to re-hardcode the
   # value listed in `pubspec.yaml` `version:`. Cross-platform.
   package_info_plus: ^8.0.0
+
+  # Bluetooth Low Energy connectivity (Pro feature).
+  # `flutter_blue_plus` is the most-maintained Flutter BLE package; it
+  # exposes a stream-based API for scanning, connecting, and reading from
+  # GATT characteristics. Used by the Kestrel weather-meter integration
+  # (live atmospheric data into the ballistics + range-day screens).
+  # `permission_handler` is required to request the Android 12+ split
+  # `BLUETOOTH_SCAN` and `BLUETOOTH_CONNECT` runtime permissions; on iOS
+  # the OS prompts via `NSBluetoothAlwaysUsageDescription` automatically
+  # but the package gives us a uniform "open settings" deep-link API.
+  flutter_blue_plus: ^1.32.0
+  permission_handler: ^11.0.0
 
 dev_dependencies:
   flutter_test:

@@ -64,6 +64,7 @@ import '../../database/database.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../utils/responsive.dart';
+import 'photo_import_screen.dart';
 import 'quick_add_recipe_screen.dart';
 import 'recipe_form_screen.dart';
 import 'smart_import_screen.dart';
@@ -242,6 +243,25 @@ class _RecipesListScreenState extends State<RecipesListScreen> {
                   );
                 },
               ),
+              if (PhotoImportScreen.isSupportedPlatform)
+                ListTile(
+                  leading: Icon(
+                    Icons.photo_camera_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: const Text('Import from photo'),
+                  subtitle: const Text(
+                    'Snap a notebook page — read on this device. Free.',
+                  ),
+                  onTap: () {
+                    Navigator.of(sheetCtx).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PhotoImportScreen(),
+                      ),
+                    );
+                  },
+                ),
               const SizedBox(height: 8),
             ],
           ),

@@ -942,6 +942,9 @@ class _DisclaimerFooter extends StatelessWidget {
 
 // ─────────────────────── Formatting helpers ───────────────────────
 
+// TODO(units): expose UnitService for display labels. SAAMI specs are
+// reference data published in inches / PSI; a future migration could
+// surface millimeter / hPa equivalents alongside the imperial values.
 class _Format {
   static const String _dash = '—';
 

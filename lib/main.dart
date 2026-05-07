@@ -98,6 +98,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
+import 'data/reticle_seed_defaults.dart';
 import 'database/database.dart';
 import 'database/seed_loader.dart';
 import 'firebase_options.dart';
@@ -110,6 +111,11 @@ Future<void> main() async {
 
   final db = AppDatabase();
   await SeedLoader(db).seedIfNeeded();
+  // Seed the default reticle library if no reticles.json was loaded by
+  // SeedLoader. Idempotent — only writes when the table is empty so the
+  // parallel reticle-agent's eventual JSON-backed seeding wins on a
+  // future launch.
+  await seedDefaultReticlesIfEmpty(db);
 
   // `purchases_flutter` ships macOS bindings as of 9.x, but the App
   // Store Connect side of the IAP setup is still iOS/Android-only —

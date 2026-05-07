@@ -130,15 +130,22 @@ import 'repositories/firearm_repository.dart';
 import 'repositories/load_development_repository.dart';
 import 'repositories/optics_repository.dart';
 import 'repositories/process_step_repository.dart';
+import 'repositories/range_day_repository.dart';
 import 'repositories/recipe_repository.dart';
+import 'repositories/reticle_repository.dart';
+import 'repositories/target_repository.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/disclaimer/disclaimer_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'services/auth_service.dart';
 import 'services/auto_save_service.dart';
 import 'services/beginner_mode_service.dart';
+import 'services/ble/ble_service.dart';
+import 'services/ble/kestrel_service.dart';
 import 'services/entitlement_notifier.dart';
+import 'services/hit_probability_service.dart';
 import 'services/purchases_service.dart';
+import 'services/unit_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/disclaimer_overlay.dart';
 
@@ -172,6 +179,9 @@ class LoadOutApp extends StatelessWidget {
         Provider<OpticsRepository>(
           create: (_) => OpticsRepository(database),
         ),
+        Provider<ReticleRepository>(
+          create: (_) => ReticleRepository(database),
+        ),
         Provider<BrassLotRepository>(
           create: (_) => BrassLotRepository(database),
         ),
@@ -185,14 +195,45 @@ class LoadOutApp extends StatelessWidget {
         Provider<BallisticProfileRepository>(
           create: (_) => BallisticProfileRepository(database),
         ),
+        Provider<TargetRepository>(
+          create: (_) => TargetRepository(database),
+        ),
+        Provider<RangeDayRepository>(
+          create: (_) => RangeDayRepository(database),
+        ),
+        // Stateless service — provided once for the Range Day screen's
+        // hit-probability gauge. Pure-functional, so a single instance is
+        // safe across the whole tree.
+        Provider<HitProbabilityService>(
+          create: (_) => const HitProbabilityService(),
+        ),
         ChangeNotifierProvider<AutoSaveService>(
           create: (_) => AutoSaveService(),
         ),
         ChangeNotifierProvider<BeginnerModeService>(
           create: (_) => BeginnerModeService(),
         ),
+        ChangeNotifierProvider<UnitService>(
+          create: (_) => UnitService(),
+        ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),
+        ),
+        // BLE services. Provided once and shared across the app so a
+        // Kestrel connection established on the Devices screen survives
+        // a navigation back to Ballistics. The BleService is lazy — its
+        // adapter-state subscription doesn't fire until something asks
+        // for the radio state.
+        ChangeNotifierProvider<BleService>(
+          create: (_) {
+            final svc = BleService();
+            // ignore: discarded_futures
+            svc.initialize();
+            return svc;
+          },
+        ),
+        ChangeNotifierProvider<KestrelService>(
+          create: (ctx) => KestrelService(ctx.read<BleService>()),
         ),
         // Seed the auth-state stream with `FirebaseAuth.instance.currentUser`,
         // which is the SYNCHRONOUSLY-available cached user from the prior

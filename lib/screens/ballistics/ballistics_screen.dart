@@ -106,6 +106,8 @@
 //   `Clipboard.setData(...)`. Triggered only on the user tapping
 //   "Export DOPE card to clipboard."
 
+import 'dart:async';
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -122,7 +124,9 @@ import '../../services/ballistics/environment.dart';
 import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart';
+import '../../services/ble/kestrel_service.dart';
 import '../../services/entitlement_notifier.dart';
+import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/pro_gate.dart';
@@ -259,6 +263,34 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   bool _weatherHintHydrated = false;
   bool _weatherHintShown = true;
 
+  // ─────────────────────── Kestrel (Pro, BLE) ───────────────────────
+  /// True iff the user has opted to drive the Environment fields from
+  /// a connected Kestrel meter rather than the open-meteo fetch /
+  /// manual entry. When true, every incoming [KestrelReading] is
+  /// pushed into the controllers and the cloud-fetch button is
+  /// suppressed in favour of a "Stop using Kestrel" affordance.
+  bool _useKestrel = false;
+
+  /// Kestrel reading subscription — alive only while [_useKestrel] is
+  /// true and a device is connected.
+  StreamSubscription<KestrelReading>? _kestrelSub;
+
+  // ─────────────────────── Unit tracking ───────────────────────
+  // The controllers above hold text in the user's CURRENT display unit
+  // (imperial by default; switches to metric values when the user
+  // toggles units in Settings). The `_lastSeen*` fields below capture
+  // the unit each controller was last rendered in so a Settings change
+  // can convert the existing text to the new unit instead of leaving
+  // the same number with a different label, which would mis-state the
+  // physical quantity.
+  String? _lastSeenVelocity;
+  String? _lastSeenSmallLen;
+  String? _lastSeenRange;
+  String? _lastSeenTemp;
+  String? _lastSeenWind;
+  String? _lastSeenPressure;
+  String? _lastSeenBulletWeight;
+
   @override
   void initState() {
     super.initState();
@@ -268,6 +300,163 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
     _restoreRangePreferences();
     _loadWeatherHintFlag();
+  }
+
+  /// Reads the latest [UnitService] state and rewrites the controllers
+  /// whenever the user has flipped a category since the last build.
+  /// Called at the top of [build] so changes propagate without restart.
+  ///
+  /// The field text is treated as **already in the displayed unit**;
+  /// when the user toggles, we invert from the OLD display unit back
+  /// to canonical (imperial), then forward to the NEW display unit.
+  /// This preserves the physical quantity the user typed.
+  void _syncDisplayedUnits(UnitService units) {
+    // Velocity (fps / m/s).
+    final velUnit = units.unitFor(UnitCategory.velocity);
+    if (_lastSeenVelocity != null && _lastSeenVelocity != velUnit) {
+      _convertCtrl(_muzzleVelCtrl, _lastSeenVelocity!, velUnit, _velocityToCanonical, _velocityFromCanonical);
+    }
+    _lastSeenVelocity = velUnit;
+
+    // Small length (in / cm) — sight height + bullet length follow this
+    // unit. Bullet diameter is intentionally NOT converted: cartridge
+    // designations are still imperial worldwide ("6.5mm" means 0.264"
+    // bullet diameter, not 0.264 cm), so reloaders type diameter in
+    // inches regardless of system.
+    final smallLenUnit = units.unitFor(UnitCategory.smallLength);
+    if (_lastSeenSmallLen != null && _lastSeenSmallLen != smallLenUnit) {
+      _convertCtrl(_sightHeightCtrl, _lastSeenSmallLen!, smallLenUnit, _smallLenToCanonical, _smallLenFromCanonical);
+      _convertCtrl(_lengthCtrl, _lastSeenSmallLen!, smallLenUnit, _smallLenToCanonical, _smallLenFromCanonical);
+    }
+    _lastSeenSmallLen = smallLenUnit;
+
+    // Range (yd / m) — applies to zero range, range min/max.
+    final rangeUnit = units.unitFor(UnitCategory.range);
+    if (_lastSeenRange != null && _lastSeenRange != rangeUnit) {
+      _convertCtrl(_zeroRangeCtrl, _lastSeenRange!, rangeUnit, _rangeToCanonical, _rangeFromCanonical);
+      _convertCtrl(_rangeMinCtrl, _lastSeenRange!, rangeUnit, _rangeToCanonical, _rangeFromCanonical);
+      _convertCtrl(_rangeMaxCtrl, _lastSeenRange!, rangeUnit, _rangeToCanonical, _rangeFromCanonical);
+    }
+    _lastSeenRange = rangeUnit;
+
+    // Temperature (°F / °C).
+    final tempUnit = units.unitFor(UnitCategory.temperature);
+    if (_lastSeenTemp != null && _lastSeenTemp != tempUnit) {
+      _convertCtrl(_tempCtrl, _lastSeenTemp!, tempUnit, _tempToCanonical, _tempFromCanonical);
+    }
+    _lastSeenTemp = tempUnit;
+
+    // Wind speed (mph / m/s / km/h).
+    final windUnit = units.unitFor(UnitCategory.windSpeed);
+    if (_lastSeenWind != null && _lastSeenWind != windUnit) {
+      _convertCtrl(_windSpeedCtrl, _lastSeenWind!, windUnit, _windToCanonical, _windFromCanonical);
+    }
+    _lastSeenWind = windUnit;
+
+    // Pressure (inHg / mmHg / hPa).
+    final pressureUnit = units.unitFor(UnitCategory.pressure);
+    if (_lastSeenPressure != null && _lastSeenPressure != pressureUnit) {
+      _convertCtrl(_pressureCtrl, _lastSeenPressure!, pressureUnit, _pressureToCanonical, _pressureFromCanonical);
+    }
+    _lastSeenPressure = pressureUnit;
+
+    // Bullet weight (gr / g).
+    final bulletWeightUnit = units.unitFor(UnitCategory.bulletWeight);
+    if (_lastSeenBulletWeight != null && _lastSeenBulletWeight != bulletWeightUnit) {
+      _convertCtrl(_weightCtrl, _lastSeenBulletWeight!, bulletWeightUnit, _bulletWeightToCanonical, _bulletWeightFromCanonical);
+    }
+    _lastSeenBulletWeight = bulletWeightUnit;
+  }
+
+  /// Convert the text of a controller from one display unit to another.
+  /// `toCanonical(value, unit)` converts a display value in `unit` back
+  /// to imperial; `fromCanonical(value, unit)` converts imperial back
+  /// to display. We chain them: oldDisplay → canonical → newDisplay.
+  void _convertCtrl(
+    TextEditingController ctrl,
+    String fromUnit,
+    String toUnit,
+    double Function(double, String) toCanonical,
+    double Function(double, String) fromCanonical,
+  ) {
+    final raw = double.tryParse(ctrl.text.trim());
+    if (raw == null) return;
+    final canonical = toCanonical(raw, fromUnit);
+    final newDisplay = fromCanonical(canonical, toUnit);
+    ctrl.text = _formatNumber(newDisplay);
+  }
+
+  /// Trim trailing zeros so converted values look natural — `2.50` →
+  /// `2.5`, `100.0` → `100`. Caps at 4 decimals to keep precision sane
+  /// for short distances when converting to inches → cm.
+  String _formatNumber(double v) {
+    if (v.isNaN || v.isInfinite) return '0';
+    final s = v.toStringAsFixed(4);
+    final trimmed = s.replaceFirst(RegExp(r'\.?0+$'), '');
+    return trimmed.isEmpty ? '0' : trimmed;
+  }
+
+  // Per-category conversion helpers used by [_syncDisplayedUnits].
+  // They all return canonical = imperial (fps, in, yd, °F, mph, inHg).
+  double _velocityToCanonical(double v, String unit) {
+    if (unit == unitMps) return v / 0.3048;
+    return v;
+  }
+  double _velocityFromCanonical(double fps, String unit) {
+    if (unit == unitMps) return fps * 0.3048;
+    return fps;
+  }
+  double _smallLenToCanonical(double v, String unit) {
+    if (unit == unitCm) return v / 2.54;
+    return v;
+  }
+  double _smallLenFromCanonical(double inches, String unit) {
+    if (unit == unitCm) return inches * 2.54;
+    return inches;
+  }
+  double _rangeToCanonical(double v, String unit) {
+    if (unit == unitM) return v / 0.9144;
+    return v;
+  }
+  double _rangeFromCanonical(double yd, String unit) {
+    if (unit == unitM) return yd * 0.9144;
+    return yd;
+  }
+  double _tempToCanonical(double v, String unit) {
+    if (unit == unitDegC) return v * 9.0 / 5.0 + 32.0;
+    return v;
+  }
+  double _tempFromCanonical(double f, String unit) {
+    if (unit == unitDegC) return (f - 32.0) * 5.0 / 9.0;
+    return f;
+  }
+  double _windToCanonical(double v, String unit) {
+    if (unit == unitMps) return v / 0.44704;
+    if (unit == unitKph) return v / 1.609344;
+    return v;
+  }
+  double _windFromCanonical(double mph, String unit) {
+    if (unit == unitMps) return mph * 0.44704;
+    if (unit == unitKph) return mph * 1.609344;
+    return mph;
+  }
+  double _pressureToCanonical(double v, String unit) {
+    if (unit == unitMmHg) return v / 25.4;
+    if (unit == unitHpa) return v / 33.8639;
+    return v;
+  }
+  double _pressureFromCanonical(double inHg, String unit) {
+    if (unit == unitMmHg) return inHg * 25.4;
+    if (unit == unitHpa) return inHg * 33.8639;
+    return inHg;
+  }
+  double _bulletWeightToCanonical(double v, String unit) {
+    if (unit == unitG) return v / 0.06479891;
+    return v;
+  }
+  double _bulletWeightFromCanonical(double gr, String unit) {
+    if (unit == unitG) return gr * 0.06479891;
+    return gr;
   }
 
   /// One-shot read of the "have we shown the weather hint yet?" flag.
@@ -294,28 +483,68 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// Snapshots the current form state into a `BallisticProfilesCompanion`.
   /// Used by both Save (insert) and Update (write existing).
   BallisticProfilesCompanion _buildProfileCompanion(String name) {
+    // Profile columns are NAMED with an explicit imperial unit
+    // ("bulletWeightGr", "muzzleVelocityFps", ...). The controller text
+    // is in the user's chosen DISPLAY unit; convert each value back to
+    // canonical imperial so loading the profile from any unit setting
+    // restores the same physical quantity.
+    final units = context.read<UnitService>();
+    double? toFps(String s) {
+      final v = double.tryParse(s);
+      if (v == null) return null;
+      return _velocityToCanonical(v, units.unitFor(UnitCategory.velocity));
+    }
+    double? toIn(String s) {
+      final v = double.tryParse(s);
+      if (v == null) return null;
+      return _smallLenToCanonical(v, units.unitFor(UnitCategory.smallLength));
+    }
+    int? toYd(String s) {
+      final v = double.tryParse(s);
+      if (v == null) return null;
+      return _rangeToCanonical(v, units.unitFor(UnitCategory.range)).round();
+    }
+    double? toGr(String s) {
+      final v = double.tryParse(s);
+      if (v == null) return null;
+      return _bulletWeightToCanonical(
+          v, units.unitFor(UnitCategory.bulletWeight));
+    }
+    double? toF(String s) {
+      final v = double.tryParse(s);
+      if (v == null) return null;
+      return _tempToCanonical(v, units.unitFor(UnitCategory.temperature));
+    }
+    double? toInHg(String s) {
+      final v = double.tryParse(s);
+      if (v == null) return null;
+      return _pressureToCanonical(v, units.unitFor(UnitCategory.pressure));
+    }
+    double? toMph(String s) {
+      final v = double.tryParse(s);
+      if (v == null) return null;
+      return _windToCanonical(v, units.unitFor(UnitCategory.windSpeed));
+    }
     return BallisticProfilesCompanion(
       name: drift.Value(name),
-      bulletWeightGr: drift.Value(double.tryParse(_weightCtrl.text) ?? 0),
+      bulletWeightGr: drift.Value(toGr(_weightCtrl.text) ?? 0),
       bulletDiameterIn: drift.Value(double.tryParse(_diameterCtrl.text) ?? 0),
       ballisticCoefficient: drift.Value(double.tryParse(_bcCtrl.text) ?? 0),
       dragModel: drift.Value(_dragModel == DragModel.g7 ? 'g7' : 'g1'),
-      bulletLengthIn: drift.Value(double.tryParse(_lengthCtrl.text)),
-      muzzleVelocityFps:
-          drift.Value(double.tryParse(_muzzleVelCtrl.text) ?? 0),
-      zeroRangeYd: drift.Value(int.tryParse(_zeroRangeCtrl.text) ?? 100),
-      sightHeightIn:
-          drift.Value(double.tryParse(_sightHeightCtrl.text) ?? 1.5),
+      bulletLengthIn: drift.Value(toIn(_lengthCtrl.text)),
+      muzzleVelocityFps: drift.Value(toFps(_muzzleVelCtrl.text) ?? 0),
+      zeroRangeYd: drift.Value(toYd(_zeroRangeCtrl.text) ?? 100),
+      sightHeightIn: drift.Value(toIn(_sightHeightCtrl.text) ?? 1.5),
       twistRate: drift.Value(_twistCtrl.text.trim().isEmpty
           ? null
           : _twistCtrl.text.trim()),
       firearmId: drift.Value(_selectedFirearm?.id),
       bulletId: drift.Value(_selectedBullet?.bullet.id),
-      temperatureF: drift.Value(double.tryParse(_tempCtrl.text)),
-      pressureInHg: drift.Value(double.tryParse(_pressureCtrl.text)),
+      temperatureF: drift.Value(toF(_tempCtrl.text)),
+      pressureInHg: drift.Value(toInHg(_pressureCtrl.text)),
       humidityPct: drift.Value(double.tryParse(_humidityCtrl.text)),
       elevationFt: drift.Value(double.tryParse(_altitudeCtrl.text)),
-      windSpeedMph: drift.Value(double.tryParse(_windSpeedCtrl.text)),
+      windSpeedMph: drift.Value(toMph(_windSpeedCtrl.text)),
       windDirectionDeg: drift.Value(double.tryParse(_windDirCtrl.text)),
       latitudeDeg: drift.Value(double.tryParse(_latitudeCtrl.text)),
       firingAzimuthDeg: drift.Value(double.tryParse(_shotAzimuthCtrl.text)),
@@ -330,26 +559,40 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// profile actually saved them (nullable columns); otherwise leaves
   /// the existing values alone, which keeps the SharedPreferences
   /// fallback intact.
+  ///
+  /// All profile columns store canonical (imperial) values; the
+  /// controllers display values in the user's CHOSEN unit. Convert
+  /// each loaded value from canonical to display before assigning so
+  /// a metric reloader sees grams / cm / m on screen even though the
+  /// row was saved in grains / inches / yards.
   void _applyProfile(BallisticProfileRow p) {
+    final units = context.read<UnitService>();
     setState(() {
       _activeProfile = p;
-      _weightCtrl.text = _trimTrailingZeros(p.bulletWeightGr);
+      _weightCtrl.text = _formatNumber(_bulletWeightFromCanonical(
+          p.bulletWeightGr, units.unitFor(UnitCategory.bulletWeight)));
       _diameterCtrl.text = p.bulletDiameterIn.toStringAsFixed(3);
       _bcCtrl.text = p.ballisticCoefficient.toStringAsFixed(3);
       _dragModel =
           p.dragModel.toLowerCase() == 'g1' ? DragModel.g1 : DragModel.g7;
       if (p.bulletLengthIn != null) {
-        _lengthCtrl.text = _trimTrailingZeros(p.bulletLengthIn!);
+        _lengthCtrl.text = _formatNumber(_smallLenFromCanonical(
+            p.bulletLengthIn!, units.unitFor(UnitCategory.smallLength)));
       }
       if (p.twistRate != null) _twistCtrl.text = p.twistRate!;
-      _muzzleVelCtrl.text = p.muzzleVelocityFps.toStringAsFixed(0);
-      _zeroRangeCtrl.text = p.zeroRangeYd.toString();
-      _sightHeightCtrl.text = _trimTrailingZeros(p.sightHeightIn);
+      _muzzleVelCtrl.text = _formatNumber(_velocityFromCanonical(
+          p.muzzleVelocityFps, units.unitFor(UnitCategory.velocity)));
+      _zeroRangeCtrl.text = _formatNumber(_rangeFromCanonical(
+          p.zeroRangeYd.toDouble(), units.unitFor(UnitCategory.range)));
+      _sightHeightCtrl.text = _formatNumber(_smallLenFromCanonical(
+          p.sightHeightIn, units.unitFor(UnitCategory.smallLength)));
       if (p.temperatureF != null) {
-        _tempCtrl.text = _trimTrailingZeros(p.temperatureF!);
+        _tempCtrl.text = _formatNumber(_tempFromCanonical(
+            p.temperatureF!, units.unitFor(UnitCategory.temperature)));
       }
       if (p.pressureInHg != null) {
-        _pressureCtrl.text = p.pressureInHg!.toStringAsFixed(2);
+        _pressureCtrl.text = _formatNumber(_pressureFromCanonical(
+            p.pressureInHg!, units.unitFor(UnitCategory.pressure)));
       }
       if (p.humidityPct != null) {
         _humidityCtrl.text = _trimTrailingZeros(p.humidityPct!);
@@ -358,7 +601,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _altitudeCtrl.text = _trimTrailingZeros(p.elevationFt!);
       }
       if (p.windSpeedMph != null) {
-        _windSpeedCtrl.text = _trimTrailingZeros(p.windSpeedMph!);
+        _windSpeedCtrl.text = _formatNumber(_windFromCanonical(
+            p.windSpeedMph!, units.unitFor(UnitCategory.windSpeed)));
       }
       if (p.windDirectionDeg != null) {
         _windDirCtrl.text = _trimTrailingZeros(p.windDirectionDeg!);
@@ -370,8 +614,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _shotAzimuthCtrl.text = _trimTrailingZeros(p.firingAzimuthDeg!);
       }
       _rangeIncrement = p.rangeIncrementYd;
-      _rangeMinCtrl.text = p.rangeMinYd.toString();
-      _rangeMaxCtrl.text = p.rangeMaxYd.toString();
+      _rangeMinCtrl.text = _formatNumber(_rangeFromCanonical(
+          p.rangeMinYd.toDouble(), units.unitFor(UnitCategory.range)));
+      _rangeMaxCtrl.text = _formatNumber(_rangeFromCanonical(
+          p.rangeMaxYd.toDouble(), units.unitFor(UnitCategory.range)));
     });
   }
 
@@ -541,6 +787,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     ]) {
       c.dispose();
     }
+    // ignore: discarded_futures
+    _kestrelSub?.cancel();
     super.dispose();
   }
 
@@ -551,22 +799,59 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       _error = null;
     });
     try {
+      // Read the user-typed values (in their CHOSEN display unit) and
+      // convert to canonical imperial before handing off to the solver.
+      // The solver itself never knows about the user's unit preference;
+      // unit awareness is strictly a UI-boundary concern.
+      final units = context.read<UnitService>();
+      // NOTE: bullet diameter is conventionally entered in inches even by
+      // metric reloaders ("0.264 for 6.5mm") since cartridge designations
+      // are still imperial. We do not unit-convert it.
       final diameter = _parsePos(_diameterCtrl.text, 'Bullet diameter');
-      final weight = _parsePos(_weightCtrl.text, 'Bullet weight');
+      final weight = _bulletWeightToCanonical(
+        _parsePos(_weightCtrl.text, 'Bullet weight'),
+        units.unitFor(UnitCategory.bulletWeight),
+      );
       final bc = _parsePos(_bcCtrl.text, 'BC');
       final twist = _parseOpt(_twistCtrl.text);
-      final length = _parseOpt(_lengthCtrl.text);
+      // Bullet length follows the small-length unit so it converts
+      // alongside sight height when the user toggles units.
+      final lengthDisp = _parseOpt(_lengthCtrl.text);
+      final length = lengthDisp == null
+          ? null
+          : _smallLenToCanonical(
+              lengthDisp,
+              units.unitFor(UnitCategory.smallLength),
+            );
 
-      final mv = _parsePos(_muzzleVelCtrl.text, 'Muzzle velocity');
-      final sightHeight = _parsePos(_sightHeightCtrl.text, 'Sight height');
-      final zeroRange = _parsePos(_zeroRangeCtrl.text, 'Zero range');
+      final mv = _velocityToCanonical(
+        _parsePos(_muzzleVelCtrl.text, 'Muzzle velocity'),
+        units.unitFor(UnitCategory.velocity),
+      );
+      final sightHeight = _smallLenToCanonical(
+        _parsePos(_sightHeightCtrl.text, 'Sight height'),
+        units.unitFor(UnitCategory.smallLength),
+      );
+      final zeroRange = _rangeToCanonical(
+        _parsePos(_zeroRangeCtrl.text, 'Zero range'),
+        units.unitFor(UnitCategory.range),
+      );
       final shotAzimuth = double.tryParse(_shotAzimuthCtrl.text.trim()) ?? 0.0;
 
-      final temp = _parseAny(_tempCtrl.text, 'Temperature');
-      final pressure = _parsePos(_pressureCtrl.text, 'Pressure');
+      final temp = _tempToCanonical(
+        _parseAny(_tempCtrl.text, 'Temperature'),
+        units.unitFor(UnitCategory.temperature),
+      );
+      final pressure = _pressureToCanonical(
+        _parsePos(_pressureCtrl.text, 'Pressure'),
+        units.unitFor(UnitCategory.pressure),
+      );
       final humidity = _parseAny(_humidityCtrl.text, 'Humidity');
       final altitude = _parseAny(_altitudeCtrl.text, 'Altitude');
-      final windSpeed = double.tryParse(_windSpeedCtrl.text.trim()) ?? 0;
+      final windSpeed = _windToCanonical(
+        double.tryParse(_windSpeedCtrl.text.trim()) ?? 0,
+        units.unitFor(UnitCategory.windSpeed),
+      );
       final windDir = double.tryParse(_windDirCtrl.text.trim()) ?? 0;
       final latitude = double.tryParse(_latitudeCtrl.text.trim()) ?? 0;
       final tgtElev = double.tryParse(_targetElevationCtrl.text.trim()) ?? 0;
@@ -727,14 +1012,15 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   void _applyBulletSelection(({BulletRow bullet, ManufacturerRow mfg}) sel) {
+    final units = context.read<UnitService>();
     setState(() {
       _selectedBullet = sel;
+      // Bullet diameter stays in inches by convention (cartridge
+      // designations).
       _diameterCtrl.text = sel.bullet.diameterIn.toStringAsFixed(3);
-      // Pretty-print weight without a trailing ".0" when it's already integral.
-      _weightCtrl.text = sel.bullet.weightGr.truncateToDouble() ==
-              sel.bullet.weightGr
-          ? sel.bullet.weightGr.toStringAsFixed(0)
-          : sel.bullet.weightGr.toString();
+      // Convert canonical grain weight to whatever the user picked.
+      _weightCtrl.text = _formatNumber(_bulletWeightFromCanonical(
+          sel.bullet.weightGr, units.unitFor(UnitCategory.bulletWeight)));
       // Prefer G7 BC when available (better fit for VLD-style boat-tail
       // bullets); fall back to G1 otherwise. Switch the drag model to
       // match so the BC and the curve agree.
@@ -782,6 +1068,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   void _applyFirearmSelection(UserFirearmRow f) {
+    final units = context.read<UnitService>();
     setState(() {
       _selectedFirearm = f;
       // Twist rate.
@@ -793,15 +1080,23 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _twistMissingFromFirearm = true;
       }
       // MV / zero range / sight height — only overwrite when the firearm
-      // has a value, so we never blow away whatever the user typed manually.
+      // has a value, so we never blow away whatever the user typed
+      // manually. Firearm columns store canonical imperial values; the
+      // controllers display values in the user's chosen unit, so each
+      // line below converts before assigning.
       if (f.defaultMuzzleVelocityFps != null) {
-        _muzzleVelCtrl.text = f.defaultMuzzleVelocityFps!.toStringAsFixed(0);
+        _muzzleVelCtrl.text = _formatNumber(_velocityFromCanonical(
+            f.defaultMuzzleVelocityFps!,
+            units.unitFor(UnitCategory.velocity)));
       }
       if (f.defaultZeroRangeYd != null) {
-        _zeroRangeCtrl.text = f.defaultZeroRangeYd!.toString();
+        _zeroRangeCtrl.text = _formatNumber(_rangeFromCanonical(
+            f.defaultZeroRangeYd!.toDouble(),
+            units.unitFor(UnitCategory.range)));
       }
       if (f.sightHeightIn != null) {
-        _sightHeightCtrl.text = f.sightHeightIn!.toString();
+        _sightHeightCtrl.text = _formatNumber(_smallLenFromCanonical(
+            f.sightHeightIn!, units.unitFor(UnitCategory.smallLength)));
       }
     });
   }
@@ -823,18 +1118,28 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     await prefs.setInt(_kRangeIncrementKey, incrementYd);
   }
 
-  /// Reads the start-range field, clamps to [_kRangeMinMin]…[_kRangeMinMax],
-  /// and falls back to [_kRangeMinDefault] if empty / non-numeric.
+  /// Reads the start-range field, converts from the user's chosen
+  /// range unit to canonical yards, clamps to [_kRangeMinMin]…
+  /// [_kRangeMinMax], and falls back to [_kRangeMinDefault] if empty /
+  /// non-numeric.
   int _readClampedMinRange() {
-    final raw = int.tryParse(_rangeMinCtrl.text.trim()) ?? _kRangeMinDefault;
-    return raw.clamp(_kRangeMinMin, _kRangeMinMax);
+    final raw = double.tryParse(_rangeMinCtrl.text.trim());
+    if (raw == null) return _kRangeMinDefault;
+    final unit = context.read<UnitService>().unitFor(UnitCategory.range);
+    final yd = _rangeToCanonical(raw, unit).round();
+    return yd.clamp(_kRangeMinMin, _kRangeMinMax);
   }
 
-  /// Reads the end-range field, clamps to [_kRangeMaxMin]…[_kRangeMaxMax],
-  /// and falls back to [_kRangeMaxDefault] if empty / non-numeric.
+  /// Reads the end-range field, converts from the user's chosen
+  /// range unit to canonical yards, clamps to [_kRangeMaxMin]…
+  /// [_kRangeMaxMax], and falls back to [_kRangeMaxDefault] if empty /
+  /// non-numeric.
   int _readClampedMaxRange() {
-    final raw = int.tryParse(_rangeMaxCtrl.text.trim()) ?? _kRangeMaxDefault;
-    return raw.clamp(_kRangeMaxMin, _kRangeMaxMax);
+    final raw = double.tryParse(_rangeMaxCtrl.text.trim());
+    if (raw == null) return _kRangeMaxDefault;
+    final unit = context.read<UnitService>().unitFor(UnitCategory.range);
+    final yd = _rangeToCanonical(raw, unit).round();
+    return yd.clamp(_kRangeMaxMin, _kRangeMaxMax);
   }
 
   /// Persists the start-range field on edit so the user's preference
@@ -908,6 +1213,11 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   @override
   Widget build(BuildContext context) {
     final showWeatherHint = _weatherHintHydrated && !_weatherHintShown;
+    // Subscribe to UnitService so the screen rebuilds when the user
+    // toggles units in Settings, then convert any controller text whose
+    // category just changed.
+    final units = context.watch<UnitService>();
+    _syncDisplayedUnits(units);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ballistics Calculator'),
@@ -1238,6 +1548,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   Widget _projectileSection() {
+    final units = context.watch<UnitService>();
+    final smallLen = unitDisplayLabel(units.unitFor(UnitCategory.smallLength));
+    final bulletWt = unitDisplayLabel(units.unitFor(UnitCategory.bulletWeight));
     return _SectionCard(
       title: 'Projectile',
       icon: Icons.album_outlined,
@@ -1253,6 +1566,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: const InputDecoration(
+                    // Diameter stays in inches by convention — cartridge
+                    // designations ("6.5mm", ".308") still map to bullet
+                    // diameters in inches even in metric workflows.
                     labelText: 'Diameter (in)',
                     helperText: 'e.g. 0.264 for 6.5mm',
                   ),
@@ -1264,8 +1580,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _weightCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Weight (gr)',
+                  decoration: InputDecoration(
+                    labelText: 'Weight ($bulletWt)',
+                    suffixText: bulletWt,
                   ),
                 ),
               ),
@@ -1279,9 +1596,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _lengthCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Length (in, optional)',
+                  decoration: InputDecoration(
+                    labelText: 'Length ($smallLen, optional)',
                     helperText: 'For Miller stability calc',
+                    suffixText: smallLen,
                   ),
                 ),
               ),
@@ -1455,6 +1773,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   Widget _muzzleZeroSection() {
+    final units = context.watch<UnitService>();
+    final velUnit = unitDisplayLabel(units.unitFor(UnitCategory.velocity));
+    final smallLen = unitDisplayLabel(units.unitFor(UnitCategory.smallLength));
+    final rangeUnit = unitDisplayLabel(units.unitFor(UnitCategory.range));
     return _SectionCard(
       title: 'Muzzle / Zero',
       icon: Icons.center_focus_strong_outlined,
@@ -1467,8 +1789,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _muzzleVelCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Muzzle velocity (fps)',
+                  decoration: InputDecoration(
+                    labelText: 'Muzzle velocity ($velUnit)',
+                    suffixText: velUnit,
                   ),
                 ),
               ),
@@ -1478,8 +1801,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _sightHeightCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Sight height (in)',
+                  decoration: InputDecoration(
+                    labelText: 'Sight height ($smallLen)',
+                    suffixText: smallLen,
                   ),
                 ),
               ),
@@ -1493,8 +1817,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _zeroRangeCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Zero range (yd)',
+                  decoration: InputDecoration(
+                    labelText: 'Zero range ($rangeUnit)',
+                    suffixText: rangeUnit,
                   ),
                 ),
               ),
@@ -1547,16 +1872,23 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     // Capture the messenger BEFORE the async fetch so we don't trip
     // `use_build_context_synchronously` after awaits.
     final messenger = ScaffoldMessenger.of(context);
+    final units = context.read<UnitService>();
     setState(() => _weatherFetching = true);
     try {
       final result = await WeatherService().fetchForCurrentLocation();
       if (!mounted) return;
+      // Weather service returns canonical imperial values; convert to
+      // the user's chosen display unit before assigning to controllers.
       setState(() {
-        _tempCtrl.text = result.tempF.toStringAsFixed(1);
-        _pressureCtrl.text = result.stationPressureInHg.toStringAsFixed(2);
+        _tempCtrl.text = _formatNumber(_tempFromCanonical(
+            result.tempF, units.unitFor(UnitCategory.temperature)));
+        _pressureCtrl.text = _formatNumber(_pressureFromCanonical(
+            result.stationPressureInHg,
+            units.unitFor(UnitCategory.pressure)));
         _humidityCtrl.text = result.humidityPct.toStringAsFixed(0);
         _altitudeCtrl.text = result.elevationFt.toStringAsFixed(0);
-        _windSpeedCtrl.text = result.windSpeedMph.toStringAsFixed(1);
+        _windSpeedCtrl.text = _formatNumber(_windFromCanonical(
+            result.windSpeedMph, units.unitFor(UnitCategory.windSpeed)));
         _windDirCtrl.text = result.windDirectionDeg.toStringAsFixed(0);
         _weatherFetchedAt = result.fetchedAt;
       });
@@ -1593,9 +1925,26 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// small "Use my location" cloud icon button with a "PRO" chip next
   /// to it so non-Pro users see what they'd be unlocking. The button
   /// flips to a spinner while the fetch is in flight.
+  ///
+  /// When a Kestrel is connected and [_useKestrel] is true, the cloud
+  /// fetch button is replaced by a "Stop using Kestrel" pill — Kestrel
+  /// readings are local + faster + more accurate than open-meteo, so
+  /// we deliberately steer the user toward keeping that on once paired.
   Widget _environmentTrailing() {
     final theme = Theme.of(context);
     final isPro = context.watch<EntitlementNotifier>().isPro;
+    final kestrel = context.watch<KestrelService>();
+    if (_useKestrel && kestrel.device != null) {
+      return TextButton.icon(
+        onPressed: _onStopUsingKestrel,
+        icon: const Icon(Icons.bluetooth_connected, size: 16),
+        label: const Text('Stop using Kestrel'),
+        style: TextButton.styleFrom(
+          padding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        ),
+      );
+    }
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1619,6 +1968,15 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               ),
             ),
           ),
+        // Show "Use Kestrel" when one is paired but the user hasn't
+        // opted in yet — surfaces the better data source the moment
+        // they have it.
+        if (isPro && kestrel.device != null && !_useKestrel)
+          IconButton(
+            tooltip: 'Pull live readings from Kestrel',
+            icon: const Icon(Icons.bluetooth, size: 20),
+            onPressed: _onStartUsingKestrel,
+          ),
         IconButton(
           tooltip: 'Use my location',
           onPressed: _weatherFetching ? null : _onUseMyLocation,
@@ -1632,6 +1990,52 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         ),
       ],
     );
+  }
+
+  /// Subscribe to the live Kestrel feed and pipe readings into the
+  /// environment controllers. Pro-gated. No-op if no Kestrel is
+  /// connected — the UI only surfaces this affordance when the device
+  /// is present.
+  Future<void> _onStartUsingKestrel() async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    final kestrel = context.read<KestrelService>();
+    if (kestrel.device == null) return;
+    await _kestrelSub?.cancel();
+    _kestrelSub = kestrel.readings.listen(_applyKestrelReading);
+    setState(() => _useKestrel = true);
+    // Apply the latest reading immediately so the UI doesn't sit on
+    // stale values until the next 1-Hz tick.
+    final latest = kestrel.lastReading;
+    if (latest != null) {
+      _applyKestrelReading(latest);
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pulling live data from Kestrel.')),
+    );
+  }
+
+  /// Cancel the live subscription. Leaves the existing controller
+  /// values where they are; the user can re-enter manually or pull
+  /// open-meteo from here.
+  Future<void> _onStopUsingKestrel() async {
+    await _kestrelSub?.cancel();
+    _kestrelSub = null;
+    if (!mounted) return;
+    setState(() => _useKestrel = false);
+  }
+
+  void _applyKestrelReading(KestrelReading r) {
+    if (!mounted) return;
+    setState(() {
+      _tempCtrl.text = r.tempF.toStringAsFixed(1);
+      _pressureCtrl.text = r.stationPressureInHg.toStringAsFixed(2);
+      _humidityCtrl.text = r.humidityPct.toStringAsFixed(0);
+      _windSpeedCtrl.text = r.windSpeedMph.toStringAsFixed(1);
+      _windDirCtrl.text = r.windDirectionDeg.toStringAsFixed(0);
+      _weatherFetchedAt = r.receivedAt;
+    });
   }
 
   /// First-run MaterialBanner above the ballistics body. Tells Pro
@@ -1660,7 +2064,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'New: pull current weather',
+                    'New: Pull Current Weather',
                     style: theme.textTheme.titleSmall?.copyWith(
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.w600,
@@ -1696,11 +2100,22 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
 
   Widget _environmentSection() {
     final updatedAt = _weatherFetchedAt;
+    final units = context.watch<UnitService>();
+    final tempLabel = unitDisplayLabel(units.unitFor(UnitCategory.temperature));
+    final pressureLabel =
+        unitDisplayLabel(units.unitFor(UnitCategory.pressure));
+    final windLabel = unitDisplayLabel(units.unitFor(UnitCategory.windSpeed));
+    final subtitle = _useKestrel
+        ? (updatedAt == null
+            ? 'Kestrel · waiting for first reading'
+            : 'Kestrel · updated ${_formatClock(updatedAt)}')
+        : (updatedAt == null
+            ? null
+            : 'Updated ${_formatClock(updatedAt)}');
     return _SectionCard(
       title: 'Environment',
       icon: Icons.air_outlined,
-      subtitle:
-          updatedAt == null ? null : 'Updated ${_formatClock(updatedAt)}',
+      subtitle: subtitle,
       trailing: _environmentTrailing(),
       child: Column(
         children: [
@@ -1711,8 +2126,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _tempCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true, signed: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Temperature (°F)',
+                  decoration: InputDecoration(
+                    labelText: 'Temperature ($tempLabel)',
+                    suffixText: tempLabel,
                   ),
                 ),
               ),
@@ -1722,9 +2138,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _pressureCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Pressure (inHg)',
+                  decoration: InputDecoration(
+                    labelText: 'Pressure ($pressureLabel)',
                     helperText: 'Station, not corrected',
+                    suffixText: pressureLabel,
                   ),
                 ),
               ),
@@ -1750,6 +2167,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true, signed: true),
                   decoration: const InputDecoration(
+                    // Elevation stays in feet — the solver normalizes
+                    // station pressure with feet, and altitude has no
+                    // dedicated unit category in the Settings list.
                     labelText: 'Elevation (ft)',
                   ),
                 ),
@@ -1764,8 +2184,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _windSpeedCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Wind (mph)',
+                  decoration: InputDecoration(
+                    labelText: 'Wind ($windLabel)',
+                    suffixText: windLabel,
                   ),
                 ),
               ),
@@ -1800,6 +2221,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
 
   Widget _outputSection() {
     final theme = Theme.of(context);
+    final units = context.watch<UnitService>();
+    final rangeUnit = unitDisplayLabel(units.unitFor(UnitCategory.range));
     return _SectionCard(
       title: 'Output',
       icon: Icons.table_rows_outlined,
@@ -1810,34 +2233,39 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           // Range-increment chip group on its own line.
           _rangeIncrementChips(),
           const SizedBox(height: 12),
-          // Min yardage on its own line.
+          // Min range on its own line. Unit-aware so the user enters
+          // the value in their chosen range unit; stored canonical
+          // value is yards.
           TextField(
             controller: _rangeMinCtrl,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            keyboardType: const TextInputType.numberWithOptions(
+                decimal: true),
+            // Decimals allowed because metric users may want
+            // sub-meter precision; we still .round() to int yards
+            // when feeding the solver.
             autocorrect: false,
             enableSuggestions: false,
-            decoration: const InputDecoration(
-              labelText: 'Min Yardage',
+            decoration: InputDecoration(
+              labelText: 'Min Range',
               helperText:
                   'Trajectory ladder starts here (0 = first increment)',
-              suffixText: 'yd',
+              suffixText: rangeUnit,
             ),
             onSubmitted: (_) => _onRangeMinChanged(),
             onEditingComplete: _onRangeMinChanged,
           ),
           const SizedBox(height: 12),
-          // Max yardage on its own line.
+          // Max range on its own line.
           TextField(
             controller: _rangeMaxCtrl,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            keyboardType: const TextInputType.numberWithOptions(
+                decimal: true),
             autocorrect: false,
             enableSuggestions: false,
-            decoration: const InputDecoration(
-              labelText: 'Max Yardage',
+            decoration: InputDecoration(
+              labelText: 'Max Range',
               helperText: 'Trajectory ladder ends at or before this range',
-              suffixText: 'yd',
+              suffixText: rangeUnit,
             ),
             onSubmitted: (_) => _onRangeMaxChanged(),
             onEditingComplete: _onRangeMaxChanged,
@@ -1944,7 +2372,18 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   }
 
   Widget _rangeIncrementChips() {
+    // The range-increment is stored in canonical yards (the solver
+    // contract), so the chips also expose imperial values. We label
+    // them with the user's chosen range unit only when imperial; when
+    // the user is on metric the chips still represent yard increments
+    // because the underlying range-ladder math is yard-based — the
+    // displayed Min/Max above already convert. Showing "yd" verbatim
+    // would be misleading on metric, so we render a unit-less number
+    // and let the helper text on the range fields explain context.
     const presets = [10, 25, 50, 100];
+    final units = context.watch<UnitService>();
+    final isImperialRange =
+        units.unitFor(UnitCategory.range) == unitYd;
     return Align(
       alignment: Alignment.centerLeft,
       child: Wrap(
@@ -1953,7 +2392,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         children: [
           for (final inc in presets)
             ChoiceChip(
-              label: Text('$inc yd'),
+              label: Text(isImperialRange ? '$inc yd' : '$inc'),
               selected: _rangeIncrement == inc,
               onSelected: (_) => _selectRangeIncrement(inc),
             ),
@@ -2063,10 +2502,21 @@ class _DopeTable extends StatelessWidget {
   final List<TrajectorySample> samples;
   final AngleUnit unit;
 
-  String _fmtAngle(double inches, double yards) {
+  /// Drop / wind reading at the row's [yards] range. The screen-wide
+  /// segmented button selects whether the linear inches are rendered
+  /// raw, in MOA, or in mils — independent of the global Settings
+  /// units (per the requirement that this picker is per-output-row,
+  /// not a global preference).
+  ///
+  /// When the user picked `inches` we additionally honor the global
+  /// small-length unit so a metric reloader sees centimeters instead
+  /// of inches in this column.
+  String _fmtAngle(BuildContext context, double inches, double yards) {
     switch (unit) {
       case AngleUnit.inches:
-        return inches.toStringAsFixed(1);
+        final units = context.read<UnitService>();
+        final disp = units.convertSmallLength(inches);
+        return disp.toStringAsFixed(1);
       case AngleUnit.moa:
         if (yards <= 0) return '—';
         return inchesToMoaAtYards(inches, yards).toStringAsFixed(1);
@@ -2076,10 +2526,11 @@ class _DopeTable extends StatelessWidget {
     }
   }
 
-  String get _unitSuffix {
+  String _unitSuffix(BuildContext context) {
     switch (unit) {
       case AngleUnit.inches:
-        return 'in';
+        final units = context.read<UnitService>();
+        return unitDisplayLabel(units.unitFor(UnitCategory.smallLength));
       case AngleUnit.moa:
         return 'MOA';
       case AngleUnit.mil:
@@ -2090,6 +2541,7 @@ class _DopeTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final units = context.watch<UnitService>();
     final headerStyle = theme.textTheme.labelMedium?.copyWith(
       color: theme.colorScheme.primary,
       fontWeight: FontWeight.w600,
@@ -2097,6 +2549,10 @@ class _DopeTable extends StatelessWidget {
     final cellStyle = theme.textTheme.bodySmall?.copyWith(
       fontFeatures: const [FontFeature.tabularFigures()],
     );
+    final dropWindSuffix = _unitSuffix(context);
+    final rangeUnit = unitDisplayLabel(units.unitFor(UnitCategory.range));
+    final velUnit = unitDisplayLabel(units.unitFor(UnitCategory.velocity));
+    final energyUnit = unitDisplayLabel(units.unitFor(UnitCategory.energy));
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
@@ -2107,15 +2563,15 @@ class _DopeTable extends StatelessWidget {
         columns: [
           DataColumn(label: Text('Range', style: headerStyle)),
           DataColumn(
-              label: Text('Drop ($_unitSuffix)', style: headerStyle),
+              label: Text('Drop ($dropWindSuffix)', style: headerStyle),
               numeric: true),
           DataColumn(
-              label: Text('Wind ($_unitSuffix)', style: headerStyle),
+              label: Text('Wind ($dropWindSuffix)', style: headerStyle),
               numeric: true),
           DataColumn(
-              label: Text('Vel (fps)', style: headerStyle), numeric: true),
+              label: Text('Vel ($velUnit)', style: headerStyle), numeric: true),
           DataColumn(
-              label: Text('Energy (ft·lb)', style: headerStyle),
+              label: Text('Energy ($energyUnit)', style: headerStyle),
               numeric: true),
           DataColumn(
               label: Text('ToF (s)', style: headerStyle), numeric: true),
@@ -2127,16 +2583,22 @@ class _DopeTable extends StatelessWidget {
             DataRow(
               cells: [
                 DataCell(
-                  Text('${s.rangeYards.toStringAsFixed(0)} yd',
-                      style: cellStyle),
+                  Text(
+                    '${units.convertRange(s.rangeYards).toStringAsFixed(0)} '
+                    '$rangeUnit',
+                    style: cellStyle,
+                  ),
                 ),
-                DataCell(Text(_fmtAngle(s.dropInches, s.rangeYards),
+                DataCell(Text(_fmtAngle(context, s.dropInches, s.rangeYards),
                     style: cellStyle)),
-                DataCell(Text(_fmtAngle(s.windDriftInches, s.rangeYards),
+                DataCell(Text(
+                    _fmtAngle(context, s.windDriftInches, s.rangeYards),
                     style: cellStyle)),
-                DataCell(Text(s.velocityFps.toStringAsFixed(0),
+                DataCell(Text(
+                    units.convertVelocity(s.velocityFps).toStringAsFixed(0),
                     style: cellStyle)),
-                DataCell(Text(s.energyFtLb.toStringAsFixed(0),
+                DataCell(Text(
+                    units.convertEnergy(s.energyFtLb).toStringAsFixed(0),
                     style: cellStyle)),
                 DataCell(
                     Text(s.timeSec.toStringAsFixed(2), style: cellStyle)),

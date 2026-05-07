@@ -9,6 +9,8 @@
     "brass":         {"version": 1, "filename": "brass.json"},
     "firearms":      {"version": 2, "filename": "firearms.json"},
     "firearm_parts": {"version": 1, "filename": "firearm_parts.json"},
-    "optics":        {"version": 1, "filename": "optics.json"}
+    "optics":        {"version": 1, "filename": "optics.json"},
+    "targets":       {"version": 1, "filename": "targets.json"},
+    "reticles":      {"version": 1, "filename": "reticles.json"}
   }
 }

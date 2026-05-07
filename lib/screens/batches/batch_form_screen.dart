@@ -387,6 +387,9 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
+                // TODO(units): expose UnitService for display labels
+                // when the batch form gains unit-bearing fields (none today
+                // — counts and dates only).
                 _Section(
                   title: 'Counts',
                   children: [

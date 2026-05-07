@@ -5,6 +5,24 @@
          that already grant fine don't downgrade. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- Bluetooth permissions (Pro feature: pair with Kestrel weather meters
+         and Garmin chronographs). On Android 12+ (API 31+) these are split
+         into two distinct runtime permissions; on earlier API levels the
+         legacy BLUETOOTH + BLUETOOTH_ADMIN are still required and Play Store
+         Console implicitly maps the new permissions back. We declare
+         `neverForLocation` on BLUETOOTH_SCAN so the OS knows we are not
+         trying to derive the user's location from BLE beacons — this lets
+         us avoid prompting for ACCESS_FINE_LOCATION solely for BLE scanning
+         on API 31+. ACCESS_FINE_LOCATION is still declared above for the
+         existing weather-fetch feature. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+                     android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH"
+                     android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+                     android:maxSdkVersion="30" />
     <application
         android:label="LoadOut"
         android:name="${applicationName}"

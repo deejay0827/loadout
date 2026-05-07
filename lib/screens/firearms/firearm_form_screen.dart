@@ -111,11 +111,13 @@ import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/optics_repository.dart';
+import '../../repositories/reticle_repository.dart';
 import '../../services/auto_save_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
+import '../../widgets/reticle_picker.dart';
 
 typedef _RefEntry = ({
   FirearmRefRow firearm,
@@ -168,6 +170,15 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   OpticEntry? _selectedOptic;
   int? _opticsId;
 
+  // Reticle picker state. Picked reticle persists on the firearm
+  // (`UserFirearms.reticleId`) so the user-installed reticle takes
+  // precedence over the optic's catalog default. When the user picks
+  // a fresh optic and the saved reticleId hasn't been set yet, we
+  // pre-fill from `Optics.reticleId` if the catalog declares one.
+  ReticleRow? _selectedReticle;
+  int? _reticleId;
+  bool _autoFilledReticleFromOptic = false;
+
   late final AutoSaveController _autoSave;
 
   @override
@@ -205,6 +216,8 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
         context.read<ComponentRepository>().allReferenceFirearms();
     _opticsId = e?.opticsId;
     _opticsFuture = context.read<OpticsRepository>().allOptics();
+    _reticleId = e?.reticleId;
+    _loadInitialReticle();
 
     _autoSave = AutoSaveController(
       service: context.read<AutoSaveService>(),
@@ -231,6 +244,35 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     ]) {
       c.addListener(_autoSave.notifyDirty);
     }
+  }
+
+  /// Resolve the saved `reticleId` (if any) into a `ReticleRow` so the
+  /// picker can render the preview with the correct reticle pre-filled.
+  /// For new firearms, this is a no-op until the user picks an optic
+  /// that has a default reticle.
+  Future<void> _loadInitialReticle() async {
+    if (_reticleId == null) return;
+    final repo = context.read<ReticleRepository>();
+    final row = await repo.byId(_reticleId!);
+    if (!mounted) return;
+    setState(() => _selectedReticle = row);
+  }
+
+  /// When the user picks a different optic, try to pre-fill the
+  /// reticle from that optic's catalog default — but only if the user
+  /// hasn't already explicitly chosen a reticle for this firearm.
+  Future<void> _maybeAutoFillReticleFromOptic(int? opticsId) async {
+    if (opticsId == null) return;
+    if (_reticleId != null && !_autoFilledReticleFromOptic) return;
+    final repo = context.read<ReticleRepository>();
+    final row = await repo.byOptic(opticsId);
+    if (row == null || !mounted) return;
+    setState(() {
+      _selectedReticle = row;
+      _reticleId = row.id;
+      _autoFilledReticleFromOptic = true;
+    });
+    _autoSave.notifyDirty();
   }
 
   /// Builds a `UserFirearmsCompanion` from the current form state and
@@ -276,6 +318,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       defaultZeroRangeYd: drift.Value(_parseInt(_defaultZeroRangeYd)),
       sightHeightIn: drift.Value(_parseDouble(_sightHeightIn)),
       opticsId: drift.Value(_opticsId),
+      reticleId: drift.Value(_reticleId),
     );
   }
 
@@ -463,6 +506,8 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                       // (both short numeric fields) into a single row so
                       // the form doesn't waste horizontal real estate.
                       // Phone keeps the original stacked layout.
+                      //
+                      // TODO(units): expose UnitService for display labels.
                       _ResponsiveRowPair(
                         first: TextFormField(
                           controller: _barrelLength,
@@ -764,8 +809,36 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                       _opticsId = o?.optic.id;
                     });
                     _autoSave.notifyDirty();
+                    // When the user picks a new optic, try to pre-fill
+                    // the reticle from the catalog default — but only
+                    // if the user hasn't already explicitly chosen a
+                    // reticle (so we don't clobber a deliberate pick).
+                    if (o != null) {
+                      _maybeAutoFillReticleFromOptic(o.optic.id);
+                    }
                   },
                 );
+              },
+            ),
+            const SizedBox(height: 16),
+            // Reticle picker — let the user choose the reticle in the
+            // mounted scope. This persists separately from the optic
+            // because users can swap reticles after purchase, and
+            // because catalog scopes typically ship with several
+            // reticle options.
+            ReticlePickerField(
+              label: 'Reticle',
+              selected: _selectedReticle,
+              restrictToOpticId: _opticsId,
+              onChanged: (row) {
+                setState(() {
+                  _selectedReticle = row;
+                  _reticleId = row?.id;
+                  // Once the user explicitly picks a reticle, stop
+                  // auto-filling on subsequent optic changes.
+                  _autoFilledReticleFromOptic = false;
+                });
+                _autoSave.notifyDirty();
               },
             ),
           ],
@@ -811,6 +884,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            // TODO(units): expose UnitService for display labels (velocity / range / smallLength).
             _ResponsiveRowPair(
               first: TextFormField(
                 controller: _defaultMuzzleVelocityFps,

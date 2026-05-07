@@ -185,6 +185,10 @@ class SeedLoader {
         firstRun || await db.firearmPartsAreEmpty || flag('firearm_parts');
     final opticsReseed =
         firstRun || await db.opticsAreEmpty || flag('optics');
+    final targetsReseed =
+        firstRun || await db.targetsAreEmpty || flag('targets');
+    final reticlesReseed =
+        firstRun || await db.reticlesAreEmpty || flag('reticles');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -193,7 +197,9 @@ class SeedLoader {
         brassReseed ||
         firearmsReseed ||
         firearmPartsReseed ||
-        opticsReseed;
+        opticsReseed ||
+        targetsReseed ||
+        reticlesReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -266,6 +272,24 @@ class SeedLoader {
         }
         await _seedOptics();
       }
+      if (targetsReseed) {
+        // Targets do not share `Manufacturers` rows — `Targets.manufacturer`
+        // is a free-form text column, so we just clear and re-seed.
+        if (!firstRun) {
+          await db.delete(db.targets).go();
+        }
+        await _seedTargets();
+      }
+      if (reticlesReseed) {
+        // Reticles do not share `Manufacturers` rows — `Reticles.manufacturerId`
+        // is a free-form text column (matches `Manufacturers.name` for
+        // 'optics' kind when one exists, but doesn't have to). Just clear
+        // and re-seed.
+        if (!firstRun) {
+          await db.delete(db.reticles).go();
+        }
+        await _seedReticles();
+      }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
       // upgrading users without nuking the rest of the DB. The forced
@@ -301,6 +325,8 @@ class SeedLoader {
     await clearIf(firearmsReseed, 'firearms');
     await clearIf(firearmPartsReseed, 'firearm_parts');
     await clearIf(opticsReseed, 'optics');
+    await clearIf(targetsReseed, 'targets');
+    await clearIf(reticlesReseed, 'reticles');
   }
 
   Future<int> _manufacturerId(
@@ -609,5 +635,56 @@ class SeedLoader {
       }).toList();
       await db.batch((b) => b.insertAll(db.optics, batch));
     }
+  }
+
+  /// Seed the [Targets] reference catalog from `assets/seed_data/targets.json`.
+  /// The JSON shape is a flat array of objects (no per-manufacturer
+  /// nesting like powders / bullets / firearms) because target
+  /// "manufacturers" are free-form labels — multiple unrelated companies
+  /// make the same shape of target, and many targets are generic with no
+  /// real maker.
+  Future<void> _seedTargets() async {
+    final data = await _readJsonList('targets.json');
+    final batch = <TargetsCompanion>[];
+    for (final entry in data) {
+      final m = entry as Map<String, dynamic>;
+      batch.add(TargetsCompanion.insert(
+        name: m['name'] as String,
+        manufacturer: Value(m['manufacturer'] as String?),
+        category: m['category'] as String,
+        shape: m['shape'] as String,
+        widthIn: (m['widthIn'] as num).toDouble(),
+        heightIn: (m['heightIn'] as num).toDouble(),
+        materialKind: m['materialKind'] as String,
+        colorHex: m['colorHex'] as String,
+        notes: Value(m['notes'] as String?),
+      ));
+    }
+    await db.batch((b) => b.insertAll(db.targets, batch));
+  }
+
+  /// Seed the [Reticles] reference catalog from
+  /// `assets/seed_data/reticles.json`. The JSON shape is a flat array;
+  /// each entry already carries an `elements` list whose JSON
+  /// representation matches `ReticleElement.toJson()`. We re-encode it
+  /// here so the column stores compact JSON regardless of the source
+  /// formatting.
+  Future<void> _seedReticles() async {
+    final data = await _readJsonList('reticles.json');
+    final batch = <ReticlesCompanion>[];
+    for (final entry in data) {
+      final m = entry as Map<String, dynamic>;
+      batch.add(ReticlesCompanion.insert(
+        manufacturerId: m['manufacturer'] as String,
+        model: m['model'] as String,
+        family: Value(m['family'] as String?),
+        type: m['type'] as String,
+        nativeUnit: m['nativeUnit'] as String,
+        maxExtentUnits: (m['maxExtentUnits'] as num).toDouble(),
+        definitionJson: json.encode(m['elements']),
+        notes: Value(m['notes'] as String?),
+      ));
+    }
+    await db.batch((b) => b.insertAll(db.reticles, batch));
   }
 }

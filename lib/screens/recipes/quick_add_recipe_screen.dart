@@ -86,6 +86,7 @@ import '../../repositories/recipe_repository.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../widgets/component_field.dart';
 import '../glossary/glossary_screen.dart';
+import 'photo_import_screen.dart';
 import 'recipe_form_screen.dart';
 import 'smart_import_screen.dart';
 
@@ -297,6 +298,18 @@ class _QuickAddRecipeScreenState extends State<QuickAddRecipeScreen> {
                   );
                 },
               ),
+              if (PhotoImportScreen.isSupportedPlatform) ...[
+                const SizedBox(height: 12),
+                _PhotoImportEntryCard(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PhotoImportScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
               const SizedBox(height: 16),
               TextFormField(
                 controller: _name,
@@ -534,6 +547,39 @@ class _SmartImportEntryCard extends StatelessWidget {
         ),
         subtitle: const Text(
           'Bring in many recipes at once from a CSV or Excel file. Free.',
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// Compact "Import from photo" affordance on the Quick Add screen.
+/// Mirrors `_SmartImportEntryCard` but routes to the on-device OCR
+/// flow for pen-and-paper reloaders. Hidden on platforms that don't
+/// support `image_picker` + ML Kit (macOS / web).
+class _PhotoImportEntryCard extends StatelessWidget {
+  const _PhotoImportEntryCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: Icon(
+          Icons.photo_camera_outlined,
+          color: theme.colorScheme.primary,
+        ),
+        title: Text(
+          'Import from photo',
+          style: theme.textTheme.titleSmall,
+        ),
+        subtitle: const Text(
+          'Snap a notebook page — we read it on this device. Free.',
         ),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,

@@ -43,6 +43,10 @@
 	<string>Use your camera to scan handwritten reloading notes into LoadOut.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Access photos to import scanned reloading notes.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>LoadOut connects to your Bluetooth chronograph (Garmin Xero) and weather meter (Kestrel) to import shot velocity and weather data.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>LoadOut connects to your Bluetooth chronograph (Garmin Xero) and weather meter (Kestrel) to import shot velocity and weather data.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

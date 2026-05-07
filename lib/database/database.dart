@@ -385,6 +385,51 @@ class Optics extends Table {
   /// Optic weight in ounces (nullable).
   RealColumn get weightOz => real().nullable()();
   TextColumn get notes => text().nullable()();
+
+  // ── Default reticle link (added schema v11) ──
+  /// Optional FK to a row in `Reticles`. Lets the seed catalog declare
+  /// "this optic ships with this reticle" so the firearm form's reticle
+  /// picker can pre-select the right entry the moment the user picks
+  /// a Razor Gen II off the optics list. Nullable because most catalog
+  /// scopes can be ordered with multiple reticle options.
+  IntColumn get reticleId => integer().nullable()();
+}
+
+/// Reference catalog of scope reticles (added schema v11). One row per
+/// reticle pattern (Vortex EBR-7C MRAD, Nightforce MIL-XT, the legacy
+/// USMC Mil-Dot, etc.). The actual element list (lines, hash marks,
+/// dots, floating numbers) is JSON-encoded in `definitionJson` because
+/// it varies wildly in size between reticles and isn't useful to query
+/// against from SQL.
+///
+/// Seeded from `assets/seed_data/reticles.json`. `manufacturerId` here
+/// is a free-form `text` column (rather than an FK to `Manufacturers`)
+/// so the seeder doesn't have to resolve the manufacturer table before
+/// inserting reticles, and so a brand whose only listing is a reticle
+/// (e.g. an aftermarket reticle in a third-party scope) doesn't have
+/// to be added to `Manufacturers` separately.
+@DataClassName('ReticleRow')
+class Reticles extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// Manufacturer name (matches `Manufacturers.name` for `kind = 'optics'`
+  /// rows when one exists). Stored as text so seed loading doesn't depend
+  /// on the order of `Manufacturers` inserts.
+  TextColumn get manufacturerId => text()();
+  /// Model / pattern name, e.g. "EBR-7C MRAD".
+  TextColumn get model => text()();
+  /// Optional grouping label, e.g. "Razor HD Gen II reticles".
+  TextColumn get family => text().nullable()();
+  /// 'ffp' | 'sfp' | 'fixed'
+  TextColumn get type => text()();
+  /// 'mil' | 'moa' | 'ipsc' | 'bdc'
+  TextColumn get nativeUnit => text()();
+  /// Half-extent (center to edge) of the rendered reticle in native units.
+  /// e.g. 10 for "10 mil to each side".
+  RealColumn get maxExtentUnits => real()();
+  /// JSON array of element objects (see `lib/data/reticle_library.dart`).
+  TextColumn get definitionJson => text()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // ─────────────────────── User data tables ───────────────────────
@@ -627,6 +672,15 @@ class UserFirearms extends Table {
   /// this firearm. Setting it does NOT auto-populate `sightHeightIn`
   /// because sight height depends on the rings/mount, not the optic.
   IntColumn get opticsId => integer().nullable()();
+
+  // ── Reticle link (added schema v11) ──
+  /// Optional link to a row in `Reticles` representing the reticle in
+  /// the scope mounted on this firearm. Distinct from `opticsId` because
+  /// a single optic model can ship with multiple reticle options and
+  /// users sometimes swap reticles after purchase. The firearm form's
+  /// reticle picker pre-fills this from the linked optic's
+  /// `Optics.reticleId` if one is set.
+  IntColumn get reticleId => integer().nullable()();
 }
 
 // ─────────────────────── Batches (user, schema v4, feature #12) ───────────────────────
@@ -735,6 +789,136 @@ class LoadDevelopmentSessions extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+// ─────────────────────── Range Day (schema v10) ───────────────────────
+//
+// The Range Day workspace is a tool the user opens *at* the range. It pulls
+// together a target, a distance, a ballistic profile (or load+firearm), and
+// current environmental conditions, runs the ballistics solver, and lets
+// the shooter record where their actual shots landed on the chosen target.
+//
+// Three tables make this work:
+//
+//   * `Targets` — the reference catalog of targets the user can shoot at,
+//     seeded from `assets/seed_data/targets.json`. Read-only at runtime.
+//   * `RangeDaySessions` — one row per range trip, holding the session-level
+//     setup (target picked, distance, environment defaults, links to the
+//     active ballistic profile / load / firearm).
+//   * `ShotImpacts` — one row per shot fired during a session, with the
+//     impact location stored as normalized (-1..1, -1..1) coordinates on
+//     the chosen target (so the same row works regardless of how the
+//     target is rendered on screen — paper plate or 24-inch steel).
+
+/// Reference catalog of common targets a shooter might use. Seeded from
+/// `assets/seed_data/targets.json`. Read-only at runtime.
+@DataClassName('TargetRow')
+class Targets extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()();
+  /// Manufacturer / brand. Nullable for generic targets ("8 in AR500
+  /// plate") that are not specific to one maker.
+  TextColumn get manufacturer => text().nullable()();
+  /// 'paper' | 'steel' | 'reactive' | 'game-silhouette'
+  TextColumn get category => text()();
+  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular'
+  TextColumn get shape => text()();
+  /// Outer-bound width of the target in inches (the visible / scoreable
+  /// area). For circles this equals heightIn.
+  RealColumn get widthIn => real()();
+  /// Outer-bound height of the target in inches.
+  RealColumn get heightIn => real()();
+  /// 'paper' | 'cardboard' | 'steel-ar500' | 'steel-ar550' | 'polymer' |
+  /// 'game-3d'.
+  TextColumn get materialKind => text()();
+  /// CSS-style hex color (e.g. "#fff8c4"). Used by the visual target
+  /// renderer so the on-screen plot resembles the real target.
+  TextColumn get colorHex => text()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// One row per range-day workspace the user opened. The session is a
+/// container for the setup (target / distance / profile / load / firearm
+/// / environment) plus the shot-impact rows that hang off it.
+@DataClassName('RangeDaySessionRow')
+class RangeDaySessions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// User-facing label (defaults to `<MMM d>` followed by the distance).
+  TextColumn get name => text()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get notes => text().nullable()();
+  /// Optional FK to the active ballistic profile.
+  IntColumn get ballisticProfileId => integer().nullable()();
+  /// Optional FK to a saved recipe (UserLoads.id) being shot today.
+  IntColumn get recipeId => integer().nullable()();
+  /// Optional FK to the user's firearm (UserFirearms.id) being shot today.
+  IntColumn get firearmId => integer().nullable()();
+  /// Optional FK to the chosen target (Targets.id).
+  IntColumn get targetId => integer().nullable()();
+  /// Distance to target, yards.
+  RealColumn get distanceYd => real()();
+  // Environment defaults — same shape as BallisticProfiles env fields so
+  // the solver gets identical inputs whether driven from a profile or a
+  // session.
+  RealColumn get temperatureF => real().nullable()();
+  RealColumn get pressureInHg => real().nullable()();
+  RealColumn get humidityPct => real().nullable()();
+  RealColumn get elevationFt => real().nullable()();
+  RealColumn get windSpeedMph => real().nullable()();
+  RealColumn get windDirectionDeg => real().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  // ── Hit-probability + reticle aim (added v11) ──
+  /// Aim point on the target, normalized to [-1, 1] across the target
+  /// width. Null means the shooter hasn't placed an aim point yet
+  /// (default behaviour treats that as dead center, 0,0).
+  RealColumn get aimPointX => real().nullable()();
+  /// Aim point on the target, normalized to [-1, 1] across the target
+  /// height (+1 = top, -1 = bottom).
+  RealColumn get aimPointY => real().nullable()();
+  /// User's known group capability at 100 yd, in MOA. Drives the
+  /// dispersion model in [HitProbabilityService]. Default 1.0 MOA — a
+  /// modest hunting-rifle baseline.
+  RealColumn get assumedGroupMoa => real().nullable()();
+  /// How confident the shooter is in their wind call. ±mph treated as
+  /// a 2-sigma window. Default 2.0.
+  RealColumn get windUncertaintyMph => real().nullable()();
+  /// How confident the shooter is in their range estimate. ±yd as a
+  /// 2-sigma window. Default 5.0.
+  RealColumn get rangeUncertaintyYd => real().nullable()();
+  /// Optional FK to the `Reticles` row to render on the target plot.
+  IntColumn get reticleId => integer().nullable()();
+  /// Per-session preference for the post-shot correction display.
+  /// 'mil' | 'moa' | 'inches'. Defaults to the app-wide angle unit.
+  TextColumn get correctionUnit =>
+      text().withDefault(const Constant('mil'))();
+}
+
+/// One row per shot recorded during a range-day session. Impact coordinates
+/// are stored normalized to [-1, 1] on each axis so the same row renders
+/// correctly on any size of target widget. (-1, -1) is bottom-left, (0, 0)
+/// is dead center, (1, 1) is top-right.
+@DataClassName('ShotImpactRow')
+class ShotImpacts extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get rangeDaySessionId =>
+      integer().references(RangeDaySessions, #id)();
+  /// 1-based shot number in the session.
+  IntColumn get shotNumber => integer()();
+  /// Normalized horizontal position on the target ([-1, 1]; -1 = left
+  /// edge, +1 = right edge). Persists independent of the target's
+  /// physical dimensions so different targets can share the same impact
+  /// math at render time.
+  RealColumn get impactX => real()();
+  /// Normalized vertical position on the target ([-1, 1]; -1 = bottom
+  /// edge, +1 = top edge).
+  RealColumn get impactY => real()();
+  TextColumn get notes => text().nullable()();
+  RealColumn get velocityFps => real().nullable()();
+  DateTimeColumn get recordedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+}
+
 // ─────────────────────── Custom user-defined fields (schema v4) ───────────────────────
 
 @DataClassName('UserCustomFieldRow')
@@ -803,6 +987,12 @@ class UserCustomFieldValues extends Table {
     Optics,
     // Schema v8 additions.
     BallisticProfiles,
+    // Schema v10 additions.
+    Targets,
+    RangeDaySessions,
+    ShotImpacts,
+    // Schema v11 additions.
+    Reticles,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -811,7 +1001,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -977,6 +1167,41 @@ class AppDatabase extends _$AppDatabase {
             await (delete(manufacturers)..where((m) => m.kind.equals('firearm')))
                 .go();
           }
+          if (from < 10) {
+            // v10 — Range Day workspace. Adds three purely additive tables:
+            // `Targets` (reference catalog seeded from targets.json),
+            // `RangeDaySessions` (per-session setup + environment), and
+            // `ShotImpacts` (per-shot impact records). No existing column
+            // changes; user data preserved.
+            await m.createTable(targets);
+            await m.createTable(rangeDaySessions);
+            await m.createTable(shotImpacts);
+          }
+          if (from < 11) {
+            // v11 — Reticle library + hit-probability inputs on Range Day
+            // sessions. Shared bump with the parallel reticle agent.
+            // Additive only:
+            //   * Creates the `Reticles` reference table.
+            //   * Adds `reticleId` to `Optics` (default reticle for the
+            //     scope) and `UserFirearms` (the user's actual reticle).
+            //   * Adds 7 nullable columns + a default-text column on
+            //     `RangeDaySessions` for aim point, dispersion inputs,
+            //     selected reticle, and correction-unit preference.
+            await m.createTable(reticles);
+            await m.addColumn(optics, optics.reticleId);
+            await m.addColumn(userFirearms, userFirearms.reticleId);
+            await m.addColumn(rangeDaySessions, rangeDaySessions.aimPointX);
+            await m.addColumn(rangeDaySessions, rangeDaySessions.aimPointY);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.assumedGroupMoa);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.windUncertaintyMph);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.rangeUncertaintyYd);
+            await m.addColumn(rangeDaySessions, rangeDaySessions.reticleId);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.correctionUnit);
+          }
         },
       );
 
@@ -1075,6 +1300,8 @@ class AppDatabase extends _$AppDatabase {
       // Children first (foreign-key safety even though we don't enforce
       // FK constraints in drift). Order chosen to mirror typical
       // dependency direction.
+      await delete(shotImpacts).go();
+      await delete(rangeDaySessions).go();
       await delete(userCustomFieldValues).go();
       await delete(userCustomFields).go();
       await delete(loadDevelopmentSessions).go();
@@ -1187,6 +1414,25 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(optics)..addColumns([optics.id.count()]))
         .map((row) => row.read(optics.id.count()) ?? 0)
         .getSingle();
+    return count == 0;
+  }
+
+  /// True when the targets catalog is empty.
+  Future<bool> get targetsAreEmpty async {
+    final count = await (selectOnly(targets)..addColumns([targets.id.count()]))
+        .map((row) => row.read(targets.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the reticles catalog is empty. Used by the reticle
+  /// repository to decide whether to insert the default library on
+  /// first launch.
+  Future<bool> get reticlesAreEmpty async {
+    final count =
+        await (selectOnly(reticles)..addColumns([reticles.id.count()]))
+            .map((row) => row.read(reticles.id.count()) ?? 0)
+            .getSingle();
     return count == 0;
   }
 }

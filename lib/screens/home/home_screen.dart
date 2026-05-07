@@ -107,6 +107,7 @@ import '../firearms/firearms_list_screen.dart';
 import '../glossary/glossary_screen.dart';
 import '../load_development/load_development_list_screen.dart';
 import '../process_steps/process_steps_screen.dart';
+import '../range_day/range_day_screen.dart';
 import '../guide/reloading_guide_screen.dart';
 import '../how_it_works/how_it_works_screen.dart';
 import '../paywall/paywall_screen.dart';
@@ -121,10 +122,11 @@ class HomeScreen extends StatefulWidget {
   /// Switches the home shell's bottom-nav to [index] from anywhere in
   /// the widget tree below it. Used by topic CTAs in
   /// [HowItWorksScreen] that pop back to the shell and then jump to a
-  /// specific tab (Recipes, Firearms, Batches, Ballistics, SAAMI).
+  /// specific tab (Recipes, Firearms, Batches, Ballistics, Range Day,
+  /// SAAMI).
   ///
   /// No-op if no [HomeScreen] ancestor is found, or if [index] is out
-  /// of range (valid range: 0–4).
+  /// of range (valid range: 0–5).
   static void switchTab(BuildContext context, int index) {
     final state = context.findAncestorStateOfType<HomeScreenState>();
     state?.switchTab(index);
@@ -142,6 +144,7 @@ class HomeScreenState extends State<HomeScreen> {
     'Firearms',
     'Batches',
     'Ballistics',
+    'Range Day',
     'SAAMI Specs',
   ];
 
@@ -150,6 +153,7 @@ class HomeScreenState extends State<HomeScreen> {
     FirearmsListScreen(),
     BatchesListScreen(),
     BallisticsScreen(),
+    RangeDayScreen(),
     SaamiScreen(),
   ];
 
@@ -175,6 +179,11 @@ class HomeScreenState extends State<HomeScreen> {
       selectedIcon: Icons.calculate,
     ),
     _NavItemData(
+      label: 'Range Day',
+      icon: Icons.gps_fixed,
+      selectedIcon: Icons.gps_fixed,
+    ),
+    _NavItemData(
       label: 'SAAMI',
       icon: Icons.straighten_outlined,
       selectedIcon: Icons.straighten,
@@ -184,7 +193,7 @@ class HomeScreenState extends State<HomeScreen> {
   /// Public so [HowItWorksScreen] CTAs can jump to a tab via
   /// [HomeScreen.switchTab]. Bounds-checked and a no-op if [index]
   /// is out of range. Valid indexes: 0=Recipes, 1=Firearms,
-  /// 2=Batches, 3=Ballistics, 4=SAAMI.
+  /// 2=Batches, 3=Ballistics, 4=Range Day, 5=SAAMI.
   void switchTab(int index) {
     if (index < 0 || index >= _pages.length) return;
     setState(() => _index = index);

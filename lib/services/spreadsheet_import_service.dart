@@ -267,6 +267,7 @@ final List<FieldOption> kFieldOptions = [
     aliases: [
       'caliber',
       'calibre',
+      'cal',
       'cartridge',
       'chambering',
       'cartridge type',
@@ -275,7 +276,14 @@ final List<FieldOption> kFieldOptions = [
   const FieldOption(
     id: FieldId.powder,
     label: 'Powder',
-    aliases: ['powder', 'propellant', 'powder type', 'powder brand'],
+    aliases: [
+      'powder',
+      'pwdr',
+      'pdr',
+      'propellant',
+      'powder type',
+      'powder brand',
+    ],
   ),
   const FieldOption(
     id: FieldId.powderChargeGr,
@@ -304,7 +312,15 @@ final List<FieldOption> kFieldOptions = [
   const FieldOption(
     id: FieldId.bullet,
     label: 'Bullet',
-    aliases: ['bullet', 'projectile', 'proj', 'bullet brand', 'bullet name'],
+    aliases: [
+      'bullet',
+      'bllt',
+      'blt',
+      'projectile',
+      'proj',
+      'bullet brand',
+      'bullet name',
+    ],
   ),
   const FieldOption(
     id: FieldId.bulletWeightGr,
@@ -332,7 +348,14 @@ final List<FieldOption> kFieldOptions = [
   const FieldOption(
     id: FieldId.primer,
     label: 'Primer',
-    aliases: ['primer', 'primer brand', 'primer model', 'primer type'],
+    aliases: [
+      'primer',
+      'prmr',
+      'prim',
+      'primer brand',
+      'primer model',
+      'primer type',
+    ],
   ),
   const FieldOption(
     id: FieldId.brass,
@@ -636,11 +659,6 @@ class SpreadsheetImportService {
 
   /// Maximum sample rows shown in the preview wizard.
   static const int _maxSampleRows = 5;
-
-  /// Minimum auto-suggestion confidence. Below this we default the
-  /// dropdown to "Don't import" — but the user can override by picking
-  /// from the dropdown.
-  static const double _suggestThreshold = 0.6;
 
   static const String _kPresetsKey = 'import_mapping_presets';
 
@@ -956,7 +974,14 @@ class SpreadsheetImportService {
             .toList(growable: false),
       );
     }
-    // Pass B: fill the rest with best unclaimed at-or-above threshold.
+    // Pass B: fill the rest with best unclaimed AT a high threshold.
+    // Pass-B picks are inherently lower-quality (the column's TOP
+    // field was taken or didn't dominate), so we want a stiff bar to
+    // avoid false positives like "Powder Type" → `scaleUsed` (which
+    // matches by happenstance via Jaro-Winkler character similarity
+    // alone). Below the threshold we default to "Don't import" —
+    // better an honest miss than a wrong guess.
+    const passBThreshold = 0.85;
     for (final i in orderedIndices) {
       if (picks[i] != null) continue;
       final scores = perColumn[i];
@@ -972,7 +997,9 @@ class SpreadsheetImportService {
           .where((s) => s.field != chosen)
           .take(3)
           .toList(growable: false);
-      if (chosen != null && chosenScore >= _suggestThreshold) {
+      // Tightened: require pass-B picks to clear ≥ 0.85. Below that
+      // we'd be guessing more than we'd be helping.
+      if (chosen != null && chosenScore >= passBThreshold) {
         usedFields.add(chosen);
       } else {
         chosen = null;
@@ -999,13 +1026,21 @@ class SpreadsheetImportService {
     return cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
-  /// Combined similarity: exact-match short-circuit, otherwise the
-  /// average of token-set Jaccard and Jaro-Winkler. Both are bounded
-  /// in [0..1]; their average preserves that bound.
+  /// Combined similarity used by the auto-suggester. Exact match
+  /// returns 1.0; otherwise we compute three signals — token
+  /// overlap, substring containment, and Jaro-Winkler — and combine
+  /// them with explicit floors and ceilings so noisy matches don't
+  /// produce confident-looking scores.
   ///
-  /// Token Jaccard handles "Powder Charge gr" vs "charge powder grain"
-  /// (word-order independent). Jaro-Winkler handles typos / short
-  /// forms ("crg" ↔ "charge" still scores reasonably).
+  /// Behaviour:
+  /// - Exact alias match (string-equal) → 1.0.
+  /// - Substring containment in either direction → 0.95.
+  /// - Significant token overlap (Jaccard ≥ 0.5) → bumped to ≥ 0.9.
+  /// - Otherwise we fall back to Jaro-Winkler, capped at 0.7 — so a
+  ///   coincidental character similarity (e.g. "Powder Type" vs
+  ///   "scale used") can't claim to be confident enough for an
+  ///   auto-pick. The user can still override in the dropdown, and
+  ///   the score lands in the alternatives list.
   double _similarity(String a, String b) {
     if (a == b) return 1.0;
     final aTokens = a.split(' ').where((t) => t.isNotEmpty).toSet();
@@ -1013,11 +1048,24 @@ class SpreadsheetImportService {
     final inter = aTokens.intersection(bTokens).length;
     final union = aTokens.union(bTokens).length;
     final jaccard = union == 0 ? 0.0 : inter / union;
-    // If one is fully contained in the other, give a strong nudge.
-    final containment = a.contains(b) || b.contains(a) ? 0.9 : 0.0;
+    final containment = a.contains(b) || b.contains(a);
+    if (containment) return 0.95;
+    if (jaccard >= 0.5) {
+      // Strong shared-token signal — small Jaro-Winkler bonus tops it
+      // off but the floor is already comfortably high.
+      return 0.9 + (jaccard - 0.5) * 0.2;
+    }
+    if (jaccard > 0) {
+      // Some shared tokens — middling confidence; still better than
+      // pure character similarity.
+      return 0.6 + jaccard * 0.4;
+    }
+    // No token overlap — fall back to Jaro-Winkler but cap so a
+    // coincidental character match can't claim confidence ≥ 0.7. This
+    // keeps cases like "Powder Type" / "Bullet Model" out of the
+    // auto-suggested column and into "Don't import" by default.
     final jw = _jaroWinkler(a, b);
-    final score = [jaccard, containment, jw].reduce((x, y) => x > y ? x : y);
-    return score;
+    return jw > 0.7 ? 0.7 : jw;
   }
 
   /// Jaro-Winkler similarity — short-form here for free, no extra dep.

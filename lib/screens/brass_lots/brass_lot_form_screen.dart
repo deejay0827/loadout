@@ -565,6 +565,9 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
               ],
             ),
             const SizedBox(height: 16),
+            // TODO(units): expose UnitService for display labels
+            // (bullet weight / smallLength). Persisted columns stay
+            // canonical so the migration is display-only.
             _Section(
               title: 'Measurements',
               children: [

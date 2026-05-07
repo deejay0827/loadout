@@ -66,7 +66,9 @@ import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/purchases_service.dart';
 import '../../services/support.dart';
+import '../../services/unit_service.dart';
 import '../backup/backup_screen.dart';
+import '../devices/devices_screen.dart';
 import '../disclaimer/disclaimer_screen.dart';
 import '../privacy/privacy_screen.dart';
 
@@ -109,12 +111,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final service = context.watch<AutoSaveService>();
     final beginner = context.watch<BeginnerModeService>();
+    final units = context.watch<UnitService>();
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: AbsorbPointer(
         absorbing: _busy,
         child: ListView(
           children: [
+            const _SectionHeader('Units of Measurement'),
+            _UnitsSection(units: units),
             const _SectionHeader('Experience'),
             SwitchListTile(
               secondary: const Icon(Icons.school_outlined),
@@ -144,6 +149,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // ignore: discarded_futures
                 service.setEnabled(v);
               },
+            ),
+            const _SectionHeader('Devices'),
+            ListTile(
+              leading: const Icon(Icons.bluetooth_outlined),
+              title: const Text('Connected Devices'),
+              subtitle: const Text(
+                'Pair a Bluetooth chronograph or Kestrel weather meter.',
+              ),
+              onTap: _openDevices,
             ),
             const _SectionHeader('Help & Support'),
             ListTile(
@@ -250,6 +264,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _openBackupScreen() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const BackupScreen()),
+    );
+  }
+
+  void _openDevices() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const DevicesScreen()),
     );
   }
 
@@ -454,6 +474,106 @@ class _SectionHeader extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+}
+
+/// Renders the master Imperial / Metric switch + a per-category list,
+/// modeled on the Strelok / Ballistics Calculator units page.
+///
+/// The master switch sets every category at once. The per-category
+/// segmented buttons let advanced users mix systems (e.g. metric for
+/// range but imperial for bullet weight). Changing the master switch
+/// resets all per-category overrides.
+class _UnitsSection extends StatelessWidget {
+  const _UnitsSection({required this.units});
+
+  final UnitService units;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Master switch.
+          SegmentedButton<UnitSystem>(
+            segments: const [
+              ButtonSegment(
+                value: UnitSystem.imperial,
+                label: Text('Use Imperial'),
+              ),
+              ButtonSegment(
+                value: UnitSystem.metric,
+                label: Text('Use Metric'),
+              ),
+            ],
+            selected: {units.system},
+            onSelectionChanged: (s) {
+              // ignore: discarded_futures
+              units.setSystem(s.first);
+            },
+            showSelectedIcon: false,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Pick your default. You can fine-tune individual measurements below.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final cat in UnitCategory.values) ...[
+            _UnitCategoryRow(units: units, category: cat),
+            const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+}
+
+/// One row inside the Units section: the category title on top, a
+/// horizontally-scrolling segmented button below.
+class _UnitCategoryRow extends StatelessWidget {
+  const _UnitCategoryRow({required this.units, required this.category});
+
+  final UnitService units;
+  final UnitCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = kUnitOptions[category] ?? const <String>[];
+    final current = units.unitFor(category);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          unitCategoryLabel(category),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
+        ),
+        const SizedBox(height: 6),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SegmentedButton<String>(
+            segments: [
+              for (final u in options)
+                ButtonSegment(value: u, label: Text(unitDisplayLabel(u))),
+            ],
+            selected: {current},
+            onSelectionChanged: (s) {
+              // ignore: discarded_futures
+              units.setOverride(category, s.first);
+            },
+            showSelectedIcon: false,
+          ),
+        ),
+      ],
     );
   }
 }

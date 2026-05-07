@@ -154,6 +154,7 @@
 // - Pops the navigator on successful save.
 
 import 'package:drift/drift.dart' as drift;
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -163,11 +164,15 @@ import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/beginner_mode_service.dart';
+import '../../services/ble/ble_service.dart';
+import '../../services/ble/garmin_xero_service.dart';
 import '../../services/recipe_print_service.dart';
+import '../../services/unit_service.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
 import '../../widgets/primer_cascade_field.dart';
+import '../../widgets/pro_gate.dart';
 
 /// Trailing-`<num>gr` matcher used to extract the bullet weight out of a
 /// catalog label like `"Berger Long Range Hybrid Target 109gr"`.
@@ -973,6 +978,69 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     }
   }
 
+  /// Pro: import shot velocities from a Garmin Xero `.fit` file.
+  /// Parses the file, computes avg / ES / SD, and rolls them into the
+  /// existing Notes + Chronograph Used fields. We don't have a
+  /// dedicated velocity-on-recipe schema today (per-recipe velocity
+  /// lives in load development sessions), so notes is the right home
+  /// until we grow dedicated columns.
+  Future<void> _onImportGarminFit() async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final ble = context.read<BleService>();
+    setState(() => _busy = true);
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['fit'],
+        withData: false,
+      );
+      if (picked == null || picked.files.isEmpty) return;
+      final path = picked.files.single.path;
+      if (path == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't read the selected file.")),
+        );
+        return;
+      }
+      final session = await GarminXeroService(ble).importFitFile(path);
+      if (!mounted) return;
+      final summary =
+          'Garmin Xero · ${session.shots.length} shots · '
+          'avg ${session.averageFps.toStringAsFixed(0)} fps · '
+          'ES ${session.extremeSpreadFps.toStringAsFixed(0)} · '
+          'SD ${session.standardDeviationFps.toStringAsFixed(1)}';
+      // Append to notes rather than overwrite so existing free-form
+      // text isn't blown away.
+      final existing = _notes.text.trim();
+      _notes.text =
+          existing.isEmpty ? summary : '$existing\n\n$summary';
+      // Default-fill the chronograph-used field if it's empty so the
+      // recipe records the source.
+      if (_chronographUsed.text.trim().isEmpty) {
+        _chronographUsed.text = 'Garmin Xero C1 Pro';
+      }
+      _autoSave.notifyDirty();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Imported ${session.shots.length} shots. '
+            'Avg ${session.averageFps.toStringAsFixed(0)} fps.',
+          ),
+        ),
+      );
+    } on GarminXeroParseException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text("Couldn't import that file: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
@@ -1097,6 +1165,14 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   /// state (controllers, the primer-size dropdown value, etc.) without
   /// resorting to globals. Cheap to rebuild — every entry is a const-ish
   /// record of metadata plus a closure.
+  ///
+  /// **Note on units (2026-05-07 migration):** field LABELS in this
+  /// form are unit-aware via `context.watch<UnitService>()`. The
+  /// canonical storage in the `UserLoads` table is unchanged — values
+  /// continue to persist as imperial (grains, inches), since shifting
+  /// the storage units would invalidate every existing recipe. The
+  /// suffix text on each field is purely cosmetic at this point;
+  /// migrating to display-conversion is tracked as follow-up work.
   Map<_FieldId, _FieldDef> _buildFieldDefs() {
     return {
       // ─────── Load Identification ───────
@@ -1179,14 +1255,20 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Powder Charge',
         level: DetailLevel.basic,
         aliases: const ['charge', 'grains', 'gr', 'weight'],
-        builder: (ctx) => TextFormField(
-          controller: _powderCharge,
-          decoration: const InputDecoration(
-            labelText: 'Powder Charge (gr)',
-            suffixText: 'gr',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final wt = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.bulletWeight));
+          return TextFormField(
+            controller: _powderCharge,
+            decoration: InputDecoration(
+              labelText: 'Powder Charge ($wt)',
+              suffixText: wt,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.powderLot: _FieldDef(
         id: _FieldId.powderLot,
@@ -1231,19 +1313,25 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Charge Tolerance',
         level: DetailLevel.all,
         aliases: const ['tolerance', 'plus', 'minus', 'spread', 'scale'],
-        builder: (ctx) => TextFormField(
-          controller: _chargeTolerance,
-          decoration: const InputDecoration(
-            labelText: 'Charge Tolerance (gr)',
-            suffixText: 'gr',
-            helperText: '± grain spread / scale resolution',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final wt = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.bulletWeight));
+          return TextFormField(
+            controller: _chargeTolerance,
+            decoration: InputDecoration(
+              labelText: 'Charge Tolerance ($wt)',
+              suffixText: wt,
+              helperText: '± spread / scale resolution',
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
         beginnerTooltip:
-            'How far each thrown charge can wander from your target, '
-            'in grains. Tighter tolerance gives more consistent '
-            'velocity but takes longer to weigh.',
+            'How far each thrown charge can wander from your target. '
+            'Tighter tolerance gives more consistent velocity but '
+            'takes longer to weigh.',
       ),
 
       // ─────── Primer ───────
@@ -1293,15 +1381,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Primer Depth',
         level: DetailLevel.detailed,
         aliases: const ['cps', 'cup', 'seating'],
-        builder: (ctx) => TextFormField(
-          controller: _primerDepth,
-          decoration: const InputDecoration(
-            labelText: 'Primer Depth (in)',
-            suffixText: 'in',
-            helperText: 'CPS, in 0.001" units',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _primerDepth,
+            decoration: InputDecoration(
+              labelText: 'Primer Depth ($len)',
+              suffixText: len,
+              helperText: 'CPS, in 0.001" units',
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.primerLot: _FieldDef(
         id: _FieldId.primerLot,
@@ -1374,14 +1468,20 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Bullet Weight',
         level: DetailLevel.basic,
         aliases: const ['grains', 'gr', 'mass'],
-        builder: (ctx) => TextFormField(
-          controller: _bulletWeight,
-          decoration: const InputDecoration(
-            labelText: 'Bullet Weight (gr)',
-            suffixText: 'gr',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final wt = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.bulletWeight));
+          return TextFormField(
+            controller: _bulletWeight,
+            decoration: InputDecoration(
+              labelText: 'Bullet Weight ($wt)',
+              suffixText: wt,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bulletLot: _FieldDef(
         id: _FieldId.bulletLot,
@@ -1426,42 +1526,60 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Bullet Length',
         level: DetailLevel.all,
         aliases: const ['length', 'overall', 'projectile'],
-        builder: (ctx) => TextFormField(
-          controller: _bulletLength,
-          decoration: const InputDecoration(
-            labelText: 'Bullet Length (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _bulletLength,
+            decoration: InputDecoration(
+              labelText: 'Bullet Length ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bulletBaseToOgive: _FieldDef(
         id: _FieldId.bulletBaseToOgive,
         label: 'Bullet Base-to-Ogive',
         level: DetailLevel.all,
         aliases: const ['bto', 'base', 'ogive', 'comparator'],
-        builder: (ctx) => TextFormField(
-          controller: _bulletBaseToOgive,
-          decoration: const InputDecoration(
-            labelText: 'Bullet Base-to-Ogive (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _bulletBaseToOgive,
+            decoration: InputDecoration(
+              labelText: 'Bullet Base-to-Ogive ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bulletBearingSurface: _FieldDef(
         id: _FieldId.bulletBearingSurface,
         label: 'Bearing Surface Length',
         level: DetailLevel.all,
         aliases: const ['bearing', 'shank', 'bullet', 'surface'],
-        builder: (ctx) => TextFormField(
-          controller: _bulletBearingSurface,
-          decoration: const InputDecoration(
-            labelText: 'Bearing Surface Length (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _bulletBearingSurface,
+            decoration: InputDecoration(
+              labelText: 'Bearing Surface Length ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bulletMeplatTrimmed: _FieldDef(
         id: _FieldId.bulletMeplatTrimmed,
@@ -1513,15 +1631,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Weight Sort Tolerance',
         level: DetailLevel.all,
         aliases: const ['tolerance', 'sort', 'spread', 'weight'],
-        builder: (ctx) => TextFormField(
-          controller: _bulletWeightTolerance,
-          decoration: const InputDecoration(
-            labelText: 'Weight Sort Tolerance (gr)',
-            suffixText: 'gr',
-            helperText: '± gr from nominal',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final wt = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.bulletWeight));
+          return TextFormField(
+            controller: _bulletWeightTolerance,
+            decoration: InputDecoration(
+              labelText: 'Weight Sort Tolerance ($wt)',
+              suffixText: wt,
+              helperText: '± from nominal',
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bulletBtoSorted: _FieldDef(
         id: _FieldId.bulletBtoSorted,
@@ -1543,15 +1667,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'BTO Sort Tolerance',
         level: DetailLevel.all,
         aliases: const ['bto', 'tolerance', 'spread', 'ogive'],
-        builder: (ctx) => TextFormField(
-          controller: _bulletBtoTolerance,
-          decoration: const InputDecoration(
-            labelText: 'BTO Sort Tolerance (in)',
-            suffixText: 'in',
-            helperText: '± in from nominal',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _bulletBtoTolerance,
+            decoration: InputDecoration(
+              labelText: 'BTO Sort Tolerance ($len)',
+              suffixText: len,
+              helperText: '± from nominal',
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bulletDiameterSorted: _FieldDef(
         id: _FieldId.bulletDiameterSorted,
@@ -1573,14 +1703,20 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Seating Depth',
         level: DetailLevel.detailed,
         aliases: const ['seat', 'jump', 'jam'],
-        builder: (ctx) => TextFormField(
-          controller: _seatingDepth,
-          decoration: const InputDecoration(
-            labelText: 'Seating Depth (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _seatingDepth,
+            decoration: InputDecoration(
+              labelText: 'Seating Depth ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.cbto: _FieldDef(
         id: _FieldId.cbto,
@@ -1593,15 +1729,21 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           'comparator',
           'btoive',
         ],
-        builder: (ctx) => TextFormField(
-          controller: _cbto,
-          decoration: const InputDecoration(
-            labelText: 'CBTO (in)',
-            suffixText: 'in',
-            helperText: 'Cartridge base to ogive',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _cbto,
+            decoration: InputDecoration(
+              labelText: 'CBTO ($len)',
+              suffixText: len,
+              helperText: 'Cartridge base to ogive',
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
         beginnerTooltip:
             'CBTO measures from the case base to the bullet\'s ogive — '
             'more reproducible than COAL across bullets with different '
@@ -1666,42 +1808,60 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             'How far you push the case shoulder back during sizing. '
             'Most reloaders aim for 0.001"-0.002" of bump for '
             'reliable chambering and case life.',
-        builder: (ctx) => TextFormField(
-          controller: _shoulderBump,
-          decoration: const InputDecoration(
-            labelText: 'Shoulder Bump (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _shoulderBump,
+            decoration: InputDecoration(
+              labelText: 'Shoulder Bump ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.mandrelSize: _FieldDef(
         id: _FieldId.mandrelSize,
         label: 'Mandrel Size',
         level: DetailLevel.detailed,
         aliases: const ['neck', 'tension', 'expander'],
-        builder: (ctx) => TextFormField(
-          controller: _mandrelSize,
-          decoration: const InputDecoration(
-            labelText: 'Mandrel Size (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _mandrelSize,
+            decoration: InputDecoration(
+              labelText: 'Mandrel Size ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bushingSize: _FieldDef(
         id: _FieldId.bushingSize,
         label: 'Bushing Size',
         level: DetailLevel.all,
         aliases: const ['bushing', 'die', 'neck'],
-        builder: (ctx) => TextFormField(
-          controller: _bushingSize,
-          decoration: const InputDecoration(
-            labelText: 'Bushing Size (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _bushingSize,
+            decoration: InputDecoration(
+              labelText: 'Bushing Size ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
 
       // ─────── Loaded Round Dimensions ───────
@@ -1710,14 +1870,20 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'COAL',
         level: DetailLevel.basic,
         aliases: const ['overall', 'length', 'oal', 'cartridge'],
-        builder: (ctx) => TextFormField(
-          controller: _coal,
-          decoration: const InputDecoration(
-            labelText: 'COAL (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _coal,
+            decoration: InputDecoration(
+              labelText: 'COAL ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.distanceToLands: _FieldDef(
         id: _FieldId.distanceToLands,
@@ -1728,42 +1894,60 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             'How far the bullet sits from the start of the rifling '
             '(the lands). Affects pressure and accuracy. Most '
             'beginners can ignore this until they\'re tuning loads.',
-        builder: (ctx) => TextFormField(
-          controller: _distanceToLands,
-          decoration: const InputDecoration(
-            labelText: 'Distance to Lands (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _distanceToLands,
+            decoration: InputDecoration(
+              labelText: 'Distance to Lands ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.jumpToLands: _FieldDef(
         id: _FieldId.jumpToLands,
         label: 'Jump to Lands',
         level: DetailLevel.all,
         aliases: const ['jump', 'lands', 'freebore'],
-        builder: (ctx) => TextFormField(
-          controller: _jumpToLands,
-          decoration: const InputDecoration(
-            labelText: 'Jump to Lands (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _jumpToLands,
+            decoration: InputDecoration(
+              labelText: 'Jump to Lands ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.loadedNeckDiameter: _FieldDef(
         id: _FieldId.loadedNeckDiameter,
         label: 'Loaded Neck Diameter',
         level: DetailLevel.all,
         aliases: const ['neck', 'diameter', 'tension', 'loaded'],
-        builder: (ctx) => TextFormField(
-          controller: _loadedNeckDiameter,
-          decoration: const InputDecoration(
-            labelText: 'Loaded Neck Diameter (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _loadedNeckDiameter,
+            decoration: InputDecoration(
+              labelText: 'Loaded Neck Diameter ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.bulletRunout: _FieldDef(
         id: _FieldId.bulletRunout,
@@ -1774,14 +1958,20 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             'How off-center the seated bullet is, measured by total '
             'indicator runout. Lower is better for accuracy. Skip '
             'unless you have a runout gauge.',
-        builder: (ctx) => TextFormField(
-          controller: _bulletRunout,
-          decoration: const InputDecoration(
-            labelText: 'Bullet Runout / TIR (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _bulletRunout,
+            decoration: InputDecoration(
+              labelText: 'Bullet Runout / TIR ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
 
       // ─────── Pressure Indicators ───────
@@ -1863,14 +2053,20 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Web Expansion at .200"',
         level: DetailLevel.all,
         aliases: const ['web', 'expansion', 'pressure', 'case'],
-        builder: (ctx) => TextFormField(
-          controller: _webExpansion,
-          decoration: const InputDecoration(
-            labelText: 'Web Expansion at .200" (in)',
-            suffixText: 'in',
-          ),
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        ),
+        // TODO(units): display labels only; canonical storage unchanged.
+        builder: (ctx) {
+          final len = unitDisplayLabel(
+              ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+          return TextFormField(
+            controller: _webExpansion,
+            decoration: InputDecoration(
+              labelText: 'Web Expansion at .200" ($len)',
+              suffixText: len,
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+          );
+        },
       ),
       _FieldId.primerFlatness: _FieldDef(
         id: _FieldId.primerFlatness,
@@ -2324,6 +2520,18 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                         ),
                       ),
                     ),
+                  const SizedBox(height: 16),
+                  // Pro: import shot velocities from a Garmin Xero .fit
+                  // export. Drops the resulting average / ES / SD into
+                  // the Notes field and the Chronograph Used field —
+                  // we don't have a dedicated velocity-on-recipe
+                  // schema today, so notes are the right home until we
+                  // grow the dedicated columns.
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.speed),
+                    onPressed: _busy ? null : _onImportGarminFit,
+                    label: const Text('Import velocity from Garmin .fit'),
+                  ),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: _busy ? null : _save,

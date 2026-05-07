@@ -100,6 +100,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/app_theme.dart';
 import '../backup/backup_screen.dart';
 import '../paywall/paywall_screen.dart';
+import '../recipes/photo_import_screen.dart';
 import '../recipes/smart_import_screen.dart';
 
 /// Multi-page guided walkthrough that introduces LoadOut's features.
@@ -266,17 +267,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  /// Photo CTA: no dedicated screen exists yet — Backup & Export is
-  /// where the photo-import flow lands when shipped, so the deep-link
-  /// drops the user there. CSV import is also available on the same
-  /// screen as a fallback.
+  /// Photo CTA: deep-links to the dedicated `PhotoImportScreen` on
+  /// platforms that support it (iOS / Android). On macOS / Windows /
+  /// web the photo path doesn't exist, so we fall back to the Backup
+  /// hub where the user can find the spreadsheet importer instead.
   void _openPhotoImport() {
     _markSeenWithoutClosing();
     final navigator = Navigator.of(context);
     navigator.pop();
-    navigator.push(
-      MaterialPageRoute(builder: (_) => const BackupScreen()),
-    );
+    if (PhotoImportScreen.isSupportedPlatform) {
+      navigator.push(
+        MaterialPageRoute(builder: (_) => const PhotoImportScreen()),
+      );
+    } else {
+      navigator.push(
+        MaterialPageRoute(builder: (_) => const BackupScreen()),
+      );
+    }
   }
 
   void _handlePageAction(_PageActionType type) {
