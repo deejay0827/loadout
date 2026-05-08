@@ -316,6 +316,9 @@ enum _FieldId {
   powderCharge,
   powderLot,
   chargeTolerance,
+  // Powder temp sensitivity (schema v15 ballistic-precision inputs).
+  powderTempSensitivity,
+  powderReferenceTemp,
   // Primer
   primer,
   primerSize,
@@ -508,6 +511,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
 
   // New v4 numeric / text controllers.
   late final TextEditingController _chargeTolerance;
+  // ── v15 ballistic-precision: powder temp sensitivity ──
+  // Non-Extreme spherical powders shift muzzle velocity by ~1 fps per
+  // °C; Hodgdon Extreme is near 0. The reference temp default in the
+  // schema is 15.6 °C (60 °F).
+  late final TextEditingController _powderTempSensitivity;
+  late final TextEditingController _powderReferenceTemp;
   late final TextEditingController _primerSeatingForce;
   late final TextEditingController _bulletLength;
   late final TextEditingController _bulletBaseToOgive;
@@ -623,6 +632,16 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     // ── New v4 controllers ──
     _chargeTolerance = TextEditingController(
       text: e?.chargeToleranceGr?.toString() ?? '',
+    );
+    // ── v15 ballistic-precision: powder temp sensitivity ──
+    // `powderReferenceTempCelsius` has a 15.6 default in the schema so
+    // it's always non-null on persisted rows; nullable sensitivity field
+    // shows blank when the user hasn't entered a value.
+    _powderTempSensitivity = TextEditingController(
+      text: e?.powderTempSensitivityFpsPerCelsius?.toString() ?? '',
+    );
+    _powderReferenceTemp = TextEditingController(
+      text: e?.powderReferenceTempCelsius.toString() ?? '',
     );
     _primerSeatingForce = TextEditingController(
       text: e?.primerSeatingForceLbs?.toString() ?? '',
@@ -742,6 +761,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       _mandrelSize,
       _notes,
       _chargeTolerance,
+      _powderTempSensitivity,
+      _powderReferenceTemp,
       _primerSeatingForce,
       _bulletLength,
       _bulletBaseToOgive,
@@ -790,6 +811,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       useCase: drift.Value(_useCase),
       powderLotId: drift.Value(_powderLotId),
       chargeToleranceGr: drift.Value(_parseDouble(_chargeTolerance)),
+      // ── v15 ballistic-precision (powder temp sensitivity) ──
+      powderTempSensitivityFpsPerCelsius:
+          drift.Value(_parseDouble(_powderTempSensitivity)),
+      powderReferenceTempCelsius: _parseDouble(_powderReferenceTemp) == null
+          ? const drift.Value.absent()
+          : drift.Value(_parseDouble(_powderReferenceTemp)!),
       primerLotId: drift.Value(_primerLotId),
       primerSeatingForceLbs: drift.Value(_parseDouble(_primerSeatingForce)),
       bulletLotId: drift.Value(_bulletLotId),
@@ -884,6 +911,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       _mandrelSize,
       _notes,
       _chargeTolerance,
+      _powderTempSensitivity,
+      _powderReferenceTemp,
       _primerSeatingForce,
       _bulletLength,
       _bulletBaseToOgive,
@@ -1137,6 +1166,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       useCase: drift.Value(_useCase),
       powderLotId: drift.Value(_powderLotId),
       chargeToleranceGr: drift.Value(_parseDouble(_chargeTolerance)),
+      // ── v15 ballistic-precision (powder temp sensitivity) ──
+      powderTempSensitivityFpsPerCelsius:
+          drift.Value(_parseDouble(_powderTempSensitivity)),
+      powderReferenceTempCelsius: _parseDouble(_powderReferenceTemp) == null
+          ? const drift.Value.absent()
+          : drift.Value(_parseDouble(_powderReferenceTemp)!),
       primerLotId: drift.Value(_primerLotId),
       primerSeatingForceLbs: drift.Value(_parseDouble(_primerSeatingForce)),
       bulletLotId: drift.Value(_bulletLotId),
@@ -1380,6 +1415,80 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             'How far each thrown charge can wander from your target. '
             'Tighter tolerance gives more consistent velocity but '
             'takes longer to weigh.',
+      ),
+      // ── Powder temp sensitivity (schema v15) ──
+      // The pair of fields below describe how this powder's velocity
+      // shifts with temperature. They feed the ballistics solver's
+      // temperature-correction term so a hot or cold range day's drop
+      // numbers track the actual velocity. Detailed-level only —
+      // beginners shouldn't be asked for a fps/°C number on day one.
+      _FieldId.powderTempSensitivity: _FieldDef(
+        id: _FieldId.powderTempSensitivity,
+        label: 'Powder Temp Sensitivity',
+        level: DetailLevel.detailed,
+        aliases: const [
+          'temp',
+          'temperature',
+          'sensitivity',
+          'fps/c',
+          'fps/°c',
+          'extreme',
+          'spherical',
+          'ball',
+        ],
+        builder: (ctx) => TextFormField(
+          controller: _powderTempSensitivity,
+          decoration: const InputDecoration(
+            labelText: 'Sensitivity (fps/°C)',
+            suffixText: 'fps/°C',
+            helperText:
+                'Powder velocity changes with temperature. Hodgdon Extreme '
+                'powders are nearly 0; spherical / ball powders can be 1.0+. '
+                'Look up your powder\'s spec sheet.',
+            helperMaxLines: 3,
+          ),
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+            signed: true,
+          ),
+        ),
+        beginnerTooltip:
+            'How many fps your muzzle velocity moves for each 1°C change '
+            'in powder temperature. Used by the solver to keep your DOPE '
+            'honest on a hot or cold range day.',
+      ),
+      _FieldId.powderReferenceTemp: _FieldDef(
+        id: _FieldId.powderReferenceTemp,
+        label: 'Powder Reference Temp',
+        level: DetailLevel.detailed,
+        aliases: const [
+          'reference',
+          'ref',
+          'temp',
+          'temperature',
+          'baseline',
+          '60f',
+          '15c',
+        ],
+        builder: (ctx) => TextFormField(
+          controller: _powderReferenceTemp,
+          decoration: const InputDecoration(
+            labelText: 'Reference (°C)',
+            suffixText: '°C',
+            helperText:
+                'The temperature your published / measured MV was '
+                'recorded at. Default 15.6 °C (60 °F).',
+            helperMaxLines: 2,
+          ),
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+            signed: true,
+          ),
+        ),
+        beginnerTooltip:
+            'The temperature your muzzle velocity was measured at. '
+            'When you shoot in different conditions the solver uses '
+            'sensitivity × (today − reference) to predict velocity.',
       ),
 
       // ─────── Primer ───────
@@ -2299,9 +2408,15 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         _FieldId.powderCharge,
         _FieldId.powderLot,
         _FieldId.chargeTolerance,
+        // v15 — temp sensitivity. Detailed-level fields, hidden in Basic.
+        _FieldId.powderTempSensitivity,
+        _FieldId.powderReferenceTemp,
       ],
       pairs: [
         [_FieldId.powder, _FieldId.powderCharge],
+        // The two temp-sensitivity fields are conceptually a single
+        // "what shifts MV with temperature" widget — pair on desktop.
+        [_FieldId.powderTempSensitivity, _FieldId.powderReferenceTemp],
       ],
     ),
     _Section(

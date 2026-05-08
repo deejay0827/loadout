@@ -735,6 +735,21 @@ class UserLoads extends Table {
   /// 'clean' | 'seasoned' | 'fouled'
   TextColumn get boreState => text().nullable()();
   TextColumn get loadedBy => text().nullable()();
+
+  // ── Ballistic precision (added schema v16) ──
+  /// Powder temperature sensitivity, fps per °C. Positive values mean the
+  /// load runs faster as the propellant warms. Modern temperature-stable
+  /// powders (Hodgdon Extreme, IMR Enduron, Vihtavuori N5xx) report < 0.5
+  /// fps/°C; older single-base ball powders can run 1.5–3 fps/°C. Null
+  /// means "no temperature sensitivity adjustment" — the solver uses the
+  /// load's tabulated MV as-is.
+  RealColumn get powderTempSensitivityFpsPerCelsius => real().nullable()();
+  /// Reference temperature (°C) the [powderTempSensitivityFpsPerCelsius]
+  /// is calibrated against. Defaults to 15.6 °C (60 °F), the SAAMI
+  /// reference temperature. The solver computes the runtime MV
+  /// adjustment as `(currentTempC - referenceTempC) × sensitivity`.
+  RealColumn get powderReferenceTempCelsius =>
+      real().withDefault(const Constant(15.6))();
 }
 
 @DataClassName('UserFirearmRow')
@@ -789,6 +804,37 @@ class UserFirearms extends Table {
   /// reticle picker pre-fills this from the linked optic's
   /// `Optics.reticleId` if one is set.
   IntColumn get reticleId => integer().nullable()();
+
+  // ── Ballistic precision (added schema v16) ──
+  /// Direction of the rifling twist as viewed from behind the muzzle.
+  /// `'right'` is the dominant US convention; `'left'` flips the sign of
+  /// the spin-drift correction in the solver. Defaults to `'right'`.
+  TextColumn get twistDirection =>
+      text().withDefault(const Constant('right'))();
+  /// Vertical sight scale factor — multiplies the elevation hold
+  /// reported by the solver. Used when the user has measured a
+  /// turret-tracking error (e.g. a scope that dials 0.95 mil for a
+  /// commanded 1.00 mil). Defaults to 1.0 (no correction).
+  RealColumn get sightScaleVertical =>
+      real().withDefault(const Constant(1.0))();
+  /// Horizontal sight scale factor — same idea, applied to the windage
+  /// hold. Defaults to 1.0.
+  RealColumn get sightScaleHorizontal =>
+      real().withDefault(const Constant(1.0))();
+  /// Atmospheric pressure (inHg) at the time the rifle was zeroed.
+  /// When all three zero-atmosphere fields are non-null, the solver
+  /// computes the bore-axis-to-line-of-sight offset under the zero
+  /// atmosphere and applies it as a constant correction at runtime,
+  /// eliminating the "I zeroed at sea level but I'm shooting at
+  /// 5000 ft" elevation error. Null falls back to the runtime
+  /// atmosphere (legacy behaviour).
+  RealColumn get zeroPressureInHg => real().nullable()();
+  /// Air temperature (°F) at the time the rifle was zeroed. See
+  /// [zeroPressureInHg] for behaviour.
+  RealColumn get zeroTemperatureF => real().nullable()();
+  /// Relative humidity (%) at the time the rifle was zeroed. See
+  /// [zeroPressureInHg] for behaviour.
+  RealColumn get zeroHumidityPct => real().nullable()();
 }
 
 // ─────────────────────── Batches (user, schema v4, feature #12) ───────────────────────
@@ -1016,6 +1062,13 @@ class RangeDaySessions extends Table {
   /// preserved next to the cant for archival purposes even if the
   /// shooter later edits the field.
   RealColumn get shotAzimuthDegrees => real().nullable()();
+
+  // ── Ballistic precision (added schema v15) ──
+  /// Incline / decline angle of the shot, in degrees. Positive = uphill,
+  /// negative = downhill. The solver applies the improved-rifleman's
+  /// rule (drop scaled by `cos(angle)^1.5`) when this field is non-null.
+  /// Null means "level shot" — no correction.
+  RealColumn get inclineAngleDeg => real().nullable()();
 }
 
 /// One row per shot recorded during a range-day session. Impact coordinates
@@ -1129,7 +1182,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1365,6 +1418,54 @@ class AppDatabase extends _$AppDatabase {
             // (not handload components) and are intentionally NOT
             // surfaced in the recipe form. Additive only.
             await m.createTable(factoryLoads);
+          }
+          if (from < 15) {
+            // v15 — Ballistic-precision inputs. Nine purely additive
+            // columns spread across three existing tables so the solver
+            // can model effects it previously ignored. Every new column
+            // either (a) is nullable and treated as "no effect" by the
+            // solver, or (b) carries a default value that reproduces the
+            // legacy behaviour for existing rows. As a result, every
+            // pre-v15 recipe / firearm / range-day session continues to
+            // produce identical trajectories until the user opts into
+            // one of the new fields.
+            //
+            // UserLoads:
+            //   * `powderTempSensitivityFpsPerCelsius` — fps/°C velocity
+            //     drift; nullable so a load without a measured value
+            //     skips the temperature adjustment entirely.
+            //   * `powderReferenceTempCelsius` — calibration temperature
+            //     for the sensitivity, defaulting to 15.6 °C
+            //     (60 °F, the SAAMI reference).
+            //
+            // UserFirearms:
+            //   * `twistDirection` — `'right' | 'left'`; defaults to
+            //     `'right'` so existing firearms behave unchanged.
+            //   * `sightScaleVertical` / `sightScaleHorizontal` —
+            //     multiplicative scope-tracking corrections, default 1.0.
+            //   * `zeroPressureInHg` / `zeroTemperatureF` /
+            //     `zeroHumidityPct` — atmospheric snapshot at zeroing
+            //     time. Nullable; the solver falls back to the runtime
+            //     atmosphere when any of the three is missing.
+            //
+            // RangeDaySessions:
+            //   * `inclineAngleDeg` — uphill/downhill shot angle.
+            //     Nullable; the solver skips the rifleman's-rule
+            //     correction when null.
+            await m.addColumn(
+                userLoads, userLoads.powderTempSensitivityFpsPerCelsius);
+            await m.addColumn(
+                userLoads, userLoads.powderReferenceTempCelsius);
+            await m.addColumn(userFirearms, userFirearms.twistDirection);
+            await m.addColumn(
+                userFirearms, userFirearms.sightScaleVertical);
+            await m.addColumn(
+                userFirearms, userFirearms.sightScaleHorizontal);
+            await m.addColumn(userFirearms, userFirearms.zeroPressureInHg);
+            await m.addColumn(userFirearms, userFirearms.zeroTemperatureF);
+            await m.addColumn(userFirearms, userFirearms.zeroHumidityPct);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.inclineAngleDeg);
           }
         },
       );

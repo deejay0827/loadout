@@ -170,6 +170,14 @@ class RecipeRepository {
       (db.select(db.userLoads)..orderBy([(l) => OrderingTerm.desc(l.updatedAt)]))
           .watch();
 
+  /// One-shot read of every recipe. Used by the notebook-onboarding
+  /// flow to count how many rows landed during a photo-import pass
+  /// (count after - count before = imported delta), and by tests that
+  /// need a snapshot rather than a stream.
+  Future<List<UserLoadRow>> allOnce() =>
+      (db.select(db.userLoads)..orderBy([(l) => OrderingTerm.desc(l.updatedAt)]))
+          .get();
+
   Future<UserLoadRow?> getById(int id) =>
       (db.select(db.userLoads)..where((l) => l.id.equals(id)))
           .getSingleOrNull();

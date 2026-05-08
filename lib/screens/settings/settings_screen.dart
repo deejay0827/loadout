@@ -70,6 +70,7 @@ import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/locale_service.dart';
 import '../../services/purchases_service.dart';
+import '../../services/sample_notebook_service.dart';
 import '../../services/support.dart';
 import '../../services/unit_service.dart';
 import '../backup/backup_screen.dart';
@@ -250,6 +251,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               onTap: _openSupportEmail,
             ),
+            // Pen-and-paper conversion: print a blank notebook page the
+            // user can fill in at the bench and photo-import later.
+            // See `lib/services/sample_notebook_service.dart`.
+            ListTile(
+              leading: const Icon(Icons.print_outlined),
+              title: const Text('Print a sample notebook page'),
+              subtitle: const Text(
+                'A blank reloading log page you can print at home, '
+                'fill in by hand, then photo-import back into LoadOut.',
+              ),
+              onTap: _shareSampleNotebook,
+            ),
             ListTile(
               leading: const Icon(Icons.restore_outlined),
               title: const Text('Restore from backup'),
@@ -364,6 +377,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const BackupScreen()),
     );
+  }
+
+  /// Pen-and-paper conversion helper: render a printable sample
+  /// notebook page and surface the OS share sheet so the user can
+  /// print, save to Files, or AirDrop. The actual PDF generation
+  /// lives in [SampleNotebookService] (one place to extend if the
+  /// layout needs to change).
+  Future<void> _shareSampleNotebook() async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await const SampleNotebookService().share(context);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Could not generate notebook page: $e')),
+      );
+    }
   }
 
   void _openCloudSync() {

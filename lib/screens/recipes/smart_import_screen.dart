@@ -1313,6 +1313,35 @@ class _DoneStep extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ),
+        const SizedBox(height: 16),
+        // Privacy reassurance — older / spreadsheet users want to see
+        // explicitly that their data isn't being uploaded. Wording
+        // matches CLAUDE.md §13.
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.shield_outlined,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Your data stays on your phone. No upload, no '
+                  'account required.',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 24),
         FilledButton.icon(
           icon: const Icon(Icons.list_alt),

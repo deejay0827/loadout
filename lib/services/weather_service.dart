@@ -61,6 +61,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
@@ -74,6 +75,32 @@ const double _kHpaPerInHg = 33.8639;
 /// Conversion factor: 1 metre ≈ 3.28084 feet. open-meteo always
 /// returns elevation in metres regardless of unit-hint parameters.
 const double _kFeetPerMetre = 3.28084;
+
+/// Convert sea-level pressure to station pressure given the station's
+/// altitude in feet and ambient temperature in °F.
+///
+/// Uses the standard barometric formula approximation
+/// `station = sea_level × (1 - altitude_ft / 145366.45)^5.255`. The
+/// (1 − altitude / scale-height) form is the truncated barometric
+/// equation valid up to a few thousand metres — plenty for any
+/// shooting position. Temperature isn't part of the formula because
+/// the standard atmosphere already builds in a 6.5 °C/km lapse rate;
+/// we accept the parameter so callers don't have to plumb it into a
+/// future temperature-corrected variant separately.
+///
+/// Returns inHg when called with inHg input, mbar when called with
+/// mbar input — the relation is unitless. Negative or zero altitude
+/// returns the input unchanged.
+double seaLevelToStationPressure(
+  double seaLevelPressure,
+  double altitudeFt,
+) {
+  if (altitudeFt <= 0) return seaLevelPressure;
+  final altitudeRatio = 1.0 - altitudeFt / 145366.45;
+  if (altitudeRatio <= 0) return seaLevelPressure;
+  // Use math.pow with explicit double to avoid integer-promotion bugs.
+  return seaLevelPressure * math.pow(altitudeRatio, 5.255).toDouble();
+}
 
 /// Result of a single weather lookup. All fields are in the
 /// imperial units the ballistics screen / solver expects.
@@ -266,23 +293,44 @@ class WeatherService {
     final humidity = _asDouble(current['relative_humidity_2m']);
     final windMph = _asDouble(current['wind_speed_10m']);
     final windDir = _asDouble(current['wind_direction_10m']);
-    final surfacePressureRaw = _asDouble(current['surface_pressure']);
     final elevationMetres = _asDouble(root['elevation']);
+    final elevationFt = elevationMetres * _kFeetPerMetre;
 
     // open-meteo's `surface_pressure` ignores `pressure_unit` and is
     // returned in hPa — verify against the units block but always
-    // assume hPa unless the units block explicitly says inHg.
+    // assume hPa unless the units block explicitly says inHg. When
+    // the field is absent (rare — typically only at obscure marine
+    // grid points) we fall back to converting `pressure_msl` to
+    // station pressure via the standard atmosphere formula using the
+    // station altitude reported by open-meteo.
     final surfacePressureUnit =
         (unitsMap['surface_pressure'] as String?)?.toLowerCase().trim();
-    final stationPressureInHg = surfacePressureUnit == 'inhg'
-        ? surfacePressureRaw
-        : surfacePressureRaw / _kHpaPerInHg;
+    double stationPressureInHg;
+    final surfaceVal = current['surface_pressure'];
+    if (surfaceVal != null) {
+      final raw = _asDouble(surfaceVal);
+      stationPressureInHg = surfacePressureUnit == 'inhg'
+          ? raw
+          : raw / _kHpaPerInHg;
+    } else {
+      // Fallback: derive station pressure from sea-level pressure using
+      // the station's altitude. open-meteo always returns
+      // `pressure_msl` so this branch is reliable when surface_pressure
+      // is missing.
+      final mslRaw = _asDouble(current['pressure_msl']);
+      final mslUnit =
+          (unitsMap['pressure_msl'] as String?)?.toLowerCase().trim();
+      final mslInHg =
+          mslUnit == 'inhg' ? mslRaw : mslRaw / _kHpaPerInHg;
+      stationPressureInHg =
+          seaLevelToStationPressure(mslInHg, elevationFt);
+    }
 
     return WeatherFetchResult(
       tempF: tempF,
       stationPressureInHg: stationPressureInHg,
       humidityPct: humidity.clamp(0, 100).toDouble(),
-      elevationFt: elevationMetres * _kFeetPerMetre,
+      elevationFt: elevationFt,
       windSpeedMph: windMph,
       windDirectionDeg: ((windDir % 360) + 360) % 360,
       fetchedAt: DateTime.now(),

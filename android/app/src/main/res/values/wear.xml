@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Wearable capability declarations for the LoadOut phone app.
+
+  Declaring `loadout_phone_companion` here lets the LoadOut Wear OS
+  module find the phone using `CapabilityClient.getCapability(...)`. The
+  watch side declares the matching `loadout_watch_companion` capability
+  in `android/wear/src/main/res/values/wear.xml`.
+
+  See CLAUDE.md §15 for the phone <-> watch contract.
+-->
+<resources>
+    <string-array name="android_wear_capabilities">
+        <item>loadout_phone_companion</item>
+    </string-array>
+</resources>

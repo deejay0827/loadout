@@ -158,6 +158,7 @@ import 'services/locale_service.dart';
 import 'services/onedrive_backup_service.dart';
 import 'services/purchases_service.dart';
 import 'services/sensors/cant_service.dart';
+import 'services/sensors/inclinometer_service.dart';
 import 'services/sensors/magnetometer_service.dart';
 import 'services/unit_service.dart';
 import 'theme/app_theme.dart';
@@ -309,6 +310,13 @@ class LoadOutApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<MagnetometerService>(
           create: (_) => MagnetometerService(),
+        ),
+        // Sister service to CantService — same accelerometer stream,
+        // computed pitch (incline) instead of roll (cant). Used by the
+        // Range Day Setup card's "Capture from sensor" button on the
+        // incline/decline angle field.
+        ChangeNotifierProvider<InclinometerService>(
+          create: (_) => InclinometerService(),
         ),
         // Seed the auth-state stream with `FirebaseAuth.instance.currentUser`,
         // which is the SYNCHRONOUSLY-available cached user from the prior

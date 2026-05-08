@@ -95,6 +95,8 @@
 
 import 'dart:math' as math;
 
+import '../data/handwriting_aliases.dart';
+
 /// One parsed field from a photo-import OCR pass. The review screen
 /// renders the value, the confidence indicator, and a "Source: …"
 /// caption with the OCR snippet that produced the value.
@@ -203,18 +205,66 @@ class RecipeParser {
   /// Optional — brass manufacturer names like `"Lapua"`, `"Hornady"`.
   final List<String> _brassNames;
 
+  /// Pre-scan a multi-segment page for context fields that apply to
+  /// EVERY entry on the page. Notebook pages frequently have the
+  /// caliber written once at the top ("6.5 CM" / "Creedmoor Range
+  /// Notes" header) and individual rows that lack a caliber column.
+  /// This helper runs `expandHandwritingTokens` over the full page
+  /// text and returns the longest single caliber hit, if any.
+  ///
+  /// Callers pass the result via [parse]'s `pageContextCaliber` so
+  /// per-row parses inherit the page-level caliber when a row's own
+  /// OCR text doesn't include one.
+  String? inferPageCaliber(String pageText) {
+    final expansion = expandHandwritingTokens(pageText);
+    if (expansion.calibers.isEmpty) return null;
+    final canonical = expansion.calibers.toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+    return canonical.first;
+  }
+
   /// Run the parser on a raw OCR string. Pure — no I/O.
-  RecipeDraft parse(String ocrText) {
+  ///
+  /// Optional [pageContextCaliber] supplies a default caliber drawn
+  /// from a page-level header so per-row parses inherit it when the
+  /// row itself doesn't include one (notebook pages with one caliber
+  /// written at the top and individual rows with only powder / charge
+  /// / bullet columns).
+  RecipeDraft parse(String ocrText, {String? pageContextCaliber}) {
     final lines = ocrText
         .split(RegExp(r'[\r\n]+'))
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .toList(growable: false);
 
-    final caliber = _findCaliber(ocrText, lines);
-    final powder = _findPowder(ocrText, lines);
+    // Run a handwriting / shorthand expansion pass over the full text.
+    // This is layered on top of the catalog-driven matchers below: if a
+    // shorthand resolves to a canonical name, we hand the canonical
+    // name back to the catalog matcher so it can attach the
+    // manufacturer + a high-confidence score.
+    final expansion = expandHandwritingTokens(ocrText);
+
+    var caliber = _findCaliber(ocrText, lines, expansion);
+    // Page-context inference: if the per-row OCR doesn't carry a
+    // caliber (or carries only a low-confidence one) and the caller
+    // supplied a page-level caliber from a header / title block, use
+    // that. Confidence 0.65 — we matched a header on this page but
+    // can't be sure each row applies. The review screen still lets
+    // the user correct it.
+    if (pageContextCaliber != null && pageContextCaliber.isNotEmpty) {
+      final hasStrongCaliber =
+          caliber != null && caliber.confidence >= 0.85;
+      if (!hasStrongCaliber) {
+        caliber = ParsedField<String>(
+          value: pageContextCaliber,
+          confidence: 0.65,
+          sourceText: 'Page header: $pageContextCaliber',
+        );
+      }
+    }
+    final powder = _findPowder(ocrText, lines, expansion);
     final powderCharge = _findPowderCharge(lines, powder?.value);
-    final bullet = _findBullet(ocrText, lines);
+    final bullet = _findBullet(ocrText, lines, expansion);
     final bulletWeight = _findBulletWeight(lines, bullet?.value);
     final primer = _findPrimer(ocrText);
     final brass = _findBrass(ocrText);
@@ -245,7 +295,11 @@ class RecipeParser {
 
   // ─────────────────────── caliber ───────────────────────
 
-  ParsedField<String>? _findCaliber(String text, List<String> lines) {
+  ParsedField<String>? _findCaliber(
+    String text,
+    List<String> lines,
+    HandwritingExpansion expansion,
+  ) {
     final lower = text.toLowerCase();
     // Exact alias hit first — confidence 0.95.
     String? bestExact;
@@ -277,6 +331,34 @@ class RecipeParser {
       );
     }
 
+    // Handwriting-shorthand pass. The expansion table catches
+    // "308 Win" / "5.56" / "6.5 CM" patterns that didn't show up in
+    // the cartridge-aliases dictionary. Confidence 0.85: we matched a
+    // canonical name through the shorthand table but didn't see the
+    // catalog's canonical spelling.
+    if (expansion.calibers.isNotEmpty) {
+      final canonical = expansion.calibers.toList()
+        ..sort((a, b) => b.length.compareTo(a.length));
+      final hit = canonical.first;
+      String source = hit;
+      for (final line in lines) {
+        final l = line.toLowerCase();
+        for (final aliasKey in kCaliberHandwritingAliases.keys) {
+          if (kCaliberHandwritingAliases[aliasKey] == hit &&
+              l.contains(aliasKey.toLowerCase())) {
+            source = line;
+            break;
+          }
+        }
+        if (source != hit) break;
+      }
+      return ParsedField<String>(
+        value: hit,
+        confidence: 0.85,
+        sourceText: source,
+      );
+    }
+
     // Loose pattern fallback: "<number><dot or x><number>" or "X mm" tokens
     // that look like cartridge designations. Confidence 0.45 because we
     // didn't cross-check against the catalog.
@@ -302,8 +384,12 @@ class RecipeParser {
 
   // ─────────────────────── powder ───────────────────────
 
-  ParsedField<String>? _findPowder(String text, List<String> lines) {
-    if (_powderNames.isEmpty) return null;
+  ParsedField<String>? _findPowder(
+    String text,
+    List<String> lines,
+    HandwritingExpansion expansion,
+  ) {
+    if (_powderNames.isEmpty && expansion.powders.isEmpty) return null;
     final lower = text.toLowerCase();
 
     // Exact substring hit first — confidence 0.95.
@@ -333,6 +419,36 @@ class RecipeParser {
         value: bestExact,
         confidence: 0.95,
         sourceText: bestSource ?? bestExact,
+      );
+    }
+
+    // Handwriting-shorthand pass. Common reloader notebook spellings
+    // ("RL16", "RE16", "Reloder 16", "R-L 16") are mapped to canonical
+    // names by `expandHandwritingTokens`. If the canonical name is in
+    // the catalog we boost to 0.85 (catalog cross-checked); otherwise
+    // we still surface the canonical name at 0.75.
+    if (expansion.powders.isNotEmpty) {
+      final canonical = expansion.powders.toList()
+        ..sort((a, b) => b.length.compareTo(a.length));
+      final hit = canonical.first;
+      final inCatalog = _powderNames
+          .any((p) => p.toLowerCase() == hit.toLowerCase());
+      String source = hit;
+      for (final line in lines) {
+        final l = line.toLowerCase();
+        for (final aliasKey in kPowderHandwritingAliases.keys) {
+          if (kPowderHandwritingAliases[aliasKey] == hit &&
+              l.contains(aliasKey)) {
+            source = line;
+            break;
+          }
+        }
+        if (source != hit) break;
+      }
+      return ParsedField<String>(
+        value: hit,
+        confidence: inCatalog ? 0.85 : 0.75,
+        sourceText: source,
       );
     }
 
@@ -376,18 +492,26 @@ class RecipeParser {
   // ─────────────────────── powder charge ───────────────────────
 
   ParsedField<double>? _findPowderCharge(List<String> lines, String? powder) {
-    // Find every "<number> gr" or "<number> grains" pattern. Filter to
-    // 5–80 gr (typical reloading charge range). Prefer numbers near the
-    // powder name if we have one.
+    // Find every "<number>(<fraction>)? gr" pattern, including the
+    // mixed-fraction handwritten variants reloaders use:
+    //   - "41.5 gr"        — plain decimal
+    //   - "41,5 gr"        — comma decimal (European)
+    //   - "41 1/2 gr"      — mixed fraction with whitespace
+    //   - "41-1/2 gr"      — mixed fraction with hyphen
+    //   - "41½ gr"         — vulgar fraction glyph
+    //   - "41¼ gr" etc.    — other vulgar fractions
+    //
+    // Filter to 5–80 gr (typical reloading charge range). Prefer
+    // numbers near the powder name if we have one.
     final pattern = RegExp(
-      r'(\d+(?:[\.,]\d+)?)\s*(?:gr(?:ain)?s?|grs?)\b',
+      r'(\d+(?:[\.,]\d+)?(?:[\s\-]\d+/\d+)?[½¼¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]?|\d+[½¼¾⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])\s*(?:gr(?:ain)?s?|grs?)\b',
       caseSensitive: false,
     );
     ParsedField<double>? best;
     for (final line in lines) {
       for (final m in pattern.allMatches(line)) {
-        final raw = m.group(1)!.replaceAll(',', '.');
-        final value = double.tryParse(raw);
+        final raw = m.group(1)!.trim();
+        final value = parseHandwrittenCharge(raw);
         if (value == null) continue;
         if (value < 5 || value > 80) continue;
         // Confidence: 0.95 if powder name is on the same line, else 0.75.
@@ -422,8 +546,12 @@ class RecipeParser {
 
   // ─────────────────────── bullet ───────────────────────
 
-  ParsedField<String>? _findBullet(String text, List<String> lines) {
-    if (_bulletLines.isEmpty) return null;
+  ParsedField<String>? _findBullet(
+    String text,
+    List<String> lines,
+    HandwritingExpansion expansion,
+  ) {
+    if (_bulletLines.isEmpty && expansion.bullets.isEmpty) return null;
     final lower = text.toLowerCase();
 
     // Look for line abbreviations users actually write — ELDM, ELD-M,
@@ -469,37 +597,56 @@ class RecipeParser {
       );
     }
 
-    // Common bullet abbreviations users write in shorthand. Map them to
-    // a canonical product line if the catalog has it.
-    final abbrevs = <String, List<String>>{
-      'ELDM': ['ELD-M', 'ELD Match'],
-      'ELD-M': ['ELD-M', 'ELD Match'],
-      'ELDX': ['ELD-X'],
-      'ELD-X': ['ELD-X'],
-      'SMK': ['MatchKing', 'SMK'],
-      'TMK': ['TMK', 'Tipped MatchKing'],
-      'VLD': ['VLD', 'Hybrid'],
-      'A-MAX': ['A-MAX', 'A-Max'],
-      'AMAX': ['A-MAX'],
-      'BTHP': ['BTHP', 'Hollow Point Boat Tail'],
-      'FMJ': ['FMJ', 'Full Metal Jacket'],
-      'JHP': ['JHP'],
-    };
-    for (final entry in abbrevs.entries) {
-      final pat = RegExp(r'\b' + RegExp.escape(entry.key) + r'\b',
-          caseSensitive: false);
-      if (pat.hasMatch(text)) {
-        for (final l in lines) {
-          if (pat.hasMatch(l)) {
-            return ParsedField<String>(
-              value: entry.value.first,
-              confidence: 0.50,
-              sourceText: l,
-            );
+    // Handwriting-shorthand pass. The expansion maps notebook
+    // shorthand ("ELDM", "VLD", "A-MAX", "BT", "TSX") to canonical
+    // product lines. Cross-check against the catalog so we attach a
+    // manufacturer when one matches, otherwise we still surface the
+    // canonical name for the review screen.
+    if (expansion.bullets.isNotEmpty) {
+      final canonical = expansion.bullets.toList()
+        ..sort((a, b) => b.length.compareTo(a.length));
+      final hit = canonical.first;
+      String value = hit;
+      String? mfg;
+      for (final entry in _bulletLines) {
+        if (entry.line.toLowerCase() == hit.toLowerCase()) {
+          mfg = entry.manufacturer;
+          value = '${entry.manufacturer} ${entry.line}';
+          break;
+        }
+      }
+      if (mfg == null) {
+        // No exact catalog match — fall back to a substring match
+        // ("Match Hybrid Target" → catalog has "Berger Match Hybrid
+        // Target") then to the canonical bare line name.
+        for (final entry in _bulletLines) {
+          if (entry.line.toLowerCase().contains(hit.toLowerCase()) ||
+              hit.toLowerCase().contains(entry.line.toLowerCase())) {
+            mfg = entry.manufacturer;
+            value = '${entry.manufacturer} ${entry.line}';
+            break;
           }
         }
       }
+      String source = hit;
+      for (final line in lines) {
+        final l = line.toLowerCase();
+        for (final aliasKey in kBulletHandwritingAliases.keys) {
+          if (kBulletHandwritingAliases[aliasKey] == hit &&
+              l.contains(aliasKey)) {
+            source = line;
+            break;
+          }
+        }
+        if (source != hit) break;
+      }
+      return ParsedField<String>(
+        value: value,
+        confidence: mfg != null ? 0.85 : 0.70,
+        sourceText: source,
+      );
     }
+
     return null;
   }
 
@@ -582,10 +729,11 @@ class RecipeParser {
     for (final entry in _bulletLines) {
       if (l.contains(entry.line.toLowerCase())) return true;
     }
-    final abbrevs = ['eldm', 'eld-m', 'eldx', 'eld-x', 'smk', 'tmk', 'vld',
-        'a-max', 'amax', 'bthp', 'fmj', 'jhp', 'hybrid', 'matchking'];
-    for (final a in abbrevs) {
-      if (l.contains(a)) return true;
+    // Any handwriting-shorthand bullet token sitting on the line is a
+    // strong signal we're in a "bullet" cell. Walk the alias keys
+    // because they're the patterns reloaders actually write.
+    for (final aliasKey in kBulletHandwritingAliases.keys) {
+      if (l.contains(aliasKey)) return true;
     }
     return false;
   }

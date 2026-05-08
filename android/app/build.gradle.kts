@@ -83,3 +83,13 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Google Play Services Wearable Data Layer — used by WatchBridge.kt to
+    // mirror the iOS WatchSessionBridge: DataItems for lossy DOPE / active-
+    // load payloads and Messages for the live timer / shot-log channel.
+    // Required by every reference under `com.google.android.gms.wearable.*`
+    // and `com.google.android.gms.tasks.Tasks` in the phone module.
+    // See CLAUDE.md §15 for the watch / Wear OS architecture overview.
+    implementation("com.google.android.gms:play-services-wearable:18.2.0")
+}

@@ -115,6 +115,7 @@ import '../../repositories/reticle_repository.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/cloud_sync_service.dart';
 import '../../services/unit_service.dart';
+import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
@@ -153,6 +154,29 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   late final TextEditingController _defaultMuzzleVelocityFps;
   late final TextEditingController _defaultZeroRangeYd;
   late final TextEditingController _sightHeightIn;
+
+  // ── v15 ballistic precision inputs ──
+  // Twist direction defaults to right-twist — the overwhelming majority
+  // of factory rifling spins right-handed (clockwise viewed from the
+  // breech). 'left' option exists for the small slice of rifles
+  // (Savage 12 LRPV varmint, some custom barrels) that don't.
+  // Drives the spin-drift sign in the ballistics solver — left-twist
+  // rifles drift left at long range instead of right.
+  String _twistDirection = 'right';
+  // Sight scale factors — most scopes don't track exactly to their
+  // advertised mil/MOA values. A 1.000 default means "no correction".
+  late final TextEditingController _sightScaleVertical;
+  late final TextEditingController _sightScaleHorizontal;
+  // Zero atmosphere — the conditions present when the user sighted in.
+  // Future ballistics solves use these as the baseline so that today's
+  // weather correction is computed relative to zero-day conditions, not
+  // to the ICAO standard atmosphere.
+  late final TextEditingController _zeroPressureInHg;
+  late final TextEditingController _zeroTemperatureF;
+  late final TextEditingController _zeroHumidityPct;
+
+  // True iff a "Capture from current weather" pull is in flight.
+  bool _zeroWeatherFetching = false;
 
   // New firearms default to "Pick from Catalog" because most users own
   // a catalog-listed production rifle/pistol. The Custom path is a
@@ -210,6 +234,35 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     _sightHeightIn = TextEditingController(
       text: e?.sightHeightIn?.toString() ?? '',
     );
+    // ── v15 ballistic precision inputs ──
+    // `twistDirection`, `sightScaleVertical`, `sightScaleHorizontal`
+    // all carry schema defaults (right / 1.0 / 1.0). Zero-atmosphere
+    // fields are nullable — the form shows blank when null so the
+    // user knows they haven't been recorded yet.
+    _twistDirection = e?.twistDirection ?? 'right';
+    _sightScaleVertical = TextEditingController(
+      // Hide the literal "1.0" baseline so the empty field reads as
+      // "no correction" — the user only types here when they have
+      // a measured tracking error.
+      text: (e?.sightScaleVertical == null || e!.sightScaleVertical == 1.0)
+          ? ''
+          : e.sightScaleVertical.toStringAsFixed(3),
+    );
+    _sightScaleHorizontal = TextEditingController(
+      text:
+          (e?.sightScaleHorizontal == null || e!.sightScaleHorizontal == 1.0)
+              ? ''
+              : e.sightScaleHorizontal.toStringAsFixed(3),
+    );
+    _zeroPressureInHg = TextEditingController(
+      text: e?.zeroPressureInHg?.toStringAsFixed(2) ?? '',
+    );
+    _zeroTemperatureF = TextEditingController(
+      text: e?.zeroTemperatureF?.toStringAsFixed(0) ?? '',
+    );
+    _zeroHumidityPct = TextEditingController(
+      text: e?.zeroHumidityPct?.toStringAsFixed(0) ?? '',
+    );
     _referenceFirearmId = e?.referenceFirearmId;
     // For new firearms (e == null) keep the catalog default. For edits,
     // mirror whatever the row was saved as.
@@ -246,6 +299,11 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       _defaultMuzzleVelocityFps,
       _defaultZeroRangeYd,
       _sightHeightIn,
+      _sightScaleVertical,
+      _sightScaleHorizontal,
+      _zeroPressureInHg,
+      _zeroTemperatureF,
+      _zeroHumidityPct,
     ]) {
       c.addListener(_autoSave.notifyDirty);
     }
@@ -324,6 +382,16 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       sightHeightIn: drift.Value(_parseDouble(_sightHeightIn)),
       opticsId: drift.Value(_opticsId),
       reticleId: drift.Value(_reticleId),
+      // ── v15 ballistic precision inputs ──
+      twistDirection: drift.Value(_twistDirection),
+      // Sight scales fall back to 1.0 (no correction) when blank.
+      sightScaleVertical:
+          drift.Value(_parseDouble(_sightScaleVertical) ?? 1.0),
+      sightScaleHorizontal:
+          drift.Value(_parseDouble(_sightScaleHorizontal) ?? 1.0),
+      zeroPressureInHg: drift.Value(_parseDouble(_zeroPressureInHg)),
+      zeroTemperatureF: drift.Value(_parseDouble(_zeroTemperatureF)),
+      zeroHumidityPct: drift.Value(_parseDouble(_zeroHumidityPct)),
     );
   }
 
@@ -344,6 +412,11 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       _defaultMuzzleVelocityFps,
       _defaultZeroRangeYd,
       _sightHeightIn,
+      _sightScaleVertical,
+      _sightScaleHorizontal,
+      _zeroPressureInHg,
+      _zeroTemperatureF,
+      _zeroHumidityPct,
     ]) {
       c.dispose();
     }
@@ -532,13 +605,13 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                               decimal: true,
                             ),
                           ),
-                          second: TextFormField(
-                            controller: _twistRate,
-                            decoration: const InputDecoration(
-                              labelText: 'Twist Rate',
-                              hintText: 'e.g. 1:8',
-                            ),
-                          ),
+                          // Twist rate row: text field + Right/Left
+                          // direction segmented button so the user
+                          // declares which way the rifling spins. Right
+                          // is the overwhelming default; left-twist
+                          // exists on a few specialty rifles and flips
+                          // the spin-drift sign at long range.
+                          second: _twistRow(),
                         );
                       }),
                       const SizedBox(height: 16),
@@ -692,6 +765,54 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           Expanded(child: Text(value)),
         ],
       ),
+    );
+  }
+
+  /// Twist rate text field with a Right/Left direction segmented button
+  /// to its right. Persists the direction in `_twistDirection` (defaults
+  /// to 'right'). Used in the main barrel-spec row.
+  Widget _twistRow() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: TextFormField(
+            controller: _twistRate,
+            decoration: const InputDecoration(
+              labelText: 'Twist Rate',
+              hintText: 'e.g. 1:8',
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        // Compact segmented button — single-letter labels keep the row
+        // narrow enough to fit on a phone next to the twist text field.
+        SegmentedButton<String>(
+          showSelectedIcon: false,
+          style: SegmentedButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          segments: const [
+            ButtonSegment<String>(
+              value: 'right',
+              label: Text('R'),
+              tooltip: 'Right-hand twist (clockwise from breech)',
+            ),
+            ButtonSegment<String>(
+              value: 'left',
+              label: Text('L'),
+              tooltip: 'Left-hand twist (counter-clockwise from breech)',
+            ),
+          ],
+          selected: {_twistDirection},
+          onSelectionChanged: (s) {
+            setState(() => _twistDirection = s.first);
+            _autoSave.notifyDirty();
+          },
+        ),
+      ],
     );
   }
 
@@ -855,8 +976,93 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                 _autoSave.notifyDirty();
               },
             ),
+            const SizedBox(height: 4),
+            // Optic accuracy expansion — vertical / horizontal scale
+            // factors. Hidden behind an ExpansionTile so beginners
+            // aren't confronted with two scale-factor numbers; long-
+            // range shooters open it once after a tracking test.
+            _opticAccuracyTile(context),
           ],
         ),
+      ),
+    );
+  }
+
+  /// Optic accuracy section — vertical / horizontal scale factors that
+  /// correct for scopes whose tracking does not match the advertised
+  /// mil/MOA increments. 1.000 = no correction. Hidden by default.
+  Widget _opticAccuracyTile(BuildContext context) {
+    final theme = Theme.of(context);
+    return Theme(
+      // The default M3 ExpansionTile draws a divider line that clashes
+      // with the parent Card. Strip it.
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(top: 4, bottom: 4),
+        leading: Icon(
+          Icons.tune,
+          size: 18,
+          color: theme.colorScheme.primary,
+        ),
+        title: Text(
+          'Optic accuracy (advanced)',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          'Most scopes don\'t track exactly to their advertised increments. '
+          'Test by dialing 10 mil up at distance and measuring actual '
+          'point-of-impact shift; ratio is your scale factor. Default 1.0 '
+          '= no correction.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        children: [
+          _ResponsiveRowPair(
+            first: TextFormField(
+              controller: _sightScaleVertical,
+              decoration: const InputDecoration(
+                labelText: 'Vertical scale',
+                hintText: '1.000',
+                helperText: '1.000 = exact; 0.950 = scope tracks 5% short',
+                helperMaxLines: 2,
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null;
+                final n = double.tryParse(t);
+                if (n == null || n <= 0) return 'Must be positive';
+                if (n < 0.5 || n > 2.0) return 'Typical 0.9-1.1';
+                return null;
+              },
+            ),
+            second: TextFormField(
+              controller: _sightScaleHorizontal,
+              decoration: const InputDecoration(
+                labelText: 'Horizontal scale',
+                hintText: '1.000',
+                helperText: '1.000 = exact tracking',
+                helperMaxLines: 2,
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null;
+                final n = double.tryParse(t);
+                if (n == null || n <= 0) return 'Must be positive';
+                if (n < 0.5 || n > 2.0) return 'Typical 0.9-1.1';
+                return null;
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -976,10 +1182,178 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                 return null;
               },
             ),
+            const SizedBox(height: 4),
+            // Zero conditions expansion. The atmosphere active when the
+            // user sighted in. Future ballistics solves use these as
+            // the baseline so today's correction is computed relative
+            // to zero-day conditions, not to the ICAO standard
+            // atmosphere.
+            _zeroConditionsTile(context),
           ],
         ),
       ),
     );
+  }
+
+  /// Zero conditions section — pressure, temperature, humidity at the
+  /// time of sight-in. Used by the ballistics solver as the reference
+  /// atmosphere when computing today's correction. Collapsed by
+  /// default; surface a "Capture from current weather" button at the
+  /// end so users can pull the values automatically when zeroing.
+  Widget _zeroConditionsTile(BuildContext context) {
+    final theme = Theme.of(context);
+    return Theme(
+      data: theme.copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(top: 4, bottom: 4),
+        leading: Icon(
+          Icons.thermostat_outlined,
+          size: 18,
+          color: theme.colorScheme.primary,
+        ),
+        title: Text(
+          'Zero conditions',
+          style: theme.textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          'The atmosphere where you sighted in. Future ballistics solves '
+          'use these as the baseline so today\'s correction is computed '
+          'relative to zero-day, not to the ICAO standard atmosphere.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        children: [
+          _ResponsiveRowPair(
+            first: TextFormField(
+              controller: _zeroPressureInHg,
+              decoration: const InputDecoration(
+                labelText: 'Pressure (inHg)',
+                hintText: 'e.g. 29.92',
+                helperText: 'Local station pressure that day',
+                suffixText: 'inHg',
+                helperMaxLines: 2,
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null;
+                final n = double.tryParse(t);
+                if (n == null || n <= 0) return 'Must be positive';
+                if (n < 18 || n > 32) return 'Typical 22-31 inHg';
+                return null;
+              },
+            ),
+            second: TextFormField(
+              controller: _zeroTemperatureF,
+              decoration: const InputDecoration(
+                labelText: 'Temperature (°F)',
+                hintText: 'e.g. 65',
+                suffixText: '°F',
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return null;
+                final n = double.tryParse(t);
+                if (n == null) return 'Must be a number';
+                if (n < -40 || n > 140) return 'Out of plausible range';
+                return null;
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _zeroHumidityPct,
+            decoration: const InputDecoration(
+              labelText: 'Humidity (%)',
+              hintText: 'e.g. 50',
+              suffixText: '%',
+            ),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
+            validator: (v) {
+              final t = (v ?? '').trim();
+              if (t.isEmpty) return null;
+              final n = double.tryParse(t);
+              if (n == null || n < 0 || n > 100) return 'Must be 0-100';
+              return null;
+            },
+          ),
+          const SizedBox(height: 12),
+          // Capture from current weather button — pulls the user's
+          // local pressure / temp / humidity via the existing
+          // open-meteo handshake and writes them into the three
+          // fields above.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed:
+                  _zeroWeatherFetching ? null : _captureZeroFromWeather,
+              icon: _zeroWeatherFetching
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.cloud_outlined, size: 18),
+              label: const Text('Capture from current weather'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Pull the current weather and copy the pressure / temp / humidity
+  /// into the Zero Conditions fields. Surfaces a snackbar with the
+  /// captured values so the user sees what's happening rather than
+  /// the fields silently filling. Failures show a friendly message.
+  Future<void> _captureZeroFromWeather() async {
+    if (!mounted) return;
+    setState(() => _zeroWeatherFetching = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final result = await WeatherService().fetchForCurrentLocation();
+      if (!mounted) return;
+      setState(() {
+        _zeroPressureInHg.text =
+            result.stationPressureInHg.toStringAsFixed(2);
+        _zeroTemperatureF.text = result.tempF.toStringAsFixed(0);
+        _zeroHumidityPct.text = result.humidityPct.toStringAsFixed(0);
+      });
+      _autoSave.notifyDirty();
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(seconds: 5),
+          content: Text(
+            '✓ Captured zero conditions  ·  '
+            '${result.stationPressureInHg.toStringAsFixed(2)} inHg  ·  '
+            '${result.tempF.toStringAsFixed(0)}°F  ·  '
+            '${result.humidityPct.toStringAsFixed(0)}% RH',
+          ),
+        ),
+      );
+    } on WeatherFetchException catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
+    } catch (_) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(
+            content: Text('Couldn\'t fetch weather. Try again later.')),
+      );
+    } finally {
+      if (mounted) setState(() => _zeroWeatherFetching = false);
+    }
   }
 }
 

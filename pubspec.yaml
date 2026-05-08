@@ -312,6 +312,19 @@ dependencies:
   flutter_blue_plus: ^1.32.0
   permission_handler: ^11.0.0
 
+  # PDF generation (sample notebook page printable, feature: pen-and-paper
+  # conversion). The `pdf` package is pure-Dart and renders directly to a
+  # `Uint8List` of PDF bytes — no native dependency, no per-platform
+  # codepath. We pair it with `share_plus` (already pulled in above for the
+  # JSON export feature) to surface the OS share sheet so the user can
+  # print, AirDrop, save to Files, etc. This is the only place we use the
+  # `pdf` package today; the `RecipePrintService` deliberately uses plain
+  # text instead because individual recipes are simple enough that
+  # text-via-share-sheet covers every output path. The sample-notebook
+  # page needs a tabular layout that doesn't render reliably in plain
+  # text across share-receiving apps.
+  pdf: ^3.10.0
+
   # Live device sensors for the Range Day Setup section.
   # `sensors_plus` exposes the OS accelerometer, gyroscope, and
   # magnetometer event streams behind a uniform Dart API. We use it

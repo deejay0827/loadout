@@ -55,7 +55,29 @@
       "Bash(timeout 60 dart compile-test)",
       "Bash(curl -sL -o /tmp/sqlite3-test.html https://github.com/simolus3/sqlite3.dart/releases)",
       "Bash(curl -sL -o /Users/general/Development/Applications/LoadOut/web/sqlite3.wasm \"https://github.com/simolus3/sqlite3.dart/releases/download/sqlite3-3.3.1/sqlite3.wasm\")",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(curl -s -A Mozilla/5.0 -H 'ZUMO-API-VERSION: 2.0.0' --max-time 10 https://hornadyapiprod.azurewebsites.net/api/Bullet -o /tmp/bullets_full.json -w 'STATUS: %{http_code} SIZE: %{size_download}\\\\n')",
+      "Bash(git fsck *)",
+      "Bash(curl -s -A Mozilla/5.0 --max-time 15 https://hornadyfourdofiframeprod.azurewebsites.net/api/Bullets/GetBcBullets -o /tmp/bc_bullets.json)",
+      "Bash(curl -s -A Mozilla/5.0 -H 'ZUMO-API-VERSION: 2.0.0' --max-time 15 'https://hornadyapiprod.azurewebsites.net/api/Bullet?$expand=Company,Category&$top=2' -o /tmp/exp.json)",
+      "Bash(python3 tool/scrape_hornady_4dof.py --output /tmp/hornady_4dof_real.json)",
+      "Bash(grep -n \"_notes,$\\\\|_chargeTolerance,\" /Users/general/Development/Applications/LoadOut/lib/screens/recipes/recipe_form_screen.dart)",
+      "Bash(python3)",
+      "Bash(python3 tool/scrape_hornady_4dof.py --output /Users/general/Development/Applications/LoadOut/assets/seed_data/drag_curves/curves.json)",
+      "Bash(grep -n \"_ballisticsDefaultsSection\\\\|sightHeightIn,$\\\\|class _ResponsiveRowPair\" /Users/general/Development/Applications/LoadOut/lib/screens/firearms/firearm_form_screen.dart)",
+      "Bash(brew list *)",
+      "Bash(brew search *)",
+      "Bash(/opt/homebrew/bin/brew list *)",
+      "Bash(brew install *)",
+      "Read(//Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/**)",
+      "Bash(\"/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/java\" -version)",
+      "Bash(cd android *)",
+      "Bash(./gradlew :app:compileDebugKotlin)",
+      "Bash(JAVA_HOME=\"/Applications/Android Studio.app/Contents/jbr/Contents/Home\" ./gradlew :app:compileDebugKotlin :wear:compileDebugKotlin)",
+      "Bash(xcodebuild -version)",
+      "Bash(xcodebuild -showsdks)",
+      "Bash(xcodebuild -downloadPlatform iOS --help)",
+      "Bash(xcodebuild -downloadPlatform iOS -architectureVariant universal)"
     ]
   }
 }

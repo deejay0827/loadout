@@ -60,6 +60,7 @@ import '../../services/ble/vortex_rangefinder_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/hit_probability_service.dart';
 import '../../services/sensors/cant_service.dart';
+import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
@@ -119,6 +120,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// "Use as shot azimuth" on the live magnetometer readout to copy
   /// the current heading in.
   final _shotAzimuthCtrl = TextEditingController(text: '0');
+
+  // ─────────────────────── Incline / decline (v16) ───────────────────────
+  /// Slope of fire in degrees. Positive = uphill, negative = downhill.
+  /// Fed to the ballistics solver via the improved rifleman's rule. The
+  /// "Capture from sensor" button reads the InclinometerService's
+  /// current pitch and pushes it here.
+  final _inclineAngleCtrl = TextEditingController(text: '0');
 
   /// Whether to apply the live cant-correction term to the displayed
   /// firing solution. Pro-gated. When true and the [CantService]
@@ -232,14 +240,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// this session yet. Persists to `RangeDaySessions.cantDegrees` so
   /// reopening the session shows the value that was active at the
   /// time of capture, even if the device has since moved.
+  // ignore: unused_field
   double? _capturedCantDeg;
   /// Captured shot azimuth (compass heading) at the time of capture.
   /// Mirrored into the `_shotAzimuthCtrl` field at capture time and
   /// persisted to `RangeDaySessions.shotAzimuthDegrees`.
+  // ignore: unused_field
   double? _capturedAzimuthDeg;
   /// Wall-clock when the user last tapped "Capture current readings".
   /// Drives the "Captured 12s ago" caption in the Sensors panel. Not
   /// persisted — purely a UI nicety for the active session.
+  // ignore: unused_field
   DateTime? _capturedAt;
 
   /// Latest hit-probability result. Recomputed lazily (300ms debounce).
@@ -261,11 +272,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             : (units.unitFor(UnitCategory.angle).toLowerCase() == 'moa'
                 ? 'moa'
                 : 'mil');
-    // Start the live cant + magnetometer sensors so the Setup section
-    // shows live data the moment it opens. start() is a graceful no-op
-    // on platforms (macOS / web) without these sensors.
+    // Start the live cant + magnetometer + inclinometer sensors so the
+    // Setup section shows live data the moment it opens. start() is a
+    // graceful no-op on platforms (macOS / web) without these sensors.
     // ignore: discarded_futures
     context.read<CantService>().start();
+    // ignore: discarded_futures
+    context.read<InclinometerService>().start();
     // ignore: discarded_futures
     context.read<MagnetometerService>().start();
     if (widget.sessionId != null) {
@@ -341,6 +354,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _shotAzimuthCtrl.text =
             s.shotAzimuthDegrees!.toStringAsFixed(0);
       }
+      // v15 ballistic precision — incline / decline angle.
+      if (s.inclineAngleDeg != null) {
+        _inclineAngleCtrl.text = s.inclineAngleDeg!.toStringAsFixed(1);
+      }
       _setupExpanded = false;
       _environmentExpanded = false;
     });
@@ -412,15 +429,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // ignore: discarded_futures
     _kestrelSub?.cancel();
     // Stop the device sensors when leaving the screen so the OS can
-    // clock-gate the radio. Both services are app-singletons (provided
-    // in lib/app.dart) so we stop rather than dispose.
+    // clock-gate the radio. All three services are app-singletons
+    // (provided in lib/app.dart) so we stop rather than dispose.
     // ignore: discarded_futures
     context.read<CantService>().stop();
     // ignore: discarded_futures
     context.read<MagnetometerService>().stop();
+    // ignore: discarded_futures
+    context.read<InclinometerService>().stop();
     for (final c in [
       _distanceCtrl,
       _shotAzimuthCtrl,
+      _inclineAngleCtrl,
       _bulletDiameterCtrl,
       _bulletWeightCtrl,
       _bulletLengthCtrl,
@@ -805,6 +825,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       rangeUncertaintyYd: drift.Value(_rangeUncertaintyYd),
       reticleId: drift.Value(_selectedReticleRow?.id),
       correctionUnit: drift.Value(_correctionUnit),
+      // v15 ballistic precision — incline / decline angle (slope of fire).
+      inclineAngleDeg: drift.Value(double.tryParse(_inclineAngleCtrl.text)),
     );
   }
 
@@ -1342,7 +1364,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           const SizedBox(height: 12),
           _shotAzimuthRow(),
           const SizedBox(height: 12),
+          _inclineAngleRow(),
+          const SizedBox(height: 12),
           _orientationRows(),
+          const SizedBox(height: 12),
+          _captureEnvironmentFromSensorsButton(),
           const SizedBox(height: 12),
           _capabilityExpander(),
           const SizedBox(height: 16),
@@ -1378,6 +1404,247 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _scheduleSolve();
         _scheduleAutoSave();
       },
+    );
+  }
+
+  // ─────────────────────── Incline / decline angle (v16) ───────────────────────
+
+  /// Number field for the slope of fire (positive = uphill,
+  /// negative = downhill). Includes a "Capture from sensor" button
+  /// that reads the InclinometerService's current pitch and pushes
+  /// it into the field. Hidden when the inclinometer service reports
+  /// the platform doesn't expose an accelerometer (web/desktop).
+  Widget _inclineAngleRow() {
+    final theme = Theme.of(context);
+    return Consumer<InclinometerService>(
+      builder: (context, inclineSvc, _) {
+        final available = inclineSvc.isAvailable;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _inclineAngleCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Incline / decline angle (°)',
+                helperText:
+                    'Slope of fire — positive = uphill, negative = '
+                    'downhill. Drop reduces with steep angles via the '
+                    'improved rifleman\'s rule.',
+                helperMaxLines: 3,
+              ),
+              onChanged: (_) {
+                _scheduleSolve();
+                _scheduleAutoSave();
+              },
+            ),
+            if (available)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: _captureInclineFromSensor,
+                      icon: const Icon(Icons.straighten, size: 16),
+                      label: const Text('Capture from sensor'),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Builder(builder: (ctx) {
+                        final inc = inclineSvc.inclineDegrees;
+                        if (inc == null) {
+                          return Text(
+                            'Live: ...',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          );
+                        }
+                        return Text(
+                          'Live: ${inc >= 0 ? '+' : ''}'
+                          '${inc.toStringAsFixed(1)}°',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontFeatures: const [
+                              FontFeature.tabularFigures()
+                            ],
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Read the live inclinometer pitch and push it into the angle
+  /// controller. Surfaces a snackbar when no sample has arrived yet.
+  void _captureInclineFromSensor() {
+    final svc = context.read<InclinometerService>();
+    final pitch = svc.inclineDegrees;
+    final messenger = ScaffoldMessenger.of(context);
+    if (pitch == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('No incline sample yet. Try again in a moment.'),
+        ),
+      );
+      return;
+    }
+    setState(() {
+      _inclineAngleCtrl.text = pitch.toStringAsFixed(1);
+    });
+    _scheduleSolve();
+    _scheduleAutoSave();
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(milliseconds: 1500),
+        content: Text(
+          'Captured incline ${pitch >= 0 ? '+' : ''}'
+          '${pitch.toStringAsFixed(1)}°',
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────── Capture environment from sensors (v16) ───────────────────────
+
+  /// Single tap pulls everything available from the device sensors:
+  /// GPS lat/lon + altitude + station-pressure approximation, plus
+  /// magnetometer azimuth, accelerometer cant, and inclinometer pitch.
+  /// Surfaces a confirmation snackbar with the captured values.
+  Widget _captureEnvironmentFromSensorsButton() {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: theme.colorScheme.surfaceContainerHigh,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.my_location,
+                    size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'One-tap environment capture',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Pulls GPS lat/lon, altitude, station pressure, true '
+              'azimuth (compass), cant (rifle level), and incline (slope '
+              'of fire) into the session in one tap.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 8),
+            FilledButton.tonalIcon(
+              onPressed: _captureEnvironmentFromSensors,
+              icon: const Icon(Icons.sensors, size: 18),
+              label: const Text('Capture environment from sensors'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Handler for the consolidated "Capture environment from sensors"
+  /// button. Walks the live sensors + GPS handshake, then surfaces a
+  /// detailed snackbar so the user sees what was captured.
+  Future<void> _captureEnvironmentFromSensors() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final cantSvc = context.read<CantService>();
+    final magSvc = context.read<MagnetometerService>();
+    final inclineSvc = context.read<InclinometerService>();
+    final cant = cantSvc.cantDegrees;
+    final heading = magSvc.headingDegrees;
+    final incline = inclineSvc.inclineDegrees;
+    // Pull location-derived values via the existing weather service —
+    // it already wraps the geolocator handshake AND reports station
+    // pressure + altitude in one round trip.
+    WeatherFetchResult? weather;
+    try {
+      weather = await WeatherService().fetchForCurrentLocation();
+    } on WeatherFetchException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
+    } catch (_) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Couldn\'t fetch weather.')),
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _capturedCantDeg = cant;
+      _capturedAzimuthDeg = heading;
+      _capturedAt = DateTime.now();
+      if (heading != null) {
+        _shotAzimuthCtrl.text = heading.toStringAsFixed(0);
+      }
+      if (incline != null) {
+        _inclineAngleCtrl.text = incline.toStringAsFixed(1);
+      }
+      if (weather != null) {
+        _tempCtrl.text = weather.tempF.toStringAsFixed(0);
+        _pressureCtrl.text =
+            weather.stationPressureInHg.toStringAsFixed(2);
+        _humidityCtrl.text = weather.humidityPct.toStringAsFixed(0);
+        _elevationCtrl.text = weather.elevationFt.toStringAsFixed(0);
+        _windSpeedCtrl.text = weather.windSpeedMph.toStringAsFixed(0);
+        _windDirCtrl.text =
+            weather.windDirectionDeg.toStringAsFixed(0);
+        _weatherFetchedAt = weather.fetchedAt;
+      }
+    });
+    _scheduleSolve();
+    _scheduleAutoSave();
+    final parts = <String>[];
+    if (weather != null) {
+      parts.add('Altitude: ${weather.elevationFt.toStringAsFixed(0)} ft');
+      parts.add(
+          'Station: ${weather.stationPressureInHg.toStringAsFixed(2)} inHg');
+      parts.add('Temp: ${weather.tempF.toStringAsFixed(0)}°F');
+      parts.add('Humidity: ${weather.humidityPct.toStringAsFixed(0)}%');
+      parts.add('Wind: ${weather.windSpeedMph.toStringAsFixed(0)} mph @ '
+          '${weather.windDirectionDeg.toStringAsFixed(0)}°');
+    }
+    if (heading != null) {
+      parts.add('Azimuth: ${heading.toStringAsFixed(0)}°');
+    }
+    if (cant != null) {
+      parts
+          .add('Cant: ${cant >= 0 ? '+' : ''}${cant.toStringAsFixed(1)}°');
+    }
+    if (incline != null) {
+      parts.add('Incline: ${incline >= 0 ? '+' : ''}'
+          '${incline.toStringAsFixed(1)}°');
+    }
+    final summary = parts.isEmpty
+        ? 'No sensor data captured. Try again outdoors.'
+        : '✓ Captured from your location\n  ${parts.join('  ·  ')}';
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(seconds: 6),
+        content: Text(summary),
+      ),
     );
   }
 

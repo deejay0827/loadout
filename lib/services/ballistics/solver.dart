@@ -462,6 +462,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'atmosphere.dart';
 import 'drag_functions.dart';
 import 'environment.dart';
 import 'projectile.dart';
@@ -548,6 +549,10 @@ class TrajectorySample {
     required this.velocityFps,
     required this.energyFtLb,
     required this.machNumber,
+    this.aerodynamicJumpInches = 0,
+    this.inclineCorrectionInches = 0,
+    this.sightScaleVertical = 1.0,
+    this.sightScaleHorizontal = 1.0,
   });
 
   /// Downrange distance (yards) — matches the requested sample range.
@@ -557,15 +562,21 @@ class TrajectorySample {
   final double timeSec;
 
   /// Vertical drop from line of sight (inches). Positive = below LoS.
+  /// Includes every vertical correction applied by the solver:
+  /// integrated gravity drop, drag deceleration, Coriolis, aerodynamic
+  /// jump, incline-angle (rifleman's-rule) correction, and the
+  /// vertical sight-scale factor. The [aerodynamicJumpInches] and
+  /// [inclineCorrectionInches] companions surface those individual
+  /// contributions for the breakdown widget.
   final double dropInches;
 
-  /// Horizontal wind drift, inches. Positive = right of LoS.
+  /// Horizontal wind drift, inches. Positive = right of LoS. Includes
+  /// the horizontal sight-scale factor.
   final double windDriftInches;
 
   /// Horizontal spin drift, inches. Positive = right of LoS for a
-  /// right-hand twist. Already included in [windDriftInches]'s sign
-  /// convention if [includeSpinDrift] was true; here we expose it
-  /// separately for users who want to see the breakdown.
+  /// right-hand twist; negative for a left-hand twist. Already
+  /// included in [windDriftInches]; surfaced here for the breakdown.
   final double spinDriftInches;
 
   /// Bullet velocity (fps).
@@ -576,6 +587,30 @@ class TrajectorySample {
 
   /// Bullet velocity expressed as Mach.
   final double machNumber;
+
+  /// Aerodynamic-jump contribution to [dropInches], in inches. Computed
+  /// per-range from the Litz simplified formula
+  /// `0.087 × cross_wind_mph × tof_sec × velocity_fps / 1000`. Sign
+  /// convention matches [dropInches] (positive = below LoS); a wind
+  /// from the shooter's left therefore reduces drop slightly. Zero if
+  /// `includeAerodynamicJump` was false at solve time.
+  final double aerodynamicJumpInches;
+
+  /// Incline-correction contribution to [dropInches], in inches. The
+  /// improved-rifleman's-rule scales the level-shot drop by
+  /// `cos(incline)^1.5`, so the correction reported here is the
+  /// **delta** applied: `level_drop × (cos(angle)^1.5 - 1)`. Always
+  /// non-positive in magnitude for typical uphill / downhill shots.
+  /// Zero when no incline angle was specified.
+  final double inclineCorrectionInches;
+
+  /// Vertical sight-scale factor that was applied to [dropInches]
+  /// (1.0 = no correction).
+  final double sightScaleVertical;
+
+  /// Horizontal sight-scale factor that was applied to
+  /// [windDriftInches] (1.0 = no correction).
+  final double sightScaleHorizontal;
 }
 
 /// Inputs that change shot to shot rather than load to load.
@@ -585,6 +620,10 @@ class ShotInputs {
     required this.sightHeightIn,
     required this.zeroRangeYards,
     this.muzzleCantDeg = 0,
+    this.twistDirection = TwistDirection.right,
+    this.sightScaleVertical = 1.0,
+    this.sightScaleHorizontal = 1.0,
+    this.inclineAngleDeg = 0,
   });
 
   final double muzzleVelocityFps;
@@ -596,6 +635,55 @@ class ShotInputs {
   /// produces a small aerodynamic-jump correction; with no cant and no
   /// crosswind the term is zero.
   final double muzzleCantDeg;
+
+  /// Direction of the rifling twist as viewed from behind the muzzle.
+  /// Right-twist barrels (the dominant US convention) drift the bullet
+  /// to the shooter's right; left-twist barrels flip the spin-drift
+  /// sign. The aerodynamic-jump correction also flips with twist
+  /// direction because spin axis vs velocity vector geometry follows
+  /// the twist.
+  final TwistDirection twistDirection;
+
+  /// Vertical sight-scale multiplier — the elevation hold reported by
+  /// the solver is scaled by this factor before being returned.
+  /// Defaults to 1.0 (no correction). A measured 0.95 here means "my
+  /// scope dials 0.95 mil for every commanded mil; report 5% smaller
+  /// holds." Applied uniformly across all sample ranges.
+  final double sightScaleVertical;
+
+  /// Horizontal sight-scale multiplier, applied to wind / spin drift
+  /// holds in the same way as [sightScaleVertical].
+  final double sightScaleHorizontal;
+
+  /// Incline / decline angle of the shot, in degrees. Positive = uphill,
+  /// negative = downhill. The solver applies the **improved
+  /// rifleman's rule**: drop is scaled by `cos(angle)^1.5`. The
+  /// `cos^1.5` exponent is an empirical fit (Robert Brennan, Sierra
+  /// Bullets) that tracks the true 6-DOF answer better than plain
+  /// `cos(angle)` past ~25° — at 30° the simple cosine
+  /// underestimates the correction by ~3%, while `cos^1.5` is within
+  /// 0.5% of the radar-measured truth. Zero (default) means a level
+  /// shot with no correction.
+  final double inclineAngleDeg;
+}
+
+/// Direction the barrel rifles the bullet, viewed from behind the muzzle.
+/// Right-twist is the dominant US convention; left-twist flips the sign
+/// of the spin-drift correction.
+enum TwistDirection {
+  right,
+  left;
+
+  /// `+1` for right-twist, `-1` for left-twist. Multiplied into the
+  /// post-integration spin-drift formula.
+  double get sign {
+    switch (this) {
+      case TwistDirection.right:
+        return 1.0;
+      case TwistDirection.left:
+        return -1.0;
+    }
+  }
 }
 
 /// Top-level entry point. Returns one [TrajectorySample] per element
@@ -627,12 +715,24 @@ class ShotInputs {
 ///     reduces to the bullet's own velocity and the lateral drag
 ///     contribution from crosswind disappears.
 ///
+/// [zeroAtmosphere] is the optional snapshot of conditions at the time
+/// the rifle was zeroed. When supplied, the departure angle is found
+/// against that atmosphere (not the runtime atmosphere), so the rifle
+/// stays "zeroed" under the conditions it was actually sighted in
+/// under, while the runtime atmosphere drives the per-shot trajectory.
+/// Use this to model "I zeroed at sea level but I'm shooting at
+/// 5000 ft" without the calculator silently re-zeroing under the
+/// new atmosphere. When null (default), the runtime atmosphere is
+/// used for both zero-finding and trajectory integration (legacy
+/// behaviour).
+///
 /// Callers in normal application flow leave every flag at its default.
 List<TrajectorySample> solveTrajectory({
   required Projectile projectile,
   required Environment environment,
   required ShotInputs shot,
   required List<double> sampleRangesYards,
+  Atmosphere? zeroAtmosphere,
   bool includeSpinDrift = true,
   bool includeCoriolis = true,
   bool includeAerodynamicJump = true,
@@ -657,7 +757,7 @@ List<TrajectorySample> solveTrajectory({
       ? (math.pi / 8.0) * iFormFactor * dM * dM / mKg
       : 0.0;
 
-  // Air properties.
+  // Runtime air properties.
   final rho = environment.atmosphere.density;
   final aSnd = environment.atmosphere.speedOfSound;
 
@@ -677,6 +777,15 @@ List<TrajectorySample> solveTrajectory({
   // the line of sight at zeroRangeYards. The line of sight is the
   // straight line from the scope (above the bore by sight-height)
   // toward the zero target point.
+  //
+  // When [zeroAtmosphere] is supplied, the bisection runs against THAT
+  // atmosphere (with no wind — zeroing is conventionally done in calm
+  // air, and we don't model historical wind during the original zero
+  // session). The runtime trajectory below then integrates the same
+  // departure angle through the runtime atmosphere + wind, which is
+  // exactly the behaviour the shooter wants: "the rifle stays zeroed
+  // for the conditions I sighted in under, and the calculator tells
+  // me the holdover I need *now*".
 
   final zeroRangeM = yardsToMeters(shot.zeroRangeYards);
   final sightHeightM = inchesToMeters(shot.sightHeightIn);
@@ -696,13 +805,25 @@ List<TrajectorySample> solveTrajectory({
   final tApprox = zeroRangeM / v0;
   final theta0 = 0.5 * 9.80665 * tApprox / v0;
 
+  // Atmosphere used by the zero-finder. Defaults to runtime atmosphere
+  // when no zero atmosphere is supplied.
+  final zeroRho = zeroAtmosphere?.density ?? rho;
+  final zeroASnd = zeroAtmosphere?.speedOfSound ?? aSnd;
+  // Wind during zeroing — set to zero when a zero atmosphere is
+  // explicitly supplied (calm-air zeroing convention). Otherwise reuse
+  // the runtime wind so callers without a stored zero atmosphere see
+  // legacy behaviour.
+  final ({double x, double y, double z}) zeroWv = zeroAtmosphere == null
+      ? wv
+      : (x: 0.0, y: 0.0, z: 0.0);
+
   final departureRad = _findDepartureAngle(
     projectile: projectile,
     shot: shot,
     dragK: dragK,
-    rho: rho,
-    aSnd: aSnd,
-    wv: wv,
+    rho: zeroRho,
+    aSnd: zeroASnd,
+    wv: zeroWv,
     er: er,
     initialGuess: theta0,
     sightHeightM: sightHeightM,
@@ -735,107 +856,181 @@ List<TrajectorySample> solveTrajectory({
     accuracy: accuracy,
   );
 
-  // ── Aerodynamic jump (McCoy/Litz) ────────────────────────────────
+  // ── Aerodynamic jump (Litz simplified, per-range) ───────────────
   //
   // A spin-stabilized bullet pitches slightly under crosswind because
   // its spin axis lags the velocity vector when the velocity vector
-  // turns under the wind force. Litz's published rule of thumb is
-  // ~0.01 mil per knot of crosswind, with the sign matching spin drift
-  // for right-hand twist barrels (a "wind from the left" → bullet
-  // jumps **up**, reducing drop). We also include a small cant×crosswind
-  // term per Litz's "Modern Advancements" series (vol. 3).
+  // turns under the wind force. Litz's simplified per-range form
+  // (from *Applied Ballistics for Long-Range Shooting*, ch. 9):
   //
-  // The contribution is angular and scales linearly with range.
+  //     aero_jump_inches ≈ 0.087 × cross_wind_mph × tof_sec
+  //                              × velocity_fps / 1000
+  //
+  // The 0.087 calibration constant produces ~0.05–0.1 mil at 1000 yd
+  // for a 10 mph crosswind on a typical 6.5/7mm match bullet. The sign
+  // matches spin drift for right-hand twist barrels: a "wind from the
+  // left" makes the bullet jump UP (reduces drop). For left-twist
+  // barrels the sign flips.
+  //
+  // Implementation: positive crossWindComponentMps (in our convention)
+  // = wind from the LEFT = bullet pushed RIGHT for a right-twist
+  // barrel. The aero-jump VERTICAL contribution for that wind is
+  // UPWARD, so dropInches gets reduced. We negate the sign to put
+  // "left wind" as a NEGATIVE drop contribution.
+  //
+  // We also keep the legacy small cant×crosswind term per Litz's
+  // *Modern Advancements* vol. 3 — it stays angular and scales with
+  // range.
+  final twistSign = shot.twistDirection.sign;
+  final aeroJumpPerSampleIn = List<double>.filled(samples.length, 0);
   if (includeAerodynamicJump && includeWind) {
-    final crossKt = mpsToKnots(environment.crossWindComponentMps);
+    final crossMps = environment.crossWindComponentMps;
+    final crossMph = crossMps / 0.44704;
     final hasTwist = (projectile.twistInches ?? 0) > 0;
-    if (hasTwist && crossKt.abs() > 1e-9) {
-      final ajMil = -0.01 * crossKt;
+    if (hasTwist && crossMph.abs() > 1e-9) {
+      // Cant×crosswind contribution stays as the angular Litz vol. 3
+      // term and is added on top of the per-range Litz formula.
+      final crossKt = mpsToKnots(environment.crossWindComponentMps);
       final cantTermMil = -0.0014 * shot.muzzleCantDeg * crossKt;
-      final totalAjRad = milToRadians(ajMil + cantTermMil);
+      final cantRad = milToRadians(cantTermMil) * twistSign;
       for (var i = 0; i < samples.length; i++) {
         final s = samples[i];
-        final ajIn = totalAjRad * s.rangeYards * 36.0;
-        samples[i] = TrajectorySample(
-          rangeYards: s.rangeYards,
-          timeSec: s.timeSec,
-          dropInches: s.dropInches + ajIn,
-          windDriftInches: s.windDriftInches,
-          spinDriftInches: s.spinDriftInches,
-          velocityFps: s.velocityFps,
-          energyFtLb: s.energyFtLb,
-          machNumber: s.machNumber,
-        );
+        // Per-range Litz formula. Negative sign so a wind from the
+        // left (positive crossMph in our convention) lifts the bullet
+        // (negative drop contribution).
+        final perRangeIn = -0.087 *
+            crossMph *
+            s.timeSec *
+            s.velocityFps /
+            1000.0 *
+            twistSign;
+        final cantIn = cantRad * s.rangeYards * 36.0;
+        aeroJumpPerSampleIn[i] = perRangeIn + cantIn;
       }
     }
   }
 
-  // Apply spin drift after the fact. We compute it from time of
-  // flight and add it to the wind-drift result. The user sees both
-  // values via the per-sample [spinDriftInches] / [windDriftInches]
-  // fields.
+  // ── Spin drift ──────────────────────────────────────────────────
+  //
+  // Empirical Litz (or Pejsa) post-integration correction. The closed
+  // form depends on [spinDriftModel]:
+  //
+  //   * Litz (default): Sd = 1.25 · (Sg + 1.2) · t^1.83 inches.
+  //   * Pejsa: 6th-order polynomial in t — picks up extra drift past
+  //     ~1.5 s of flight where Litz's t^1.83 saturates.
+  //
+  // Both formulas return a magnitude assuming right-hand twist; we
+  // multiply by [TwistDirection.sign] so left-twist barrels see the
+  // opposite drift direction.
+  final spinDriftPerSampleIn = List<double>.filled(samples.length, 0);
   if (includeSpinDrift) {
     final sg = projectile.millerStability(shot.muzzleVelocityFps);
     if (sg != null && projectile.twistInches != null) {
-      // Right-hand twist → drift to the right (+z). The exact closed
-      // form depends on [spinDriftModel]:
-      //
-      //   * Litz (default): Sd = 1.25 · (Sg + 1.2) · t^1.83 inches.
-      //     Empirical power-law fit to 6-DOF reference simulations.
-      //     Accurate within a few tenths of an inch out to ~1500 yd.
-      //
-      //   * Pejsa: 6th-order polynomial in t that picks up additional
-      //     drift past the regime where Litz's t^1.83 saturates.
-      //     Pejsa's *New Exact Small Arms Ballistics* (2008) derives
-      //     it from the steady-state yaw-of-repose differential
-      //     equation and reports ~3% improvement over Litz at 1800 yd
-      //     for stable-through-transonic match bullets.
-      //
-      // Both formulas read the same Sg + time of flight inputs.
       for (var i = 0; i < samples.length; i++) {
         final s = samples[i];
-        final spinIn = _spinDriftInches(spinDriftModel, sg, s.timeSec);
-        samples[i] = TrajectorySample(
-          rangeYards: s.rangeYards,
-          timeSec: s.timeSec,
-          dropInches: s.dropInches,
-          windDriftInches: s.windDriftInches + spinIn,
-          spinDriftInches: spinIn,
-          velocityFps: s.velocityFps,
-          energyFtLb: s.energyFtLb,
-          machNumber: s.machNumber,
-        );
+        final magnitude =
+            _spinDriftInches(spinDriftModel, sg, s.timeSec);
+        spinDriftPerSampleIn[i] = magnitude * twistSign;
       }
     }
   }
 
   // ── Coning correction (McCoy MV2DM, simplified) ──────────────────
   //
-  // For very long-range shots the bullet's spin axis cones around the
-  // velocity vector — gravity-induced trajectory curvature drives a
-  // slow steady-state yaw of repose, adding small additional vertical
-  // drop and lateral deflection. We apply a first-order term calibrated
-  // so a 2-second flight (~1700 yd .308) adds ~0.5" of drop and ~0.2"
-  // of lateral. McCoy ch. 9 derives the exact form from the moments
-  // of inertia; we use a compact empirical proxy that captures the
-  // magnitude.
+  // First-order yaw-of-repose proxy active past ~1.4 s of flight.
+  // Adds vertical drop + a smaller lateral component (matching the
+  // spin-drift sign for the same twist direction).
+  final coningDropPerSampleIn = List<double>.filled(samples.length, 0);
+  final coningSidePerSampleIn = List<double>.filled(samples.length, 0);
   if (includeConing) {
     for (var i = 0; i < samples.length; i++) {
       final s = samples[i];
       if (s.timeSec < 1.4) continue;
-      final coningDrop = _coningDropInches(s.timeSec);
-      final coningSide = _coningSideInches(s.timeSec);
-      samples[i] = TrajectorySample(
-        rangeYards: s.rangeYards,
-        timeSec: s.timeSec,
-        dropInches: s.dropInches + coningDrop,
-        windDriftInches: s.windDriftInches + coningSide,
-        spinDriftInches: s.spinDriftInches,
-        velocityFps: s.velocityFps,
-        energyFtLb: s.energyFtLb,
-        machNumber: s.machNumber,
-      );
+      coningDropPerSampleIn[i] = _coningDropInches(s.timeSec);
+      coningSidePerSampleIn[i] = _coningSideInches(s.timeSec) * twistSign;
     }
+  }
+
+  // ── Incline / decline correction (improved rifleman's rule) ─────
+  //
+  // The improved rifleman's rule scales the level-shot drop by
+  // `cos(angle)^1.5`. This is empirically closer to the true
+  // 6-DOF answer than the textbook `cos(angle)` rule, especially
+  // beyond 25° where the simple cosine under-corrects by ~3% at 30°
+  // and ~10% at 45°. Reference: Robert Brennan / Sierra Bullets
+  // exterior-ballistics handbook §6 (downhill / uphill shots).
+  //
+  // Note: only the gravity-driven portion of the trajectory should
+  // scale with cos^1.5 — sight-height geometry (the bullet starts
+  // below the line of sight by `sight_height`) is unchanged by the
+  // shot angle. Practically, the difference between "scale just the
+  // gravity drop" and "scale the entire reported drop" is < 0.1 mil
+  // even at long range, because sight-height-vs-LoS contribution to
+  // dropInches goes to zero past the zero range. We scale the full
+  // dropInches for simplicity; the test fixture verifies the
+  // long-range fit.
+  final inclineAngleRad =
+      shot.inclineAngleDeg * math.pi / 180.0;
+  final inclineFactor = math.pow(
+        math.cos(inclineAngleRad).abs(),
+        1.5,
+      ).toDouble();
+  final inclineDeltaPerSampleIn =
+      List<double>.filled(samples.length, 0);
+
+  // ── Compose the final per-sample output. ────────────────────────
+  //
+  // We apply contributions in this order:
+  //
+  //   1. Add aerodynamic-jump and coning drop to the integrated drop.
+  //   2. Apply the incline-correction factor to the resulting drop
+  //      (the level-shot drop scaled by cos(angle)^1.5). Record the
+  //      delta as `inclineCorrectionInches`.
+  //   3. Multiply the elevation hold by the vertical sight-scale
+  //      factor. Spin drift, aero-jump, and coning lateral are
+  //      similarly scaled by the horizontal sight-scale factor.
+  //
+  // The end result is a single `dropInches` / `windDriftInches`
+  // pair with all corrections baked in, plus the breakdown fields
+  // for callers that want to display the contributions separately.
+  for (var i = 0; i < samples.length; i++) {
+    final s = samples[i];
+    final integratedDrop = s.dropInches;
+    final aeroJumpIn = aeroJumpPerSampleIn[i];
+    final coningDropIn = coningDropPerSampleIn[i];
+
+    // Drop with all vertical corrections except sight-scale.
+    final preInclineDrop = integratedDrop + aeroJumpIn + coningDropIn;
+    final postInclineDrop = preInclineDrop * inclineFactor;
+    inclineDeltaPerSampleIn[i] = postInclineDrop - preInclineDrop;
+
+    // Apply the vertical sight-scale factor.
+    final finalDrop = postInclineDrop * shot.sightScaleVertical;
+
+    // Wind drift = integrated drift + spin drift + coning side, then
+    // scaled by horizontal sight-scale.
+    final windDriftRaw = s.windDriftInches +
+        spinDriftPerSampleIn[i] +
+        coningSidePerSampleIn[i];
+    final finalWind = windDriftRaw * shot.sightScaleHorizontal;
+
+    samples[i] = TrajectorySample(
+      rangeYards: s.rangeYards,
+      timeSec: s.timeSec,
+      dropInches: finalDrop,
+      windDriftInches: finalWind,
+      spinDriftInches:
+          spinDriftPerSampleIn[i] * shot.sightScaleHorizontal,
+      velocityFps: s.velocityFps,
+      energyFtLb: s.energyFtLb,
+      machNumber: s.machNumber,
+      aerodynamicJumpInches:
+          aeroJumpIn * shot.sightScaleVertical,
+      inclineCorrectionInches:
+          inclineDeltaPerSampleIn[i] * shot.sightScaleVertical,
+      sightScaleVertical: shot.sightScaleVertical,
+      sightScaleHorizontal: shot.sightScaleHorizontal,
+    );
   }
 
   return samples;

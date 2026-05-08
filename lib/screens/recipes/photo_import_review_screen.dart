@@ -313,6 +313,14 @@ class _PhotoImportReviewScreenState extends State<PhotoImportReviewScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              // Privacy reassurance — older users want to see this
+              // explicitly on the review screen, not just in the
+              // welcome deck. Wording matches CLAUDE.md §13.
+              _PrivacyReassuranceRow(
+                text: 'This photo never leaves your phone. '
+                    'Recognition runs on this device.',
+              ),
+              const SizedBox(height: 12),
               Text(
                 'Check each field below before saving. Values we\'re less '
                 'confident about are highlighted.',
@@ -551,4 +559,43 @@ enum _FieldKey {
   bulletWeight,
   primer,
   brass,
+}
+
+/// Small privacy-reassurance row that appears on the review screen.
+/// One sentence in plain language with a shield icon. Wording aligns
+/// with CLAUDE.md §13: photo OCR is fully on-device, no LoadOut
+/// backend ever sees the image.
+class _PrivacyReassuranceRow extends StatelessWidget {
+  const _PrivacyReassuranceRow({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.shield_outlined,
+            size: 18,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

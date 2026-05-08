@@ -125,11 +125,11 @@
     "@onboardingQuickAddBullet1": {
         "description": "Quick Add bullet — describes the simplified five-field form."
     },
-    "onboardingQuickAddBullet2": "Caliber. Powder + charge. Bullet + weight. COAL. Done.",
+    "onboardingQuickAddBullet2": "Caliber, powder and charge, bullet and weight, and your overall length (COAL). That is all.",
     "@onboardingQuickAddBullet2": {
         "description": "Quick Add bullet — names the five fields. COAL is a technical reloading term (Cartridge Overall Length); leave untranslated if no native equivalent exists."
     },
-    "onboardingQuickAddBullet3": "Save it. Add detail later if you want.",
+    "onboardingQuickAddBullet3": "Save your load now. Add more detail later, only if you want to.",
     "@onboardingQuickAddBullet3": {
         "description": "Quick Add bullet — emphasises that saving early is fine."
     },

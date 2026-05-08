@@ -102,7 +102,9 @@ import '../../theme/app_theme.dart';
 import '../backup/backup_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../recipes/photo_import_screen.dart';
+import '../recipes/quick_add_recipe_screen.dart';
 import '../recipes/smart_import_screen.dart';
+import 'notebook_onboarding_screen.dart';
 
 /// Multi-page guided walkthrough that introduces LoadOut's features.
 /// Reachable from the side drawer ("How To Use LoadOut") and from
@@ -135,7 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   /// `build()` because `AppLocalizations.of(context)` requires a
   /// `BuildContext` and its result changes when the user switches the
   /// app language in Settings — so the list cannot be a `late final`.
-  /// The list is small (5 entries) and rebuilding it on every frame is
+  /// The list is small (6 entries) and rebuilding it on every frame is
   /// cheap.
   List<_OnboardingPage> _buildPages(AppLocalizations l) {
     return [
@@ -147,6 +149,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           l.onboardingWelcomeBullet1,
           l.onboardingWelcomeBullet2,
         ],
+      ),
+      // Slide A.5 — Path picker. "How do you track your loads today?"
+      // Renders three persona cards (just-starting, notebook,
+      // spreadsheet); the notebook path is the highlighted CTA. This
+      // slide replaces a generic "feature tour" with persona-specific
+      // routing into the matching dedicated flow. Pen-and-paper users
+      // — the largest survey cohort — get a card centered visually
+      // with a brass tint to draw attention.
+      const _OnboardingPage(
+        icon: Icons.alt_route,
+        title: 'How do you track your loads today?',
+        bullets: [],
+        actionType: _PageActionType.pickPath,
+        actionLabel: '',
       ),
       // Slide B — Quick Add.
       _OnboardingPage(
@@ -302,7 +318,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         _openSpreadsheetImport();
       case _PageActionType.openPhotoImport:
         _openPhotoImport();
+      case _PageActionType.pickPath:
+        // Path-picker cards each call their per-card handler directly
+        // (see _PathPickerSlide). This branch exists so the switch is
+        // exhaustive but is never reached.
+        break;
     }
+  }
+
+  /// Notebook path: deep-link into the dedicated
+  /// `NotebookOnboardingScreen` so the pen-and-paper user gets the
+  /// guided flow (explainer → photo capture → review → wrap-up).
+  /// On macOS / web (no ML Kit) we fall through to the Backup hub
+  /// where the user can find the spreadsheet importer instead.
+  void _openNotebookPath() {
+    _markSeenWithoutClosing();
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    if (PhotoImportScreen.isSupportedPlatform) {
+      NotebookOnboardingScreen.start(navigator.context);
+    } else {
+      navigator.push(
+        MaterialPageRoute(builder: (_) => const BackupScreen()),
+      );
+    }
+  }
+
+  /// "Just starting out" path: jump straight to Quick Add. The user
+  /// who has no existing data is the simplest case — give them the
+  /// blank form, beginner-friendly defaults are already on by
+  /// default for first-time users.
+  void _openQuickStart() {
+    _markSeenWithoutClosing();
+    final navigator = Navigator.of(context);
+    navigator.pop();
+    navigator.push(
+      MaterialPageRoute(builder: (_) => const QuickAddRecipeScreen()),
+    );
   }
 
   @override
@@ -352,6 +404,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ? null
                         : () =>
                             _handlePageAction(page.secondaryActionType!),
+                    onPickQuickStart: _openQuickStart,
+                    onPickNotebook: _openNotebookPath,
+                    onPickSpreadsheet: _openSpreadsheetImport,
                   );
                 },
               ),
@@ -402,6 +457,11 @@ enum _PageActionType {
   finish,
   openSpreadsheetImport,
   openPhotoImport,
+  /// Path-picker slide: render persona-specific cards instead of a
+  /// single CTA button. Each card has its own callback. Tapping a
+  /// card pops onboarding and pushes the matching dedicated flow
+  /// (notebook, spreadsheet, or just-getting-started Quick Add).
+  pickPath,
 }
 
 /// Plain data container for a single onboarding page. Action label/
@@ -444,15 +504,35 @@ class _OnboardingPageView extends StatelessWidget {
     required this.page,
     this.onAction,
     this.onSecondaryAction,
+    this.onPickQuickStart,
+    this.onPickNotebook,
+    this.onPickSpreadsheet,
   });
 
   final _OnboardingPage page;
   final VoidCallback? onAction;
   final VoidCallback? onSecondaryAction;
 
+  /// Path-picker slide callbacks. Wired only when the page's action
+  /// type is [_PageActionType.pickPath]; null on every other slide.
+  final VoidCallback? onPickQuickStart;
+  final VoidCallback? onPickNotebook;
+  final VoidCallback? onPickSpreadsheet;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Path-picker slide. Renders three "How do you track today?" cards
+    // instead of bullet lists + a single CTA. This is the conversion
+    // surface for the pen-and-paper persona.
+    if (page.actionType == _PageActionType.pickPath) {
+      return _PathPickerSlide(
+        title: page.title,
+        onPickQuickStart: onPickQuickStart,
+        onPickNotebook: onPickNotebook,
+        onPickSpreadsheet: onPickSpreadsheet,
+      );
+    }
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
       child: Column(
@@ -536,6 +616,8 @@ class _OnboardingPageView extends StatelessWidget {
         return Icons.workspace_premium_outlined;
       case _PageActionType.finish:
         return Icons.rocket_launch_outlined;
+      case _PageActionType.pickPath:
+        return Icons.alt_route;
     }
   }
 
@@ -546,6 +628,158 @@ class _OnboardingPageView extends StatelessWidget {
     final type = page.secondaryActionType;
     if (type == null) return Icons.arrow_forward;
     return _iconForAction(type);
+  }
+}
+
+/// "How do you track your loads today?" path-picker slide. Renders
+/// three persona cards stacked vertically:
+///   * Just starting out — Quick Add, beginner-friendly.
+///   * I have a notebook — guided photo-import flow.
+///   * I use Excel / Google Sheets — Smart Import wizard.
+///
+/// Each card has an icon, a title, and a one-line subtitle. Tapping a
+/// card pops onboarding and opens the matching dedicated flow. The
+/// pen-and-paper card is highlighted (brass tint) — surveys say it's
+/// the largest cohort and we want it visually weighted.
+class _PathPickerSlide extends StatelessWidget {
+  const _PathPickerSlide({
+    required this.title,
+    required this.onPickQuickStart,
+    required this.onPickNotebook,
+    required this.onPickSpreadsheet,
+  });
+
+  final String title;
+  final VoidCallback? onPickQuickStart;
+  final VoidCallback? onPickNotebook;
+  final VoidCallback? onPickSpreadsheet;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Icon(
+            Icons.alt_route,
+            size: 64,
+            color: AppTheme.brass,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: theme.textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Pick the option that sounds the most like you. '
+            "You can change anything later.",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          _PathCard(
+            icon: Icons.bolt_outlined,
+            title: 'Just starting out',
+            subtitle: 'Quick Add — type a load like you would write it.',
+            onTap: onPickQuickStart,
+          ),
+          const SizedBox(height: 12),
+          _PathCard(
+            icon: Icons.menu_book_outlined,
+            title: 'I have a notebook',
+            subtitle: 'Photo-import a page (about 60 seconds).',
+            onTap: onPickNotebook,
+            highlighted: true,
+          ),
+          const SizedBox(height: 12),
+          _PathCard(
+            icon: Icons.table_view_outlined,
+            title: 'I use Excel or Google Sheets',
+            subtitle: 'Smart import — we will match your columns.',
+            onTap: onPickSpreadsheet,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One persona card on the path-picker slide. Renders an icon + title
+/// + subtitle in a tappable card. The notebook card is highlighted in
+/// brass tint to draw attention to the largest survey cohort.
+class _PathCard extends StatelessWidget {
+  const _PathCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.highlighted = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      color: highlighted
+          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.55)
+          : null,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                icon,
+                size: 32,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

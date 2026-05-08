@@ -210,6 +210,7 @@ class _NewLoadDevelopmentScreenState extends State<NewLoadDevelopmentScreen> {
                 bulletDiameterSorted: false,
                 ejectorMarks: false,
                 crateredPrimers: false,
+                powderReferenceTempCelsius: 15.6,
               )
             : refs.recipes.first,
       );

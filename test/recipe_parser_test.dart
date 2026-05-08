@@ -160,5 +160,69 @@ void main() {
       expect(draft.powderChargeGr, isNull);
       expect(draft.bulletWeightGr?.value, 200);
     });
+
+    test('parses mixed-fraction handwritten charges', () {
+      // Reloaders writing "41 1/2 gr" mean 41.5 gr.
+      final raw = '6.5 Creedmoor\nH4350 41 1/2 gr\n140 ELDM';
+      final draft = parser.parse(raw);
+      expect(draft.powderChargeGr?.value, 41.5);
+    });
+
+    test('parses vulgar-fraction handwritten charges', () {
+      final raw = '6.5 Creedmoor\nH4350 41½ gr\n140 ELDM';
+      final draft = parser.parse(raw);
+      expect(draft.powderChargeGr?.value, 41.5);
+    });
+
+    test('handwriting alias resolves powder shorthand even without catalog hit',
+        () {
+      final localParser = RecipeParser(
+        cartridgeAliases: {'.308 Winchester': const ['308 Win']},
+        powderNames: const [],
+        bulletLines: const [],
+      );
+      final draft = localParser.parse('308 Win\nRL16 41.5 gr\n175 SMK');
+      expect(draft.powder?.value, 'Reloder 16');
+    });
+
+    test('handwriting alias resolves caliber shorthand', () {
+      final localParser = RecipeParser(
+        cartridgeAliases: const {},
+        powderNames: const ['CFE223'],
+        bulletLines: const [],
+      );
+      final draft = localParser.parse('5.56\nCFE223 24.5 gr\n55 gr FMJ');
+      expect(draft.caliber?.value, '5.56x45mm NATO');
+    });
+
+    test('handwriting alias resolves bullet shorthand', () {
+      final localParser = RecipeParser(
+        cartridgeAliases: {'.308 Winchester': const ['308 Win']},
+        powderNames: const ['Varget'],
+        bulletLines: const [],
+      );
+      final draft = localParser.parse('308 Win\nVarget 44.0 gr\n175 SMK');
+      expect(draft.bullet?.value, contains('MatchKing'));
+    });
+
+    test('page-context caliber fills in when row has no caliber', () {
+      final raw = 'H4350 41.5 gr\n140 ELDM';
+      final draft = parser.parse(raw, pageContextCaliber: '6.5 Creedmoor');
+      expect(draft.caliber?.value, '6.5 Creedmoor');
+      expect(draft.caliber!.confidence, 0.65);
+    });
+
+    test('page-context caliber yields to row-level caliber match', () {
+      final raw = '6.5 Creedmoor\nH4350 41.5 gr\n140 ELDM';
+      final draft = parser.parse(raw, pageContextCaliber: '.308 Winchester');
+      expect(draft.caliber?.value, '6.5 Creedmoor');
+    });
+
+    test('inferPageCaliber finds the caliber from a header line', () {
+      const pageText =
+          '6.5 Creedmoor Range Notes\nLoad #1: H4350 41.5 gr ELDM\n'
+          'Load #2: H4350 41.7 gr SMK\nLoad #3: H4350 41.9 gr A-Tip';
+      expect(parser.inferPageCaliber(pageText), '6.5 Creedmoor');
+    });
   });
 }

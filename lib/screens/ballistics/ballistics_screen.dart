@@ -255,6 +255,25 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   final _windDirCtrl = TextEditingController(text: '90');
   final _latitudeCtrl = TextEditingController(text: '40');
 
+  // ─────────────────────── Advanced (v16) ───────────────────────
+  // Fields hidden behind an "Advanced" expansion: aerodynamic jump
+  // multiplier, Mach number readout (computed), zero atmosphere, plus
+  // the per-firearm/per-load v16 inputs (twist direction, sight scale,
+  // powder temp sensitivity). All optional — defaults preserve current
+  // solver behaviour.
+  final _twistDirCtrl = TextEditingController(text: 'right');
+  String _twistDirection = 'right';
+  final _sightScaleVerticalCtrl = TextEditingController(text: '');
+  final _sightScaleHorizontalCtrl = TextEditingController(text: '');
+  final _zeroPressureInHgCtrl = TextEditingController(text: '');
+  final _zeroTemperatureFCtrl = TextEditingController(text: '');
+  final _zeroHumidityPctCtrl = TextEditingController(text: '');
+  final _powderTempSensitivityCtrl = TextEditingController(text: '');
+  final _powderReferenceTempCtrl = TextEditingController(text: '');
+  final _aerodynamicJumpCtrl = TextEditingController(text: '');
+  final _inclineAngleCtrl = TextEditingController(text: '0');
+  bool _advancedExpanded = false;
+
   // ─────────────────────── Output settings ───────────────────────
   final _rangeMinCtrl =
       TextEditingController(text: _kRangeMinDefault.toString());
@@ -818,6 +837,17 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       _latitudeCtrl,
       _rangeMinCtrl,
       _rangeMaxCtrl,
+      // ── v16 advanced-section controllers ──
+      _twistDirCtrl,
+      _sightScaleVerticalCtrl,
+      _sightScaleHorizontalCtrl,
+      _zeroPressureInHgCtrl,
+      _zeroTemperatureFCtrl,
+      _zeroHumidityPctCtrl,
+      _powderTempSensitivityCtrl,
+      _powderReferenceTempCtrl,
+      _aerodynamicJumpCtrl,
+      _inclineAngleCtrl,
     ]) {
       c.dispose();
     }
@@ -1199,6 +1229,35 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _sightHeightCtrl.text = _formatNumber(_smallLenFromCanonical(
             f.sightHeightIn!, units.unitFor(UnitCategory.smallLength)));
       }
+      // ── v15 firearm fields: twist direction + sight scale + zero atmo ──
+      // Pre-fill the Advanced section so the user sees the firearm's
+      // saved precision inputs without having to retype them. Only
+      // overwrite when the firearm has a value — preserves any free-
+      // typed values the user already entered.
+      _twistDirection = f.twistDirection;
+      // Sight scales: don't overwrite when the firearm carries the
+      // schema default of 1.0, so the user's blank-means-no-correction
+      // intuition holds. Same convention as the firearm form.
+      if (f.sightScaleVertical != 1.0) {
+        _sightScaleVerticalCtrl.text =
+            f.sightScaleVertical.toStringAsFixed(3);
+      }
+      if (f.sightScaleHorizontal != 1.0) {
+        _sightScaleHorizontalCtrl.text =
+            f.sightScaleHorizontal.toStringAsFixed(3);
+      }
+      if (f.zeroPressureInHg != null) {
+        _zeroPressureInHgCtrl.text =
+            f.zeroPressureInHg!.toStringAsFixed(2);
+      }
+      if (f.zeroTemperatureF != null) {
+        _zeroTemperatureFCtrl.text =
+            f.zeroTemperatureF!.toStringAsFixed(0);
+      }
+      if (f.zeroHumidityPct != null) {
+        _zeroHumidityPctCtrl.text =
+            f.zeroHumidityPct!.toStringAsFixed(0);
+      }
     });
   }
 
@@ -1343,6 +1402,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     _muzzleZeroSection(),
                     const SizedBox(height: 8),
                     _environmentSection(),
+                    const SizedBox(height: 8),
+                    _advancedSection(),
                     const SizedBox(height: 8),
                     _outputSection(),
                     const SizedBox(height: 16),
@@ -2181,9 +2242,22 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         _windDirCtrl.text = result.windDirectionDeg.toStringAsFixed(0);
         _weatherFetchedAt = result.fetchedAt;
       });
+      // Surface every captured value so the user sees what was pulled
+      // — instead of fields silently filling. Multi-line snackbar
+      // gives the long content room to breathe; 6s gives enough time
+      // to read.
       messenger.showSnackBar(
         SnackBar(
-          content: Text('Weather updated · ${_formatClock(result.fetchedAt)}'),
+          duration: const Duration(seconds: 6),
+          content: Text(
+            '✓ Pulled from your location\n'
+            '  Altitude: ${result.elevationFt.toStringAsFixed(0)} ft  ·  '
+            'Station: ${result.stationPressureInHg.toStringAsFixed(2)} inHg  ·  '
+            'Temp: ${result.tempF.toStringAsFixed(0)}°F  ·  '
+            'Humidity: ${result.humidityPct.toStringAsFixed(0)}%  ·  '
+            'Wind: ${result.windSpeedMph.toStringAsFixed(0)} mph @ '
+            '${result.windDirectionDeg.toStringAsFixed(0)}°',
+          ),
         ),
       );
     } on WeatherFetchException catch (e) {
@@ -2504,6 +2578,215 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Advanced inputs section. Hidden by default behind an
+  /// `ExpansionTile` so the default ballistics screen doesn't get
+  /// cluttered. When opened, exposes:
+  ///
+  ///   * Aerodynamic jump multiplier (Bryan Litz spin-drift jump term)
+  ///   * Twist direction (right/left) — flips spin-drift sign
+  ///   * Sight scale factors (vertical / horizontal) — corrects scopes
+  ///     whose tracking does not match advertised mil/MOA values
+  ///   * Powder temperature sensitivity (fps/°C) + reference temp (°C)
+  ///   * Zero atmosphere (pressure / temperature / humidity)
+  ///   * Incline / decline angle (slope of fire)
+  ///
+  /// All optional. When left blank, the solver uses its existing
+  /// defaults. Free-typed values always take priority over auto-fill
+  /// from a picked firearm/load.
+  Widget _advancedSection() {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          initiallyExpanded: _advancedExpanded,
+          onExpansionChanged: (v) => setState(() => _advancedExpanded = v),
+          tilePadding: const EdgeInsets.fromLTRB(16, 4, 12, 4),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          leading: Icon(Icons.science_outlined,
+              size: 20, color: theme.colorScheme.primary),
+          title: Text(
+            'Advanced',
+            style: theme.textTheme.titleMedium,
+          ),
+          subtitle: Text(
+            'Aerodynamic jump, twist direction, sight scale, '
+            'powder temp sensitivity, zero atmosphere, incline.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          children: [
+            // Twist direction.
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Twist direction',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
+                SegmentedButton<String>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment<String>(
+                      value: 'right',
+                      label: Text('Right'),
+                    ),
+                    ButtonSegment<String>(
+                      value: 'left',
+                      label: Text('Left'),
+                    ),
+                  ],
+                  selected: {_twistDirection},
+                  onSelectionChanged: (s) =>
+                      setState(() => _twistDirection = s.first),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Sight scale.
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _sightScaleVerticalCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Sight scale vertical',
+                      hintText: '1.000',
+                      helperText: '1.000 = no correction',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _sightScaleHorizontalCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Sight scale horizontal',
+                      hintText: '1.000',
+                      helperText: '1.000 = no correction',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Aerodynamic jump multiplier.
+            TextField(
+              controller: _aerodynamicJumpCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true, signed: true),
+              decoration: const InputDecoration(
+                labelText: 'Aerodynamic jump (multiplier)',
+                hintText: 'e.g. 0.0 (off) or ±0.05',
+                helperText:
+                    'Litz aerodynamic jump term. Positive multiplier '
+                    'tilts the bullet axis with crosswind on launch.',
+                helperMaxLines: 3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Powder temp sensitivity (fps/°C + reference °C).
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _powderTempSensitivityCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Powder temp sens (fps/°C)',
+                      hintText: 'e.g. 0.4',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _powderReferenceTempCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Reference (°C)',
+                      hintText: 'e.g. 15.6',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Zero atmosphere.
+            Text(
+              'Zero atmosphere (where you sighted in)',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _zeroPressureInHgCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Zero pressure (inHg)',
+                      hintText: 'e.g. 29.92',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: _zeroTemperatureFCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Zero temp (°F)',
+                      hintText: 'e.g. 65',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _zeroHumidityPctCtrl,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Zero humidity (%)',
+                hintText: 'e.g. 50',
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Incline / decline.
+            TextField(
+              controller: _inclineAngleCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Incline / decline (°)',
+                helperText: 'Positive = uphill; negative = downhill',
+                helperMaxLines: 2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2883,6 +3166,13 @@ class _DopeTable extends StatelessWidget {
               label: Text('ToF (s)', style: headerStyle), numeric: true),
           DataColumn(
               label: Text('Mach', style: headerStyle), numeric: true),
+          // v16 — aerodynamic jump contribution per range. The solver
+          // already breaks this out as `aerodynamicJumpInches` on each
+          // TrajectorySample, so surfacing it as a column is just a
+          // formatting concern. Signed value (positive = adds drop).
+          DataColumn(
+              label: Text('AeroJump (in)', style: headerStyle),
+              numeric: true),
         ],
         rows: [
           for (final s in samples)
@@ -2910,6 +3200,16 @@ class _DopeTable extends StatelessWidget {
                     Text(s.timeSec.toStringAsFixed(2), style: cellStyle)),
                 DataCell(
                     Text(s.machNumber.toStringAsFixed(2), style: cellStyle)),
+                // Aerodynamic jump contribution. Signed in raw inches
+                // — keeping the breakdown column unit-free is fine
+                // since this is a contribution, not a primary ballistic
+                // output.
+                DataCell(
+                  Text(
+                    s.aerodynamicJumpInches.toStringAsFixed(1),
+                    style: cellStyle,
+                  ),
+                ),
               ],
             ),
         ],

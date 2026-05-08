@@ -8467,6 +8467,29 @@ class $UserLoadsTable extends UserLoads
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _powderTempSensitivityFpsPerCelsiusMeta =
+      const VerificationMeta('powderTempSensitivityFpsPerCelsius');
+  @override
+  late final GeneratedColumn<double> powderTempSensitivityFpsPerCelsius =
+      GeneratedColumn<double>(
+        'powder_temp_sensitivity_fps_per_celsius',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _powderReferenceTempCelsiusMeta =
+      const VerificationMeta('powderReferenceTempCelsius');
+  @override
+  late final GeneratedColumn<double> powderReferenceTempCelsius =
+      GeneratedColumn<double>(
+        'powder_reference_temp_celsius',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(15.6),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -8528,6 +8551,8 @@ class $UserLoadsTable extends UserLoads
     chronographUsed,
     boreState,
     loadedBy,
+    powderTempSensitivityFpsPerCelsius,
+    powderReferenceTempCelsius,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -9014,6 +9039,24 @@ class $UserLoadsTable extends UserLoads
         loadedBy.isAcceptableOrUnknown(data['loaded_by']!, _loadedByMeta),
       );
     }
+    if (data.containsKey('powder_temp_sensitivity_fps_per_celsius')) {
+      context.handle(
+        _powderTempSensitivityFpsPerCelsiusMeta,
+        powderTempSensitivityFpsPerCelsius.isAcceptableOrUnknown(
+          data['powder_temp_sensitivity_fps_per_celsius']!,
+          _powderTempSensitivityFpsPerCelsiusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('powder_reference_temp_celsius')) {
+      context.handle(
+        _powderReferenceTempCelsiusMeta,
+        powderReferenceTempCelsius.isAcceptableOrUnknown(
+          data['powder_reference_temp_celsius']!,
+          _powderReferenceTempCelsiusMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -9259,6 +9302,14 @@ class $UserLoadsTable extends UserLoads
         DriftSqlType.string,
         data['${effectivePrefix}loaded_by'],
       ),
+      powderTempSensitivityFpsPerCelsius: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}powder_temp_sensitivity_fps_per_celsius'],
+      ),
+      powderReferenceTempCelsius: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}powder_reference_temp_celsius'],
+      )!,
     );
   }
 
@@ -9340,6 +9391,20 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
   /// 'clean' | 'seasoned' | 'fouled'
   final String? boreState;
   final String? loadedBy;
+
+  /// Powder temperature sensitivity, fps per °C. Positive values mean the
+  /// load runs faster as the propellant warms. Modern temperature-stable
+  /// powders (Hodgdon Extreme, IMR Enduron, Vihtavuori N5xx) report < 0.5
+  /// fps/°C; older single-base ball powders can run 1.5–3 fps/°C. Null
+  /// means "no temperature sensitivity adjustment" — the solver uses the
+  /// load's tabulated MV as-is.
+  final double? powderTempSensitivityFpsPerCelsius;
+
+  /// Reference temperature (°C) the [powderTempSensitivityFpsPerCelsius]
+  /// is calibrated against. Defaults to 15.6 °C (60 °F), the SAAMI
+  /// reference temperature. The solver computes the runtime MV
+  /// adjustment as `(currentTempC - referenceTempC) × sensitivity`.
+  final double powderReferenceTempCelsius;
   const UserLoadRow({
     required this.id,
     required this.name,
@@ -9400,6 +9465,8 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     this.chronographUsed,
     this.boreState,
     this.loadedBy,
+    this.powderTempSensitivityFpsPerCelsius,
+    required this.powderReferenceTempCelsius,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -9563,6 +9630,14 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     if (!nullToAbsent || loadedBy != null) {
       map['loaded_by'] = Variable<String>(loadedBy);
     }
+    if (!nullToAbsent || powderTempSensitivityFpsPerCelsius != null) {
+      map['powder_temp_sensitivity_fps_per_celsius'] = Variable<double>(
+        powderTempSensitivityFpsPerCelsius,
+      );
+    }
+    map['powder_reference_temp_celsius'] = Variable<double>(
+      powderReferenceTempCelsius,
+    );
     return map;
   }
 
@@ -9723,6 +9798,11 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       loadedBy: loadedBy == null && nullToAbsent
           ? const Value.absent()
           : Value(loadedBy),
+      powderTempSensitivityFpsPerCelsius:
+          powderTempSensitivityFpsPerCelsius == null && nullToAbsent
+          ? const Value.absent()
+          : Value(powderTempSensitivityFpsPerCelsius),
+      powderReferenceTempCelsius: Value(powderReferenceTempCelsius),
     );
   }
 
@@ -9821,6 +9901,12 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       chronographUsed: serializer.fromJson<String?>(json['chronographUsed']),
       boreState: serializer.fromJson<String?>(json['boreState']),
       loadedBy: serializer.fromJson<String?>(json['loadedBy']),
+      powderTempSensitivityFpsPerCelsius: serializer.fromJson<double?>(
+        json['powderTempSensitivityFpsPerCelsius'],
+      ),
+      powderReferenceTempCelsius: serializer.fromJson<double>(
+        json['powderReferenceTempCelsius'],
+      ),
     );
   }
   @override
@@ -9894,6 +9980,12 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
       'chronographUsed': serializer.toJson<String?>(chronographUsed),
       'boreState': serializer.toJson<String?>(boreState),
       'loadedBy': serializer.toJson<String?>(loadedBy),
+      'powderTempSensitivityFpsPerCelsius': serializer.toJson<double?>(
+        powderTempSensitivityFpsPerCelsius,
+      ),
+      'powderReferenceTempCelsius': serializer.toJson<double>(
+        powderReferenceTempCelsius,
+      ),
     };
   }
 
@@ -9957,6 +10049,8 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     Value<String?> chronographUsed = const Value.absent(),
     Value<String?> boreState = const Value.absent(),
     Value<String?> loadedBy = const Value.absent(),
+    Value<double?> powderTempSensitivityFpsPerCelsius = const Value.absent(),
+    double? powderReferenceTempCelsius,
   }) => UserLoadRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -10073,6 +10167,12 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
         : this.chronographUsed,
     boreState: boreState.present ? boreState.value : this.boreState,
     loadedBy: loadedBy.present ? loadedBy.value : this.loadedBy,
+    powderTempSensitivityFpsPerCelsius:
+        powderTempSensitivityFpsPerCelsius.present
+        ? powderTempSensitivityFpsPerCelsius.value
+        : this.powderTempSensitivityFpsPerCelsius,
+    powderReferenceTempCelsius:
+        powderReferenceTempCelsius ?? this.powderReferenceTempCelsius,
   );
   UserLoadRow copyWithCompanion(UserLoadsCompanion data) {
     return UserLoadRow(
@@ -10215,6 +10315,13 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           : this.chronographUsed,
       boreState: data.boreState.present ? data.boreState.value : this.boreState,
       loadedBy: data.loadedBy.present ? data.loadedBy.value : this.loadedBy,
+      powderTempSensitivityFpsPerCelsius:
+          data.powderTempSensitivityFpsPerCelsius.present
+          ? data.powderTempSensitivityFpsPerCelsius.value
+          : this.powderTempSensitivityFpsPerCelsius,
+      powderReferenceTempCelsius: data.powderReferenceTempCelsius.present
+          ? data.powderReferenceTempCelsius.value
+          : this.powderReferenceTempCelsius,
     );
   }
 
@@ -10279,7 +10386,11 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           ..write('comparatorInsertUsed: $comparatorInsertUsed, ')
           ..write('chronographUsed: $chronographUsed, ')
           ..write('boreState: $boreState, ')
-          ..write('loadedBy: $loadedBy')
+          ..write('loadedBy: $loadedBy, ')
+          ..write(
+            'powderTempSensitivityFpsPerCelsius: $powderTempSensitivityFpsPerCelsius, ',
+          )
+          ..write('powderReferenceTempCelsius: $powderReferenceTempCelsius')
           ..write(')'))
         .toString();
   }
@@ -10345,6 +10456,8 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
     chronographUsed,
     boreState,
     loadedBy,
+    powderTempSensitivityFpsPerCelsius,
+    powderReferenceTempCelsius,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -10408,7 +10521,10 @@ class UserLoadRow extends DataClass implements Insertable<UserLoadRow> {
           other.comparatorInsertUsed == this.comparatorInsertUsed &&
           other.chronographUsed == this.chronographUsed &&
           other.boreState == this.boreState &&
-          other.loadedBy == this.loadedBy);
+          other.loadedBy == this.loadedBy &&
+          other.powderTempSensitivityFpsPerCelsius ==
+              this.powderTempSensitivityFpsPerCelsius &&
+          other.powderReferenceTempCelsius == this.powderReferenceTempCelsius);
 }
 
 class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
@@ -10471,6 +10587,8 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
   final Value<String?> chronographUsed;
   final Value<String?> boreState;
   final Value<String?> loadedBy;
+  final Value<double?> powderTempSensitivityFpsPerCelsius;
+  final Value<double> powderReferenceTempCelsius;
   const UserLoadsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -10531,6 +10649,8 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     this.chronographUsed = const Value.absent(),
     this.boreState = const Value.absent(),
     this.loadedBy = const Value.absent(),
+    this.powderTempSensitivityFpsPerCelsius = const Value.absent(),
+    this.powderReferenceTempCelsius = const Value.absent(),
   });
   UserLoadsCompanion.insert({
     this.id = const Value.absent(),
@@ -10592,6 +10712,8 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     this.chronographUsed = const Value.absent(),
     this.boreState = const Value.absent(),
     this.loadedBy = const Value.absent(),
+    this.powderTempSensitivityFpsPerCelsius = const Value.absent(),
+    this.powderReferenceTempCelsius = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserLoadRow> custom({
     Expression<int>? id,
@@ -10653,6 +10775,8 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     Expression<String>? chronographUsed,
     Expression<String>? boreState,
     Expression<String>? loadedBy,
+    Expression<double>? powderTempSensitivityFpsPerCelsius,
+    Expression<double>? powderReferenceTempCelsius,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -10726,6 +10850,11 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
       if (chronographUsed != null) 'chronograph_used': chronographUsed,
       if (boreState != null) 'bore_state': boreState,
       if (loadedBy != null) 'loaded_by': loadedBy,
+      if (powderTempSensitivityFpsPerCelsius != null)
+        'powder_temp_sensitivity_fps_per_celsius':
+            powderTempSensitivityFpsPerCelsius,
+      if (powderReferenceTempCelsius != null)
+        'powder_reference_temp_celsius': powderReferenceTempCelsius,
     });
   }
 
@@ -10789,6 +10918,8 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     Value<String?>? chronographUsed,
     Value<String?>? boreState,
     Value<String?>? loadedBy,
+    Value<double?>? powderTempSensitivityFpsPerCelsius,
+    Value<double>? powderReferenceTempCelsius,
   }) {
     return UserLoadsCompanion(
       id: id ?? this.id,
@@ -10853,6 +10984,11 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
       chronographUsed: chronographUsed ?? this.chronographUsed,
       boreState: boreState ?? this.boreState,
       loadedBy: loadedBy ?? this.loadedBy,
+      powderTempSensitivityFpsPerCelsius:
+          powderTempSensitivityFpsPerCelsius ??
+          this.powderTempSensitivityFpsPerCelsius,
+      powderReferenceTempCelsius:
+          powderReferenceTempCelsius ?? this.powderReferenceTempCelsius,
     );
   }
 
@@ -11054,6 +11190,16 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
     if (loadedBy.present) {
       map['loaded_by'] = Variable<String>(loadedBy.value);
     }
+    if (powderTempSensitivityFpsPerCelsius.present) {
+      map['powder_temp_sensitivity_fps_per_celsius'] = Variable<double>(
+        powderTempSensitivityFpsPerCelsius.value,
+      );
+    }
+    if (powderReferenceTempCelsius.present) {
+      map['powder_reference_temp_celsius'] = Variable<double>(
+        powderReferenceTempCelsius.value,
+      );
+    }
     return map;
   }
 
@@ -11118,7 +11264,11 @@ class UserLoadsCompanion extends UpdateCompanion<UserLoadRow> {
           ..write('comparatorInsertUsed: $comparatorInsertUsed, ')
           ..write('chronographUsed: $chronographUsed, ')
           ..write('boreState: $boreState, ')
-          ..write('loadedBy: $loadedBy')
+          ..write('loadedBy: $loadedBy, ')
+          ..write(
+            'powderTempSensitivityFpsPerCelsius: $powderTempSensitivityFpsPerCelsius, ',
+          )
+          ..write('powderReferenceTempCelsius: $powderReferenceTempCelsius')
           ..write(')'))
         .toString();
   }
@@ -11398,6 +11548,75 @@ class $UserFirearmsTable extends UserFirearms
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _twistDirectionMeta = const VerificationMeta(
+    'twistDirection',
+  );
+  @override
+  late final GeneratedColumn<String> twistDirection = GeneratedColumn<String>(
+    'twist_direction',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('right'),
+  );
+  static const VerificationMeta _sightScaleVerticalMeta =
+      const VerificationMeta('sightScaleVertical');
+  @override
+  late final GeneratedColumn<double> sightScaleVertical =
+      GeneratedColumn<double>(
+        'sight_scale_vertical',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(1.0),
+      );
+  static const VerificationMeta _sightScaleHorizontalMeta =
+      const VerificationMeta('sightScaleHorizontal');
+  @override
+  late final GeneratedColumn<double> sightScaleHorizontal =
+      GeneratedColumn<double>(
+        'sight_scale_horizontal',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(1.0),
+      );
+  static const VerificationMeta _zeroPressureInHgMeta = const VerificationMeta(
+    'zeroPressureInHg',
+  );
+  @override
+  late final GeneratedColumn<double> zeroPressureInHg = GeneratedColumn<double>(
+    'zero_pressure_in_hg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _zeroTemperatureFMeta = const VerificationMeta(
+    'zeroTemperatureF',
+  );
+  @override
+  late final GeneratedColumn<double> zeroTemperatureF = GeneratedColumn<double>(
+    'zero_temperature_f',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _zeroHumidityPctMeta = const VerificationMeta(
+    'zeroHumidityPct',
+  );
+  @override
+  late final GeneratedColumn<double> zeroHumidityPct = GeneratedColumn<double>(
+    'zero_humidity_pct',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -11425,6 +11644,12 @@ class $UserFirearmsTable extends UserFirearms
     sightHeightIn,
     opticsId,
     reticleId,
+    twistDirection,
+    sightScaleVertical,
+    sightScaleHorizontal,
+    zeroPressureInHg,
+    zeroTemperatureF,
+    zeroHumidityPct,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -11623,6 +11848,60 @@ class $UserFirearmsTable extends UserFirearms
         reticleId.isAcceptableOrUnknown(data['reticle_id']!, _reticleIdMeta),
       );
     }
+    if (data.containsKey('twist_direction')) {
+      context.handle(
+        _twistDirectionMeta,
+        twistDirection.isAcceptableOrUnknown(
+          data['twist_direction']!,
+          _twistDirectionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sight_scale_vertical')) {
+      context.handle(
+        _sightScaleVerticalMeta,
+        sightScaleVertical.isAcceptableOrUnknown(
+          data['sight_scale_vertical']!,
+          _sightScaleVerticalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sight_scale_horizontal')) {
+      context.handle(
+        _sightScaleHorizontalMeta,
+        sightScaleHorizontal.isAcceptableOrUnknown(
+          data['sight_scale_horizontal']!,
+          _sightScaleHorizontalMeta,
+        ),
+      );
+    }
+    if (data.containsKey('zero_pressure_in_hg')) {
+      context.handle(
+        _zeroPressureInHgMeta,
+        zeroPressureInHg.isAcceptableOrUnknown(
+          data['zero_pressure_in_hg']!,
+          _zeroPressureInHgMeta,
+        ),
+      );
+    }
+    if (data.containsKey('zero_temperature_f')) {
+      context.handle(
+        _zeroTemperatureFMeta,
+        zeroTemperatureF.isAcceptableOrUnknown(
+          data['zero_temperature_f']!,
+          _zeroTemperatureFMeta,
+        ),
+      );
+    }
+    if (data.containsKey('zero_humidity_pct')) {
+      context.handle(
+        _zeroHumidityPctMeta,
+        zeroHumidityPct.isAcceptableOrUnknown(
+          data['zero_humidity_pct']!,
+          _zeroHumidityPctMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -11732,6 +12011,30 @@ class $UserFirearmsTable extends UserFirearms
         DriftSqlType.int,
         data['${effectivePrefix}reticle_id'],
       ),
+      twistDirection: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}twist_direction'],
+      )!,
+      sightScaleVertical: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sight_scale_vertical'],
+      )!,
+      sightScaleHorizontal: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}sight_scale_horizontal'],
+      )!,
+      zeroPressureInHg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}zero_pressure_in_hg'],
+      ),
+      zeroTemperatureF: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}zero_temperature_f'],
+      ),
+      zeroHumidityPct: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}zero_humidity_pct'],
+      ),
     );
   }
 
@@ -11793,6 +12096,38 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
   /// reticle picker pre-fills this from the linked optic's
   /// `Optics.reticleId` if one is set.
   final int? reticleId;
+
+  /// Direction of the rifling twist as viewed from behind the muzzle.
+  /// `'right'` is the dominant US convention; `'left'` flips the sign of
+  /// the spin-drift correction in the solver. Defaults to `'right'`.
+  final String twistDirection;
+
+  /// Vertical sight scale factor — multiplies the elevation hold
+  /// reported by the solver. Used when the user has measured a
+  /// turret-tracking error (e.g. a scope that dials 0.95 mil for a
+  /// commanded 1.00 mil). Defaults to 1.0 (no correction).
+  final double sightScaleVertical;
+
+  /// Horizontal sight scale factor — same idea, applied to the windage
+  /// hold. Defaults to 1.0.
+  final double sightScaleHorizontal;
+
+  /// Atmospheric pressure (inHg) at the time the rifle was zeroed.
+  /// When all three zero-atmosphere fields are non-null, the solver
+  /// computes the bore-axis-to-line-of-sight offset under the zero
+  /// atmosphere and applies it as a constant correction at runtime,
+  /// eliminating the "I zeroed at sea level but I'm shooting at
+  /// 5000 ft" elevation error. Null falls back to the runtime
+  /// atmosphere (legacy behaviour).
+  final double? zeroPressureInHg;
+
+  /// Air temperature (°F) at the time the rifle was zeroed. See
+  /// [zeroPressureInHg] for behaviour.
+  final double? zeroTemperatureF;
+
+  /// Relative humidity (%) at the time the rifle was zeroed. See
+  /// [zeroPressureInHg] for behaviour.
+  final double? zeroHumidityPct;
   const UserFirearmRow({
     required this.id,
     required this.name,
@@ -11819,6 +12154,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     this.sightHeightIn,
     this.opticsId,
     this.reticleId,
+    required this.twistDirection,
+    required this.sightScaleVertical,
+    required this.sightScaleHorizontal,
+    this.zeroPressureInHg,
+    this.zeroTemperatureF,
+    this.zeroHumidityPct,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -11894,6 +12235,18 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     if (!nullToAbsent || reticleId != null) {
       map['reticle_id'] = Variable<int>(reticleId);
     }
+    map['twist_direction'] = Variable<String>(twistDirection);
+    map['sight_scale_vertical'] = Variable<double>(sightScaleVertical);
+    map['sight_scale_horizontal'] = Variable<double>(sightScaleHorizontal);
+    if (!nullToAbsent || zeroPressureInHg != null) {
+      map['zero_pressure_in_hg'] = Variable<double>(zeroPressureInHg);
+    }
+    if (!nullToAbsent || zeroTemperatureF != null) {
+      map['zero_temperature_f'] = Variable<double>(zeroTemperatureF);
+    }
+    if (!nullToAbsent || zeroHumidityPct != null) {
+      map['zero_humidity_pct'] = Variable<double>(zeroHumidityPct);
+    }
     return map;
   }
 
@@ -11964,6 +12317,18 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       reticleId: reticleId == null && nullToAbsent
           ? const Value.absent()
           : Value(reticleId),
+      twistDirection: Value(twistDirection),
+      sightScaleVertical: Value(sightScaleVertical),
+      sightScaleHorizontal: Value(sightScaleHorizontal),
+      zeroPressureInHg: zeroPressureInHg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(zeroPressureInHg),
+      zeroTemperatureF: zeroTemperatureF == null && nullToAbsent
+          ? const Value.absent()
+          : Value(zeroTemperatureF),
+      zeroHumidityPct: zeroHumidityPct == null && nullToAbsent
+          ? const Value.absent()
+          : Value(zeroHumidityPct),
     );
   }
 
@@ -12010,6 +12375,16 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       sightHeightIn: serializer.fromJson<double?>(json['sightHeightIn']),
       opticsId: serializer.fromJson<int?>(json['opticsId']),
       reticleId: serializer.fromJson<int?>(json['reticleId']),
+      twistDirection: serializer.fromJson<String>(json['twistDirection']),
+      sightScaleVertical: serializer.fromJson<double>(
+        json['sightScaleVertical'],
+      ),
+      sightScaleHorizontal: serializer.fromJson<double>(
+        json['sightScaleHorizontal'],
+      ),
+      zeroPressureInHg: serializer.fromJson<double?>(json['zeroPressureInHg']),
+      zeroTemperatureF: serializer.fromJson<double?>(json['zeroTemperatureF']),
+      zeroHumidityPct: serializer.fromJson<double?>(json['zeroHumidityPct']),
     );
   }
   @override
@@ -12047,6 +12422,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
       'sightHeightIn': serializer.toJson<double?>(sightHeightIn),
       'opticsId': serializer.toJson<int?>(opticsId),
       'reticleId': serializer.toJson<int?>(reticleId),
+      'twistDirection': serializer.toJson<String>(twistDirection),
+      'sightScaleVertical': serializer.toJson<double>(sightScaleVertical),
+      'sightScaleHorizontal': serializer.toJson<double>(sightScaleHorizontal),
+      'zeroPressureInHg': serializer.toJson<double?>(zeroPressureInHg),
+      'zeroTemperatureF': serializer.toJson<double?>(zeroTemperatureF),
+      'zeroHumidityPct': serializer.toJson<double?>(zeroHumidityPct),
     };
   }
 
@@ -12076,6 +12457,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     Value<double?> sightHeightIn = const Value.absent(),
     Value<int?> opticsId = const Value.absent(),
     Value<int?> reticleId = const Value.absent(),
+    String? twistDirection,
+    double? sightScaleVertical,
+    double? sightScaleHorizontal,
+    Value<double?> zeroPressureInHg = const Value.absent(),
+    Value<double?> zeroTemperatureF = const Value.absent(),
+    Value<double?> zeroHumidityPct = const Value.absent(),
   }) => UserFirearmRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -12122,6 +12509,18 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
         : this.sightHeightIn,
     opticsId: opticsId.present ? opticsId.value : this.opticsId,
     reticleId: reticleId.present ? reticleId.value : this.reticleId,
+    twistDirection: twistDirection ?? this.twistDirection,
+    sightScaleVertical: sightScaleVertical ?? this.sightScaleVertical,
+    sightScaleHorizontal: sightScaleHorizontal ?? this.sightScaleHorizontal,
+    zeroPressureInHg: zeroPressureInHg.present
+        ? zeroPressureInHg.value
+        : this.zeroPressureInHg,
+    zeroTemperatureF: zeroTemperatureF.present
+        ? zeroTemperatureF.value
+        : this.zeroTemperatureF,
+    zeroHumidityPct: zeroHumidityPct.present
+        ? zeroHumidityPct.value
+        : this.zeroHumidityPct,
   );
   UserFirearmRow copyWithCompanion(UserFirearmsCompanion data) {
     return UserFirearmRow(
@@ -12176,6 +12575,24 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           : this.sightHeightIn,
       opticsId: data.opticsId.present ? data.opticsId.value : this.opticsId,
       reticleId: data.reticleId.present ? data.reticleId.value : this.reticleId,
+      twistDirection: data.twistDirection.present
+          ? data.twistDirection.value
+          : this.twistDirection,
+      sightScaleVertical: data.sightScaleVertical.present
+          ? data.sightScaleVertical.value
+          : this.sightScaleVertical,
+      sightScaleHorizontal: data.sightScaleHorizontal.present
+          ? data.sightScaleHorizontal.value
+          : this.sightScaleHorizontal,
+      zeroPressureInHg: data.zeroPressureInHg.present
+          ? data.zeroPressureInHg.value
+          : this.zeroPressureInHg,
+      zeroTemperatureF: data.zeroTemperatureF.present
+          ? data.zeroTemperatureF.value
+          : this.zeroTemperatureF,
+      zeroHumidityPct: data.zeroHumidityPct.present
+          ? data.zeroHumidityPct.value
+          : this.zeroHumidityPct,
     );
   }
 
@@ -12208,7 +12625,13 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           ..write('defaultZeroRangeYd: $defaultZeroRangeYd, ')
           ..write('sightHeightIn: $sightHeightIn, ')
           ..write('opticsId: $opticsId, ')
-          ..write('reticleId: $reticleId')
+          ..write('reticleId: $reticleId, ')
+          ..write('twistDirection: $twistDirection, ')
+          ..write('sightScaleVertical: $sightScaleVertical, ')
+          ..write('sightScaleHorizontal: $sightScaleHorizontal, ')
+          ..write('zeroPressureInHg: $zeroPressureInHg, ')
+          ..write('zeroTemperatureF: $zeroTemperatureF, ')
+          ..write('zeroHumidityPct: $zeroHumidityPct')
           ..write(')'))
         .toString();
   }
@@ -12240,6 +12663,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
     sightHeightIn,
     opticsId,
     reticleId,
+    twistDirection,
+    sightScaleVertical,
+    sightScaleHorizontal,
+    zeroPressureInHg,
+    zeroTemperatureF,
+    zeroHumidityPct,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -12270,7 +12699,13 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
           other.defaultZeroRangeYd == this.defaultZeroRangeYd &&
           other.sightHeightIn == this.sightHeightIn &&
           other.opticsId == this.opticsId &&
-          other.reticleId == this.reticleId);
+          other.reticleId == this.reticleId &&
+          other.twistDirection == this.twistDirection &&
+          other.sightScaleVertical == this.sightScaleVertical &&
+          other.sightScaleHorizontal == this.sightScaleHorizontal &&
+          other.zeroPressureInHg == this.zeroPressureInHg &&
+          other.zeroTemperatureF == this.zeroTemperatureF &&
+          other.zeroHumidityPct == this.zeroHumidityPct);
 }
 
 class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
@@ -12299,6 +12734,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
   final Value<double?> sightHeightIn;
   final Value<int?> opticsId;
   final Value<int?> reticleId;
+  final Value<String> twistDirection;
+  final Value<double> sightScaleVertical;
+  final Value<double> sightScaleHorizontal;
+  final Value<double?> zeroPressureInHg;
+  final Value<double?> zeroTemperatureF;
+  final Value<double?> zeroHumidityPct;
   const UserFirearmsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -12325,6 +12766,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.sightHeightIn = const Value.absent(),
     this.opticsId = const Value.absent(),
     this.reticleId = const Value.absent(),
+    this.twistDirection = const Value.absent(),
+    this.sightScaleVertical = const Value.absent(),
+    this.sightScaleHorizontal = const Value.absent(),
+    this.zeroPressureInHg = const Value.absent(),
+    this.zeroTemperatureF = const Value.absent(),
+    this.zeroHumidityPct = const Value.absent(),
   });
   UserFirearmsCompanion.insert({
     this.id = const Value.absent(),
@@ -12352,6 +12799,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     this.sightHeightIn = const Value.absent(),
     this.opticsId = const Value.absent(),
     this.reticleId = const Value.absent(),
+    this.twistDirection = const Value.absent(),
+    this.sightScaleVertical = const Value.absent(),
+    this.sightScaleHorizontal = const Value.absent(),
+    this.zeroPressureInHg = const Value.absent(),
+    this.zeroTemperatureF = const Value.absent(),
+    this.zeroHumidityPct = const Value.absent(),
   }) : name = Value(name);
   static Insertable<UserFirearmRow> custom({
     Expression<int>? id,
@@ -12379,6 +12832,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Expression<double>? sightHeightIn,
     Expression<int>? opticsId,
     Expression<int>? reticleId,
+    Expression<String>? twistDirection,
+    Expression<double>? sightScaleVertical,
+    Expression<double>? sightScaleHorizontal,
+    Expression<double>? zeroPressureInHg,
+    Expression<double>? zeroTemperatureF,
+    Expression<double>? zeroHumidityPct,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -12413,6 +12872,14 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       if (sightHeightIn != null) 'sight_height_in': sightHeightIn,
       if (opticsId != null) 'optics_id': opticsId,
       if (reticleId != null) 'reticle_id': reticleId,
+      if (twistDirection != null) 'twist_direction': twistDirection,
+      if (sightScaleVertical != null)
+        'sight_scale_vertical': sightScaleVertical,
+      if (sightScaleHorizontal != null)
+        'sight_scale_horizontal': sightScaleHorizontal,
+      if (zeroPressureInHg != null) 'zero_pressure_in_hg': zeroPressureInHg,
+      if (zeroTemperatureF != null) 'zero_temperature_f': zeroTemperatureF,
+      if (zeroHumidityPct != null) 'zero_humidity_pct': zeroHumidityPct,
     });
   }
 
@@ -12442,6 +12909,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     Value<double?>? sightHeightIn,
     Value<int?>? opticsId,
     Value<int?>? reticleId,
+    Value<String>? twistDirection,
+    Value<double>? sightScaleVertical,
+    Value<double>? sightScaleHorizontal,
+    Value<double?>? zeroPressureInHg,
+    Value<double?>? zeroTemperatureF,
+    Value<double?>? zeroHumidityPct,
   }) {
     return UserFirearmsCompanion(
       id: id ?? this.id,
@@ -12472,6 +12945,12 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
       sightHeightIn: sightHeightIn ?? this.sightHeightIn,
       opticsId: opticsId ?? this.opticsId,
       reticleId: reticleId ?? this.reticleId,
+      twistDirection: twistDirection ?? this.twistDirection,
+      sightScaleVertical: sightScaleVertical ?? this.sightScaleVertical,
+      sightScaleHorizontal: sightScaleHorizontal ?? this.sightScaleHorizontal,
+      zeroPressureInHg: zeroPressureInHg ?? this.zeroPressureInHg,
+      zeroTemperatureF: zeroTemperatureF ?? this.zeroTemperatureF,
+      zeroHumidityPct: zeroHumidityPct ?? this.zeroHumidityPct,
     );
   }
 
@@ -12561,6 +13040,26 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
     if (reticleId.present) {
       map['reticle_id'] = Variable<int>(reticleId.value);
     }
+    if (twistDirection.present) {
+      map['twist_direction'] = Variable<String>(twistDirection.value);
+    }
+    if (sightScaleVertical.present) {
+      map['sight_scale_vertical'] = Variable<double>(sightScaleVertical.value);
+    }
+    if (sightScaleHorizontal.present) {
+      map['sight_scale_horizontal'] = Variable<double>(
+        sightScaleHorizontal.value,
+      );
+    }
+    if (zeroPressureInHg.present) {
+      map['zero_pressure_in_hg'] = Variable<double>(zeroPressureInHg.value);
+    }
+    if (zeroTemperatureF.present) {
+      map['zero_temperature_f'] = Variable<double>(zeroTemperatureF.value);
+    }
+    if (zeroHumidityPct.present) {
+      map['zero_humidity_pct'] = Variable<double>(zeroHumidityPct.value);
+    }
     return map;
   }
 
@@ -12593,7 +13092,13 @@ class UserFirearmsCompanion extends UpdateCompanion<UserFirearmRow> {
           ..write('defaultZeroRangeYd: $defaultZeroRangeYd, ')
           ..write('sightHeightIn: $sightHeightIn, ')
           ..write('opticsId: $opticsId, ')
-          ..write('reticleId: $reticleId')
+          ..write('reticleId: $reticleId, ')
+          ..write('twistDirection: $twistDirection, ')
+          ..write('sightScaleVertical: $sightScaleVertical, ')
+          ..write('sightScaleHorizontal: $sightScaleHorizontal, ')
+          ..write('zeroPressureInHg: $zeroPressureInHg, ')
+          ..write('zeroTemperatureF: $zeroTemperatureF, ')
+          ..write('zeroHumidityPct: $zeroHumidityPct')
           ..write(')'))
         .toString();
   }
@@ -20935,6 +21440,17 @@ class $RangeDaySessionsTable extends RangeDaySessions
         type: DriftSqlType.double,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _inclineAngleDegMeta = const VerificationMeta(
+    'inclineAngleDeg',
+  );
+  @override
+  late final GeneratedColumn<double> inclineAngleDeg = GeneratedColumn<double>(
+    'incline_angle_deg',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -20963,6 +21479,7 @@ class $RangeDaySessionsTable extends RangeDaySessions
     correctionUnit,
     cantDegrees,
     shotAzimuthDegrees,
+    inclineAngleDeg,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -21174,6 +21691,15 @@ class $RangeDaySessionsTable extends RangeDaySessions
         ),
       );
     }
+    if (data.containsKey('incline_angle_deg')) {
+      context.handle(
+        _inclineAngleDegMeta,
+        inclineAngleDeg.isAcceptableOrUnknown(
+          data['incline_angle_deg']!,
+          _inclineAngleDegMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21287,6 +21813,10 @@ class $RangeDaySessionsTable extends RangeDaySessions
         DriftSqlType.double,
         data['${effectivePrefix}shot_azimuth_degrees'],
       ),
+      inclineAngleDeg: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}incline_angle_deg'],
+      ),
     );
   }
 
@@ -21372,6 +21902,12 @@ class RangeDaySessionRow extends DataClass
   /// preserved next to the cant for archival purposes even if the
   /// shooter later edits the field.
   final double? shotAzimuthDegrees;
+
+  /// Incline / decline angle of the shot, in degrees. Positive = uphill,
+  /// negative = downhill. The solver applies the improved-rifleman's
+  /// rule (drop scaled by `cos(angle)^1.5`) when this field is non-null.
+  /// Null means "level shot" — no correction.
+  final double? inclineAngleDeg;
   const RangeDaySessionRow({
     required this.id,
     required this.name,
@@ -21399,6 +21935,7 @@ class RangeDaySessionRow extends DataClass
     required this.correctionUnit,
     this.cantDegrees,
     this.shotAzimuthDegrees,
+    this.inclineAngleDeg,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -21466,6 +22003,9 @@ class RangeDaySessionRow extends DataClass
     }
     if (!nullToAbsent || shotAzimuthDegrees != null) {
       map['shot_azimuth_degrees'] = Variable<double>(shotAzimuthDegrees);
+    }
+    if (!nullToAbsent || inclineAngleDeg != null) {
+      map['incline_angle_deg'] = Variable<double>(inclineAngleDeg);
     }
     return map;
   }
@@ -21536,6 +22076,9 @@ class RangeDaySessionRow extends DataClass
       shotAzimuthDegrees: shotAzimuthDegrees == null && nullToAbsent
           ? const Value.absent()
           : Value(shotAzimuthDegrees),
+      inclineAngleDeg: inclineAngleDeg == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inclineAngleDeg),
     );
   }
 
@@ -21577,6 +22120,7 @@ class RangeDaySessionRow extends DataClass
       shotAzimuthDegrees: serializer.fromJson<double?>(
         json['shotAzimuthDegrees'],
       ),
+      inclineAngleDeg: serializer.fromJson<double?>(json['inclineAngleDeg']),
     );
   }
   @override
@@ -21609,6 +22153,7 @@ class RangeDaySessionRow extends DataClass
       'correctionUnit': serializer.toJson<String>(correctionUnit),
       'cantDegrees': serializer.toJson<double?>(cantDegrees),
       'shotAzimuthDegrees': serializer.toJson<double?>(shotAzimuthDegrees),
+      'inclineAngleDeg': serializer.toJson<double?>(inclineAngleDeg),
     };
   }
 
@@ -21639,6 +22184,7 @@ class RangeDaySessionRow extends DataClass
     String? correctionUnit,
     Value<double?> cantDegrees = const Value.absent(),
     Value<double?> shotAzimuthDegrees = const Value.absent(),
+    Value<double?> inclineAngleDeg = const Value.absent(),
   }) => RangeDaySessionRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -21678,6 +22224,9 @@ class RangeDaySessionRow extends DataClass
     shotAzimuthDegrees: shotAzimuthDegrees.present
         ? shotAzimuthDegrees.value
         : this.shotAzimuthDegrees,
+    inclineAngleDeg: inclineAngleDeg.present
+        ? inclineAngleDeg.value
+        : this.inclineAngleDeg,
   );
   RangeDaySessionRow copyWithCompanion(RangeDaySessionsCompanion data) {
     return RangeDaySessionRow(
@@ -21735,6 +22284,9 @@ class RangeDaySessionRow extends DataClass
       shotAzimuthDegrees: data.shotAzimuthDegrees.present
           ? data.shotAzimuthDegrees.value
           : this.shotAzimuthDegrees,
+      inclineAngleDeg: data.inclineAngleDeg.present
+          ? data.inclineAngleDeg.value
+          : this.inclineAngleDeg,
     );
   }
 
@@ -21766,7 +22318,8 @@ class RangeDaySessionRow extends DataClass
           ..write('reticleId: $reticleId, ')
           ..write('correctionUnit: $correctionUnit, ')
           ..write('cantDegrees: $cantDegrees, ')
-          ..write('shotAzimuthDegrees: $shotAzimuthDegrees')
+          ..write('shotAzimuthDegrees: $shotAzimuthDegrees, ')
+          ..write('inclineAngleDeg: $inclineAngleDeg')
           ..write(')'))
         .toString();
   }
@@ -21799,6 +22352,7 @@ class RangeDaySessionRow extends DataClass
     correctionUnit,
     cantDegrees,
     shotAzimuthDegrees,
+    inclineAngleDeg,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -21829,7 +22383,8 @@ class RangeDaySessionRow extends DataClass
           other.reticleId == this.reticleId &&
           other.correctionUnit == this.correctionUnit &&
           other.cantDegrees == this.cantDegrees &&
-          other.shotAzimuthDegrees == this.shotAzimuthDegrees);
+          other.shotAzimuthDegrees == this.shotAzimuthDegrees &&
+          other.inclineAngleDeg == this.inclineAngleDeg);
 }
 
 class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
@@ -21859,6 +22414,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
   final Value<String> correctionUnit;
   final Value<double?> cantDegrees;
   final Value<double?> shotAzimuthDegrees;
+  final Value<double?> inclineAngleDeg;
   const RangeDaySessionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -21886,6 +22442,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.correctionUnit = const Value.absent(),
     this.cantDegrees = const Value.absent(),
     this.shotAzimuthDegrees = const Value.absent(),
+    this.inclineAngleDeg = const Value.absent(),
   });
   RangeDaySessionsCompanion.insert({
     this.id = const Value.absent(),
@@ -21914,6 +22471,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.correctionUnit = const Value.absent(),
     this.cantDegrees = const Value.absent(),
     this.shotAzimuthDegrees = const Value.absent(),
+    this.inclineAngleDeg = const Value.absent(),
   }) : name = Value(name),
        date = Value(date),
        distanceYd = Value(distanceYd);
@@ -21944,6 +22502,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Expression<String>? correctionUnit,
     Expression<double>? cantDegrees,
     Expression<double>? shotAzimuthDegrees,
+    Expression<double>? inclineAngleDeg,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -21976,6 +22535,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       if (cantDegrees != null) 'cant_degrees': cantDegrees,
       if (shotAzimuthDegrees != null)
         'shot_azimuth_degrees': shotAzimuthDegrees,
+      if (inclineAngleDeg != null) 'incline_angle_deg': inclineAngleDeg,
     });
   }
 
@@ -22006,6 +22566,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Value<String>? correctionUnit,
     Value<double?>? cantDegrees,
     Value<double?>? shotAzimuthDegrees,
+    Value<double?>? inclineAngleDeg,
   }) {
     return RangeDaySessionsCompanion(
       id: id ?? this.id,
@@ -22034,6 +22595,7 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       correctionUnit: correctionUnit ?? this.correctionUnit,
       cantDegrees: cantDegrees ?? this.cantDegrees,
       shotAzimuthDegrees: shotAzimuthDegrees ?? this.shotAzimuthDegrees,
+      inclineAngleDeg: inclineAngleDeg ?? this.inclineAngleDeg,
     );
   }
 
@@ -22118,6 +22680,9 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     if (shotAzimuthDegrees.present) {
       map['shot_azimuth_degrees'] = Variable<double>(shotAzimuthDegrees.value);
     }
+    if (inclineAngleDeg.present) {
+      map['incline_angle_deg'] = Variable<double>(inclineAngleDeg.value);
+    }
     return map;
   }
 
@@ -22149,7 +22714,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
           ..write('reticleId: $reticleId, ')
           ..write('correctionUnit: $correctionUnit, ')
           ..write('cantDegrees: $cantDegrees, ')
-          ..write('shotAzimuthDegrees: $shotAzimuthDegrees')
+          ..write('shotAzimuthDegrees: $shotAzimuthDegrees, ')
+          ..write('inclineAngleDeg: $inclineAngleDeg')
           ..write(')'))
         .toString();
   }
@@ -30770,6 +31336,8 @@ typedef $$UserLoadsTableCreateCompanionBuilder =
       Value<String?> chronographUsed,
       Value<String?> boreState,
       Value<String?> loadedBy,
+      Value<double?> powderTempSensitivityFpsPerCelsius,
+      Value<double> powderReferenceTempCelsius,
     });
 typedef $$UserLoadsTableUpdateCompanionBuilder =
     UserLoadsCompanion Function({
@@ -30832,6 +31400,8 @@ typedef $$UserLoadsTableUpdateCompanionBuilder =
       Value<String?> chronographUsed,
       Value<String?> boreState,
       Value<String?> loadedBy,
+      Value<double?> powderTempSensitivityFpsPerCelsius,
+      Value<double> powderReferenceTempCelsius,
     });
 
 final class $$UserLoadsTableReferences
@@ -31261,6 +31831,17 @@ class $$UserLoadsTableFilterComposer
 
   ColumnFilters<String> get loadedBy => $composableBuilder(
     column: $table.loadedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get powderTempSensitivityFpsPerCelsius =>
+      $composableBuilder(
+        column: $table.powderTempSensitivityFpsPerCelsius,
+        builder: (column) => ColumnFilters(column),
+      );
+
+  ColumnFilters<double> get powderReferenceTempCelsius => $composableBuilder(
+    column: $table.powderReferenceTempCelsius,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -31717,6 +32298,17 @@ class $$UserLoadsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get powderTempSensitivityFpsPerCelsius =>
+      $composableBuilder(
+        column: $table.powderTempSensitivityFpsPerCelsius,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<double> get powderReferenceTempCelsius => $composableBuilder(
+    column: $table.powderReferenceTempCelsius,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$PowderLotsTableOrderingComposer get powderLotId {
     final $$PowderLotsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -32056,6 +32648,17 @@ class $$UserLoadsTableAnnotationComposer
   GeneratedColumn<String> get loadedBy =>
       $composableBuilder(column: $table.loadedBy, builder: (column) => column);
 
+  GeneratedColumn<double> get powderTempSensitivityFpsPerCelsius =>
+      $composableBuilder(
+        column: $table.powderTempSensitivityFpsPerCelsius,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<double> get powderReferenceTempCelsius => $composableBuilder(
+    column: $table.powderReferenceTempCelsius,
+    builder: (column) => column,
+  );
+
   $$PowderLotsTableAnnotationComposer get powderLotId {
     final $$PowderLotsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -32321,6 +32924,9 @@ class $$UserLoadsTableTableManager
                 Value<String?> chronographUsed = const Value.absent(),
                 Value<String?> boreState = const Value.absent(),
                 Value<String?> loadedBy = const Value.absent(),
+                Value<double?> powderTempSensitivityFpsPerCelsius =
+                    const Value.absent(),
+                Value<double> powderReferenceTempCelsius = const Value.absent(),
               }) => UserLoadsCompanion(
                 id: id,
                 name: name,
@@ -32381,6 +32987,9 @@ class $$UserLoadsTableTableManager
                 chronographUsed: chronographUsed,
                 boreState: boreState,
                 loadedBy: loadedBy,
+                powderTempSensitivityFpsPerCelsius:
+                    powderTempSensitivityFpsPerCelsius,
+                powderReferenceTempCelsius: powderReferenceTempCelsius,
               ),
           createCompanionCallback:
               ({
@@ -32443,6 +33052,9 @@ class $$UserLoadsTableTableManager
                 Value<String?> chronographUsed = const Value.absent(),
                 Value<String?> boreState = const Value.absent(),
                 Value<String?> loadedBy = const Value.absent(),
+                Value<double?> powderTempSensitivityFpsPerCelsius =
+                    const Value.absent(),
+                Value<double> powderReferenceTempCelsius = const Value.absent(),
               }) => UserLoadsCompanion.insert(
                 id: id,
                 name: name,
@@ -32503,6 +33115,9 @@ class $$UserLoadsTableTableManager
                 chronographUsed: chronographUsed,
                 boreState: boreState,
                 loadedBy: loadedBy,
+                powderTempSensitivityFpsPerCelsius:
+                    powderTempSensitivityFpsPerCelsius,
+                powderReferenceTempCelsius: powderReferenceTempCelsius,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -32722,6 +33337,12 @@ typedef $$UserFirearmsTableCreateCompanionBuilder =
       Value<double?> sightHeightIn,
       Value<int?> opticsId,
       Value<int?> reticleId,
+      Value<String> twistDirection,
+      Value<double> sightScaleVertical,
+      Value<double> sightScaleHorizontal,
+      Value<double?> zeroPressureInHg,
+      Value<double?> zeroTemperatureF,
+      Value<double?> zeroHumidityPct,
     });
 typedef $$UserFirearmsTableUpdateCompanionBuilder =
     UserFirearmsCompanion Function({
@@ -32750,6 +33371,12 @@ typedef $$UserFirearmsTableUpdateCompanionBuilder =
       Value<double?> sightHeightIn,
       Value<int?> opticsId,
       Value<int?> reticleId,
+      Value<String> twistDirection,
+      Value<double> sightScaleVertical,
+      Value<double> sightScaleHorizontal,
+      Value<double?> zeroPressureInHg,
+      Value<double?> zeroTemperatureF,
+      Value<double?> zeroHumidityPct,
     });
 
 final class $$UserFirearmsTableReferences
@@ -32956,6 +33583,36 @@ class $$UserFirearmsTableFilterComposer
 
   ColumnFilters<int> get reticleId => $composableBuilder(
     column: $table.reticleId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get twistDirection => $composableBuilder(
+    column: $table.twistDirection,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sightScaleVertical => $composableBuilder(
+    column: $table.sightScaleVertical,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get sightScaleHorizontal => $composableBuilder(
+    column: $table.sightScaleHorizontal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get zeroPressureInHg => $composableBuilder(
+    column: $table.zeroPressureInHg,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get zeroTemperatureF => $composableBuilder(
+    column: $table.zeroTemperatureF,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get zeroHumidityPct => $composableBuilder(
+    column: $table.zeroHumidityPct,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -33169,6 +33826,36 @@ class $$UserFirearmsTableOrderingComposer
     column: $table.reticleId,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get twistDirection => $composableBuilder(
+    column: $table.twistDirection,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sightScaleVertical => $composableBuilder(
+    column: $table.sightScaleVertical,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get sightScaleHorizontal => $composableBuilder(
+    column: $table.sightScaleHorizontal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get zeroPressureInHg => $composableBuilder(
+    column: $table.zeroPressureInHg,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get zeroTemperatureF => $composableBuilder(
+    column: $table.zeroTemperatureF,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get zeroHumidityPct => $composableBuilder(
+    column: $table.zeroHumidityPct,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$UserFirearmsTableAnnotationComposer
@@ -33280,6 +33967,36 @@ class $$UserFirearmsTableAnnotationComposer
 
   GeneratedColumn<int> get reticleId =>
       $composableBuilder(column: $table.reticleId, builder: (column) => column);
+
+  GeneratedColumn<String> get twistDirection => $composableBuilder(
+    column: $table.twistDirection,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sightScaleVertical => $composableBuilder(
+    column: $table.sightScaleVertical,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get sightScaleHorizontal => $composableBuilder(
+    column: $table.sightScaleHorizontal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get zeroPressureInHg => $composableBuilder(
+    column: $table.zeroPressureInHg,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get zeroTemperatureF => $composableBuilder(
+    column: $table.zeroTemperatureF,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get zeroHumidityPct => $composableBuilder(
+    column: $table.zeroHumidityPct,
+    builder: (column) => column,
+  );
 
   Expression<T> batchesRefs<T extends Object>(
     Expression<T> Function($$BatchesTableAnnotationComposer a) f,
@@ -33417,6 +34134,12 @@ class $$UserFirearmsTableTableManager
                 Value<double?> sightHeightIn = const Value.absent(),
                 Value<int?> opticsId = const Value.absent(),
                 Value<int?> reticleId = const Value.absent(),
+                Value<String> twistDirection = const Value.absent(),
+                Value<double> sightScaleVertical = const Value.absent(),
+                Value<double> sightScaleHorizontal = const Value.absent(),
+                Value<double?> zeroPressureInHg = const Value.absent(),
+                Value<double?> zeroTemperatureF = const Value.absent(),
+                Value<double?> zeroHumidityPct = const Value.absent(),
               }) => UserFirearmsCompanion(
                 id: id,
                 name: name,
@@ -33443,6 +34166,12 @@ class $$UserFirearmsTableTableManager
                 sightHeightIn: sightHeightIn,
                 opticsId: opticsId,
                 reticleId: reticleId,
+                twistDirection: twistDirection,
+                sightScaleVertical: sightScaleVertical,
+                sightScaleHorizontal: sightScaleHorizontal,
+                zeroPressureInHg: zeroPressureInHg,
+                zeroTemperatureF: zeroTemperatureF,
+                zeroHumidityPct: zeroHumidityPct,
               ),
           createCompanionCallback:
               ({
@@ -33472,6 +34201,12 @@ class $$UserFirearmsTableTableManager
                 Value<double?> sightHeightIn = const Value.absent(),
                 Value<int?> opticsId = const Value.absent(),
                 Value<int?> reticleId = const Value.absent(),
+                Value<String> twistDirection = const Value.absent(),
+                Value<double> sightScaleVertical = const Value.absent(),
+                Value<double> sightScaleHorizontal = const Value.absent(),
+                Value<double?> zeroPressureInHg = const Value.absent(),
+                Value<double?> zeroTemperatureF = const Value.absent(),
+                Value<double?> zeroHumidityPct = const Value.absent(),
               }) => UserFirearmsCompanion.insert(
                 id: id,
                 name: name,
@@ -33498,6 +34233,12 @@ class $$UserFirearmsTableTableManager
                 sightHeightIn: sightHeightIn,
                 opticsId: opticsId,
                 reticleId: reticleId,
+                twistDirection: twistDirection,
+                sightScaleVertical: sightScaleVertical,
+                sightScaleHorizontal: sightScaleHorizontal,
+                zeroPressureInHg: zeroPressureInHg,
+                zeroTemperatureF: zeroTemperatureF,
+                zeroHumidityPct: zeroHumidityPct,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -38666,6 +39407,7 @@ typedef $$RangeDaySessionsTableCreateCompanionBuilder =
       Value<String> correctionUnit,
       Value<double?> cantDegrees,
       Value<double?> shotAzimuthDegrees,
+      Value<double?> inclineAngleDeg,
     });
 typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
     RangeDaySessionsCompanion Function({
@@ -38695,6 +39437,7 @@ typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
       Value<String> correctionUnit,
       Value<double?> cantDegrees,
       Value<double?> shotAzimuthDegrees,
+      Value<double?> inclineAngleDeg,
     });
 
 final class $$RangeDaySessionsTableReferences
@@ -38871,6 +39614,11 @@ class $$RangeDaySessionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get inclineAngleDeg => $composableBuilder(
+    column: $table.inclineAngleDeg,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> shotImpactsRefs(
     Expression<bool> Function($$ShotImpactsTableFilterComposer f) f,
   ) {
@@ -39035,6 +39783,11 @@ class $$RangeDaySessionsTableOrderingComposer
     column: $table.shotAzimuthDegrees,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get inclineAngleDeg => $composableBuilder(
+    column: $table.inclineAngleDeg,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RangeDaySessionsTableAnnotationComposer
@@ -39152,6 +39905,11 @@ class $$RangeDaySessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get inclineAngleDeg => $composableBuilder(
+    column: $table.inclineAngleDeg,
+    builder: (column) => column,
+  );
+
   Expression<T> shotImpactsRefs<T extends Object>(
     Expression<T> Function($$ShotImpactsTableAnnotationComposer a) f,
   ) {
@@ -39234,6 +39992,7 @@ class $$RangeDaySessionsTableTableManager
                 Value<String> correctionUnit = const Value.absent(),
                 Value<double?> cantDegrees = const Value.absent(),
                 Value<double?> shotAzimuthDegrees = const Value.absent(),
+                Value<double?> inclineAngleDeg = const Value.absent(),
               }) => RangeDaySessionsCompanion(
                 id: id,
                 name: name,
@@ -39261,6 +40020,7 @@ class $$RangeDaySessionsTableTableManager
                 correctionUnit: correctionUnit,
                 cantDegrees: cantDegrees,
                 shotAzimuthDegrees: shotAzimuthDegrees,
+                inclineAngleDeg: inclineAngleDeg,
               ),
           createCompanionCallback:
               ({
@@ -39290,6 +40050,7 @@ class $$RangeDaySessionsTableTableManager
                 Value<String> correctionUnit = const Value.absent(),
                 Value<double?> cantDegrees = const Value.absent(),
                 Value<double?> shotAzimuthDegrees = const Value.absent(),
+                Value<double?> inclineAngleDeg = const Value.absent(),
               }) => RangeDaySessionsCompanion.insert(
                 id: id,
                 name: name,
@@ -39317,6 +40078,7 @@ class $$RangeDaySessionsTableTableManager
                 correctionUnit: correctionUnit,
                 cantDegrees: cantDegrees,
                 shotAzimuthDegrees: shotAzimuthDegrees,
+                inclineAngleDeg: inclineAngleDeg,
               ),
           withReferenceMapper: (p0) => p0
               .map(
