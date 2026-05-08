@@ -16,6 +16,13 @@
 //   button.)
 // * Autosave **on, error** — error icon + "Save failed".
 //
+// On the right edge it also hosts a tiny [CloudSyncDot] — green when
+// synced, amber while syncing, red on error. The dot self-hides for
+// free users and when Cloud Sync is disabled, so it only ever lights
+// up when continuous sync is actually running. This keeps form-level
+// "is my data safely on the cloud?" feedback in the same place as
+// the per-form save status.
+//
 // Subscribes to both the global [AutoSaveService] preference (so
 // toggling it in Settings updates the banner) and the per-form
 // controller's `status` / `lastSavedAt` notifiers (so it reflects the
@@ -48,6 +55,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/auto_save_service.dart';
+import 'cloud_sync_indicator.dart';
 
 class AutoSaveBanner extends StatelessWidget {
   const AutoSaveBanner({super.key, required this.controller});
@@ -151,6 +159,11 @@ class AutoSaveBanner extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            // Cloud Sync dot. Renders nothing for free users / when sync
+            // is disabled — see [CloudSyncDot] for the gating logic. The
+            // 10px size is consistent with the AppBar variant.
+            const SizedBox(width: 8),
+            const CloudSyncDot(size: 10),
           ],
         ),
       ),

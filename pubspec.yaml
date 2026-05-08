@@ -246,11 +246,19 @@ dependencies:
   #                  on the App ID, so dev/CI builds don't break.
   # googleapis / googleapis_auth — Drive API client for the cross-platform
   #                                Google Drive (appDataFolder) backup target.
+  # flutter_secure_storage — iOS Keychain / Android Keystore wrapper used
+  #                          by Cloud Sync (feature #6) to cache the
+  #                          end-to-end-encryption passphrase across launches
+  #                          so AutoSave can sync without re-prompting. Never
+  #                          touches SharedPreferences. The passphrase entry
+  #                          is keyed per-provider so iCloud, Drive, and
+  #                          OneDrive can each have their own.
   share_plus: ^10.1.4
   cryptography: ^2.7.0
   icloud_storage: ^2.2.0
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
+  flutter_secure_storage: ^9.2.2
 
   # Pro feature: pull current weather (temperature / pressure / humidity /
   # wind) from open-meteo.com for the ballistics screen's Environment

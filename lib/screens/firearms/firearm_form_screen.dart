@@ -113,6 +113,7 @@ import '../../repositories/firearm_repository.dart';
 import '../../repositories/optics_repository.dart';
 import '../../repositories/reticle_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/unit_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/auto_save_banner.dart';
@@ -224,6 +225,9 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       service: context.read<AutoSaveService>(),
       onSave: _runAutoSave,
       initialSavedRowId: widget.existing?.id,
+      // Cloud Sync hook — no-op when sync is disabled / non-Pro.
+      onSavedToCloud: () =>
+          context.read<CloudSyncService>().scheduleSyncUp(),
     );
 
     // Wire every text controller to autosave so any keystroke marks

@@ -254,6 +254,13 @@ class HitProbabilityService {
         required double wind,
       }) {
         if (mv <= 0 || range <= 0) return null;
+        // Use [BallisticsAccuracy.fast] here on purpose: the
+        // perturbation re-solves run six times per `compute(...)` call
+        // (wind ±, range ±, MV ±) and the user expects sub-300ms
+        // total. The fixed-step RK4 produces results within ~0.3 MIL
+        // of the adaptive Cash–Karp solver for smooth supersonic
+        // flight, and the dispersion-modeling math down-stream
+        // tolerates a few percent of integrator noise.
         final samples = solveTrajectory(
           projectile: projectile,
           environment: envWithWind(wind),
@@ -265,6 +272,8 @@ class HitProbabilityService {
           sampleRangesYards: [range],
           includeSpinDrift: false,
           includeCoriolis: false,
+          includeAerodynamicJump: false,
+          accuracy: BallisticsAccuracy.fast,
         );
         if (samples.isEmpty) return null;
         return samples.first;

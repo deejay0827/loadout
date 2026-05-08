@@ -77,6 +77,7 @@ import '../devices/devices_screen.dart';
 import '../disclaimer/disclaimer_screen.dart';
 import '../legal/terms_screen.dart';
 import '../privacy/privacy_screen.dart';
+import '../sync/cloud_sync_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -258,6 +259,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onTap: _openBackupScreen,
             ),
             ListTile(
+              leading: const Icon(Icons.cloud_sync_outlined),
+              title: const Text('Cloud Sync (Pro)'),
+              subtitle: const Text(
+                'Continuously sync your data to your own iCloud, '
+                'Google Drive, or OneDrive. End-to-end encrypted.',
+              ),
+              onTap: _openCloudSync,
+            ),
+            ListTile(
               leading: const Icon(Icons.workspace_premium_outlined),
               title: const Text('Restore purchases'),
               subtitle: const Text(
@@ -353,6 +363,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _openBackupScreen() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const BackupScreen()),
+    );
+  }
+
+  void _openCloudSync() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CloudSyncScreen()),
     );
   }
 

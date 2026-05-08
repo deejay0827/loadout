@@ -33,10 +33,47 @@
 // the reticle is `aimPoint` if provided, otherwise the canvas center.
 // Reticle Y axis: +1 = up (positive native units = up). Flutter canvas:
 // +Y = down. So we flip Y when we map element coordinates to pixels.
+//
+// ============================================================================
+// HOLD-OVER HIGHLIGHTING
+// ============================================================================
+// When the caller passes a [FiringHoldOver], we paint a filled circle on
+// the reticle at the projected (elevationMil, windageMil) coordinate.
+// The hold-over is always provided in MIL — we convert internally to the
+// reticle's native unit before plotting so the circle lands on whatever
+// hash mark a real shooter would use as their hold. Sign convention:
+//   * elevationMil > 0  → hold UP (impact below LoS at the range)
+//   * windageMil   > 0  → hold RIGHT (wind pushes from the right; the
+//                                     shooter holds into the wind)
 
 import 'package:flutter/material.dart';
 
 import '../data/reticle_library.dart';
+
+/// Firing-solution dial that the renderer projects onto the reticle as a
+/// hold-over highlight. Both fields are in milliradians; the renderer
+/// converts to the reticle's native unit before plotting so a MOA reticle
+/// gets the highlight on the right MOA hash.
+///
+/// Sign convention is "what the shooter is holding for", not the bullet's
+/// raw drop / drift:
+///   * `elevationMil` positive — hold UP (compensates for bullet drop).
+///   * `windageMil`   positive — hold RIGHT (compensates for left-to-right wind).
+///
+/// Range Day passes the live firing solution into this object after
+/// converting the solver's drop / wind drift inches to mils at the active
+/// range via [bu.inchesToMilAtYards].
+class FiringHoldOver {
+  const FiringHoldOver({
+    required this.elevationMil,
+    required this.windageMil,
+  });
+
+  final double elevationMil;
+  final double windageMil;
+
+  bool get isZero => elevationMil.abs() < 1e-6 && windageMil.abs() < 1e-6;
+}
 
 class ReticleRenderer extends StatelessWidget {
   const ReticleRenderer({
@@ -48,6 +85,8 @@ class ReticleRenderer extends StatelessWidget {
     this.aimPoint,
     this.size = const Size(280, 280),
     this.showUnitOverlay = true,
+    this.holdOver,
+    this.holdOverHighlightColor,
   });
 
   /// The reticle definition to render.
@@ -78,10 +117,24 @@ class ReticleRenderer extends StatelessWidget {
   /// where the label would crowd the reticle.
   final bool showUnitOverlay;
 
+  /// When non-null, paint a hold-over highlight at the matching hash on
+  /// the reticle. The renderer projects (elevationMil, windageMil) into
+  /// the reticle's native units and draws a small filled circle there
+  /// — visually telling the shooter "this is the dial / hold the firing
+  /// solution is asking for".
+  final FiringHoldOver? holdOver;
+
+  /// Override the hold-over highlight color. Defaults to the theme's
+  /// secondary at 0.85 alpha so it stands apart from the reticle line
+  /// color (which uses primary by default).
+  final Color? holdOverHighlightColor;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final lineColor = color ?? theme.colorScheme.primary;
+    final highlight = holdOverHighlightColor ??
+        theme.colorScheme.secondary.withValues(alpha: 0.85);
     return SizedBox(
       width: size.width,
       height: size.height,
@@ -94,6 +147,8 @@ class ReticleRenderer extends StatelessWidget {
           lineColor: lineColor,
           aimPoint: aimPoint,
           showUnitOverlay: showUnitOverlay,
+          holdOver: holdOver,
+          holdOverHighlightColor: highlight,
         ),
       ),
     );
@@ -108,6 +163,8 @@ class _ReticlePainter extends CustomPainter {
     required this.lineColor,
     required this.aimPoint,
     required this.showUnitOverlay,
+    required this.holdOver,
+    required this.holdOverHighlightColor,
   });
 
   final ReticleDefinition reticle;
@@ -116,6 +173,8 @@ class _ReticlePainter extends CustomPainter {
   final Color lineColor;
   final Offset? aimPoint;
   final bool showUnitOverlay;
+  final FiringHoldOver? holdOver;
+  final Color holdOverHighlightColor;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -235,6 +294,63 @@ class _ReticlePainter extends CustomPainter {
       }
     }
 
+    // Hold-over highlight. The renderer is given the firing solution as
+    // (elevationMil, windageMil) — we convert into the reticle's native
+    // unit, project to pixel space using the same `pxPerUnit` factor as
+    // the elements, and paint a small filled circle there. The shooter
+    // sees the matching hash on the reticle "lit up".
+    final ho = holdOver;
+    if (ho != null) {
+      // mil → reticle native unit. For mil reticles this is identity;
+      // for MOA reticles we multiply by 3.43775; for IPSC / BDC we treat
+      // it as mil-equivalent (those reticles don't have a true angular
+      // sub-tension so the highlight ends up plotted at the mil position
+      // — best we can do without per-reticle calibration data).
+      final milToNative = switch (reticle.nativeUnit) {
+        ReticleNativeUnit.mil => 1.0,
+        ReticleNativeUnit.moa => milToMoa,
+        ReticleNativeUnit.ipsc => 1.0,
+        ReticleNativeUnit.bdc => 1.0,
+      };
+      // Reticle convention: +y up = "hold up" in shooter terms, +x right
+      // = "hold right". `elevationMil > 0` means the user holds higher,
+      // i.e. the highlight goes ABOVE center (positive native y), which
+      // matches the existing reticle layout where holdover hashes sit on
+      // the +y axis below the center crosshair when the bullet drops.
+      //
+      // Wait — the upper half of a precision reticle is the cleared half
+      // and the LOWER half (negative y) is where holdover hashes sit (so
+      // the crosshair stays clear at ranges where you hold above). To
+      // match that, hold-up in elevation corresponds to plotting on the
+      // -y side of the reticle (canvas-up, since we flip Y in toPx).
+      // That makes the highlight land on the holdover marks the shooter
+      // would actually use.
+      final holdNativeY = -ho.elevationMil * milToNative;
+      final holdNativeX = ho.windageMil * milToNative;
+      final pt = toPx(holdNativeX, holdNativeY);
+      final r = (size.shortestSide * 0.018).clamp(4.0, 6.5);
+      // Soft halo first, then the crisp filled core.
+      canvas.drawCircle(
+        pt,
+        r + 2.5,
+        Paint()..color = holdOverHighlightColor.withValues(alpha: 0.25),
+      );
+      canvas.drawCircle(
+        pt,
+        r,
+        Paint()..color = holdOverHighlightColor,
+      );
+      // Thin white outline so the dot reads against any reticle color.
+      canvas.drawCircle(
+        pt,
+        r,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.65)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0,
+      );
+    }
+
     if (showUnitOverlay) {
       _drawUnitOverlay(canvas, size);
     }
@@ -272,6 +388,9 @@ class _ReticlePainter extends CustomPainter {
         old.scale != scale ||
         old.lineColor != lineColor ||
         old.aimPoint != aimPoint ||
-        old.showUnitOverlay != showUnitOverlay;
+        old.showUnitOverlay != showUnitOverlay ||
+        old.holdOver?.elevationMil != holdOver?.elevationMil ||
+        old.holdOver?.windageMil != holdOver?.windageMil ||
+        old.holdOverHighlightColor != holdOverHighlightColor;
   }
 }

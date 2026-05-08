@@ -213,6 +213,35 @@ ship JSON corrections without a store release. See
 - [ ] Cost tracking — optional per-component cost so the app can show
   cost-per-round.
 
+## Cloud Sync / OneDrive
+
+- [ ] **Register the LoadOut OneDrive Sync app on portal.azure.com** and
+  paste the Application (client) ID into
+  `lib/services/onedrive_config.dart` (`OneDriveConfig.clientId`). See
+  `CLAUDE.md` § 18 for the full step-by-step (account types =
+  consumers, redirect URIs for iOS + Android, API permissions =
+  `Files.ReadWrite.AppFolder` + `offline_access`, no client secret —
+  PKCE only). Until this is done, the OneDrive cards / sync provider
+  rows self-hide behind `OneDriveConfig.isPlaceholder`.
+- [ ] **Verify OneDrive end-to-end** — sign in with a personal
+  Microsoft account, confirm the per-app folder is created, run a
+  manual cloud backup + restore, then turn on Cloud Sync and confirm
+  AutoSave-driven uploads land within ~5s.
+- [ ] **App Store / Play Store privacy disclosures** — add a Cloud
+  Sync entry alongside the existing Cloud Backup entry. Both ship
+  the same encrypted blob to the user's own cloud; the disclosure
+  needs to call out the encrypted-at-rest, never-server-decryptable
+  posture. Re-confirm on every store submission per CLAUDE.md § 13.
+- [ ] **Native PKCE webview for OneDrive sign-in** — today
+  `OneDriveBackupService.connectInteractive` is the entry point that
+  persists a refresh token, but the actual interactive auth code
+  exchange (browser tab + PKCE verifier) hasn't been wired into the
+  Cloud Sync screen yet. Pick a webview package (`flutter_web_auth_2`
+  or `webview_flutter`), implement the PKCE flow in
+  `lib/screens/sync/cloud_sync_screen.dart`, then call
+  `connectInteractive` with the resulting tokens. Until this lands,
+  OneDrive Cloud Sync surfaces "Connect OneDrive" as a no-op.
+
 ## Production hardening
 
 - [ ] Replace placeholder `test/widget_test.dart` with real coverage —

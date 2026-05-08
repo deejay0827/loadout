@@ -344,10 +344,10 @@ class PrivacyScreen extends StatelessWidget {
             items: const [
               'Asks you to set a passphrase. Your data is encrypted on the '
                   'device, with that passphrase, before any upload.',
-              'Uploads the encrypted backup to your own iCloud Drive (iOS) '
-                  'or Google Drive (Android, or iOS if you prefer). You '
-                  'sign in to your cloud provider directly — we never '
-                  'handle your cloud credentials.',
+              'Uploads the encrypted backup to your own iCloud Drive (iOS), '
+                  'Google Drive (any platform), or Microsoft OneDrive (any '
+                  'platform). You sign in to your cloud provider directly '
+                  '— we never handle your cloud credentials.',
               'Stores nothing on LoadOut servers. There is no LoadOut '
                   'backend in this flow.',
             ],
@@ -357,6 +357,32 @@ class PrivacyScreen extends StatelessWidget {
             'We can\'t read your backup, and we can\'t recover a lost '
             'passphrase. If you forget it, the backup is unrecoverable. '
             'Write the passphrase down somewhere safe.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Continuous Cloud Sync (Pro, opt-in)',
+            style: subheadingStyle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cloud Sync uses the same encryption model as the one-shot '
+            'backup above — encrypted on this device with your '
+            'passphrase, written to the same cloud folder you chose. The '
+            'difference is that the upload happens automatically a few '
+            'seconds after each save, and the download happens on app '
+            'launch plus a manual "Sync Now" button. We never see the '
+            'encrypted blob and operate no backend that receives '
+            'reloading data.',
+            style: bodyStyle,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Your passphrase is cached on this device in the iOS Keychain '
+            '/ Android Keystore so AutoSave can sync without re-prompting. '
+            'On other devices, you enter the same passphrase to set up '
+            'sync there — no LoadOut server distributes it. Lose the '
+            'passphrase and the synced data is unrecoverable.',
             style: bodyStyle,
           ),
           const SizedBox(height: 24),

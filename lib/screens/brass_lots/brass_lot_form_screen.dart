@@ -64,6 +64,7 @@ import '../../database/database.dart';
 import '../../repositories/brass_lot_repository.dart';
 import '../../repositories/component_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/unit_service.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
@@ -150,6 +151,9 @@ class _BrassLotFormScreenState extends State<BrassLotFormScreen> {
       service: context.read<AutoSaveService>(),
       onSave: _runAutoSave,
       initialSavedRowId: widget.existing?.id,
+      // Cloud Sync hook — no-op when sync is disabled / non-Pro.
+      onSavedToCloud: () =>
+          context.read<CloudSyncService>().scheduleSyncUp(),
     );
 
     for (final c in [

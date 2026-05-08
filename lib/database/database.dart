@@ -36,7 +36,7 @@
 // methods plus generated companions like `UserLoadsCompanion` for
 // constructing rows.
 //
-// `schemaVersion` is currently 12. The `MigrationStrategy` defines two
+// `schemaVersion` is currently 14. The `MigrationStrategy` defines two
 // callbacks: `onCreate` runs on a fresh install (creates every table, then
 // seeds the 8 standard reloading process steps), and `onUpgrade` runs
 // when an installed user opens a build with a newer `schemaVersion`. The
@@ -160,6 +160,7 @@
 
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
@@ -171,7 +172,8 @@ class Manufacturers extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
   TextColumn get country => text().nullable()();
-  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts' | 'optics'
+  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts' |
+  /// 'optics' | 'ammo'
   TextColumn get kind => text()();
 
   @override
@@ -484,6 +486,58 @@ class DragCurves extends Table {
   List<Set<Column>> get uniqueKeys => [
         {manufacturer, line, weightGr, diameterIn},
       ];
+}
+
+/// Reference catalog of factory ammunition products (added schema v14).
+/// Distinct from `Bullets` (which catalogs reloading-component bullet
+/// projectiles). A `FactoryLoads` row is one published factory cartridge
+/// SKU — e.g. "Hornady Match 6.5 Creedmoor 140 gr ELD-M" — with the
+/// manufacturer's published muzzle velocity and ballistic coefficient.
+///
+/// Drives the "Factory Ammo" picker in the ballistics calculator and the
+/// Range Day workspace. Intentionally NOT surfaced in the recipe form —
+/// recipes are for handloaders, factory ammo doesn't belong there.
+///
+/// Seeded from `assets/seed_data/factory_loads.json`. Manufacturer rows
+/// are looked up / inserted in the shared `Manufacturers` table with
+/// `kind = 'ammo'`, alongside the existing `bullet`, `powder`, etc.
+/// kinds. The shared `Manufacturers` row keeps brand metadata in one
+/// place even when the same brand also appears under a different kind
+/// (e.g. Hornady appears as both `bullet` and `ammo`).
+@DataClassName('FactoryLoadRow')
+class FactoryLoads extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get manufacturerId => integer().references(Manufacturers, #id)();
+  /// Marketing product line (e.g. "Match", "Precision Hunter", "ELD-X").
+  /// Free-form text — manufacturers don't share a vocabulary here.
+  TextColumn get productLine => text()();
+  /// Cartridge name as the manufacturer prints it on the box
+  /// (e.g. "6.5 Creedmoor", ".308 Win"). Loose match against the
+  /// `Cartridges` reference catalog name + aliases at query time.
+  TextColumn get caliber => text()();
+  /// Bullet name as listed on the box (e.g. "ELD Match", "InterLock SP",
+  /// "TGK"). Distinct from the reloading `Bullets.line` because factory
+  /// product bullets sometimes carry box-only names that don't appear in
+  /// the reloading-bullet catalog.
+  TextColumn get bulletName => text()();
+  RealColumn get bulletWeightGr => real()();
+  RealColumn get bulletDiameterIn => real().nullable()();
+  RealColumn get bcG1 => real().nullable()();
+  RealColumn get bcG7 => real().nullable()();
+  /// Manufacturer-published muzzle velocity in fps. Note: this is from
+  /// the test barrel listed in the spec sheet; real-world velocity
+  /// varies with barrel length and chamber, and the user can override
+  /// the value in the calculator.
+  RealColumn get factoryMvFps => real().nullable()();
+  /// Test barrel length the published MV was measured against, in
+  /// inches. Lets advanced users translate to their real barrel via a
+  /// rough rule-of-thumb correction. Nullable when the manufacturer
+  /// doesn't list it.
+  RealColumn get testBarrelLengthIn => real().nullable()();
+  /// Manufacturer SKU / part number (e.g. "81500", "FGMM65CRD140").
+  TextColumn get partNumber => text().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // ─────────────────────── User data tables ───────────────────────
@@ -946,6 +1000,22 @@ class RangeDaySessions extends Table {
   /// 'mil' | 'moa' | 'inches'. Defaults to the app-wide angle unit.
   TextColumn get correctionUnit =>
       text().withDefault(const Constant('mil'))();
+
+  // ── Captured sensor readings (added v13) ──
+  /// Captured cant (rifle level) at session-setup time, in degrees.
+  /// Positive = rifle canted right relative to the calibrated zero.
+  /// Persisted only when the user taps "Capture current readings" in
+  /// the Sensors panel; null if the capture button was never used. The
+  /// solver consumes the *live* `CantService.cantDegrees`, so this
+  /// column is purely a record of the conditions at the time of
+  /// capture, useful for after-the-fact review of a session.
+  RealColumn get cantDegrees => real().nullable()();
+  /// Captured shot azimuth (compass heading) at session-setup time, in
+  /// degrees. 0 = N, 90 = E, 180 = S, 270 = W. Mirrors the value typed
+  /// into / read from the Shot Azimuth field — captured here so it's
+  /// preserved next to the cant for archival purposes even if the
+  /// shooter later edits the field.
+  RealColumn get shotAzimuthDegrees => real().nullable()();
 }
 
 /// One row per shot recorded during a range-day session. Impact coordinates
@@ -1049,6 +1119,8 @@ class UserCustomFieldValues extends Table {
     Reticles,
     // Schema v12 additions.
     DragCurves,
+    // Schema v14 additions.
+    FactoryLoads,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1057,7 +1129,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1268,6 +1340,32 @@ class AppDatabase extends _$AppDatabase {
             // existing column or table changes; user data is preserved.
             await m.createTable(dragCurves);
           }
+          if (from < 13) {
+            // v13 — Captured cant + shot-azimuth on RangeDaySessions.
+            // Two nullable REAL columns added so the user can tap
+            // "Capture current readings" in the Sensors panel and have
+            // the live cant + heading frozen onto the session row for
+            // after-the-fact review. The solver still consumes the
+            // *live* CantService for cant correction; these columns are
+            // archival. Additive only — no existing column or table
+            // changes; user data is preserved.
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.cantDegrees);
+            await m.addColumn(
+                rangeDaySessions, rangeDaySessions.shotAzimuthDegrees);
+          }
+          if (from < 14) {
+            // v14 — Factory ammunition catalog. Adds the `FactoryLoads`
+            // reference table (seeded from
+            // `assets/seed_data/factory_loads.json`) so the ballistics
+            // calculator and Range Day workspace can offer a "Factory
+            // Ammo" picker that surfaces published cartridge SKUs with
+            // factory MV + BC. Distinct from the reloading-component
+            // `Bullets` catalog — factory loads are full cartridges
+            // (not handload components) and are intentionally NOT
+            // surfaced in the recipe form. Additive only.
+            await m.createTable(factoryLoads);
+          }
         },
       );
 
@@ -1387,6 +1485,30 @@ class AppDatabase extends _$AppDatabase {
   }
 
   static QueryExecutor _open() {
+    if (kIsWeb) {
+      // Web: drift uses a sqlite3 WASM build + a web worker, both served
+      // alongside the Flutter assets in `web/`. The actual storage backend
+      // (OPFS / IndexedDB / in-memory fallback) is selected by drift at
+      // runtime based on what the browser supports.
+      //
+      // Files expected in the deployed `web/` directory (see CLAUDE.md →
+      // Web platform):
+      //   - sqlite3.wasm           (downloaded from
+      //     https://github.com/simolus3/sqlite3.dart/releases)
+      //   - drift_worker.dart.js   (built with
+      //     `dart compile js -O2 -o web/drift_worker.dart.js web/drift_worker.dart`)
+      //
+      // If either file is missing the database open will fail and the app
+      // crashes on launch — the build script in CLAUDE.md re-emits both
+      // every time `flutter build web` is invoked.
+      return driftDatabase(
+        name: 'loadout',
+        web: DriftWebOptions(
+          sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+          driftWorker: Uri.parse('drift_worker.dart.js'),
+        ),
+      );
+    }
     return driftDatabase(
       name: 'loadout',
       native: const DriftNativeOptions(
@@ -1509,6 +1631,17 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(dragCurves)
           ..addColumns([dragCurves.id.count()]))
         .map((row) => row.read(dragCurves.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the factory-ammunition catalog is empty. Used by the
+  /// seed loader to decide whether to insert the bundled factory-loads
+  /// library on first launch (or after a v14 migration).
+  Future<bool> get factoryLoadsAreEmpty async {
+    final count = await (selectOnly(factoryLoads)
+          ..addColumns([factoryLoads.id.count()]))
+        .map((row) => row.read(factoryLoads.id.count()) ?? 0)
         .getSingle();
     return count == 0;
   }

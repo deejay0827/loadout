@@ -5,9 +5,12 @@ practical, focused on what is non-obvious or easy to get wrong.
 
 ## 1. What it is
 
-LoadOut is a local-first ammo reloading tracker for iOS and Android, built in
-Flutter. It lets a reloader catalog their loads, firearms, and components
-without sending any of that data off-device.
+LoadOut is a local-first ammo reloading tracker for **iOS, Android, macOS,
+and the web**, built in Flutter. It lets a reloader catalog their loads,
+firearms, and components without sending any of that data off-device. The
+web target ships the same UI (the responsive `NavigationRail` + master-detail
+layout already serves desktop browser widths well) and stores user data in
+the browser via OPFS / IndexedDB through drift's WASM build (see § 18).
 
 | | |
 |---|---|
@@ -105,6 +108,14 @@ public/
     assetlinks.json                App Links for Android
 android/                           Standard Flutter Android scaffold
 ios/                               Standard Flutter iOS scaffold
+macos/                             Standard Flutter macOS scaffold
+web/                               Flutter web platform — see § 18
+  index.html                       Branded title + theme color #1F2937
+  manifest.json                    PWA manifest (charcoal + brass)
+  drift_worker.dart                Drift web worker entry point (compiled to .js)
+  drift_worker.dart.js             Built artifact — committed so Hosting deploys can serve it
+  sqlite3.wasm                     Drift's sqlite3 WebAssembly build, downloaded from
+                                   https://github.com/simolus3/sqlite3.dart/releases
 firestore.rules                    Per-user rules; not currently used by the client
 firestore.indexes.json             Empty
 firebase.json                      Hosting + Firestore + Flutter platform config
@@ -224,8 +235,17 @@ flutter run
 # Quick iOS compile check without code signing
 flutter build ios --debug --no-codesign
 
-# Deploy AASA / assetlinks.json (after editing public/.well-known/*)
-firebase deploy --only hosting
+# Web: build the static bundle for Firebase Hosting (build/web/)
+flutter build web --release
+
+# Web: rebuild the drift worker after editing web/drift_worker.dart
+dart compile js -O2 -o web/drift_worker.dart.js web/drift_worker.dart
+
+# Deploy AASA / assetlinks.json (marketing site)
+firebase deploy --only hosting:marketing
+
+# Deploy the Flutter web bundle (build/web/)
+flutter build web --release && firebase deploy --only hosting:app
 
 # Deploy Firestore rules (currently unused but the rules file exists)
 firebase deploy --only firestore:rules --project=loadout-precision-reloading
@@ -352,7 +372,15 @@ provider's developer portal. Secrets that need rotation are tracked in
 
 ## 10. Firebase Hosting
 
-`public/` is the Hosting root. Its only job is serving:
+`firebase.json` declares **two** Hosting targets, each pointing at its own
+Firebase Hosting site:
+
+| Target | Public dir | Site (operator-created) | Purpose |
+|---|---|---|---|
+| `marketing` | `public/` | `loadout-precision-reloading` (default) | Landing page, AASA, assetlinks, email-link callback |
+| `app` | `build/web/` | `loadout-app` (operator creates a second site in Firebase Console) | The Flutter web build |
+
+`marketing` serves:
 
 - `public/.well-known/apple-app-site-association` — iOS Universal Links
   (Hosting injects `Content-Type: application/json` per the rule in
@@ -362,11 +390,45 @@ provider's developer portal. Secrets that need rotation are tracked in
   `/auth/**` to it so that email-link callbacks resolve to a real URL when
   the app isn't installed.
 
-Deploy with:
+`app` serves the Flutter web bundle from `build/web/` with a single SPA
+rewrite (`** → /index.html`). The `Cross-Origin-{Embedder,Opener}-Policy`
+headers are set so the browser will allow drift's WASM build to use
+shared-array-buffer-backed APIs (OPFS) when available.
+
+### One-time operator setup (per machine)
+
+The operator must:
+
+1. Create the second Hosting site in Firebase Console
+   (project `loadout-precision-reloading` → Hosting → Add another site).
+   Name it `loadout-app` (so it lives at
+   `https://loadout-app.web.app`).
+2. Apply target aliases on the local machine:
+   ```sh
+   firebase target:apply hosting marketing loadout-precision-reloading
+   firebase target:apply hosting app loadout-app
+   ```
+3. Add `https://loadout-app.web.app` and
+   `https://loadout-app.firebaseapp.com` to **Firebase Auth →
+   Settings → Authorized domains**, otherwise sign-in popups and
+   email-link redirects fail on the web build.
+4. For Google Sign-In on web: Firebase Console → Project Settings →
+   General → register a **Web** app (separate from iOS/Android) so
+   Firebase emits a web client ID that `google_sign_in_web` can pick
+   up at runtime. Without this the Google button silently no-ops on
+   web.
+
+### Deploy
 
 ```sh
-firebase deploy --only hosting
+firebase deploy --only hosting:marketing      # marketing site
+flutter build web --release \
+  && firebase deploy --only hosting:app       # web app
 ```
+
+**Do not run `firebase deploy --only hosting`** with no target — that
+deploys both sites, and accidentally pushing a stale `build/web/` to
+the app target will overwrite a known-good build.
 
 ## 11. Adding a new auth provider
 
@@ -405,8 +467,9 @@ Pattern that has worked for Microsoft, Yahoo, Apple:
 The app's marketing claim and in-app privacy copy say, in plain English:
 
 > We don't track you, we don't run a backend that stores your reloading
-> data, and any cloud backup is encrypted on your device with your own
-> passphrase and uploaded to your own iCloud Drive or Google Drive.
+> data, and any cloud backup or sync is encrypted on your device with
+> your own passphrase and uploaded to your own iCloud Drive, Google
+> Drive, or OneDrive.
 
 Concretely:
 
@@ -417,22 +480,31 @@ Concretely:
 - Local JSON export is always free. The export is written to the device's
   Files / Downloads area and never touches LoadOut infrastructure.
 - Optional Pro feature: end-to-end encrypted backup to the user's own
-  iCloud Drive (iOS) or Google Drive (Android, also iOS for cross-platform
-  users). The blob is encrypted on device with a user-chosen passphrase
-  before upload. **LoadOut never sees the encrypted blob, and we never
-  operate any backend that receives reloading data.** Lost passphrases are
-  unrecoverable; this is by design.
+  iCloud Drive (iOS), Google Drive (any platform), or Microsoft OneDrive
+  (any platform). The blob is encrypted on device with a user-chosen
+  passphrase before upload. **LoadOut never sees the encrypted blob, and
+  we never operate any backend that receives reloading data.** Lost
+  passphrases are unrecoverable; this is by design.
+- Optional Pro feature: continuous **Cloud Sync** (see § 19). Same
+  encryption model as the manual backup — encrypted on device with the
+  user's passphrase, written to the user's own iCloud / Google Drive /
+  OneDrive container. The only differences from manual backup are that
+  the upload happens automatically a few seconds after each AutoSave
+  fires, and the download happens on app launch + a manual "Sync Now"
+  button. **LoadOut still never sees the encrypted blob and runs no
+  backend that receives reloading data.**
 - Uninstalling the app or wiping the device deletes the on-device data. If
-  the user enabled cloud backup, restoring requires re-authenticating to
-  their cloud provider and entering the passphrase.
+  the user enabled cloud backup or sync, restoring requires
+  re-authenticating to their cloud provider and entering the passphrase.
 
-**Cloud backup is an approved opt-in feature, but only under the strict
-client-side encryption model described above.** Do not add any code path
-that uploads user reloading data to a LoadOut-operated backend, sends
-plaintext (or server-decryptable) backups anywhere, or weakens the
-passphrase-only key derivation. Any change to the storage / sync model has
-to revisit the in-app disclaimer copy, the privacy screen, the App Store /
-Play Store privacy disclosures, and any landing page copy.
+**Cloud backup and Cloud Sync are approved opt-in features, but only
+under the strict client-side encryption model described above.** Do not
+add any code path that uploads user reloading data to a LoadOut-operated
+backend, sends plaintext (or server-decryptable) backups anywhere, or
+weakens the passphrase-only key derivation. Any change to the storage /
+sync model has to revisit the in-app disclaimer copy, the privacy
+screen, the App Store / Play Store privacy disclosures, and any landing
+page copy.
 
 ## 14. Open items / where to track work
 
@@ -703,3 +775,241 @@ To localize one screen / widget:
   needs `MaterialApp.localizationsDelegates` already includes the RTL
   delegate, so it's "just" a translation effort — but the form layouts have
   not been audited for RTL mirroring.
+
+## 17. Web platform
+
+LoadOut runs in the browser as a Flutter web app, deployed to its own
+Firebase Hosting target (see § 10). The same Dart codebase compiles for
+mobile, desktop, and web; everything platform-specific is gated behind
+`kIsWeb` (or a positive `Platform.isIOS || Platform.isAndroid` check).
+
+### Build and run
+
+```sh
+flutter run -d chrome           # local dev
+flutter build web --release     # production bundle into build/web/
+```
+
+`flutter build web` rebuilds `build/web/main.dart.js` (via dart2js) and
+copies the static files in `web/` (including `sqlite3.wasm` and the
+prebuilt `drift_worker.dart.js`). The web bundle is roughly 4–5 MB
+gzipped on first load; subsequent loads hit the service worker cache.
+
+### Drift on web
+
+Drift on web does not use `path_provider` (there is no filesystem from
+the browser's perspective). Instead it uses a sqlite3 WebAssembly build
+plus a web worker that hosts the database connection. Both files live
+in `web/`:
+
+- `web/sqlite3.wasm` — downloaded from
+  https://github.com/simolus3/sqlite3.dart/releases/download/sqlite3-<ver>/sqlite3.wasm
+  matching the `sqlite3` Dart package version pinned in `pubspec.lock`
+  (currently 3.3.1). Re-download whenever the lockfile pin moves.
+- `web/drift_worker.dart` — entry point. Compiled to
+  `web/drift_worker.dart.js` with:
+  ```sh
+  dart compile js -O2 -o web/drift_worker.dart.js web/drift_worker.dart
+  ```
+  Both `drift_worker.dart` AND `drift_worker.dart.js` are committed.
+  `flutter build web` does NOT recompile the worker — it must be
+  rebuilt manually any time the drift package version moves or the
+  worker source changes.
+
+The connection itself is set up in `lib/database/database.dart`'s
+`_open()`:
+
+```dart
+return driftDatabase(
+  name: 'loadout',
+  web: DriftWebOptions(
+    sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+    driftWorker: Uri.parse('drift_worker.dart.js'),
+  ),
+);
+```
+
+At runtime drift picks the best storage backend the browser supports:
+
+- **OPFS** (Origin-Private File System, Chrome / Edge / modern Safari) —
+  durable, fastest. Requires the `Cross-Origin-{Embedder,Opener}-Policy`
+  headers set in `firebase.json`'s `app` target.
+- **IndexedDB** — fallback when OPFS isn't available. Durable but slower.
+- **In-memory** — last-resort fallback when both fail. NOT durable.
+
+The data lives entirely in the user's browser profile. Clearing site
+data wipes it. There is no LoadOut-side sync (consistent with § 13).
+
+### kIsWeb gating policy
+
+Some plugins have no working web implementation, or are deliberately not
+shipped on web because the platform doesn't host the relevant store.
+These features are **gated** with `kIsWeb` (often combined with
+`Platform.isIOS || Platform.isAndroid`) so the web build silently hides
+them rather than crashing. Current gates:
+
+| Feature | Reason | Where the gate lives |
+|---|---|---|
+| Photo Import (`google_mlkit_text_recognition`) | ML Kit has no web implementation | `PhotoImportScreen.isSupportedPlatform` (`lib/screens/recipes/photo_import_screen.dart`) |
+| BLE devices (Kestrel, Garmin Xero, rangefinders) | `flutter_blue_plus_web` exists but the firmware integrations target mobile OSes | `BleService.isAvailable()` returns `false` on web; the Devices screen still renders, banner says "not available" |
+| Cant + magnetometer sensors (Range Day Setup) | No browser API for magnetometer / orientation parity | `CantService.start()` / `MagnetometerService.start()` no-op on web |
+| RevenueCat (`purchases_flutter`) | RevenueCat doesn't operate a web storefront for our SKUs | `_isPurchasesSupported` in `lib/main.dart` returns `false` on web. Paywall renders the existing "Pro is not yet available" placeholder. |
+| Crashlytics (`firebase_crashlytics`) | Plugin throws `MissingPluginException` on web | `_isCrashlyticsSupported` in `lib/main.dart` |
+| iCloud backup (`icloud_storage`) | iOS-only by design | Already gated on `Platform.isIOS` in `IcloudBackupService` |
+
+When adding a new plugin, check pub.dev for the `web` platform tag. If
+the plugin doesn't ship a web implementation, wrap every call site in
+a `kIsWeb` guard AND hide the UI surface — Flutter will let you compile,
+but you'll get a runtime `MissingPluginException` on web the first time
+the user touches the feature.
+
+### Auth providers on web
+
+Firebase Auth on web works for the providers we ship:
+
+- Email/password, anonymous, email-link — work out of the box. The
+  email-link callback URL stays the same
+  (`https://loadout-precision-reloading.web.app/auth/link`); the
+  `marketing` Hosting target's `/auth/**` rewrite handles the redirect
+  back to the app.
+- Apple, Microsoft, Yahoo — Firebase opens the OAuth flow in a popup
+  / redirect. No client-side changes needed.
+- Google — needs a separate **web** OAuth client ID registered in
+  Firebase Console (operator step listed in § 10). The
+  `google_sign_in_web` package picks up the client ID at runtime; the
+  rest of the `AuthService` API is shared with mobile.
+
+### Layout note
+
+The app's responsive shell (`lib/screens/home/home_screen.dart`) already
+uses `NavigationRail` + master-detail at desktop widths, so the web
+build looks reasonable in a browser without any extra work. Mobile-width
+browsers fall back to the bottom-nav layout.
+
+### Privacy posture on web
+
+The web build keeps the same local-first promise as the mobile builds.
+User reloading data lives in the browser's OPFS / IndexedDB store and
+never leaves the device. Firebase Auth still processes the user's email
+during sign-in (same as mobile). Cloud backup on web is currently
+disabled — the icloud / Drive integrations need platform-specific work
+before they can run in the browser. This is reflected in the existing
+`SignInPromptCard` copy and is fine to leave as a follow-up.
+
+## 18. Microsoft OneDrive OAuth setup (operator step)
+
+LoadOut ships OneDrive as a third Cloud Sync / Cloud Backup provider
+alongside iCloud Drive and Google Drive. The Azure AD app registration
+is the operator step that gates this — `lib/services/onedrive_config.dart`
+holds the public client ID with a `REPLACE_ME_*` placeholder; the rest
+of the codebase compiles and runs (the OneDrive cards / picker rows
+self-hide behind `OneDriveConfig.isPlaceholder`) until the placeholder
+is replaced with a real GUID.
+
+To activate:
+
+1. **portal.azure.com → App registrations → New registration**:
+   - Name: `LoadOut OneDrive Sync`
+   - Supported account types: **Accounts in any organizational
+     directory and personal Microsoft accounts** (the `consumers`
+     tenant is what enables `Files.ReadWrite.AppFolder` for personal
+     OneDrive).
+   - Redirect URIs (Public client / native — mobile and desktop):
+     - `loadout://onedrive-callback` (iOS / macOS — also register
+       in `ios/Runner/Info.plist` `CFBundleURLTypes`).
+     - `msauth.com.johnsondigital.loadout://auth` (Android — also
+       register in `android/app/src/main/AndroidManifest.xml`).
+2. **API permissions → Add → Microsoft Graph → Delegated**:
+   - `Files.ReadWrite.AppFolder`
+   - `offline_access` (needed for the refresh-token flow Cloud Sync
+     uses).
+3. Copy the **Application (client) ID** GUID into
+   `OneDriveConfig.clientId`. Leave `tenantId` as `consumers` for the
+   personal-OneDrive flow.
+4. **No client secret** — public client / native registrations use
+   PKCE. There is no `client_secret` to ship in `lib/services/`; the
+   actual interactive sign-in lives in
+   `lib/screens/sync/cloud_sync_screen.dart` and uses the platform's
+   in-app web auth flow.
+5. **Rotation cadence**: PKCE-only public client registrations have
+   no expiring secret. Review the redirect URIs annually to make sure
+   they still match the iOS Info.plist + Android Manifest entries.
+   The user-side refresh tokens (cached in `flutter_secure_storage`)
+   are rotated automatically by the OAuth flow and Microsoft expires
+   unused refresh tokens after 90 days.
+
+`OneDriveBackupService.connectInteractive` is the entry point that
+persists the refresh token; the screen drives it after a successful
+PKCE exchange. `disconnect()` clears the cached token. Both are gated
+on `OneDriveConfig.isPlaceholder` so dev / CI builds with the
+placeholder never accidentally try to sign in.
+
+## 19. Cloud Sync (Pro)
+
+Continuous, end-to-end-encrypted, cross-device sync of the user's
+reloading data. Layered on top of the existing manual backup/restore
+infrastructure. Lives in:
+
+| | |
+|---|---|
+| Service | `lib/services/cloud_sync_service.dart` (`CloudSyncService`) |
+| Encryption | unchanged — `lib/services/backup_crypto.dart` |
+| Providers | iCloud (`ICloudBackupService`), Drive (`DriveBackupService`), OneDrive (`OneDriveBackupService`) |
+| Screen | `lib/screens/sync/cloud_sync_screen.dart` |
+| Indicator | `lib/widgets/cloud_sync_indicator.dart` (AppBar icon + dot) |
+| Wiring | `lib/app.dart` provides the service; AutoSaveControllers fire `scheduleSyncUp()` after every save |
+| Pro gate | yes — `EntitlementNotifier.isPro` short-circuits every sync operation |
+| Passphrase storage | `flutter_secure_storage` keyed `sync_passphrase_<provider>` |
+
+### Storage shape
+
+- One canonical encrypted blob per user, named `loadout_sync.encrypted`,
+  in the active provider's app folder (iCloud `Backups/`, Drive
+  `appDataFolder`, OneDrive `approot`).
+- Same on-disk format as a manual backup — `ExportService.exportToJson()`
+  → `BackupCrypto.encrypt(passphrase, json)`. Decrypt is the inverse.
+
+### Mechanics
+
+- **Push (`syncUp`)**: every form save fires `AutoSaveController._runSave`,
+  which calls `onSavedToCloud`, which calls `CloudSyncService.scheduleSyncUp`.
+  That starts (or restarts) a 5-second debounce timer; when it elapses,
+  `syncUp` exports the DB, encrypts, and overwrites the blob.
+- **Pull (`syncDown`)**: called once at app launch from
+  `_AuthGate._maybePullCloudSyncOnLaunch` and from the manual "Sync
+  Now" button. Downloads the blob, decrypts, walks every user-data
+  table in `kUserDataTableOrder`, and applies the "newest `updatedAt`
+  wins" rule per row. Local-only rows (created since last sync) are
+  preserved and pushed by the next `syncUp`.
+- **Reconcile**: pull then push, used by the manual "Sync Now" button.
+- **Concurrency guard**: a single `_busy` flag prevents two `syncUp`s
+  from running in parallel; if a save lands during a sync, a
+  `_queuedFollowUp` bit fires one final push at the end.
+
+### Conflict policy
+
+- Last-writer-wins by row `updatedAt`. Tables without `updatedAt`
+  fall back to `createdAt`; if neither side has a clock, remote wins
+  (preserves manual-restore semantics).
+- Decryption failure (`SyncPullOutcome.passphraseMismatch`) leaves
+  the local DB untouched and surfaces a "passphrase needed" status.
+- Schema-version mismatch (`schema_version` in the inbound payload >
+  local) is rejected with a fatal error — the user is told to
+  update the app on this device.
+- A real CRDT is explicitly out of scope. Personal reloading data on
+  two devices is a soft conflict at most.
+
+### Privacy contract
+
+Same as § 13. The encrypted blob lives in the user's own cloud, never
+on LoadOut infrastructure. Lost passphrase = lost data — the Cloud
+Sync screen has a red warning to that effect.
+
+### Free vs Pro
+
+- Free users see Settings → Cloud Sync (Pro), see the explanation,
+  and tapping "Enable" routes through `ensurePro` to the paywall.
+  They retain access to the manual one-shot backup on the Backup &
+  Export screen.
+- Pro users get the full enable / disable / reconcile flow, the
+  AppBar indicator dot, and the "Sync Now" button.

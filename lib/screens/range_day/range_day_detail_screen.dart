@@ -45,6 +45,7 @@ import '../../repositories/target_repository.dart';
 import '../../services/ballistics/atmosphere.dart';
 import '../../services/ballistics/drag_functions.dart';
 import '../../services/ballistics/environment.dart';
+import '../../services/ballistics/group_stats.dart';
 import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart' as bu;
@@ -168,6 +169,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   bool _environmentExpanded = true;
   bool _movingTargetExpanded = false;
 
+  /// "Sensors" panel inside the Setup card. Collapsed by default so
+  /// beginners aren't presented with cant + heading readouts they
+  /// don't yet care about. Power users tap once and the panel stays
+  /// open for the session.
+  bool _sensorsExpanded = false;
+
+  /// 2 Hz "live updates" pulse that drives a tiny rebuild of the
+  /// Sensors panel — gives the chip its "throb" feeling without
+  /// burning frames on every accelerometer sample.
+  bool _sensorsLive = false;
+  Timer? _sensorsPulse;
+
   // ─────────────────────── Solution ───────────────────────
   /// Solution at the user's distance. Null until the first solve runs.
   TrajectorySample? _solution;
@@ -212,6 +225,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   /// Whether the "shooter capability" expansion in Setup is open.
   bool _capabilityExpanded = false;
+
+  // ─────────────────────── Captured sensor readings (v13) ───────────────────────
+  /// Captured cant (rifle level) at the time the user tapped "Capture
+  /// current readings". Null means no capture has been performed for
+  /// this session yet. Persists to `RangeDaySessions.cantDegrees` so
+  /// reopening the session shows the value that was active at the
+  /// time of capture, even if the device has since moved.
+  double? _capturedCantDeg;
+  /// Captured shot azimuth (compass heading) at the time of capture.
+  /// Mirrored into the `_shotAzimuthCtrl` field at capture time and
+  /// persisted to `RangeDaySessions.shotAzimuthDegrees`.
+  double? _capturedAzimuthDeg;
+  /// Wall-clock when the user last tapped "Capture current readings".
+  /// Drives the "Captured 12s ago" caption in the Sensors panel. Not
+  /// persisted — purely a UI nicety for the active session.
+  DateTime? _capturedAt;
 
   /// Latest hit-probability result. Recomputed lazily (300ms debounce).
   HitProbabilityResult? _hitProb;
@@ -300,6 +329,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _rangeUncertaintyYd = s.rangeUncertaintyYd ?? 5.0;
       _correctionUnit =
           (s.correctionUnit.isEmpty ? 'mil' : s.correctionUnit);
+      // v13 — captured cant + azimuth. If the previous save included a
+      // captured shot azimuth, mirror it into the editable text field
+      // so the field reflects the persisted value when the session is
+      // re-opened. Cant is *display-only* in the captured row; the
+      // solver always uses the live CantService value if cant
+      // correction is enabled.
+      _capturedCantDeg = s.cantDegrees;
+      _capturedAzimuthDeg = s.shotAzimuthDegrees;
+      if (s.shotAzimuthDegrees != null) {
+        _shotAzimuthCtrl.text =
+            s.shotAzimuthDegrees!.toStringAsFixed(0);
+      }
       _setupExpanded = false;
       _environmentExpanded = false;
     });
@@ -367,6 +408,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _saveDebounce?.cancel();
     _solveDebounce?.cancel();
     _hitProbDebounce?.cancel();
+    _sensorsPulse?.cancel();
     // ignore: discarded_futures
     _kestrelSub?.cancel();
     // Stop the device sensors when leaving the screen so the OS can
@@ -1121,45 +1163,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   /// Single-column phone layout.
   Widget _phoneBody() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _setupCard(),
-          const SizedBox(height: 12),
-          _environmentCard(),
-          const SizedBox(height: 12),
-          _solutionCard(),
-          const SizedBox(height: 12),
-          _hitProbCard(),
-          const SizedBox(height: 12),
-          _targetPlotCard(),
-          if (_shots.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _correctionCard(),
-          ],
-          const SizedBox(height: 12),
-          _movingTargetCard(),
-          const SizedBox(height: 12),
-          _dopeCard(),
-          const SizedBox(height: 12),
-          _notesCard(),
-        ],
-      ),
-    );
-  }
-
-  /// Two-column tablet / desktop layout. Left: setup / env / solution.
-  /// Right: target plot / DOPE / moving target.
-  Widget _wideBody() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _solutionStrip(),
         Expanded(
-          flex: 5,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 32),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -1171,29 +1181,81 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 const SizedBox(height: 12),
                 _hitProbCard(),
                 const SizedBox(height: 12),
-                _notesCard(),
-              ],
-            ),
-          ),
-        ),
-        Expanded(
-          flex: 6,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(8, 12, 16, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
                 _targetPlotCard(),
+                const SizedBox(height: 12),
+                _groupStatsCard(),
                 if (_shots.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   _correctionCard(),
                 ],
                 const SizedBox(height: 12),
+                _movingTargetCard(),
+                const SizedBox(height: 12),
                 _dopeCard(),
                 const SizedBox(height: 12),
-                _movingTargetCard(),
+                _notesCard(),
               ],
             ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Two-column tablet / desktop layout. Left: setup / env / solution.
+  /// Right: target plot / DOPE / moving target.
+  Widget _wideBody() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _solutionStrip(),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 5,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _setupCard(),
+                      const SizedBox(height: 12),
+                      _environmentCard(),
+                      const SizedBox(height: 12),
+                      _solutionCard(),
+                      const SizedBox(height: 12),
+                      _groupStatsCard(),
+                      const SizedBox(height: 12),
+                      _hitProbCard(),
+                      const SizedBox(height: 12),
+                      _notesCard(),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 6,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(8, 12, 16, 32),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _targetPlotCard(),
+                      if (_shots.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _correctionCard(),
+                      ],
+                      const SizedBox(height: 12),
+                      _dopeCard(),
+                      const SizedBox(height: 12),
+                      _movingTargetCard(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -1321,14 +1383,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   // ─────────────────────── Orientation (cant + heading) ───────────────────────
 
-  /// The cant (level) and magnetometer (heading) live-readout rows.
-  /// Both are sourced from device sensors via `Provider`-backed
-  /// services and re-render on every smoothed sample.
+  /// The cant (level) and magnetometer (heading) live-readout rows,
+  /// wrapped in a collapsible "Sensors" expander. Collapsed by default
+  /// so beginners don't have to look at extra readouts they don't yet
+  /// care about; the collapsed header still shows live values as a
+  /// chip strip:
+  ///
+  ///     📐 Cant: -0.4° (level)   🧭 Azimuth: 287° (W)   [ Live updates ●○ ]
+  ///
+  /// Tapping anywhere on the header expands to the full cant + heading
+  /// rows with their calibration / "Use as shot azimuth" buttons. Power
+  /// users can leave it expanded for the session.
   ///
   /// On platforms without these sensors (macOS, web), the underlying
-  /// services report `isAvailable == false` and we render a single
-  /// "Sensors unavailable on this device" notice so the screen still
-  /// degrades gracefully.
+  /// services report `isAvailable == false` and the rows render a
+  /// "Sensor unavailable" placeholder so the screen still degrades
+  /// gracefully.
   Widget _orientationRows() {
     final theme = Theme.of(context);
     return Container(
@@ -1336,15 +1406,134 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _cantRow(),
-          const Divider(height: 20),
-          _headingRow(),
+          InkWell(
+            onTap: () => setState(
+                () => _sensorsExpanded = !_sensorsExpanded),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+              child: _sensorsHeader(),
+            ),
+          ),
+          if (_sensorsExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _cantRow(),
+                  const Divider(height: 20),
+                  _headingRow(),
+                  const SizedBox(height: 8),
+                  _liveUpdatesToggle(),
+                ],
+              ),
+            ),
         ],
       ),
+    );
+  }
+
+  /// Header row for the Sensors expander. When collapsed, mirrors the
+  /// live cant + azimuth values as a chip strip so the user gets the
+  /// information without expanding. When expanded, shows just the title
+  /// + chevron.
+  Widget _sensorsHeader() {
+    final theme = Theme.of(context);
+    if (_sensorsExpanded) {
+      return Row(
+        children: [
+          Icon(Icons.sensors,
+              size: 18, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          Text('Sensors', style: theme.textTheme.titleSmall),
+          const Spacer(),
+          const Icon(Icons.expand_less),
+        ],
+      );
+    }
+    final cant = context.watch<CantService>().cantDegrees;
+    final cantAvail = context.watch<CantService>().isAvailable;
+    final heading = context.watch<MagnetometerService>().headingDegrees;
+    final headingAvail = context.watch<MagnetometerService>().isAvailable;
+    final cantStr = !cantAvail
+        ? '—'
+        : (cant == null
+            ? '…'
+            : '${cant >= 0 ? '+' : ''}${cant.toStringAsFixed(1)}°');
+    final headingStr = !headingAvail
+        ? '—'
+        : (heading == null
+            ? '…'
+            : '${heading.toStringAsFixed(0)}° ${_compassLabel(heading)}');
+    final cantWarn = cant != null && cant.abs() > 2.0;
+    return Row(
+      children: [
+        Icon(Icons.sensors, size: 18, color: theme.colorScheme.primary),
+        const SizedBox(width: 8),
+        Text('Sensors', style: theme.textTheme.titleSmall),
+        const SizedBox(width: 12),
+        Icon(Icons.straighten,
+            size: 14,
+            color: cantWarn
+                ? theme.colorScheme.error
+                : theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 2),
+        Text(
+          cantStr,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontFeatures: const [FontFeature.tabularFigures()],
+            color: cantWarn ? theme.colorScheme.error : null,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Icon(Icons.explore,
+            size: 14, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 2),
+        Text(
+          headingStr,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        const Spacer(),
+        const Icon(Icons.expand_more),
+      ],
+    );
+  }
+
+  /// "Live updates" pulse toggle. The CantService and MagnetometerService
+  /// already stream at ~10–15 Hz; this toggle simply feeds a 2 Hz timer
+  /// that calls `setState` so the chip strip + bubble level get a
+  /// noticeable "refresh" feeling. With it OFF the rebuilds still happen
+  /// — just driven by the underlying ChangeNotifier instead of the
+  /// timer — but the user sees a deliberate pulse when they enable it.
+  Widget _liveUpdatesToggle() {
+    return SwitchListTile.adaptive(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      title: const Text('Live updates'),
+      subtitle: const Text(
+          '2 Hz refresh of the cant + heading chip — useful for verifying '
+          'the sensors are alive without staring at the readout.'),
+      value: _sensorsLive,
+      onChanged: (v) {
+        setState(() {
+          _sensorsLive = v;
+          _sensorsPulse?.cancel();
+          if (v) {
+            _sensorsPulse = Timer.periodic(
+              const Duration(milliseconds: 500),
+              (_) {
+                if (!mounted) return;
+                setState(() {});
+              },
+            );
+          }
+        });
+      },
     );
   }
 
@@ -2644,7 +2833,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ? TargetSpec.defaultPaper()
         : TargetSpec.fromRow(_selectedTarget!);
     final yards = double.tryParse(_distanceCtrl.text) ?? 0;
-    final stats = _groupStats(yards);
+    final stats = _computeGroupStats(yards);
     final reticleUnit = _correctionUnit == 'moa' ? 'moa' : 'mil';
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -2746,12 +2935,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   child: _smallStat('Shots', '${_shots.length}'),
                 ),
                 Expanded(
-                  child: _smallStat('Group',
-                      stats == null ? '—' : '${stats.groupIn.toStringAsFixed(2)}"'),
+                  child: _smallStat(
+                      'Group',
+                      stats == null
+                          ? '—'
+                          : '${stats.extremeSpreadIn.toStringAsFixed(2)}"'),
                 ),
                 Expanded(
-                  child: _smallStat('MOA',
-                      stats == null ? '—' : stats.groupMoa.toStringAsFixed(2)),
+                  child: _smallStat(
+                      'MOA',
+                      stats == null
+                          ? '—'
+                          : stats.extremeSpreadMoa.toStringAsFixed(2)),
                 ),
               ],
             ),
@@ -2782,33 +2977,25 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return true;
   }
 
-  /// Compute simple group statistics for the current shot impacts.
-  /// Returns null if fewer than 2 shots are recorded.
-  _GroupStats? _groupStats(double yards) {
+  /// Compute the rich [GroupStats] for the current shot impacts. Returns
+  /// null if fewer than 2 shots are recorded or no target is picked.
+  ///
+  /// Conversion from normalized (-1..1) impact coordinates to inches:
+  /// `x_inches = impactX * widthIn / 2`, `y_inches = impactY * heightIn / 2`.
+  GroupStats? _computeGroupStats(double yards) {
     if (_shots.length < 2) return null;
     if (_selectedTarget == null) return null;
-    // Convert normalized impact coords to inches on the target. Width
-    // and height map to ±widthIn/2 / ±heightIn/2.
     final w = _selectedTarget!.widthIn;
     final h = _selectedTarget!.heightIn;
-    final pts = <Offset>[];
-    for (final s in _shots) {
-      final xIn = s.impactX * (w / 2);
-      final yIn = s.impactY * (h / 2);
-      pts.add(Offset(xIn, yIn));
-    }
-    // Extreme spread = max pairwise distance.
-    double maxD = 0;
-    for (var i = 0; i < pts.length; i++) {
-      for (var j = i + 1; j < pts.length; j++) {
-        final dx = pts[i].dx - pts[j].dx;
-        final dy = pts[i].dy - pts[j].dy;
-        final d = math.sqrt(dx * dx + dy * dy);
-        if (d > maxD) maxD = d;
-      }
-    }
-    final moa = yards <= 0 ? 0.0 : bu.inchesToMoaAtYards(maxD, yards);
-    return _GroupStats(groupIn: maxD, groupMoa: moa);
+    final pts = [
+      for (final s in _shots) Offset(s.impactX * (w / 2), s.impactY * (h / 2)),
+    ];
+    final bulletDia = double.tryParse(_bulletDiameterCtrl.text.trim()) ?? 0.0;
+    return computeGroupStats(
+      points: pts,
+      distanceYd: yards,
+      bulletDiameterIn: bulletDia,
+    );
   }
 
   // ─────────────────────── Moving target (Pro) card ───────────────────────
@@ -3290,6 +3477,422 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     );
   }
 
+  // ─────────────────────── Group statistics card ───────────────────────
+
+  /// "Group statistics" card. Below the firing-solution / hit-probability
+  /// summary it answers two questions a precision shooter actually asks
+  /// after a range trip:
+  ///
+  ///   1. How tight was this group? — extreme spread, mean radius,
+  ///      group MOA, the outside-edge "caliper" measurement, and the
+  ///      horizontal / vertical population standard deviations.
+  ///   2. Which way is my zero off? — group centroid (offset from the
+  ///      aim point) plus a "Suggested zero adjust" line that flips the
+  ///      sign so the shooter can think in scope-turret directions
+  ///      ("0.4" right means dial 0.4" left").
+  ///
+  /// Renders an empty placeholder for 0–1 shots so the card is never
+  /// missing — its presence reminds users they can record more shots.
+  Widget _groupStatsCard() {
+    final theme = Theme.of(context);
+    final yards = double.tryParse(_distanceCtrl.text) ?? 0;
+    final stats = _computeGroupStats(yards);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.scatter_plot, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text('Group statistics',
+                    style: theme.textTheme.titleMedium),
+                const Spacer(),
+                if (stats != null)
+                  Text(
+                    '${stats.shotCount}-shot group',
+                    style: theme.textTheme.bodySmall,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (stats == null)
+              Text(
+                _shots.isEmpty
+                    ? 'Record shots on the target plot to see group statistics.'
+                    : 'Need ≥2 shots to compute group statistics.',
+                style: theme.textTheme.bodyMedium,
+              )
+            else
+              _groupStatsBody(stats, yards),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Renders the three "ES / MR / Group" rows, the SD pair, and the
+  /// centroid + zero-adjust paragraph. Unit display for the MOA / MIL
+  /// column tracks the per-session correction unit toggle so the user
+  /// sees the numbers in the system they're already dialing the scope
+  /// in.
+  Widget _groupStatsBody(GroupStats stats, double yards) {
+    final unit = _correctionUnit;
+    String fmtAngle(double inches) {
+      switch (unit) {
+        case 'mil':
+          return yards <= 0
+              ? '—'
+              : '${bu.inchesToMilAtYards(inches, yards).toStringAsFixed(2)} mil';
+        case 'moa':
+          return yards <= 0
+              ? '—'
+              : '${bu.inchesToMoaAtYards(inches, yards).toStringAsFixed(2)} MOA';
+        default:
+          return ''; // inches: no separate angle column
+      }
+    }
+
+    final showAngleColumn = unit != 'inches';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _groupStatRow(
+          icon: Icons.adjust,
+          label: 'ES',
+          tooltip: 'Extreme spread (longest center-to-center)',
+          inches: stats.extremeSpreadIn,
+          showAngle: showAngleColumn,
+          angleText: fmtAngle(stats.extremeSpreadIn),
+        ),
+        const SizedBox(height: 6),
+        _groupStatRow(
+          icon: Icons.radio_button_checked,
+          label: 'Mean R',
+          tooltip: 'Mean distance from each shot to the group centroid',
+          inches: stats.meanRadiusIn,
+          showAngle: showAngleColumn,
+          angleText: fmtAngle(stats.meanRadiusIn),
+        ),
+        const SizedBox(height: 6),
+        _groupStatRow(
+          icon: Icons.crop_free,
+          label: 'Group',
+          tooltip: 'ES + bullet diameter (the outside-edge caliper '
+              'measurement)',
+          inches: stats.groupSizeIn,
+          showAngle: showAngleColumn,
+          angleText: fmtAngle(stats.groupSizeIn),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _smallStat(
+                'σ horizontal',
+                '${stats.horizontalSdIn.toStringAsFixed(2)}"',
+              ),
+            ),
+            Expanded(
+              child: _smallStat(
+                'σ vertical',
+                '${stats.verticalSdIn.toStringAsFixed(2)}"',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _zeroAdjustBlock(stats, yards),
+      ],
+    );
+  }
+
+  /// One "icon · label · inches · angle" row inside the group stats body.
+  /// Tooltip appears on long-press / hover so a curious shooter can see
+  /// what the abbreviation stands for without cluttering the row.
+  Widget _groupStatRow({
+    required IconData icon,
+    required String label,
+    required String tooltip,
+    required double inches,
+    required bool showAngle,
+    required String angleText,
+  }) {
+    final theme = Theme.of(context);
+    return Tooltip(
+      message: tooltip,
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: theme.colorScheme.primary),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 64,
+            child: Text(label,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                )),
+          ),
+          Expanded(
+            child: Text(
+              '${inches.toStringAsFixed(2)}"',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          if (showAngle)
+            SizedBox(
+              width: 96,
+              child: Text(
+                angleText,
+                textAlign: TextAlign.right,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// "Centroid: 0.4" right, 0.2" low → Suggested zero adjust: 0.4" left
+  /// (← 0.07 mil), 0.2" up (↑ 0.03 mil)" — the user-facing reverse of
+  /// the centroid offset, so the shooter can directly translate the
+  /// numbers into scope-turret clicks.
+  Widget _zeroAdjustBlock(GroupStats stats, double yards) {
+    final theme = Theme.of(context);
+    final cdx = stats.centroidIn.dx;
+    final cdy = stats.centroidIn.dy;
+    final unit = _correctionUnit;
+    String fmtIn(double v) => '${v.abs().toStringAsFixed(2)}"';
+    String fmtAngle(double v) {
+      switch (unit) {
+        case 'mil':
+          return yards <= 0
+              ? ''
+              : '${bu.inchesToMilAtYards(v.abs(), yards).toStringAsFixed(2)} mil';
+        case 'moa':
+          return yards <= 0
+              ? ''
+              : '${bu.inchesToMoaAtYards(v.abs(), yards).toStringAsFixed(2)} MOA';
+        default:
+          return '';
+      }
+    }
+
+    String centroidLine;
+    if (cdx.abs() < 0.05 && cdy.abs() < 0.05) {
+      centroidLine = 'Centroid: on aim point';
+    } else {
+      final h = cdx.abs() < 0.05
+          ? ''
+          : '${fmtIn(cdx)} ${cdx >= 0 ? 'right' : 'left'}';
+      final v = cdy.abs() < 0.05
+          ? ''
+          : '${fmtIn(cdy)} ${cdy >= 0 ? 'high' : 'low'}';
+      final pieces = [h, v].where((s) => s.isNotEmpty).join(', ');
+      centroidLine = 'Centroid: $pieces';
+    }
+
+    // Zero adjust is the reverse of the centroid: if the group is
+    // 0.4" right, the user dials the scope 0.4" LEFT. Sign-flipping
+    // the centroid is enough — the labels flip naturally.
+    final adjustHRaw = -cdx;
+    final adjustVRaw = -cdy;
+    final hLabel = adjustHRaw.abs() < 0.05
+        ? null
+        : (adjustHRaw >= 0 ? ('right', '→') : ('left', '←'));
+    final vLabel = adjustVRaw.abs() < 0.05
+        ? null
+        : (adjustVRaw >= 0 ? ('up', '↑') : ('down', '↓'));
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(centroidLine, style: theme.textTheme.bodyMedium),
+          if (hLabel != null || vLabel != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Suggested zero adjust:',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 2),
+            if (hLabel != null)
+              Text(
+                '${fmtIn(adjustHRaw)} ${hLabel.$1}'
+                '${unit != 'inches' ? '  (${hLabel.$2} ${fmtAngle(adjustHRaw)})' : ''}',
+                style: theme.textTheme.bodyMedium,
+              ),
+            if (vLabel != null)
+              Text(
+                '${fmtIn(adjustVRaw)} ${vLabel.$1}'
+                '${unit != 'inches' ? '  (${vLabel.$2} ${fmtAngle(adjustVRaw)})' : ''}',
+                style: theme.textTheme.bodyMedium,
+              ),
+          ] else ...[
+            const SizedBox(height: 6),
+            Text(
+              'Group is centered — zero looks good.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────── Sticky solution strip ───────────────────────
+
+  /// Slim, always-visible header chip strip with the user's current
+  /// firing solution at a glance:
+  ///
+  ///     6.5 CM · 600 yd · 8" steel
+  ///     Wind 8 mph @ 9 o'clock
+  ///     Hold ↑ 5.4 mil  → 0.8 mil
+  ///
+  /// Renders nothing until a solution is available (saves the vertical
+  /// real estate while the user is still configuring the session).
+  /// Lives at the top of both the phone and tablet bodies so it never
+  /// scrolls off — the goal is "glance → fire → glance".
+  Widget _solutionStrip() {
+    final theme = Theme.of(context);
+    final s = _solution;
+    final dist = double.tryParse(_distanceCtrl.text.trim()) ?? 0;
+    final cant = context.watch<CantService>().cantDegrees;
+    if (s == null) return const SizedBox.shrink();
+    final loadLabel = _selectedLoad?.name ??
+        _selectedProfile?.name ??
+        (_bulletWeightCtrl.text.isEmpty
+            ? 'Load'
+            : '${_bulletWeightCtrl.text.trim()} gr');
+    final targetLabel = _selectedTarget?.name ?? 'No target';
+    final wind = double.tryParse(_windSpeedCtrl.text.trim()) ?? 0;
+    final windDir = double.tryParse(_windDirCtrl.text.trim()) ?? 0;
+    final clock = _windClock(windDir);
+    final dropMil = bu.inchesToMilAtYards(s.dropInches, s.rangeYards);
+    final windMil = bu.inchesToMilAtYards(s.windDriftInches, s.rangeYards);
+    final dropMoa = bu.inchesToMoaAtYards(s.dropInches, s.rangeYards);
+    final windMoa = bu.inchesToMoaAtYards(s.windDriftInches, s.rangeYards);
+    final isMil = _correctionUnit == 'mil';
+    final dropStr = isMil
+        ? '${dropMil.toStringAsFixed(2)} mil'
+        : '${dropMoa.toStringAsFixed(1)} MOA';
+    final windStr = isMil
+        ? '${windMil.toStringAsFixed(2)} mil'
+        : '${windMoa.toStringAsFixed(1)} MOA';
+    final cantWarn = cant != null && cant.abs() > 2.0;
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$loadLabel · ${dist.toStringAsFixed(0)} yd · '
+                    '$targetLabel',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (cant != null) _bubbleLevel(cant, cantWarn),
+              ],
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Icon(Icons.air, size: 14, color: theme.colorScheme.primary),
+                const SizedBox(width: 4),
+                Text(
+                  'Wind ${wind.toStringAsFixed(0)} mph @ $clock',
+                  style: theme.textTheme.bodySmall,
+                ),
+                const SizedBox(width: 12),
+                Icon(Icons.arrow_upward,
+                    size: 14, color: theme.colorScheme.primary),
+                Text(' Hold $dropStr',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      fontWeight: FontWeight.w500,
+                    )),
+                const SizedBox(width: 12),
+                Icon(
+                  s.windDriftInches >= 0
+                      ? Icons.arrow_forward
+                      : Icons.arrow_back,
+                  size: 14,
+                  color: theme.colorScheme.primary,
+                ),
+                Text(' ${windStr.replaceFirst('-', '')}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontFeatures: const [FontFeature.tabularFigures()],
+                      fontWeight: FontWeight.w500,
+                    )),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Tiny bubble-level glyph rendered next to the firing-solution strip.
+  /// Goes red when the rifle is canted more than 2°. The level is meant
+  /// to be a glance-check, not a precision tool — the cant readout in
+  /// the Setup → Sensors panel is the authoritative number.
+  Widget _bubbleLevel(double cantDeg, bool warn) {
+    final theme = Theme.of(context);
+    final color = warn ? theme.colorScheme.error : theme.colorScheme.primary;
+    return Tooltip(
+      message: 'Cant: ${cantDeg >= 0 ? '+' : ''}${cantDeg.toStringAsFixed(1)}°'
+          '${warn ? '\nLevel rifle before firing' : ''}',
+      child: SizedBox(
+        width: 56,
+        height: 18,
+        child: CustomPaint(
+          painter: _BubbleLevelPainter(
+            cantDeg: cantDeg,
+            color: color,
+            track: theme.colorScheme.outline,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Map a "wind from" degree heading to a clock-face label like
+  /// "9 o'clock" — what experienced shooters use to communicate wind.
+  String _windClock(double fromDeg) {
+    // 12 o'clock = 0/360, 3 o'clock = 90, 6 = 180, 9 = 270.
+    final d = ((fromDeg % 360) + 360) % 360;
+    final hour = ((d / 30).round() % 12);
+    final h = hour == 0 ? 12 : hour;
+    return "$h o'clock";
+  }
+
   // ─────────────────────── Notes card ───────────────────────
 
   Widget _notesCard() {
@@ -3342,12 +3945,6 @@ class _DopeBodyCell extends StatelessWidget {
 
 enum _ShotEditResult { cancel, save, delete }
 
-class _GroupStats {
-  const _GroupStats({required this.groupIn, required this.groupMoa});
-  final double groupIn;
-  final double groupMoa;
-}
-
 /// Small bag of "this device gave us this reading" used by the
 /// _rangefinderQuickFill picker to find the freshest reading across
 /// all connected rangefinders. The reading is nullable so we can build
@@ -3356,4 +3953,70 @@ class _RangefinderCandidate {
   const _RangefinderCandidate({required this.label, required this.reading});
   final String label;
   final RangefinderReading? reading;
+}
+
+/// Tiny rifle-cant bubble level. Draws a horizontal track with center
+/// notches and a small bubble that floats based on the live cant angle.
+/// Sized for the sticky solution strip (about 56x18 px).
+class _BubbleLevelPainter extends CustomPainter {
+  _BubbleLevelPainter({
+    required this.cantDeg,
+    required this.color,
+    required this.track,
+  });
+
+  /// Signed cant angle in degrees. Positive = right tilt → bubble drifts
+  /// LEFT (because the bubble in a real spirit level moves opposite the
+  /// tilt). We display it that way to match a physical level the user
+  /// might have on their scope rail.
+  final double cantDeg;
+  final Color color;
+  final Color track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final halfW = size.width / 2 - 4;
+    // Track line.
+    final trackPaint = Paint()
+      ..color = track
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(cx - halfW, cy),
+      Offset(cx + halfW, cy),
+      trackPaint,
+    );
+    // Center notches.
+    final notch = Paint()
+      ..color = track
+      ..strokeWidth = 1.0;
+    canvas.drawLine(
+      Offset(cx - 4, cy - 5),
+      Offset(cx - 4, cy + 5),
+      notch,
+    );
+    canvas.drawLine(
+      Offset(cx + 4, cy - 5),
+      Offset(cx + 4, cy + 5),
+      notch,
+    );
+    // Bubble. Cap the visible deflection at ±10° so the bubble doesn't
+    // walk off the track if the phone is held sideways.
+    final clamped = cantDeg.clamp(-10.0, 10.0);
+    final dx = -clamped / 10.0 * halfW;
+    canvas.drawCircle(
+      Offset(cx + dx, cy),
+      4.5,
+      Paint()..color = color,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubbleLevelPainter old) {
+    return old.cantDeg != cantDeg ||
+        old.color != color ||
+        old.track != track;
+  }
 }

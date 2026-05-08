@@ -133,7 +133,8 @@ class ManufacturerRow extends DataClass implements Insertable<ManufacturerRow> {
   final String name;
   final String? country;
 
-  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts' | 'optics'
+  /// 'powder' | 'bullet' | 'primer' | 'brass' | 'firearm' | 'parts' |
+  /// 'optics' | 'ammo'
   final String kind;
   const ManufacturerRow({
     required this.id,
@@ -20912,6 +20913,28 @@ class $RangeDaySessionsTable extends RangeDaySessions
     requiredDuringInsert: false,
     defaultValue: const Constant('mil'),
   );
+  static const VerificationMeta _cantDegreesMeta = const VerificationMeta(
+    'cantDegrees',
+  );
+  @override
+  late final GeneratedColumn<double> cantDegrees = GeneratedColumn<double>(
+    'cant_degrees',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _shotAzimuthDegreesMeta =
+      const VerificationMeta('shotAzimuthDegrees');
+  @override
+  late final GeneratedColumn<double> shotAzimuthDegrees =
+      GeneratedColumn<double>(
+        'shot_azimuth_degrees',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -20938,6 +20961,8 @@ class $RangeDaySessionsTable extends RangeDaySessions
     rangeUncertaintyYd,
     reticleId,
     correctionUnit,
+    cantDegrees,
+    shotAzimuthDegrees,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -21131,6 +21156,24 @@ class $RangeDaySessionsTable extends RangeDaySessions
         ),
       );
     }
+    if (data.containsKey('cant_degrees')) {
+      context.handle(
+        _cantDegreesMeta,
+        cantDegrees.isAcceptableOrUnknown(
+          data['cant_degrees']!,
+          _cantDegreesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('shot_azimuth_degrees')) {
+      context.handle(
+        _shotAzimuthDegreesMeta,
+        shotAzimuthDegrees.isAcceptableOrUnknown(
+          data['shot_azimuth_degrees']!,
+          _shotAzimuthDegreesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -21236,6 +21279,14 @@ class $RangeDaySessionsTable extends RangeDaySessions
         DriftSqlType.string,
         data['${effectivePrefix}correction_unit'],
       )!,
+      cantDegrees: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cant_degrees'],
+      ),
+      shotAzimuthDegrees: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}shot_azimuth_degrees'],
+      ),
     );
   }
 
@@ -21305,6 +21356,22 @@ class RangeDaySessionRow extends DataClass
   /// Per-session preference for the post-shot correction display.
   /// 'mil' | 'moa' | 'inches'. Defaults to the app-wide angle unit.
   final String correctionUnit;
+
+  /// Captured cant (rifle level) at session-setup time, in degrees.
+  /// Positive = rifle canted right relative to the calibrated zero.
+  /// Persisted only when the user taps "Capture current readings" in
+  /// the Sensors panel; null if the capture button was never used. The
+  /// solver consumes the *live* `CantService.cantDegrees`, so this
+  /// column is purely a record of the conditions at the time of
+  /// capture, useful for after-the-fact review of a session.
+  final double? cantDegrees;
+
+  /// Captured shot azimuth (compass heading) at session-setup time, in
+  /// degrees. 0 = N, 90 = E, 180 = S, 270 = W. Mirrors the value typed
+  /// into / read from the Shot Azimuth field — captured here so it's
+  /// preserved next to the cant for archival purposes even if the
+  /// shooter later edits the field.
+  final double? shotAzimuthDegrees;
   const RangeDaySessionRow({
     required this.id,
     required this.name,
@@ -21330,6 +21397,8 @@ class RangeDaySessionRow extends DataClass
     this.rangeUncertaintyYd,
     this.reticleId,
     required this.correctionUnit,
+    this.cantDegrees,
+    this.shotAzimuthDegrees,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -21392,6 +21461,12 @@ class RangeDaySessionRow extends DataClass
       map['reticle_id'] = Variable<int>(reticleId);
     }
     map['correction_unit'] = Variable<String>(correctionUnit);
+    if (!nullToAbsent || cantDegrees != null) {
+      map['cant_degrees'] = Variable<double>(cantDegrees);
+    }
+    if (!nullToAbsent || shotAzimuthDegrees != null) {
+      map['shot_azimuth_degrees'] = Variable<double>(shotAzimuthDegrees);
+    }
     return map;
   }
 
@@ -21455,6 +21530,12 @@ class RangeDaySessionRow extends DataClass
           ? const Value.absent()
           : Value(reticleId),
       correctionUnit: Value(correctionUnit),
+      cantDegrees: cantDegrees == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cantDegrees),
+      shotAzimuthDegrees: shotAzimuthDegrees == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shotAzimuthDegrees),
     );
   }
 
@@ -21492,6 +21573,10 @@ class RangeDaySessionRow extends DataClass
       ),
       reticleId: serializer.fromJson<int?>(json['reticleId']),
       correctionUnit: serializer.fromJson<String>(json['correctionUnit']),
+      cantDegrees: serializer.fromJson<double?>(json['cantDegrees']),
+      shotAzimuthDegrees: serializer.fromJson<double?>(
+        json['shotAzimuthDegrees'],
+      ),
     );
   }
   @override
@@ -21522,6 +21607,8 @@ class RangeDaySessionRow extends DataClass
       'rangeUncertaintyYd': serializer.toJson<double?>(rangeUncertaintyYd),
       'reticleId': serializer.toJson<int?>(reticleId),
       'correctionUnit': serializer.toJson<String>(correctionUnit),
+      'cantDegrees': serializer.toJson<double?>(cantDegrees),
+      'shotAzimuthDegrees': serializer.toJson<double?>(shotAzimuthDegrees),
     };
   }
 
@@ -21550,6 +21637,8 @@ class RangeDaySessionRow extends DataClass
     Value<double?> rangeUncertaintyYd = const Value.absent(),
     Value<int?> reticleId = const Value.absent(),
     String? correctionUnit,
+    Value<double?> cantDegrees = const Value.absent(),
+    Value<double?> shotAzimuthDegrees = const Value.absent(),
   }) => RangeDaySessionRow(
     id: id ?? this.id,
     name: name ?? this.name,
@@ -21585,6 +21674,10 @@ class RangeDaySessionRow extends DataClass
         : this.rangeUncertaintyYd,
     reticleId: reticleId.present ? reticleId.value : this.reticleId,
     correctionUnit: correctionUnit ?? this.correctionUnit,
+    cantDegrees: cantDegrees.present ? cantDegrees.value : this.cantDegrees,
+    shotAzimuthDegrees: shotAzimuthDegrees.present
+        ? shotAzimuthDegrees.value
+        : this.shotAzimuthDegrees,
   );
   RangeDaySessionRow copyWithCompanion(RangeDaySessionsCompanion data) {
     return RangeDaySessionRow(
@@ -21636,6 +21729,12 @@ class RangeDaySessionRow extends DataClass
       correctionUnit: data.correctionUnit.present
           ? data.correctionUnit.value
           : this.correctionUnit,
+      cantDegrees: data.cantDegrees.present
+          ? data.cantDegrees.value
+          : this.cantDegrees,
+      shotAzimuthDegrees: data.shotAzimuthDegrees.present
+          ? data.shotAzimuthDegrees.value
+          : this.shotAzimuthDegrees,
     );
   }
 
@@ -21665,7 +21764,9 @@ class RangeDaySessionRow extends DataClass
           ..write('windUncertaintyMph: $windUncertaintyMph, ')
           ..write('rangeUncertaintyYd: $rangeUncertaintyYd, ')
           ..write('reticleId: $reticleId, ')
-          ..write('correctionUnit: $correctionUnit')
+          ..write('correctionUnit: $correctionUnit, ')
+          ..write('cantDegrees: $cantDegrees, ')
+          ..write('shotAzimuthDegrees: $shotAzimuthDegrees')
           ..write(')'))
         .toString();
   }
@@ -21696,6 +21797,8 @@ class RangeDaySessionRow extends DataClass
     rangeUncertaintyYd,
     reticleId,
     correctionUnit,
+    cantDegrees,
+    shotAzimuthDegrees,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -21724,7 +21827,9 @@ class RangeDaySessionRow extends DataClass
           other.windUncertaintyMph == this.windUncertaintyMph &&
           other.rangeUncertaintyYd == this.rangeUncertaintyYd &&
           other.reticleId == this.reticleId &&
-          other.correctionUnit == this.correctionUnit);
+          other.correctionUnit == this.correctionUnit &&
+          other.cantDegrees == this.cantDegrees &&
+          other.shotAzimuthDegrees == this.shotAzimuthDegrees);
 }
 
 class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
@@ -21752,6 +21857,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
   final Value<double?> rangeUncertaintyYd;
   final Value<int?> reticleId;
   final Value<String> correctionUnit;
+  final Value<double?> cantDegrees;
+  final Value<double?> shotAzimuthDegrees;
   const RangeDaySessionsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
@@ -21777,6 +21884,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.rangeUncertaintyYd = const Value.absent(),
     this.reticleId = const Value.absent(),
     this.correctionUnit = const Value.absent(),
+    this.cantDegrees = const Value.absent(),
+    this.shotAzimuthDegrees = const Value.absent(),
   });
   RangeDaySessionsCompanion.insert({
     this.id = const Value.absent(),
@@ -21803,6 +21912,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     this.rangeUncertaintyYd = const Value.absent(),
     this.reticleId = const Value.absent(),
     this.correctionUnit = const Value.absent(),
+    this.cantDegrees = const Value.absent(),
+    this.shotAzimuthDegrees = const Value.absent(),
   }) : name = Value(name),
        date = Value(date),
        distanceYd = Value(distanceYd);
@@ -21831,6 +21942,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Expression<double>? rangeUncertaintyYd,
     Expression<int>? reticleId,
     Expression<String>? correctionUnit,
+    Expression<double>? cantDegrees,
+    Expression<double>? shotAzimuthDegrees,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -21860,6 +21973,9 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
         'range_uncertainty_yd': rangeUncertaintyYd,
       if (reticleId != null) 'reticle_id': reticleId,
       if (correctionUnit != null) 'correction_unit': correctionUnit,
+      if (cantDegrees != null) 'cant_degrees': cantDegrees,
+      if (shotAzimuthDegrees != null)
+        'shot_azimuth_degrees': shotAzimuthDegrees,
     });
   }
 
@@ -21888,6 +22004,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     Value<double?>? rangeUncertaintyYd,
     Value<int?>? reticleId,
     Value<String>? correctionUnit,
+    Value<double?>? cantDegrees,
+    Value<double?>? shotAzimuthDegrees,
   }) {
     return RangeDaySessionsCompanion(
       id: id ?? this.id,
@@ -21914,6 +22032,8 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
       rangeUncertaintyYd: rangeUncertaintyYd ?? this.rangeUncertaintyYd,
       reticleId: reticleId ?? this.reticleId,
       correctionUnit: correctionUnit ?? this.correctionUnit,
+      cantDegrees: cantDegrees ?? this.cantDegrees,
+      shotAzimuthDegrees: shotAzimuthDegrees ?? this.shotAzimuthDegrees,
     );
   }
 
@@ -21992,6 +22112,12 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
     if (correctionUnit.present) {
       map['correction_unit'] = Variable<String>(correctionUnit.value);
     }
+    if (cantDegrees.present) {
+      map['cant_degrees'] = Variable<double>(cantDegrees.value);
+    }
+    if (shotAzimuthDegrees.present) {
+      map['shot_azimuth_degrees'] = Variable<double>(shotAzimuthDegrees.value);
+    }
     return map;
   }
 
@@ -22021,7 +22147,9 @@ class RangeDaySessionsCompanion extends UpdateCompanion<RangeDaySessionRow> {
           ..write('windUncertaintyMph: $windUncertaintyMph, ')
           ..write('rangeUncertaintyYd: $rangeUncertaintyYd, ')
           ..write('reticleId: $reticleId, ')
-          ..write('correctionUnit: $correctionUnit')
+          ..write('correctionUnit: $correctionUnit, ')
+          ..write('cantDegrees: $cantDegrees, ')
+          ..write('shotAzimuthDegrees: $shotAzimuthDegrees')
           ..write(')'))
         .toString();
   }
@@ -23756,6 +23884,859 @@ class DragCurvesCompanion extends UpdateCompanion<DragCurveRow> {
   }
 }
 
+class $FactoryLoadsTable extends FactoryLoads
+    with TableInfo<$FactoryLoadsTable, FactoryLoadRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $FactoryLoadsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerIdMeta = const VerificationMeta(
+    'manufacturerId',
+  );
+  @override
+  late final GeneratedColumn<int> manufacturerId = GeneratedColumn<int>(
+    'manufacturer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES manufacturers (id)',
+    ),
+  );
+  static const VerificationMeta _productLineMeta = const VerificationMeta(
+    'productLine',
+  );
+  @override
+  late final GeneratedColumn<String> productLine = GeneratedColumn<String>(
+    'product_line',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _caliberMeta = const VerificationMeta(
+    'caliber',
+  );
+  @override
+  late final GeneratedColumn<String> caliber = GeneratedColumn<String>(
+    'caliber',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletNameMeta = const VerificationMeta(
+    'bulletName',
+  );
+  @override
+  late final GeneratedColumn<String> bulletName = GeneratedColumn<String>(
+    'bullet_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletWeightGrMeta = const VerificationMeta(
+    'bulletWeightGr',
+  );
+  @override
+  late final GeneratedColumn<double> bulletWeightGr = GeneratedColumn<double>(
+    'bullet_weight_gr',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bulletDiameterInMeta = const VerificationMeta(
+    'bulletDiameterIn',
+  );
+  @override
+  late final GeneratedColumn<double> bulletDiameterIn = GeneratedColumn<double>(
+    'bullet_diameter_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bcG1Meta = const VerificationMeta('bcG1');
+  @override
+  late final GeneratedColumn<double> bcG1 = GeneratedColumn<double>(
+    'bc_g1',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bcG7Meta = const VerificationMeta('bcG7');
+  @override
+  late final GeneratedColumn<double> bcG7 = GeneratedColumn<double>(
+    'bc_g7',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _factoryMvFpsMeta = const VerificationMeta(
+    'factoryMvFps',
+  );
+  @override
+  late final GeneratedColumn<double> factoryMvFps = GeneratedColumn<double>(
+    'factory_mv_fps',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _testBarrelLengthInMeta =
+      const VerificationMeta('testBarrelLengthIn');
+  @override
+  late final GeneratedColumn<double> testBarrelLengthIn =
+      GeneratedColumn<double>(
+        'test_barrel_length_in',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _partNumberMeta = const VerificationMeta(
+    'partNumber',
+  );
+  @override
+  late final GeneratedColumn<String> partNumber = GeneratedColumn<String>(
+    'part_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturerId,
+    productLine,
+    caliber,
+    bulletName,
+    bulletWeightGr,
+    bulletDiameterIn,
+    bcG1,
+    bcG7,
+    factoryMvFps,
+    testBarrelLengthIn,
+    partNumber,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'factory_loads';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<FactoryLoadRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer_id')) {
+      context.handle(
+        _manufacturerIdMeta,
+        manufacturerId.isAcceptableOrUnknown(
+          data['manufacturer_id']!,
+          _manufacturerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manufacturerIdMeta);
+    }
+    if (data.containsKey('product_line')) {
+      context.handle(
+        _productLineMeta,
+        productLine.isAcceptableOrUnknown(
+          data['product_line']!,
+          _productLineMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_productLineMeta);
+    }
+    if (data.containsKey('caliber')) {
+      context.handle(
+        _caliberMeta,
+        caliber.isAcceptableOrUnknown(data['caliber']!, _caliberMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_caliberMeta);
+    }
+    if (data.containsKey('bullet_name')) {
+      context.handle(
+        _bulletNameMeta,
+        bulletName.isAcceptableOrUnknown(data['bullet_name']!, _bulletNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bulletNameMeta);
+    }
+    if (data.containsKey('bullet_weight_gr')) {
+      context.handle(
+        _bulletWeightGrMeta,
+        bulletWeightGr.isAcceptableOrUnknown(
+          data['bullet_weight_gr']!,
+          _bulletWeightGrMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_bulletWeightGrMeta);
+    }
+    if (data.containsKey('bullet_diameter_in')) {
+      context.handle(
+        _bulletDiameterInMeta,
+        bulletDiameterIn.isAcceptableOrUnknown(
+          data['bullet_diameter_in']!,
+          _bulletDiameterInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('bc_g1')) {
+      context.handle(
+        _bcG1Meta,
+        bcG1.isAcceptableOrUnknown(data['bc_g1']!, _bcG1Meta),
+      );
+    }
+    if (data.containsKey('bc_g7')) {
+      context.handle(
+        _bcG7Meta,
+        bcG7.isAcceptableOrUnknown(data['bc_g7']!, _bcG7Meta),
+      );
+    }
+    if (data.containsKey('factory_mv_fps')) {
+      context.handle(
+        _factoryMvFpsMeta,
+        factoryMvFps.isAcceptableOrUnknown(
+          data['factory_mv_fps']!,
+          _factoryMvFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('test_barrel_length_in')) {
+      context.handle(
+        _testBarrelLengthInMeta,
+        testBarrelLengthIn.isAcceptableOrUnknown(
+          data['test_barrel_length_in']!,
+          _testBarrelLengthInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('part_number')) {
+      context.handle(
+        _partNumberMeta,
+        partNumber.isAcceptableOrUnknown(data['part_number']!, _partNumberMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  FactoryLoadRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return FactoryLoadRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}manufacturer_id'],
+      )!,
+      productLine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}product_line'],
+      )!,
+      caliber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}caliber'],
+      )!,
+      bulletName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bullet_name'],
+      )!,
+      bulletWeightGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_weight_gr'],
+      )!,
+      bulletDiameterIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bullet_diameter_in'],
+      ),
+      bcG1: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bc_g1'],
+      ),
+      bcG7: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}bc_g7'],
+      ),
+      factoryMvFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}factory_mv_fps'],
+      ),
+      testBarrelLengthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}test_barrel_length_in'],
+      ),
+      partNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}part_number'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $FactoryLoadsTable createAlias(String alias) {
+    return $FactoryLoadsTable(attachedDatabase, alias);
+  }
+}
+
+class FactoryLoadRow extends DataClass implements Insertable<FactoryLoadRow> {
+  final int id;
+  final int manufacturerId;
+
+  /// Marketing product line (e.g. "Match", "Precision Hunter", "ELD-X").
+  /// Free-form text — manufacturers don't share a vocabulary here.
+  final String productLine;
+
+  /// Cartridge name as the manufacturer prints it on the box
+  /// (e.g. "6.5 Creedmoor", ".308 Win"). Loose match against the
+  /// `Cartridges` reference catalog name + aliases at query time.
+  final String caliber;
+
+  /// Bullet name as listed on the box (e.g. "ELD Match", "InterLock SP",
+  /// "TGK"). Distinct from the reloading `Bullets.line` because factory
+  /// product bullets sometimes carry box-only names that don't appear in
+  /// the reloading-bullet catalog.
+  final String bulletName;
+  final double bulletWeightGr;
+  final double? bulletDiameterIn;
+  final double? bcG1;
+  final double? bcG7;
+
+  /// Manufacturer-published muzzle velocity in fps. Note: this is from
+  /// the test barrel listed in the spec sheet; real-world velocity
+  /// varies with barrel length and chamber, and the user can override
+  /// the value in the calculator.
+  final double? factoryMvFps;
+
+  /// Test barrel length the published MV was measured against, in
+  /// inches. Lets advanced users translate to their real barrel via a
+  /// rough rule-of-thumb correction. Nullable when the manufacturer
+  /// doesn't list it.
+  final double? testBarrelLengthIn;
+
+  /// Manufacturer SKU / part number (e.g. "81500", "FGMM65CRD140").
+  final String? partNumber;
+  final String? notes;
+  final DateTime createdAt;
+  const FactoryLoadRow({
+    required this.id,
+    required this.manufacturerId,
+    required this.productLine,
+    required this.caliber,
+    required this.bulletName,
+    required this.bulletWeightGr,
+    this.bulletDiameterIn,
+    this.bcG1,
+    this.bcG7,
+    this.factoryMvFps,
+    this.testBarrelLengthIn,
+    this.partNumber,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['manufacturer_id'] = Variable<int>(manufacturerId);
+    map['product_line'] = Variable<String>(productLine);
+    map['caliber'] = Variable<String>(caliber);
+    map['bullet_name'] = Variable<String>(bulletName);
+    map['bullet_weight_gr'] = Variable<double>(bulletWeightGr);
+    if (!nullToAbsent || bulletDiameterIn != null) {
+      map['bullet_diameter_in'] = Variable<double>(bulletDiameterIn);
+    }
+    if (!nullToAbsent || bcG1 != null) {
+      map['bc_g1'] = Variable<double>(bcG1);
+    }
+    if (!nullToAbsent || bcG7 != null) {
+      map['bc_g7'] = Variable<double>(bcG7);
+    }
+    if (!nullToAbsent || factoryMvFps != null) {
+      map['factory_mv_fps'] = Variable<double>(factoryMvFps);
+    }
+    if (!nullToAbsent || testBarrelLengthIn != null) {
+      map['test_barrel_length_in'] = Variable<double>(testBarrelLengthIn);
+    }
+    if (!nullToAbsent || partNumber != null) {
+      map['part_number'] = Variable<String>(partNumber);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  FactoryLoadsCompanion toCompanion(bool nullToAbsent) {
+    return FactoryLoadsCompanion(
+      id: Value(id),
+      manufacturerId: Value(manufacturerId),
+      productLine: Value(productLine),
+      caliber: Value(caliber),
+      bulletName: Value(bulletName),
+      bulletWeightGr: Value(bulletWeightGr),
+      bulletDiameterIn: bulletDiameterIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bulletDiameterIn),
+      bcG1: bcG1 == null && nullToAbsent ? const Value.absent() : Value(bcG1),
+      bcG7: bcG7 == null && nullToAbsent ? const Value.absent() : Value(bcG7),
+      factoryMvFps: factoryMvFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(factoryMvFps),
+      testBarrelLengthIn: testBarrelLengthIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(testBarrelLengthIn),
+      partNumber: partNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(partNumber),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory FactoryLoadRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return FactoryLoadRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturerId: serializer.fromJson<int>(json['manufacturerId']),
+      productLine: serializer.fromJson<String>(json['productLine']),
+      caliber: serializer.fromJson<String>(json['caliber']),
+      bulletName: serializer.fromJson<String>(json['bulletName']),
+      bulletWeightGr: serializer.fromJson<double>(json['bulletWeightGr']),
+      bulletDiameterIn: serializer.fromJson<double?>(json['bulletDiameterIn']),
+      bcG1: serializer.fromJson<double?>(json['bcG1']),
+      bcG7: serializer.fromJson<double?>(json['bcG7']),
+      factoryMvFps: serializer.fromJson<double?>(json['factoryMvFps']),
+      testBarrelLengthIn: serializer.fromJson<double?>(
+        json['testBarrelLengthIn'],
+      ),
+      partNumber: serializer.fromJson<String?>(json['partNumber']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturerId': serializer.toJson<int>(manufacturerId),
+      'productLine': serializer.toJson<String>(productLine),
+      'caliber': serializer.toJson<String>(caliber),
+      'bulletName': serializer.toJson<String>(bulletName),
+      'bulletWeightGr': serializer.toJson<double>(bulletWeightGr),
+      'bulletDiameterIn': serializer.toJson<double?>(bulletDiameterIn),
+      'bcG1': serializer.toJson<double?>(bcG1),
+      'bcG7': serializer.toJson<double?>(bcG7),
+      'factoryMvFps': serializer.toJson<double?>(factoryMvFps),
+      'testBarrelLengthIn': serializer.toJson<double?>(testBarrelLengthIn),
+      'partNumber': serializer.toJson<String?>(partNumber),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  FactoryLoadRow copyWith({
+    int? id,
+    int? manufacturerId,
+    String? productLine,
+    String? caliber,
+    String? bulletName,
+    double? bulletWeightGr,
+    Value<double?> bulletDiameterIn = const Value.absent(),
+    Value<double?> bcG1 = const Value.absent(),
+    Value<double?> bcG7 = const Value.absent(),
+    Value<double?> factoryMvFps = const Value.absent(),
+    Value<double?> testBarrelLengthIn = const Value.absent(),
+    Value<String?> partNumber = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => FactoryLoadRow(
+    id: id ?? this.id,
+    manufacturerId: manufacturerId ?? this.manufacturerId,
+    productLine: productLine ?? this.productLine,
+    caliber: caliber ?? this.caliber,
+    bulletName: bulletName ?? this.bulletName,
+    bulletWeightGr: bulletWeightGr ?? this.bulletWeightGr,
+    bulletDiameterIn: bulletDiameterIn.present
+        ? bulletDiameterIn.value
+        : this.bulletDiameterIn,
+    bcG1: bcG1.present ? bcG1.value : this.bcG1,
+    bcG7: bcG7.present ? bcG7.value : this.bcG7,
+    factoryMvFps: factoryMvFps.present ? factoryMvFps.value : this.factoryMvFps,
+    testBarrelLengthIn: testBarrelLengthIn.present
+        ? testBarrelLengthIn.value
+        : this.testBarrelLengthIn,
+    partNumber: partNumber.present ? partNumber.value : this.partNumber,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  FactoryLoadRow copyWithCompanion(FactoryLoadsCompanion data) {
+    return FactoryLoadRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturerId: data.manufacturerId.present
+          ? data.manufacturerId.value
+          : this.manufacturerId,
+      productLine: data.productLine.present
+          ? data.productLine.value
+          : this.productLine,
+      caliber: data.caliber.present ? data.caliber.value : this.caliber,
+      bulletName: data.bulletName.present
+          ? data.bulletName.value
+          : this.bulletName,
+      bulletWeightGr: data.bulletWeightGr.present
+          ? data.bulletWeightGr.value
+          : this.bulletWeightGr,
+      bulletDiameterIn: data.bulletDiameterIn.present
+          ? data.bulletDiameterIn.value
+          : this.bulletDiameterIn,
+      bcG1: data.bcG1.present ? data.bcG1.value : this.bcG1,
+      bcG7: data.bcG7.present ? data.bcG7.value : this.bcG7,
+      factoryMvFps: data.factoryMvFps.present
+          ? data.factoryMvFps.value
+          : this.factoryMvFps,
+      testBarrelLengthIn: data.testBarrelLengthIn.present
+          ? data.testBarrelLengthIn.value
+          : this.testBarrelLengthIn,
+      partNumber: data.partNumber.present
+          ? data.partNumber.value
+          : this.partNumber,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FactoryLoadRow(')
+          ..write('id: $id, ')
+          ..write('manufacturerId: $manufacturerId, ')
+          ..write('productLine: $productLine, ')
+          ..write('caliber: $caliber, ')
+          ..write('bulletName: $bulletName, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('bulletDiameterIn: $bulletDiameterIn, ')
+          ..write('bcG1: $bcG1, ')
+          ..write('bcG7: $bcG7, ')
+          ..write('factoryMvFps: $factoryMvFps, ')
+          ..write('testBarrelLengthIn: $testBarrelLengthIn, ')
+          ..write('partNumber: $partNumber, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manufacturerId,
+    productLine,
+    caliber,
+    bulletName,
+    bulletWeightGr,
+    bulletDiameterIn,
+    bcG1,
+    bcG7,
+    factoryMvFps,
+    testBarrelLengthIn,
+    partNumber,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is FactoryLoadRow &&
+          other.id == this.id &&
+          other.manufacturerId == this.manufacturerId &&
+          other.productLine == this.productLine &&
+          other.caliber == this.caliber &&
+          other.bulletName == this.bulletName &&
+          other.bulletWeightGr == this.bulletWeightGr &&
+          other.bulletDiameterIn == this.bulletDiameterIn &&
+          other.bcG1 == this.bcG1 &&
+          other.bcG7 == this.bcG7 &&
+          other.factoryMvFps == this.factoryMvFps &&
+          other.testBarrelLengthIn == this.testBarrelLengthIn &&
+          other.partNumber == this.partNumber &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class FactoryLoadsCompanion extends UpdateCompanion<FactoryLoadRow> {
+  final Value<int> id;
+  final Value<int> manufacturerId;
+  final Value<String> productLine;
+  final Value<String> caliber;
+  final Value<String> bulletName;
+  final Value<double> bulletWeightGr;
+  final Value<double?> bulletDiameterIn;
+  final Value<double?> bcG1;
+  final Value<double?> bcG7;
+  final Value<double?> factoryMvFps;
+  final Value<double?> testBarrelLengthIn;
+  final Value<String?> partNumber;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const FactoryLoadsCompanion({
+    this.id = const Value.absent(),
+    this.manufacturerId = const Value.absent(),
+    this.productLine = const Value.absent(),
+    this.caliber = const Value.absent(),
+    this.bulletName = const Value.absent(),
+    this.bulletWeightGr = const Value.absent(),
+    this.bulletDiameterIn = const Value.absent(),
+    this.bcG1 = const Value.absent(),
+    this.bcG7 = const Value.absent(),
+    this.factoryMvFps = const Value.absent(),
+    this.testBarrelLengthIn = const Value.absent(),
+    this.partNumber = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  FactoryLoadsCompanion.insert({
+    this.id = const Value.absent(),
+    required int manufacturerId,
+    required String productLine,
+    required String caliber,
+    required String bulletName,
+    required double bulletWeightGr,
+    this.bulletDiameterIn = const Value.absent(),
+    this.bcG1 = const Value.absent(),
+    this.bcG7 = const Value.absent(),
+    this.factoryMvFps = const Value.absent(),
+    this.testBarrelLengthIn = const Value.absent(),
+    this.partNumber = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : manufacturerId = Value(manufacturerId),
+       productLine = Value(productLine),
+       caliber = Value(caliber),
+       bulletName = Value(bulletName),
+       bulletWeightGr = Value(bulletWeightGr);
+  static Insertable<FactoryLoadRow> custom({
+    Expression<int>? id,
+    Expression<int>? manufacturerId,
+    Expression<String>? productLine,
+    Expression<String>? caliber,
+    Expression<String>? bulletName,
+    Expression<double>? bulletWeightGr,
+    Expression<double>? bulletDiameterIn,
+    Expression<double>? bcG1,
+    Expression<double>? bcG7,
+    Expression<double>? factoryMvFps,
+    Expression<double>? testBarrelLengthIn,
+    Expression<String>? partNumber,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturerId != null) 'manufacturer_id': manufacturerId,
+      if (productLine != null) 'product_line': productLine,
+      if (caliber != null) 'caliber': caliber,
+      if (bulletName != null) 'bullet_name': bulletName,
+      if (bulletWeightGr != null) 'bullet_weight_gr': bulletWeightGr,
+      if (bulletDiameterIn != null) 'bullet_diameter_in': bulletDiameterIn,
+      if (bcG1 != null) 'bc_g1': bcG1,
+      if (bcG7 != null) 'bc_g7': bcG7,
+      if (factoryMvFps != null) 'factory_mv_fps': factoryMvFps,
+      if (testBarrelLengthIn != null)
+        'test_barrel_length_in': testBarrelLengthIn,
+      if (partNumber != null) 'part_number': partNumber,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  FactoryLoadsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? manufacturerId,
+    Value<String>? productLine,
+    Value<String>? caliber,
+    Value<String>? bulletName,
+    Value<double>? bulletWeightGr,
+    Value<double?>? bulletDiameterIn,
+    Value<double?>? bcG1,
+    Value<double?>? bcG7,
+    Value<double?>? factoryMvFps,
+    Value<double?>? testBarrelLengthIn,
+    Value<String?>? partNumber,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return FactoryLoadsCompanion(
+      id: id ?? this.id,
+      manufacturerId: manufacturerId ?? this.manufacturerId,
+      productLine: productLine ?? this.productLine,
+      caliber: caliber ?? this.caliber,
+      bulletName: bulletName ?? this.bulletName,
+      bulletWeightGr: bulletWeightGr ?? this.bulletWeightGr,
+      bulletDiameterIn: bulletDiameterIn ?? this.bulletDiameterIn,
+      bcG1: bcG1 ?? this.bcG1,
+      bcG7: bcG7 ?? this.bcG7,
+      factoryMvFps: factoryMvFps ?? this.factoryMvFps,
+      testBarrelLengthIn: testBarrelLengthIn ?? this.testBarrelLengthIn,
+      partNumber: partNumber ?? this.partNumber,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturerId.present) {
+      map['manufacturer_id'] = Variable<int>(manufacturerId.value);
+    }
+    if (productLine.present) {
+      map['product_line'] = Variable<String>(productLine.value);
+    }
+    if (caliber.present) {
+      map['caliber'] = Variable<String>(caliber.value);
+    }
+    if (bulletName.present) {
+      map['bullet_name'] = Variable<String>(bulletName.value);
+    }
+    if (bulletWeightGr.present) {
+      map['bullet_weight_gr'] = Variable<double>(bulletWeightGr.value);
+    }
+    if (bulletDiameterIn.present) {
+      map['bullet_diameter_in'] = Variable<double>(bulletDiameterIn.value);
+    }
+    if (bcG1.present) {
+      map['bc_g1'] = Variable<double>(bcG1.value);
+    }
+    if (bcG7.present) {
+      map['bc_g7'] = Variable<double>(bcG7.value);
+    }
+    if (factoryMvFps.present) {
+      map['factory_mv_fps'] = Variable<double>(factoryMvFps.value);
+    }
+    if (testBarrelLengthIn.present) {
+      map['test_barrel_length_in'] = Variable<double>(testBarrelLengthIn.value);
+    }
+    if (partNumber.present) {
+      map['part_number'] = Variable<String>(partNumber.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('FactoryLoadsCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturerId: $manufacturerId, ')
+          ..write('productLine: $productLine, ')
+          ..write('caliber: $caliber, ')
+          ..write('bulletName: $bulletName, ')
+          ..write('bulletWeightGr: $bulletWeightGr, ')
+          ..write('bulletDiameterIn: $bulletDiameterIn, ')
+          ..write('bcG1: $bcG1, ')
+          ..write('bcG7: $bcG7, ')
+          ..write('factoryMvFps: $factoryMvFps, ')
+          ..write('testBarrelLengthIn: $testBarrelLengthIn, ')
+          ..write('partNumber: $partNumber, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -23798,6 +24779,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ShotImpactsTable shotImpacts = $ShotImpactsTable(this);
   late final $ReticlesTable reticles = $ReticlesTable(this);
   late final $DragCurvesTable dragCurves = $DragCurvesTable(this);
+  late final $FactoryLoadsTable factoryLoads = $FactoryLoadsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -23831,6 +24813,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     shotImpacts,
     reticles,
     dragCurves,
+    factoryLoads,
   ];
 }
 
@@ -24004,6 +24987,27 @@ final class $$ManufacturersTableReferences
     ).filter((f) => f.manufacturerId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_opticsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$FactoryLoadsTable, List<FactoryLoadRow>>
+  _factoryLoadsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.factoryLoads,
+    aliasName: $_aliasNameGenerator(
+      db.manufacturers.id,
+      db.factoryLoads.manufacturerId,
+    ),
+  );
+
+  $$FactoryLoadsTableProcessedTableManager get factoryLoadsRefs {
+    final manager = $$FactoryLoadsTableTableManager(
+      $_db,
+      $_db.factoryLoads,
+    ).filter((f) => f.manufacturerId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_factoryLoadsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -24205,6 +25209,31 @@ class $$ManufacturersTableFilterComposer
           }) => $$OpticsTableFilterComposer(
             $db: $db,
             $table: $db.optics,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> factoryLoadsRefs(
+    Expression<bool> Function($$FactoryLoadsTableFilterComposer f) f,
+  ) {
+    final $$FactoryLoadsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.factoryLoads,
+      getReferencedColumn: (t) => t.manufacturerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FactoryLoadsTableFilterComposer(
+            $db: $db,
+            $table: $db.factoryLoads,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -24440,6 +25469,31 @@ class $$ManufacturersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> factoryLoadsRefs<T extends Object>(
+    Expression<T> Function($$FactoryLoadsTableAnnotationComposer a) f,
+  ) {
+    final $$FactoryLoadsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.factoryLoads,
+      getReferencedColumn: (t) => t.manufacturerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$FactoryLoadsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.factoryLoads,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ManufacturersTableTableManager
@@ -24463,6 +25517,7 @@ class $$ManufacturersTableTableManager
             bool firearmsRefRefs,
             bool firearmPartsRefs,
             bool opticsRefs,
+            bool factoryLoadsRefs,
           })
         > {
   $$ManufacturersTableTableManager(_$AppDatabase db, $ManufacturersTable table)
@@ -24517,6 +25572,7 @@ class $$ManufacturersTableTableManager
                 firearmsRefRefs = false,
                 firearmPartsRefs = false,
                 opticsRefs = false,
+                factoryLoadsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -24528,6 +25584,7 @@ class $$ManufacturersTableTableManager
                     if (firearmsRefRefs) db.firearmsRef,
                     if (firearmPartsRefs) db.firearmParts,
                     if (opticsRefs) db.optics,
+                    if (factoryLoadsRefs) db.factoryLoads,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -24679,6 +25736,27 @@ class $$ManufacturersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (factoryLoadsRefs)
+                        await $_getPrefetchedData<
+                          ManufacturerRow,
+                          $ManufacturersTable,
+                          FactoryLoadRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ManufacturersTableReferences
+                              ._factoryLoadsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ManufacturersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).factoryLoadsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.manufacturerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -24707,6 +25785,7 @@ typedef $$ManufacturersTableProcessedTableManager =
         bool firearmsRefRefs,
         bool firearmPartsRefs,
         bool opticsRefs,
+        bool factoryLoadsRefs,
       })
     >;
 typedef $$CartridgesTableCreateCompanionBuilder =
@@ -37585,6 +38664,8 @@ typedef $$RangeDaySessionsTableCreateCompanionBuilder =
       Value<double?> rangeUncertaintyYd,
       Value<int?> reticleId,
       Value<String> correctionUnit,
+      Value<double?> cantDegrees,
+      Value<double?> shotAzimuthDegrees,
     });
 typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
     RangeDaySessionsCompanion Function({
@@ -37612,6 +38693,8 @@ typedef $$RangeDaySessionsTableUpdateCompanionBuilder =
       Value<double?> rangeUncertaintyYd,
       Value<int?> reticleId,
       Value<String> correctionUnit,
+      Value<double?> cantDegrees,
+      Value<double?> shotAzimuthDegrees,
     });
 
 final class $$RangeDaySessionsTableReferences
@@ -37778,6 +38861,16 @@ class $$RangeDaySessionsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<double> get cantDegrees => $composableBuilder(
+    column: $table.cantDegrees,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get shotAzimuthDegrees => $composableBuilder(
+    column: $table.shotAzimuthDegrees,
+    builder: (column) => ColumnFilters(column),
+  );
+
   Expression<bool> shotImpactsRefs(
     Expression<bool> Function($$ShotImpactsTableFilterComposer f) f,
   ) {
@@ -37932,6 +39025,16 @@ class $$RangeDaySessionsTableOrderingComposer
     column: $table.correctionUnit,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get cantDegrees => $composableBuilder(
+    column: $table.cantDegrees,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get shotAzimuthDegrees => $composableBuilder(
+    column: $table.shotAzimuthDegrees,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RangeDaySessionsTableAnnotationComposer
@@ -38039,6 +39142,16 @@ class $$RangeDaySessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get cantDegrees => $composableBuilder(
+    column: $table.cantDegrees,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get shotAzimuthDegrees => $composableBuilder(
+    column: $table.shotAzimuthDegrees,
+    builder: (column) => column,
+  );
+
   Expression<T> shotImpactsRefs<T extends Object>(
     Expression<T> Function($$ShotImpactsTableAnnotationComposer a) f,
   ) {
@@ -38119,6 +39232,8 @@ class $$RangeDaySessionsTableTableManager
                 Value<double?> rangeUncertaintyYd = const Value.absent(),
                 Value<int?> reticleId = const Value.absent(),
                 Value<String> correctionUnit = const Value.absent(),
+                Value<double?> cantDegrees = const Value.absent(),
+                Value<double?> shotAzimuthDegrees = const Value.absent(),
               }) => RangeDaySessionsCompanion(
                 id: id,
                 name: name,
@@ -38144,6 +39259,8 @@ class $$RangeDaySessionsTableTableManager
                 rangeUncertaintyYd: rangeUncertaintyYd,
                 reticleId: reticleId,
                 correctionUnit: correctionUnit,
+                cantDegrees: cantDegrees,
+                shotAzimuthDegrees: shotAzimuthDegrees,
               ),
           createCompanionCallback:
               ({
@@ -38171,6 +39288,8 @@ class $$RangeDaySessionsTableTableManager
                 Value<double?> rangeUncertaintyYd = const Value.absent(),
                 Value<int?> reticleId = const Value.absent(),
                 Value<String> correctionUnit = const Value.absent(),
+                Value<double?> cantDegrees = const Value.absent(),
+                Value<double?> shotAzimuthDegrees = const Value.absent(),
               }) => RangeDaySessionsCompanion.insert(
                 id: id,
                 name: name,
@@ -38196,6 +39315,8 @@ class $$RangeDaySessionsTableTableManager
                 rangeUncertaintyYd: rangeUncertaintyYd,
                 reticleId: reticleId,
                 correctionUnit: correctionUnit,
+                cantDegrees: cantDegrees,
+                shotAzimuthDegrees: shotAzimuthDegrees,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -39204,6 +40325,507 @@ typedef $$DragCurvesTableProcessedTableManager =
       DragCurveRow,
       PrefetchHooks Function()
     >;
+typedef $$FactoryLoadsTableCreateCompanionBuilder =
+    FactoryLoadsCompanion Function({
+      Value<int> id,
+      required int manufacturerId,
+      required String productLine,
+      required String caliber,
+      required String bulletName,
+      required double bulletWeightGr,
+      Value<double?> bulletDiameterIn,
+      Value<double?> bcG1,
+      Value<double?> bcG7,
+      Value<double?> factoryMvFps,
+      Value<double?> testBarrelLengthIn,
+      Value<String?> partNumber,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$FactoryLoadsTableUpdateCompanionBuilder =
+    FactoryLoadsCompanion Function({
+      Value<int> id,
+      Value<int> manufacturerId,
+      Value<String> productLine,
+      Value<String> caliber,
+      Value<String> bulletName,
+      Value<double> bulletWeightGr,
+      Value<double?> bulletDiameterIn,
+      Value<double?> bcG1,
+      Value<double?> bcG7,
+      Value<double?> factoryMvFps,
+      Value<double?> testBarrelLengthIn,
+      Value<String?> partNumber,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$FactoryLoadsTableReferences
+    extends BaseReferences<_$AppDatabase, $FactoryLoadsTable, FactoryLoadRow> {
+  $$FactoryLoadsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ManufacturersTable _manufacturerIdTable(_$AppDatabase db) =>
+      db.manufacturers.createAlias(
+        $_aliasNameGenerator(
+          db.factoryLoads.manufacturerId,
+          db.manufacturers.id,
+        ),
+      );
+
+  $$ManufacturersTableProcessedTableManager get manufacturerId {
+    final $_column = $_itemColumn<int>('manufacturer_id')!;
+
+    final manager = $$ManufacturersTableTableManager(
+      $_db,
+      $_db.manufacturers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_manufacturerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$FactoryLoadsTableFilterComposer
+    extends Composer<_$AppDatabase, $FactoryLoadsTable> {
+  $$FactoryLoadsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get productLine => $composableBuilder(
+    column: $table.productLine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get caliber => $composableBuilder(
+    column: $table.caliber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bulletName => $composableBuilder(
+    column: $table.bulletName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bcG1 => $composableBuilder(
+    column: $table.bcG1,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get bcG7 => $composableBuilder(
+    column: $table.bcG7,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get factoryMvFps => $composableBuilder(
+    column: $table.factoryMvFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get testBarrelLengthIn => $composableBuilder(
+    column: $table.testBarrelLengthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get partNumber => $composableBuilder(
+    column: $table.partNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ManufacturersTableFilterComposer get manufacturerId {
+    final $$ManufacturersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.manufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManufacturersTableFilterComposer(
+            $db: $db,
+            $table: $db.manufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FactoryLoadsTableOrderingComposer
+    extends Composer<_$AppDatabase, $FactoryLoadsTable> {
+  $$FactoryLoadsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get productLine => $composableBuilder(
+    column: $table.productLine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get caliber => $composableBuilder(
+    column: $table.caliber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bulletName => $composableBuilder(
+    column: $table.bulletName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bcG1 => $composableBuilder(
+    column: $table.bcG1,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get bcG7 => $composableBuilder(
+    column: $table.bcG7,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get factoryMvFps => $composableBuilder(
+    column: $table.factoryMvFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get testBarrelLengthIn => $composableBuilder(
+    column: $table.testBarrelLengthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get partNumber => $composableBuilder(
+    column: $table.partNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ManufacturersTableOrderingComposer get manufacturerId {
+    final $$ManufacturersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.manufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManufacturersTableOrderingComposer(
+            $db: $db,
+            $table: $db.manufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FactoryLoadsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $FactoryLoadsTable> {
+  $$FactoryLoadsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get productLine => $composableBuilder(
+    column: $table.productLine,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get caliber =>
+      $composableBuilder(column: $table.caliber, builder: (column) => column);
+
+  GeneratedColumn<String> get bulletName => $composableBuilder(
+    column: $table.bulletName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletWeightGr => $composableBuilder(
+    column: $table.bulletWeightGr,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bulletDiameterIn => $composableBuilder(
+    column: $table.bulletDiameterIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get bcG1 =>
+      $composableBuilder(column: $table.bcG1, builder: (column) => column);
+
+  GeneratedColumn<double> get bcG7 =>
+      $composableBuilder(column: $table.bcG7, builder: (column) => column);
+
+  GeneratedColumn<double> get factoryMvFps => $composableBuilder(
+    column: $table.factoryMvFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get testBarrelLengthIn => $composableBuilder(
+    column: $table.testBarrelLengthIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get partNumber => $composableBuilder(
+    column: $table.partNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ManufacturersTableAnnotationComposer get manufacturerId {
+    final $$ManufacturersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.manufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ManufacturersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.manufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$FactoryLoadsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $FactoryLoadsTable,
+          FactoryLoadRow,
+          $$FactoryLoadsTableFilterComposer,
+          $$FactoryLoadsTableOrderingComposer,
+          $$FactoryLoadsTableAnnotationComposer,
+          $$FactoryLoadsTableCreateCompanionBuilder,
+          $$FactoryLoadsTableUpdateCompanionBuilder,
+          (FactoryLoadRow, $$FactoryLoadsTableReferences),
+          FactoryLoadRow,
+          PrefetchHooks Function({bool manufacturerId})
+        > {
+  $$FactoryLoadsTableTableManager(_$AppDatabase db, $FactoryLoadsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$FactoryLoadsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$FactoryLoadsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$FactoryLoadsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> manufacturerId = const Value.absent(),
+                Value<String> productLine = const Value.absent(),
+                Value<String> caliber = const Value.absent(),
+                Value<String> bulletName = const Value.absent(),
+                Value<double> bulletWeightGr = const Value.absent(),
+                Value<double?> bulletDiameterIn = const Value.absent(),
+                Value<double?> bcG1 = const Value.absent(),
+                Value<double?> bcG7 = const Value.absent(),
+                Value<double?> factoryMvFps = const Value.absent(),
+                Value<double?> testBarrelLengthIn = const Value.absent(),
+                Value<String?> partNumber = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => FactoryLoadsCompanion(
+                id: id,
+                manufacturerId: manufacturerId,
+                productLine: productLine,
+                caliber: caliber,
+                bulletName: bulletName,
+                bulletWeightGr: bulletWeightGr,
+                bulletDiameterIn: bulletDiameterIn,
+                bcG1: bcG1,
+                bcG7: bcG7,
+                factoryMvFps: factoryMvFps,
+                testBarrelLengthIn: testBarrelLengthIn,
+                partNumber: partNumber,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int manufacturerId,
+                required String productLine,
+                required String caliber,
+                required String bulletName,
+                required double bulletWeightGr,
+                Value<double?> bulletDiameterIn = const Value.absent(),
+                Value<double?> bcG1 = const Value.absent(),
+                Value<double?> bcG7 = const Value.absent(),
+                Value<double?> factoryMvFps = const Value.absent(),
+                Value<double?> testBarrelLengthIn = const Value.absent(),
+                Value<String?> partNumber = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => FactoryLoadsCompanion.insert(
+                id: id,
+                manufacturerId: manufacturerId,
+                productLine: productLine,
+                caliber: caliber,
+                bulletName: bulletName,
+                bulletWeightGr: bulletWeightGr,
+                bulletDiameterIn: bulletDiameterIn,
+                bcG1: bcG1,
+                bcG7: bcG7,
+                factoryMvFps: factoryMvFps,
+                testBarrelLengthIn: testBarrelLengthIn,
+                partNumber: partNumber,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$FactoryLoadsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({manufacturerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (manufacturerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.manufacturerId,
+                                referencedTable: $$FactoryLoadsTableReferences
+                                    ._manufacturerIdTable(db),
+                                referencedColumn: $$FactoryLoadsTableReferences
+                                    ._manufacturerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$FactoryLoadsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $FactoryLoadsTable,
+      FactoryLoadRow,
+      $$FactoryLoadsTableFilterComposer,
+      $$FactoryLoadsTableOrderingComposer,
+      $$FactoryLoadsTableAnnotationComposer,
+      $$FactoryLoadsTableCreateCompanionBuilder,
+      $$FactoryLoadsTableUpdateCompanionBuilder,
+      (FactoryLoadRow, $$FactoryLoadsTableReferences),
+      FactoryLoadRow,
+      PrefetchHooks Function({bool manufacturerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -39267,4 +40889,6 @@ class $AppDatabaseManager {
       $$ReticlesTableTableManager(_db, _db.reticles);
   $$DragCurvesTableTableManager get dragCurves =>
       $$DragCurvesTableTableManager(_db, _db.dragCurves);
+  $$FactoryLoadsTableTableManager get factoryLoads =>
+      $$FactoryLoadsTableTableManager(_db, _db.factoryLoads);
 }

@@ -6,36 +6,78 @@
   "storage": {
     "rules": "storage.rules"
   },
-  "hosting": {
-    "public": "public",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "headers": [
-      {
-        "source": "/.well-known/apple-app-site-association",
-        "headers": [
-          { "key": "Content-Type", "value": "application/json" }
-        ]
-      }
-    ],
-    "rewrites": [
-      {
-        "source": "/privacy",
-        "destination": "/privacy/index.html"
-      },
-      {
-        "source": "/privacy/**",
-        "destination": "/privacy/index.html"
-      },
-      {
-        "source": "/auth/**",
-        "destination": "/index.html"
-      }
-    ]
-  },
+  "hosting": [
+    {
+      "target": "marketing",
+      "public": "public",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "headers": [
+        {
+          "source": "/.well-known/apple-app-site-association",
+          "headers": [
+            { "key": "Content-Type", "value": "application/json" }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "/privacy.html",
+          "destination": "/legal/privacy.html"
+        },
+        {
+          "source": "/terms.html",
+          "destination": "/legal/terms.html"
+        },
+        {
+          "source": "/privacy",
+          "destination": "/legal/privacy.html"
+        },
+        {
+          "source": "/terms",
+          "destination": "/legal/terms.html"
+        },
+        {
+          "source": "/privacy/**",
+          "destination": "/legal/privacy.html"
+        },
+        {
+          "source": "/terms/**",
+          "destination": "/legal/terms.html"
+        },
+        {
+          "source": "/auth/**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "app",
+      "public": "build/web",
+      "ignore": [
+        "firebase.json",
+        "**/.*"
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(js|wasm)",
+          "headers": [
+            { "key": "Cross-Origin-Embedder-Policy", "value": "credentialless" },
+            { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+          ]
+        }
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ],
   "flutter": {
     "platforms": {
       "android": {

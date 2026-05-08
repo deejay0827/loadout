@@ -183,12 +183,19 @@ class AutoSaveService extends ChangeNotifier {
 /// `onSave` call should `UPDATE` rather than `INSERT`. The form is
 /// responsible for branching on `savedRowId` inside its `onSave` to
 /// pick the right repository call.
+///
+/// Cloud Sync hook: the controller fires [onSavedToCloud] (when set)
+/// after every successful save so `CloudSyncService.scheduleSyncUp`
+/// can debounce + push the encrypted blob a few seconds later. Forms
+/// don't have to know about Cloud Sync — `app.dart` wires the
+/// callback once and the same code path lights up every form.
 class AutoSaveController {
   AutoSaveController({
     required this.onSave,
     required this.service,
     this.debounce = const Duration(seconds: 2),
     int? initialSavedRowId,
+    this.onSavedToCloud,
   }) : _savedRowId = ValueNotifier<int?>(initialSavedRowId);
 
   /// Builds (and persists) the row, returning the saved row's primary
@@ -198,6 +205,13 @@ class AutoSaveController {
 
   final AutoSaveService service;
   final Duration debounce;
+
+  /// Optional hook invoked after every successful save. Today this is
+  /// used by Cloud Sync to schedule a debounced upload of the
+  /// encrypted blob; tests / future features can plug their own
+  /// behavior in here. Failures inside the callback are caught so
+  /// they can never break the autosave pipeline.
+  final void Function()? onSavedToCloud;
 
   Timer? _debounceTimer;
   bool _disposed = false;
@@ -265,6 +279,13 @@ class AutoSaveController {
       _savedRowId.value = id;
       _lastSavedAt.value = DateTime.now();
       _status.value = AutoSaveStatus.saved;
+      // Notify Cloud Sync (if enabled). Wrapped so a sync-side error
+      // never disturbs the autosave UX.
+      try {
+        onSavedToCloud?.call();
+      } catch (e) {
+        debugPrint('AutoSaveController.onSavedToCloud failed: $e');
+      }
     } catch (_) {
       if (_disposed) return;
       _status.value = AutoSaveStatus.error;

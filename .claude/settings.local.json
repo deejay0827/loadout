@@ -52,7 +52,10 @@
       "Bash(python3 /tmp/factory_loads_gen/build.py)",
       "Bash(JAVA_HOME='/Applications/Android Studio.app/Contents/jbr/Contents/Home' ./gradlew :app:assembleDebug --console=plain)",
       "Bash(JAVA_HOME='/Applications/Android Studio.app/Contents/jbr/Contents/Home' ./gradlew :app:compileFlutterBuildDebug --console=plain)",
-      "Bash(timeout 60 dart compile-test)"
+      "Bash(timeout 60 dart compile-test)",
+      "Bash(curl -sL -o /tmp/sqlite3-test.html https://github.com/simolus3/sqlite3.dart/releases)",
+      "Bash(curl -sL -o /Users/general/Development/Applications/LoadOut/web/sqlite3.wasm \"https://github.com/simolus3/sqlite3.dart/releases/download/sqlite3-3.3.1/sqlite3.wasm\")",
+      "Bash(wait)"
     ]
   }
 }

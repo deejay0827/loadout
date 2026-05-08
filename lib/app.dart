@@ -148,9 +148,14 @@ import 'services/ble/kestrel_service.dart';
 import 'services/ble/leica_geovid_service.dart';
 import 'services/ble/sig_kilo_service.dart';
 import 'services/ble/vortex_rangefinder_service.dart';
+import 'services/cloud_backup.dart';
+import 'services/cloud_sync_service.dart';
+import 'services/drive_backup_service.dart';
 import 'services/entitlement_notifier.dart';
 import 'services/hit_probability_service.dart';
+import 'services/icloud_backup_service.dart';
 import 'services/locale_service.dart';
+import 'services/onedrive_backup_service.dart';
 import 'services/purchases_service.dart';
 import 'services/sensors/cant_service.dart';
 import 'services/sensors/magnetometer_service.dart';
@@ -239,6 +244,25 @@ class LoadOutApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<EntitlementNotifier>(
           create: (ctx) => EntitlementNotifier(ctx.read<PurchasesService>()),
+        ),
+        // Cloud Sync (Pro). Continuous, end-to-end-encrypted sync of
+        // the user's reloading data to the user's own iCloud / Google
+        // Drive / OneDrive — see CLAUDE.md §17 and
+        // `lib/services/cloud_sync_service.dart`. Provided once at
+        // the root so AutoSaveController, the AppBar indicator, and
+        // the Settings → Cloud Sync screen all observe the same
+        // notifier. The provider map keys must match
+        // `SyncProviderId.*` literals exactly.
+        ChangeNotifierProvider<CloudSyncService>(
+          create: (ctx) => CloudSyncService(
+            database: ctx.read<AppDatabase>(),
+            entitlements: ctx.read<EntitlementNotifier>(),
+            providers: <String, CloudBackupProvider>{
+              SyncProviderId.icloud: ICloudBackupService(),
+              SyncProviderId.gdrive: DriveBackupService(),
+              SyncProviderId.onedrive: OneDriveBackupService(),
+            },
+          ),
         ),
         // BLE services. Provided once and shared across the app so a
         // Kestrel connection established on the Devices screen survives
@@ -413,6 +437,22 @@ class _AuthGateState extends State<_AuthGate> {
     super.initState();
     _initDeepLinks();
     _initPurchasesUserSync();
+    _maybePullCloudSyncOnLaunch();
+  }
+
+  /// Best-effort initial Cloud Sync pull on app launch. If the user
+  /// has Pro + sync enabled, fire `syncDown` once after the first
+  /// frame so any changes made on a different device land before they
+  /// start scrolling. Failures are logged-only — we never block the
+  /// home screen on cloud reachability.
+  void _maybePullCloudSyncOnLaunch() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final svc = context.read<CloudSyncService>();
+      if (!svc.isEnabled) return;
+      // ignore: discarded_futures
+      svc.syncDown();
+    });
   }
 
   Future<void> _initDeepLinks() async {

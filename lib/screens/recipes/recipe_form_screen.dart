@@ -171,6 +171,7 @@ import '../../database/database.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../services/ble/ble_service.dart';
 import '../../services/ble/garmin_xero_service.dart';
@@ -717,6 +718,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       service: context.read<AutoSaveService>(),
       onSave: _runAutoSave,
       initialSavedRowId: widget.existing?.id,
+      // Schedule a Cloud Sync push 5s after the save lands. No-op
+      // when the user hasn't enabled sync — see CloudSyncService.
+      onSavedToCloud: () =>
+          context.read<CloudSyncService>().scheduleSyncUp(),
     );
     // Wire every text controller (including custom fields, see
     // _buildCustomFieldEditor's `putIfAbsent` calls) to autosave.

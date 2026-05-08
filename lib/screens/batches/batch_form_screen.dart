@@ -64,6 +64,7 @@ import '../../repositories/firearm_repository.dart';
 import '../../repositories/process_step_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../widgets/auto_save_banner.dart';
 import '../../widgets/auto_save_first_time_hint.dart';
 
@@ -120,6 +121,9 @@ class _BatchFormScreenState extends State<BatchFormScreen> {
       service: context.read<AutoSaveService>(),
       onSave: _runAutoSave,
       initialSavedRowId: widget.existing?.id,
+      // Cloud Sync hook — no-op when sync is disabled / non-Pro.
+      onSavedToCloud: () =>
+          context.read<CloudSyncService>().scheduleSyncUp(),
     );
     for (final c in [_name, _count, _firedCount, _notes]) {
       c.addListener(_autoSave.notifyDirty);

@@ -98,6 +98,7 @@ import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../theme/app_theme.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/cloud_sync_indicator.dart';
 import '../ai_chat/ai_chat_screen.dart';
 import '../backup/backup_screen.dart';
 import '../ballistics/ballistics_screen.dart';
@@ -236,6 +237,12 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+      // Cloud Sync indicator + manual reconcile entry point. Hides
+      // itself for free users / users without sync enabled by
+      // routing the tap to the Cloud Sync screen (where the paywall
+      // lives) instead of the reconcile call. Long-press always
+      // pushes the screen.
+      const CloudSyncAppBarAction(),
       IconButton(
         tooltip: isPro ? 'LoadOut Pro' : 'Upgrade to Pro',
         icon: Icon(

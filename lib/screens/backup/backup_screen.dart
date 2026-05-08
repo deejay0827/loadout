@@ -102,6 +102,8 @@ import '../../services/drive_backup_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/export_service.dart';
 import '../../services/icloud_backup_service.dart';
+import '../../services/onedrive_backup_service.dart';
+import '../../services/onedrive_config.dart';
 import '../auth/login_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../recipes/smart_import_screen.dart';
@@ -133,6 +135,7 @@ class _BackupScreenState extends State<BackupScreen> {
   late final ExportService _export;
   late final ICloudBackupService _icloud;
   late final DriveBackupService _drive;
+  late final OneDriveBackupService _onedrive;
 
   bool _busy = false;
   String? _statusMessage;
@@ -153,6 +156,7 @@ class _BackupScreenState extends State<BackupScreen> {
     _export = ExportService(db);
     _icloud = ICloudBackupService();
     _drive = DriveBackupService();
+    _onedrive = OneDriveBackupService();
     _authSub = FirebaseAuth.instance.authStateChanges().listen((_) {
       if (!mounted) return;
       setState(() {});
@@ -219,6 +223,16 @@ class _BackupScreenState extends State<BackupScreen> {
                 onRestore: () => _runCloudRestore(_drive),
                 onListAndManage: () => _openCloudList(_drive),
               ),
+              if (!OneDriveConfig.isPlaceholder) ...[
+                const SizedBox(height: 16),
+                _CloudCard(
+                  provider: _onedrive,
+                  busy: _busy,
+                  onBackup: () => _runCloudBackup(_onedrive),
+                  onRestore: () => _runCloudRestore(_onedrive),
+                  onListAndManage: () => _openCloudList(_onedrive),
+                ),
+              ],
             ],
             if (_statusMessage != null) ...[
               const SizedBox(height: 16),
@@ -428,6 +442,10 @@ class _BackupScreenState extends State<BackupScreen> {
       return 'iCloud Drive is unavailable — make sure iCloud Drive is '
           'turned on in Settings → [your name] → iCloud, and that '
           'this app has iCloud access.';
+    }
+    if (provider is OneDriveBackupService) {
+      return 'OneDrive is unavailable — open Cloud Sync settings to '
+          'connect your Microsoft account.';
     }
     return '${provider.displayName} is unavailable — sign in to your '
         'Google account to back up here.';
@@ -823,7 +841,20 @@ class _CloudCardState extends State<_CloudCard> {
     final theme = Theme.of(context);
     final providerIcon = widget.provider is ICloudBackupService
         ? Icons.cloud_outlined
-        : Icons.cloud_queue_outlined;
+        : widget.provider is OneDriveBackupService
+            ? Icons.cloud_circle_outlined
+            : Icons.cloud_queue_outlined;
+    final providerBlurb = widget.provider is ICloudBackupService
+        ? 'Encrypted blob lives in your iCloud Drive under '
+            'Files.app → LoadOut → Backups. Apple sees an opaque '
+            'file; only your passphrase unlocks it.'
+        : widget.provider is OneDriveBackupService
+            ? 'Encrypted blob lives in a per-app OneDrive folder only '
+                'LoadOut can read. Cross-platform — perfect for users '
+                'with a Microsoft 365 subscription.'
+            : 'Encrypted blob lives in a per-app Drive folder only '
+                'LoadOut can read. Works the same on iOS and Android, '
+                'so it is the cross-device restore path.';
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -842,13 +873,7 @@ class _CloudCardState extends State<_CloudCard> {
             ),
             const SizedBox(height: 8),
             Text(
-              widget.provider is ICloudBackupService
-                  ? 'Encrypted blob lives in your iCloud Drive under '
-                      'Files.app → LoadOut → Backups. Apple sees an opaque '
-                      'file; only your passphrase unlocks it.'
-                  : 'Encrypted blob lives in a per-app Drive folder only '
-                      'LoadOut can read. Works the same on iOS and Android, '
-                      'so it is the cross-device restore path.',
+              providerBlurb,
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
