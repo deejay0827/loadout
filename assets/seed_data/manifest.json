@@ -11,7 +11,10 @@
     "firearm_parts": {"version": 1, "filename": "firearm_parts.json"},
     "optics":        {"version": 1, "filename": "optics.json"},
     "targets":       {"version": 1, "filename": "targets.json"},
-    "reticles":      {"version": 2, "filename": "reticles.json"},
-    "drag_curves":   {"version": 1, "filename": "drag_curves/curves.json"}
+    "reticles":      {"version": 3, "filename": "reticles.json"},
+    "drag_curves":   {"version": 1, "filename": "drag_curves/curves.json"},
+    "scopes_v2":     {"version": 2, "filename": "scopes.json"},
+    "reticles_v2":   {"version": 2, "filename": "reticles_v2.json"},
+    "scope_reticle_options": {"version": 2, "filename": "scope_reticle_options.json"}
   }
 }

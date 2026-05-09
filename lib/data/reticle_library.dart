@@ -338,6 +338,20 @@ class HoldoverDot extends ReticleElement {
 /// One reticle definition. Constructed either from a `Reticles` row
 /// (via the repository) or directly from a JSON entry in
 /// `assets/seed_data/reticles.json`.
+///
+/// As of schema v22 each definition also carries a [verified] flag
+/// plus optional [sourceUrl], [verifiedAt], [designer], [license],
+/// and [subtensions] fields. The renderer / picker MUST refuse to
+/// draw a row whose [verified] is `false` as if it were the named
+/// reticle -- placeholder rows ship as the correct manufacturer +
+/// model strings so the picker can list them, but the UI is
+/// responsible for either hiding them entirely or surfacing an
+/// "unverified -- generic representation" guard. The legacy seed-
+/// data path (the in-code defaults in
+/// `lib/data/reticle_seed_defaults.dart` and the JSON catalog in
+/// `assets/seed_data/reticles.json`) defaults [verified] to `false`
+/// so older callers that round-trip through the `fromRow` /
+/// `fromJson` constructors stay safe-by-default.
 class ReticleDefinition {
   const ReticleDefinition({
     required this.id,
@@ -349,6 +363,12 @@ class ReticleDefinition {
     required this.elements,
     required this.maxExtentUnits,
     this.notes,
+    this.verified = false,
+    this.sourceUrl,
+    this.verifiedAt,
+    this.designer,
+    this.license,
+    this.subtensions,
   });
 
   /// Stable string id used as a join key elsewhere (custom reticles
@@ -372,8 +392,50 @@ class ReticleDefinition {
   final double maxExtentUnits;
   final String? notes;
 
-  /// Decode a `ReticleDefinition` from one entry in `reticles.json`.
+  /// `true` when this row has been hand-checked against a manufacturer
+  /// / patent-holder published spec sheet. UI that renders the named
+  /// reticle for the user MUST treat `false` as "do not render this as
+  /// the named reticle" -- either hide the entry or surface an
+  /// unverified-placeholder warning. Defaults to `false` so legacy
+  /// rows (in-code defaults, the original `assets/seed_data/
+  /// reticles.json` catalog) flow through the gate safely.
+  final bool verified;
+
+  /// Manufacturer / patent-holder spec URL the row was verified
+  /// against. Required to be populated when [verified] is true; null
+  /// otherwise.
+  final String? sourceUrl;
+
+  /// Date the row was last verified against [sourceUrl]. Same
+  /// nullability contract as [sourceUrl].
+  final DateTime? verifiedAt;
+
+  /// Designer / patent holder for licensed designs (e.g. "Horus Vision
+  /// LLC" for every Tremor3 / Tremor5 / H59 / H37 row regardless of
+  /// the scope brand the row is wired to). Free-form text. Null for
+  /// reticles whose designer is the same as the manufacturer.
+  final String? designer;
+
+  /// License attribution to display next to the reticle in the picker
+  /// (e.g. "Horus Vision LLC"). Free-form text. Null for in-house
+  /// brand reticles.
+  final String? license;
+
+  /// Optional patent-holder / manufacturer subtension dictionary.
+  /// Decoded from the row's `subtensionsJson` column when present.
+  /// Used by future detail surfaces to show the canonical numeric
+  /// spec (grid spacing, wind dot positions, ranging brackets) next
+  /// to the rendered diagram.
+  final Map<String, dynamic>? subtensions;
+
+  /// Decode a `ReticleDefinition` from one entry in `reticles.json`
+  /// or `reticles_v2.json`. The verified-data fields (`verified`,
+  /// `sourceUrl`, `verifiedAt`, `designer`, `license`, `subtensions`)
+  /// are all optional in the JSON shape -- legacy entries in the
+  /// older `reticles.json` simply omit them and inherit the safe
+  /// defaults.
   factory ReticleDefinition.fromJson(Map<String, dynamic> json) {
+    final verifiedAtStr = json['verifiedAt'] as String?;
     return ReticleDefinition(
       id: json['id'] as String,
       manufacturer: json['manufacturer'] as String,
@@ -386,6 +448,12 @@ class ReticleDefinition {
           .map((e) => ReticleElement.fromJson(e as Map<String, dynamic>))
           .toList(growable: false),
       notes: json['notes'] as String?,
+      verified: json['verified'] as bool? ?? false,
+      sourceUrl: json['sourceUrl'] as String?,
+      verifiedAt: verifiedAtStr != null ? DateTime.tryParse(verifiedAtStr) : null,
+      designer: json['designer'] as String?,
+      license: json['license'] as String?,
+      subtensions: json['subtensions'] as Map<String, dynamic>?,
     );
   }
 
@@ -394,6 +462,12 @@ class ReticleDefinition {
   /// caller is responsible for giving us the row's stable string id
   /// (the reference catalog uses the seed-file id; user-defined
   /// reticles synthesize one from their primary key).
+  ///
+  /// The verified-data fields (`verified`, `sourceUrl`, `verifiedAt`,
+  /// `designer`, `license`, `subtensionsJson`) are added in v22 and
+  /// default to safe values when callers haven't been migrated to
+  /// pass them through yet -- the existing `ReticleRepository.
+  /// definitionFromRow` keeps working without the new args.
   factory ReticleDefinition.fromRow({
     required String id,
     required String manufacturer,
@@ -404,8 +478,17 @@ class ReticleDefinition {
     required double maxExtentUnits,
     required String definitionJson,
     String? notes,
+    bool verified = false,
+    String? sourceUrl,
+    DateTime? verifiedAt,
+    String? designer,
+    String? license,
+    String? subtensionsJson,
   }) {
     final elementsJson = json.decode(definitionJson) as List<dynamic>;
+    final subtensions = subtensionsJson != null
+        ? (json.decode(subtensionsJson) as Map<String, dynamic>)
+        : null;
     return ReticleDefinition(
       id: id,
       manufacturer: manufacturer,
@@ -418,6 +501,12 @@ class ReticleDefinition {
           .map((e) => ReticleElement.fromJson(e as Map<String, dynamic>))
           .toList(growable: false),
       notes: notes,
+      verified: verified,
+      sourceUrl: sourceUrl,
+      verifiedAt: verifiedAt,
+      designer: designer,
+      license: license,
+      subtensions: subtensions,
     );
   }
 
@@ -427,7 +516,8 @@ class ReticleDefinition {
       json.encode(elements.map((e) => e.toJson()).toList());
 
   /// Encode the full definition (used when the user-data layer wants
-  /// to round-trip a custom reticle).
+  /// to round-trip a custom reticle). The verified-data fields are
+  /// included when populated so a round-trip preserves provenance.
   Map<String, dynamic> toJson() => {
         'id': id,
         'manufacturer': manufacturer,
@@ -438,6 +528,12 @@ class ReticleDefinition {
         'maxExtentUnits': maxExtentUnits,
         'elements': elements.map((e) => e.toJson()).toList(),
         if (notes != null) 'notes': notes,
+        'verified': verified,
+        if (sourceUrl != null) 'sourceUrl': sourceUrl,
+        if (verifiedAt != null) 'verifiedAt': verifiedAt!.toIso8601String(),
+        if (designer != null) 'designer': designer,
+        if (license != null) 'license': license,
+        if (subtensions != null) 'subtensions': subtensions,
       };
 
   /// Parse the seed-file/database string for `type` into the enum.

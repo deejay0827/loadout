@@ -432,6 +432,40 @@ class Reticles extends Table {
   TextColumn get definitionJson => text()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  // ── Verified-data fields (added schema v22) ──
+  /// Whether the row's geometry has been hand-checked against a
+  /// manufacturer / patent-holder published spec. `false` (the default)
+  /// means the entry is a placeholder or generic stand-in; UI surfaces
+  /// MUST refuse to render unverified rows as if they were the named
+  /// reticle. The audit pass that introduced this column flagged most
+  /// existing rows as `false` — see `lib/data/reticle_library.dart`
+  /// header for the verification rules.
+  BoolColumn get verified =>
+      boolean().withDefault(const Constant(false))();
+  /// URL of the manufacturer / patent-holder spec document the row was
+  /// verified against. Required when `verified = true`; ignored when
+  /// `verified = false`. Stored verbatim so a future re-audit can hit
+  /// the same page.
+  TextColumn get sourceUrl => text().nullable()();
+  /// Date the row was last verified against `sourceUrl`. Ignored when
+  /// `verified = false`.
+  DateTimeColumn get verifiedAt => dateTime().nullable()();
+  /// Designer / patent-holder for licensed designs (e.g. "Horus Vision
+  /// LLC" for every TReMoR3 / TReMoR5 / H59 / H37 row, regardless of
+  /// the scope brand the row is wired to via `ScopeReticleOptions`).
+  /// Free-form text. Null for in-house brand reticles whose designer
+  /// is the same as the manufacturer.
+  TextColumn get designer => text().nullable()();
+  /// License attribution string shown next to the reticle in the
+  /// picker (e.g. "Horus Vision LLC"). Free-form. Null when the
+  /// reticle is the manufacturer's own design.
+  TextColumn get license => text().nullable()();
+  /// JSON-encoded subtension dictionary keyed by the patent-holder /
+  /// manufacturer's published vocabulary (see `assets/seed_data/
+  /// reticles_v2.json` for the canonical shape). Optional — null when
+  /// the geometry in `definitionJson` is sufficient on its own.
+  TextColumn get subtensionsJson => text().nullable()();
 }
 
 /// Reference catalog of custom drag curves (CDMs / DSFs) for specific
@@ -485,6 +519,174 @@ class DragCurves extends Table {
   @override
   List<Set<Column>> get uniqueKeys => [
         {manufacturer, line, weightGr, diameterIn},
+      ];
+}
+
+// ─────────────────────── Verified scope/reticle catalog (schema v22) ───────────────────────
+//
+// The pre-v22 `Optics` + `Reticles` tables coexist with the verified-data
+// catalog below. The legacy `Optics` table inlines a single free-form
+// `reticle` text field per scope, which forced us to ship one optics row
+// per scope-reticle SKU (or worse, one row per scope with the wrong
+// reticle picked arbitrarily). The legacy `Reticles` table wires every
+// reticle to a single manufacturer string — fine for brand-specific
+// patterns like Vortex's EBR-7C, but wrong for licensed designs like
+// the Horus TReMoR3 that ship across multiple scope brands (Nightforce,
+// Schmidt & Bender, EOTech, US Optics, Bushnell — every TReMoR3 is the
+// SAME reticle pattern owned by Horus Vision LLC, not five different
+// reticles).
+//
+// The new model splits the data into three normalised tables:
+//
+//   * `ScopeManufacturers` — one row per scope brand
+//     (e.g. "Vortex Optics", country = "USA", website).
+//   * `ScopeModels`        — one row per scope SKU
+//     (e.g. "Razor HD Gen III 6-36x56 FFP"). Carries the click value,
+//     elevation/windage travel, focal plane, tube/objective, etc.
+//   * `ScopeReticleOptions`— many-to-many join. One row per scope-
+//     reticle SKU the manufacturer actually ships
+//     (e.g. Razor HD Gen II 4.5-27x56 FFP × Horus TReMoR3 MRAD).
+//   * `Reticles`           — independent entities, one per pattern.
+//                            The Horus TReMoR3 is one `Reticles` row
+//                            referenced by every scope that ships it.
+//                            (We keep using the existing `Reticles`
+//                            table — it gains a few extra columns in
+//                            v22 to track verification + source URL.)
+//
+// Every verified row carries a `sourceUrl` and a `verifiedAt` date so a
+// future audit can re-spot-check entries. Rows with `verified = false`
+// are placeholders the renderer must NOT draw as if they were real.
+
+/// Brand of rifle scope manufacturer, distinct from the cross-purpose
+/// `Manufacturers` table which lumps powder / bullet / primer / brass /
+/// firearm / parts / optics / ammo brands together. We split this out
+/// so a "Schmidt & Bender" row in `ScopeManufacturers` doesn't have to
+/// race against any other reloading-component "Schmidt & Bender" row
+/// (and so the verified-scope catalog can be updated independently of
+/// the rest of the seed pipeline).
+@DataClassName('ScopeManufacturerRow')
+class ScopeManufacturers extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  /// Manufacturer display name (e.g. "Vortex Optics").
+  TextColumn get name => text().unique()();
+  /// ISO-style country of headquarters (e.g. "USA", "Germany", "Austria").
+  TextColumn get country => text().nullable()();
+  /// Manufacturer's primary website (no trailing slash).
+  TextColumn get website => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// One verified, sourced scope SKU. Carries the published click value,
+/// elevation / windage travel, focal-plane class, tube + objective, and
+/// a citation `sourceUrl` so the row can be re-verified later.
+///
+/// `clickValueMil` and `clickValueMoa` are both nullable — a scope is
+/// almost always one or the other, but a few makers ship a "switchable"
+/// turret or sell the same body with both turret types. Whichever
+/// columns are populated reflect what's published on the manufacturer's
+/// spec sheet.
+///
+/// Travel and max-adjustment columns are stored in the scope's *native*
+/// turret unit (mil or MOA). Solver / display code that needs the other
+/// unit must convert at use time.
+@DataClassName('ScopeModelRow')
+class ScopeModels extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get manufacturerId =>
+      integer().references(ScopeManufacturers, #id)();
+  /// Model + magnification string as the manufacturer markets it
+  /// (e.g. "Razor HD Gen III 6-36x56 FFP").
+  TextColumn get modelName => text()();
+  /// 'rifle-scope' | 'lpvo' | 'red-dot' | 'prism' | 'spotting'.
+  TextColumn get category => text()();
+  /// Minimum magnification (e.g. 6 for a 6-36x scope, 1 for a 1-6x LPVO).
+  RealColumn get magnificationMin => real().nullable()();
+  /// Maximum magnification.
+  RealColumn get magnificationMax => real().nullable()();
+  /// Objective lens diameter in mm. 0 / null for tubeless red dots.
+  IntColumn get objectiveDiameterMm => integer().nullable()();
+  /// Main tube diameter in mm (typical: 30, 34, 35, 36).
+  IntColumn get tubeDiameterMm => integer().nullable()();
+  /// 'first' | 'second' | 'fixed'.
+  TextColumn get focalPlane => text()();
+  /// 'mrad' | 'moa' | 'switchable'. Drives unit-display defaults; the
+  /// per-turret click value below is the authoritative numeric source.
+  TextColumn get reticleClass => text()();
+  /// Click value in MRAD (e.g. 0.1 for a 0.1-MRAD turret). Null when
+  /// this SKU only ships in MOA.
+  RealColumn get clickValueMil => real().nullable()();
+  /// Click value in MOA (e.g. 0.25 for a 1/4-MOA turret). Null when
+  /// this SKU only ships in MRAD.
+  RealColumn get clickValueMoa => real().nullable()();
+  /// Mil per full elevation-turret rotation (e.g. 10 for "10 mil per
+  /// rev"). Null when only the MOA equivalent is published.
+  RealColumn get travelPerRevMil => real().nullable()();
+  /// MOA per full elevation-turret rotation (e.g. 25 for "25 MOA per
+  /// rev"). Null when only the MRAD equivalent is published.
+  RealColumn get travelPerRevMoa => real().nullable()();
+  /// Total elevation travel in MRAD (e.g. 36.1 for the Razor Gen III).
+  RealColumn get maxElevationMil => real().nullable()();
+  /// Total elevation travel in MOA (e.g. 120 for the Razor Gen III).
+  RealColumn get maxElevationMoa => real().nullable()();
+  /// Total windage travel in MRAD (e.g. 15.5 for the Razor Gen III).
+  RealColumn get maxWindageMil => real().nullable()();
+  /// Total windage travel in MOA (e.g. 52.5 for the Razor Gen III).
+  RealColumn get maxWindageMoa => real().nullable()();
+  /// Eye relief in inches.
+  RealColumn get eyeReliefIn => real().nullable()();
+  /// Manufacturer-published weight in ounces.
+  RealColumn get weightOz => real().nullable()();
+  /// Overall length in inches.
+  RealColumn get lengthIn => real().nullable()();
+  /// Minimum side-focus / parallax setting in yards.
+  IntColumn get parallaxMinYd => integer().nullable()();
+  /// Manufacturer's product page URL (the row's citation). Required —
+  /// any row without a source URL has not been verified and must not
+  /// be inserted via the seed loader.
+  TextColumn get sourceUrl => text()();
+  /// Date the row was verified against `sourceUrl` (ISO-8601 day
+  /// precision is fine).
+  DateTimeColumn get verifiedAt => dateTime()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {manufacturerId, modelName},
+      ];
+}
+
+/// Many-to-many join between `ScopeModels` and `Reticles`. One row per
+/// scope-reticle SKU the manufacturer actually ships
+/// (e.g. Razor HD Gen II 4.5-27x56 FFP with the EBR-7C MRAD reticle is
+/// one row; the same scope body with the Horus TReMoR3 reticle is a
+/// second row sharing the same `scopeModelId`).
+///
+/// `isDefault` flags the manufacturer's default / most-popular reticle
+/// for the scope — used by the firearm form to pre-select something
+/// reasonable when the user picks the scope without specifying a
+/// reticle. `manufacturerSku` carries the model number printed on the
+/// box (e.g. "RZR-42708" for the Razor Gen II 4.5-27x56 EBR-7C MRAD)
+/// and is used as the row's stable identity for re-seeds.
+@DataClassName('ScopeReticleOptionRow')
+class ScopeReticleOptions extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get scopeModelId => integer().references(ScopeModels, #id)();
+  IntColumn get reticleId => integer().references(Reticles, #id)();
+  /// Manufacturer's stock-keeping unit (e.g. "RZR-42708"). Optional
+  /// because some scope-reticle pairs aren't sold under their own SKU.
+  TextColumn get manufacturerSku => text().nullable()();
+  /// True for the manufacturer's default / most-popular reticle for
+  /// this scope. Exactly zero or one row per `scopeModelId` should be
+  /// flagged. Not enforced as a DB constraint — the seed pipeline
+  /// validates.
+  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {scopeModelId, reticleId},
       ];
 }
 
@@ -1461,6 +1663,10 @@ class UserCustomFieldValues extends Table {
     // Schema v19 additions (target racks reference catalog).
     TargetRacks,
     TargetRackChildren,
+    // Schema v22 additions (verified scope + reticle catalog).
+    ScopeManufacturers,
+    ScopeModels,
+    ScopeReticleOptions,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1469,7 +1675,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -1807,6 +2013,71 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(targetRacks);
             await m.createTable(targetRackChildren);
           }
+          if (from < 20) {
+            // v20 — Targets renamed to drop leading material words
+            // ("Steel Plate 12 in" → "Plate 12 in", etc.) so the
+            // picker can group by SHAPE without the name redundantly
+            // repeating the material. Wipe the [Targets] table so
+            // the next launch's `seedIfNeeded` re-inserts the
+            // renamed catalog from JSON. Existing
+            // `RangeDaySessions.targetId` rows that referenced the
+            // old name are preserved as ids; the picker's stale-id
+            // guard (range_day_detail_screen.dart `_targetPicker`)
+            // handles ids that no longer resolve. User data
+            // (RangeDaySessions, ShotImpacts) is preserved — only
+            // the reference catalog rotates.
+            await delete(targets).go();
+          }
+          if (from < 21) {
+            // v21 — Followup pass on the v20 rename: a couple of
+            // entries still leaked the material word inside the name
+            // ("IDPA Cardboard Target" → "IDPA Target"). Wipe the
+            // [Targets] table again so the next launch's
+            // `seedIfNeeded` re-inserts the cleaned catalog from
+            // JSON. Same stale-id behaviour as v20: any
+            // `RangeDaySessions.targetId` that pointed at a renamed
+            // row falls back to the picker's "(picked — hidden by
+            // filter)" guard rather than crashing. User data
+            // (RangeDaySessions, ShotImpacts) is preserved.
+            await delete(targets).go();
+          }
+          if (from < 22) {
+            // v22 — Verified scope + reticle catalog. Three new tables
+            // ([ScopeManufacturers], [ScopeModels],
+            // [ScopeReticleOptions]) plus four new columns on the
+            // existing [Reticles] table (`verified`, `sourceUrl`,
+            // `verifiedAt`, `designer`, `license`, `subtensionsJson`)
+            // so the audit pass can mark which legacy reticle entries
+            // are accurate-enough to render as the named pattern and
+            // which are placeholders. Additive only. The legacy
+            // [Optics] / [Reticles] tables are preserved untouched so
+            // every existing caller (firearm form optics dropdown,
+            // range day reticle picker, scope view) keeps working;
+            // the migration off the legacy schema is a follow-up
+            // task. Migration steps:
+            //
+            //   1. Create the three new tables.
+            //   2. Add the six new columns to [Reticles] (each is
+            //      either nullable or has a default, so existing rows
+            //      need no backfill — they all start with
+            //      `verified = false`).
+            //
+            // The [ScopeManufacturers] / [ScopeModels] /
+            // [ScopeReticleOptions] tables are populated on next
+            // launch by `SeedLoader.seedIfNeeded` from the JSON files
+            // under `assets/seed_data/` (`scopes.json`,
+            // `scope_reticle_options.json`, plus an additive
+            // `reticles_v2.json` that supplements `reticles.json`).
+            await m.createTable(scopeManufacturers);
+            await m.createTable(scopeModels);
+            await m.createTable(scopeReticleOptions);
+            await m.addColumn(reticles, reticles.verified);
+            await m.addColumn(reticles, reticles.sourceUrl);
+            await m.addColumn(reticles, reticles.verifiedAt);
+            await m.addColumn(reticles, reticles.designer);
+            await m.addColumn(reticles, reticles.license);
+            await m.addColumn(reticles, reticles.subtensionsJson);
+          }
         },
       );
 
@@ -2102,6 +2373,37 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(targetRacks)
           ..addColumns([targetRacks.id.count()]))
         .map((row) => row.read(targetRacks.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the [ScopeManufacturers] catalog is empty. Used by the
+  /// seed loader to decide whether to seed the verified scope catalog
+  /// on first launch (or after the v22 migration).
+  Future<bool> get scopeManufacturersAreEmpty async {
+    final count = await (selectOnly(scopeManufacturers)
+          ..addColumns([scopeManufacturers.id.count()]))
+        .map((row) => row.read(scopeManufacturers.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the [ScopeModels] catalog is empty. Mirrors
+  /// [scopeManufacturersAreEmpty] for the per-SKU spec table.
+  Future<bool> get scopeModelsAreEmpty async {
+    final count = await (selectOnly(scopeModels)
+          ..addColumns([scopeModels.id.count()]))
+        .map((row) => row.read(scopeModels.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the [ScopeReticleOptions] join is empty. Mirrors
+  /// [scopeManufacturersAreEmpty] for the many-to-many table.
+  Future<bool> get scopeReticleOptionsAreEmpty async {
+    final count = await (selectOnly(scopeReticleOptions)
+          ..addColumns([scopeReticleOptions.id.count()]))
+        .map((row) => row.read(scopeReticleOptions.id.count()) ?? 0)
         .getSingle();
     return count == 0;
   }

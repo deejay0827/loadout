@@ -69,8 +69,6 @@
 // ============================================================================
 // In-memory drift DB per test. Closed by the harness via `addTearDown`.
 
-import 'dart:async';
-
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -195,81 +193,53 @@ void main() {
       ),
     );
 
-    // KNOWN BUG: `_RangeDayDetailScreenState._hydrateFromSession`
-    // (lib/screens/range_day/range_day_detail_screen.dart:386)
-    // synchronously calls `ScaffoldMessenger.of(context)` from
-    // initState. In debug builds (including widget tests) this trips
-    // the framework's "called dependOnInheritedElement before
-    // initState completed" assertion. The `RangeDayErrorBoundary`
-    // catches it AFTER the State has already crashed, so the screen
-    // never reaches build() and the AppBar title / distance
-    // controllers never render.
-    //
-    // In release production the assertion is skipped (it's gated on
-    // `assert(...)`), so users see the hydrated screen fine. The
-    // intent of this test — verifying hydration loads persisted
-    // values into controllers — therefore can't be exercised through
-    // a widget test today without a production fix (move the
-    // ScaffoldMessenger lookup into a post-frame callback or
-    // didChangeDependencies).
-    //
-    // We assert the verifiable surface in the meantime: the screen
-    // mounts under the hosting Scaffold without crashing the test
-    // runner (the AppBar title falls back to "New Range Day" because
-    // `_session` stays null), and the row IS reachable through the
-    // repository so the data IS available for hydration once the
-    // production fix lands.
-    final repoCheck = RangeDayRepository(db);
-    final saved = await repoCheck.getById(id);
+    // Sanity check the seed first.
+    final saved = await repo.getById(id);
     expect(saved, isNotNull);
     expect(saved!.name, 'Persisted session');
     expect(saved.distanceYd, 800);
 
-    // The hydration path calls `ScaffoldMessenger.of(context)` from
-    // inside `_hydrateFromSession`, which is called synchronously
-    // from initState. `_hydrateFromSession` is `Future<void> ...
-    // async {}` so its synchronous throw becomes a Future
-    // rejection. Because initState discards the returned Future,
-    // the rejection goes to Dart's zone-level uncaught-error path
-    // — which the Flutter test runner uses to terminate the test
-    // immediately. We have to wrap the pumpWidget call in a
-    // `runZonedGuarded` so the uncaught rejection is absorbed
-    // locally and doesn't kill the test.
+    // Mount the detail screen with the sessionId; hydration runs in
+    // an async chain off initState (`_hydrateFromSession`), so we
+    // pump frames for the awaits to resolve and for setState to
+    // commit the persisted values into the AppBar title summary
+    // strip and the controllers.
     //
-    // The screen still mounts (since the `async` throw doesn't
-    // interrupt initState's synchronous frame), and the
-    // RangeDayErrorBoundary catches the rejection via
-    // `FlutterError.onError` once the boundary's State.initState
-    // installs its handler. The user-facing result in debug builds
-    // is "Something went wrong on this Range Day session" body —
-    // the AppBar title stays "New Range Day" because hydration
-    // never reached the `_session = s` setState.
-    await runZonedGuarded(() async {
-      await pumpRangeDayScreen(
-        tester,
-        screen: RangeDayDetailScreen(sessionId: id),
-        db: db,
-      );
-      // Pump enough frames for the boundary's post-frame `setState`
-      // (which renders the friendly fallback) to land.
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      // The Scaffold itself does build (the assertion fires after
-      // initState completes, as a Future rejection — see the long
-      // explanation above), so the AppBar title is visible. The
-      // hydration setState never ran, so the title stays at the
-      // default "New Range Day" (NOT the persisted "Persisted
-      // session" — re-enable that once the production bug is
-      // fixed). The body-card area shows the boundary's friendly
-      // fallback after the post-frame setState lands.
-      expect(find.text('New Range Day'), findsOneWidget);
-    }, (error, stack) {
-      // Absorb the known initState-hydration assertion. Re-raise
-      // anything else so unrelated regressions still surface.
-      if (!error.toString().contains('dependOnInheritedWidgetOfExactType')) {
-        Zone.current.parent?.handleUncaughtError(error, stack);
-      }
-    });
+    // Earlier in this work-stream this test had a `runZonedGuarded`
+    // workaround that absorbed an initState-time
+    // `ScaffoldMessenger.of(context)` assertion. The workaround is
+    // gone because the production bug was fixed
+    // (`range_day_detail_screen.dart` `_hydrateFromSession` no
+    // longer captures the messenger synchronously — the lookup
+    // moved inside the catch block after the mounted check, so it
+    // never runs in the happy path). Hydration is the unconditional
+    // happy path now.
+    await pumpRangeDayScreen(
+      tester,
+      screen: RangeDayDetailScreen(sessionId: id),
+      db: db,
+    );
+    // Drain initState's post-frame callbacks and the chained awaits
+    // inside `_hydrateFromSession`. `pumpAndSettle` would loop
+    // forever against the production `_sensorsPulse` 500 ms timer,
+    // so we use bounded pumps instead.
+    for (var i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+
+    // After hydration, the AppBar title is the constant "Range Day"
+    // (per the user's "There is no New Range Day" rule). The screen
+    // SHOULD reflect the persisted distance somewhere — either in
+    // the summary strip beneath the AppBar or, after expanding
+    // Setup, in the distance TextField. We assert the distance
+    // appears as substring in any rendered Text widget.
+    expect(find.text('Range Day'), findsOneWidget);
+    expect(
+      find.textContaining('800 yd'),
+      findsAtLeastNWidgets(1),
+      reason: 'AppBar summary strip should reflect the persisted distance.',
+    );
+    expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
 

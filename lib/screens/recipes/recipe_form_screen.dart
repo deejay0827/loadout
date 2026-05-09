@@ -184,6 +184,7 @@ import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
 import '../../widgets/primer_cascade_field.dart';
 import '../../widgets/pro_gate.dart';
+import '../../widgets/unsaved_changes_dispatcher.dart';
 
 /// Trailing-`<num>gr` matcher used to extract the bullet weight out of a
 /// catalog label like `"Berger Long Range Hybrid Target 109gr"`.
@@ -2608,11 +2609,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     final autoSaveOn = context.watch<AutoSaveService>().isEnabled;
     final beginnerOn = context.watch<BeginnerModeService>().isEnabled;
 
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, _) async {
-        await _autoSave.flush();
-      },
+    return UnsavedChangesScope(
+      controller: _autoSave,
       child: Scaffold(
         appBar: AppBar(
           title: Text(isEdit ? 'Edit Recipe' : 'New Recipe'),

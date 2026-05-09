@@ -1,0 +1,348 @@
+{
+  "options": [
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen III 6-36x56 FFP",
+      "reticle_id": "vortex_ebr7d_mrad_v2",
+      "manufacturer_sku": "RZR-63600",
+      "is_default": true,
+      "notes": "Default MRAD SKU. EBR-7D MRAD reticle in FFP."
+    },
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen III 6-36x56 FFP",
+      "reticle_id": "vortex_ebr7d_moa_v2",
+      "manufacturer_sku": "RZR-63601",
+      "is_default": false,
+      "notes": "MOA SKU. EBR-7D MOA reticle in FFP. SKU number inferred as RZR-63601 (sequential to the MRAD RZR-63600); confirm against vortexoptics.com Black Razor variant if precise SKU matters."
+    },
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
+      "reticle_id": "vortex_ebr7c_mrad_v2",
+      "manufacturer_sku": "RZR-42708",
+      "is_default": true,
+      "notes": "Default MRAD SKU and most popular configuration."
+    },
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
+      "reticle_id": "vortex_ebr7c_moa_v2",
+      "manufacturer_sku": "RZR-42707",
+      "is_default": false,
+      "notes": "MOA variant of the Razor HD Gen II 4.5-27x56 FFP. EBR-7C reticle in MOA subtensions."
+    },
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
+      "reticle_id": "vortex_ebr2c_mrad_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "EBR-2C MRAD reticle option. Reticle row currently a placeholder (verified=false) until subtension diagram captured. Picker MUST surface 'unverified -- generic representation' guard."
+    },
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
+      "reticle_id": "vortex_ebr2c_moa_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "EBR-2C MOA reticle option. Reticle row currently a placeholder (verified=false)."
+    },
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
+      "reticle_id": "horus_tremor3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus TReMoR3 reticle licensed by Vortex on this scope body. Subtensions captured in the reticle row's subtensionsJson but renderable element list intentionally empty (verified=false) until the 5-page Horus diagram is converted into LoadOut's element vocabulary. Picker MUST surface 'unverified -- generic representation' guard."
+    },
+    {
+      "scope_manufacturer": "Vortex Optics",
+      "scope_model": "Razor HD Gen II 4.5-27x56 FFP",
+      "reticle_id": "horus_h59_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus H59 reticle option (licensed). Reticle row carries the verified Horus subtension dictionary but renderable element list is empty (verified=false) until per-element conversion lands."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 7-35x56 F1",
+      "reticle_id": "nightforce_milxt_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "Default reticle on the modern Nightforce ATACR 7-35 F1 SKU is the MIL-XT. Subtension dictionary verified from the official Nightforce reticle sheet."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 7-35x56 F1",
+      "reticle_id": "nightforce_moaxt_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MOA-XT reticle option (MOA twin of MIL-XT)."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 7-35x56 F1",
+      "reticle_id": "nightforce_moar_f1_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MOAR F1 reticle option."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 7-35x56 F1",
+      "reticle_id": "horus_tremor3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus TReMoR3 reticle option (licensed). Same Reticles row as the Vortex / Schmidt & Bender / EOTech wirings -- one source of truth per Horus pattern."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 7-35x56 F1",
+      "reticle_id": "nightforce_milc_f1_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MIL-C F1 reticle option (placeholder; verified=false)."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 4-16x42 F1",
+      "reticle_id": "nightforce_milxt_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MIL-XT default."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 4-16x42 F1",
+      "reticle_id": "nightforce_moaxt_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MOA-XT reticle option."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 4-16x42 F1",
+      "reticle_id": "nightforce_moar_f1_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MOAR F1 reticle option (30 MOA scale below center variant for this scope body)."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 4-16x42 F1",
+      "reticle_id": "horus_tremor3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus TReMoR3 reticle option (licensed)."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "ATACR 4-16x42 F1",
+      "reticle_id": "nightforce_milc_f1_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MIL-C F1 reticle option (placeholder; verified=false)."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "NX8 4-32x50 F1",
+      "reticle_id": "nightforce_milxt_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "MIL-XT default."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "NX8 4-32x50 F1",
+      "reticle_id": "nightforce_moaxt_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MOA-XT reticle option."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "NX8 4-32x50 F1",
+      "reticle_id": "nightforce_moar_f1_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MOAR F1 reticle option."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "NX8 4-32x50 F1",
+      "reticle_id": "horus_tremor3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus TReMoR3 reticle option (licensed)."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "NX8 4-32x50 F1",
+      "reticle_id": "nightforce_milc_f1_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MIL-C F1 reticle option (placeholder; verified=false)."
+    },
+    {
+      "scope_manufacturer": "Nightforce Optics",
+      "scope_model": "SHV 5-20x56",
+      "reticle_id": "nightforce_moar_sfp_v2",
+      "manufacturer_sku": "SHV20",
+      "is_default": true,
+      "notes": "MOAR SFP reticle is the precision-shooter default on the SHV 5-20x56 (20 MOA scale below center variant). Forceplex (non-mil hunter reticle) is also offered on the same body but is not in the verified catalog yet."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 5-25x56",
+      "reticle_id": "schmidt_bender_p4f_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "P4F-MIL is one of the most common reticle SKUs on the PMII 5-25 line. Reticle row currently a placeholder (verified=false) -- the schmidtundbender.de PDF still needs to be text-extracted into a structured spec."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 5-25x56",
+      "reticle_id": "schmidt_bender_msr2_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MSR2 reticle option (FinnAccuracy-collaborative design). Verified subtension dictionary captured."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 5-25x56",
+      "reticle_id": "schmidt_bender_gr2id_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "GR2ID reticle option (PRS-focused Christmas-tree). Verified subtension dictionary captured."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 5-25x56",
+      "reticle_id": "horus_h59_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus H59 reticle option (licensed by Schmidt & Bender on the PMII 5-25). Reticle row carries the Horus subtension dictionary; element list empty (verified=false) until per-element rendering is built out."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 5-25x56",
+      "reticle_id": "horus_tremor3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus TReMoR3 reticle option (licensed)."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 3-20x50 Ultra Short",
+      "reticle_id": "schmidt_bender_p4f_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "P4F-MIL default for the 3-20x50 Ultra Short. Placeholder reticle row (verified=false) until full subtension PDF transcribed."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 3-20x50 Ultra Short",
+      "reticle_id": "schmidt_bender_msr2_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "MSR2 reticle option."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 3-20x50 Ultra Short",
+      "reticle_id": "schmidt_bender_gr2id_v2",
+      "manufacturer_sku": "667-911-422-G8-E8",
+      "is_default": false,
+      "notes": "GR2ID reticle option. SKU shown is the 1cm clockwise DT II+ MTC LT/ST II ZC LT variant of the 3-20x50 Ultra Short with the GR2ID FFP."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 3-20x50 Ultra Short",
+      "reticle_id": "horus_h59_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus H59 reticle option (licensed)."
+    },
+    {
+      "scope_manufacturer": "Schmidt & Bender",
+      "scope_model": "PM II 3-20x50 Ultra Short",
+      "reticle_id": "horus_tremor3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus TReMoR3 reticle option (licensed)."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
+      "reticle_id": "leupold_pr2_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "PR2-MIL is the headline SKU for the Mark 5HD 5-25 M5C3 FFP body. Verified subtension dictionary captured from the Leupold spec sheet."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
+      "reticle_id": "leupold_tmr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "TMR reticle option (Tactical Milling Reticle). Verified subtension dictionary captured."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
+      "reticle_id": "leupold_pr2_moa_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "PR2-MOA reticle option (M1C3 turret variant). Reticle row currently a placeholder (verified=false)."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
+      "reticle_id": "horus_h59_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus H59 reticle option (licensed by Leupold; M5C3 illuminated FFP H59 SKU)."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 5HD 5-25x56 M5C3 FFP",
+      "reticle_id": "horus_tremor3_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "Horus TReMoR3 reticle option (illuminated M5C3 FFP Tremor 3 SKU)."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 4HD 4.5-18x52 M5C3 FFP",
+      "reticle_id": "leupold_pr2_mil_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "PR2-MIL default. Same reticle row as the Mark 5HD entry."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 4HD 4.5-18x52 M5C3 FFP",
+      "reticle_id": "leupold_tmr_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "TMR reticle option."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "Mark 4HD 4.5-18x52 M5C3 FFP",
+      "reticle_id": "leupold_pr2_moa_v2",
+      "manufacturer_sku": null,
+      "is_default": false,
+      "notes": "PR2-MOA reticle option (M1C3 turret variant; placeholder)."
+    },
+    {
+      "scope_manufacturer": "Leupold",
+      "scope_model": "VX-5HD 3-15x44 CDS-ZL2 Side Focus",
+      "reticle_id": "leupold_htmr_v2",
+      "manufacturer_sku": null,
+      "is_default": true,
+      "notes": "HTMR is the precision-shooter SKU on the VX-5HD 3-15. Reticle row currently a placeholder (verified=false) until a per-reticle PDF subtension diagram is captured."
+    }
+  ]
+}

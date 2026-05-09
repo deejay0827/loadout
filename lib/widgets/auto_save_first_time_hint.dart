@@ -57,8 +57,9 @@ class AutoSaveFirstTimeHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final service = context.watch<AutoSaveService>();
-    final shouldShow =
-        service.isHydrated && service.isEnabled && !service.hasShownFirstTimeHint;
+    final shouldShow = service.isHydrated &&
+        service.frequency.savesAutomatically &&
+        !service.hasShownFirstTimeHint;
     if (!shouldShow) return child;
     final theme = Theme.of(context);
     return Column(

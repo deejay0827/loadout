@@ -197,6 +197,14 @@ class SeedLoader {
     // download via the 'target_racks' pref key.
     final targetRacksReseed =
         firstRun || await db.targetRacksAreEmpty || flag('target_racks');
+    // Verified scope catalog (added schema v22). Three coordinated
+    // tables that must seed together (scopes -> reticles_v2 ->
+    // scope_reticle_options) so the join always resolves. We treat
+    // them as one reseed unit gated by the [ScopeManufacturers]
+    // emptiness check.
+    final verifiedScopesReseed = firstRun ||
+        await db.scopeManufacturersAreEmpty ||
+        flag('scopes_v2');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -209,7 +217,8 @@ class SeedLoader {
         targetsReseed ||
         reticlesReseed ||
         dragCurvesReseed ||
-        targetRacksReseed;
+        targetRacksReseed ||
+        verifiedScopesReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -320,6 +329,40 @@ class SeedLoader {
         }
         await _seedTargetRacks();
       }
+      if (verifiedScopesReseed) {
+        // Verified scope catalog (schema v22). The three tables form
+        // a strict parent -> child chain via FK columns:
+        //   ScopeManufacturers <- ScopeModels <- ScopeReticleOptions
+        //                                  ^         |
+        //                                  |         v
+        //                                  +----- Reticles
+        //
+        // Wipe children first to satisfy the FK constraint, then
+        // wipe parents, then re-seed top-down. We DO NOT touch the
+        // shared `Manufacturers` table here -- the verified scope
+        // catalog uses its own dedicated `ScopeManufacturers`
+        // namespace so there is no orphan-cleanup needed.
+        //
+        // Reticles re-seeded here are the v22 verified additions
+        // ONLY -- the legacy `reticles.json` rows seeded by
+        // _seedReticles() above stay untouched. We identify the
+        // verified rows by their `verified = true` flag plus a
+        // `sourceUrl` so the wipe never accidentally drops a legacy
+        // row.
+        if (!firstRun) {
+          await db.delete(db.scopeReticleOptions).go();
+          await db.delete(db.scopeModels).go();
+          await db.delete(db.scopeManufacturers).go();
+          // Drop only the v2 verified reticle rows so we can re-seed
+          // them with any updates. Legacy `reticles.json` rows are
+          // preserved (they have `verified = false` and `sourceUrl`
+          // null after the v22 migration).
+          await (db.delete(db.reticles)
+                ..where((r) => r.sourceUrl.isNotNull()))
+              .go();
+        }
+        await _seedVerifiedScopes();
+      }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
       // upgrading users without nuking the rest of the DB. The forced
@@ -359,6 +402,7 @@ class SeedLoader {
     await clearIf(reticlesReseed, 'reticles');
     await clearIf(dragCurvesReseed, 'drag_curves');
     await clearIf(targetRacksReseed, 'target_racks');
+    await clearIf(verifiedScopesReseed, 'scopes_v2');
   }
 
   Future<int> _manufacturerId(
@@ -761,11 +805,42 @@ class SeedLoader {
   /// representation matches `ReticleElement.toJson()`. We re-encode it
   /// here so the column stores compact JSON regardless of the source
   /// formatting.
+  ///
+  /// Verified-data fields (`verified`, `sourceUrl`, `verifiedAt`,
+  /// `designer`, `license`) are honored when present in the JSON. The
+  /// audit-cleanup pass that introduced these fields explicitly stamped
+  /// every brand-labeled-but-generic-art row with `verified: false`,
+  /// so reading the field from the JSON is a defense-in-depth check on
+  /// top of the schema column default. Entries without the field
+  /// (legacy / future additions that forget to set it) inherit the
+  /// schema default of `false` -- the safe fallback.
   Future<void> _seedReticles() async {
     final data = await _readJsonList('reticles.json');
     final batch = <ReticlesCompanion>[];
     for (final entry in data) {
       final m = entry as Map<String, dynamic>;
+      // Pull verified-data fields if present; otherwise fall through to
+      // `Value.absent()` so the schema's column defaults apply.
+      // The explicit type parameter on `Value.absent<T>()` is required —
+      // without it Dart infers `Value<dynamic>` from the conditional and
+      // the drift companion's strongly-typed setters reject the
+      // assignment at compile time.
+      final verifiedValue = m.containsKey('verified')
+          ? Value(m['verified'] as bool)
+          : const Value<bool>.absent();
+      final sourceUrlValue = m.containsKey('sourceUrl')
+          ? Value(m['sourceUrl'] as String?)
+          : const Value<String?>.absent();
+      final verifiedAtStr = m['verifiedAt'] as String?;
+      final verifiedAtValue = verifiedAtStr != null
+          ? Value(DateTime.tryParse(verifiedAtStr))
+          : const Value<DateTime?>.absent();
+      final designerValue = m.containsKey('designer')
+          ? Value(m['designer'] as String?)
+          : const Value<String?>.absent();
+      final licenseValue = m.containsKey('license')
+          ? Value(m['license'] as String?)
+          : const Value<String?>.absent();
       batch.add(ReticlesCompanion.insert(
         manufacturerId: m['manufacturer'] as String,
         model: m['model'] as String,
@@ -775,6 +850,11 @@ class SeedLoader {
         maxExtentUnits: (m['maxExtentUnits'] as num).toDouble(),
         definitionJson: json.encode(m['elements']),
         notes: Value(m['notes'] as String?),
+        verified: verifiedValue,
+        sourceUrl: sourceUrlValue,
+        verifiedAt: verifiedAtValue,
+        designer: designerValue,
+        license: licenseValue,
       ));
     }
     await db.batch((b) => b.insertAll(db.reticles, batch));
@@ -852,5 +932,257 @@ class SeedLoader {
     await db.batch(
       (b) => b.insertAll(db.dragCurves, batch, mode: InsertMode.insertOrIgnore),
     );
+  }
+
+  /// Seed the verified scope + reticle catalog (schema v22) from three
+  /// JSON files in `assets/seed_data/`:
+  ///
+  ///   * `scopes.json` -> `ScopeManufacturers` + `ScopeModels`.
+  ///   * `reticles_v2.json` -> additive verified rows in the existing
+  ///     `Reticles` table (carrying `verified`, `sourceUrl`,
+  ///     `verifiedAt`, `designer`, `license`, `subtensionsJson`).
+  ///   * `scope_reticle_options.json` -> `ScopeReticleOptions` join
+  ///     between scopes and the reticle rows.
+  ///
+  /// The three files are coupled: the join references rows in the
+  /// other two by name, so they must be inserted in dependency order
+  /// (manufacturer -> model -> reticle -> option) within a single
+  /// transaction. The caller is `seedIfNeeded` which already wraps
+  /// the whole thing in `db.transaction(...)`, so failures in any of
+  /// the three steps roll back cleanly.
+  ///
+  /// Defensive parsing: every JSON field is read with explicit null
+  /// handling and type coercion. A missing manufacturer or model row
+  /// is logged via `print` (so the verified scope row is silently
+  /// dropped) rather than crashing the whole seed pass -- one bad
+  /// option entry MUST NOT prevent the rest of the catalog from
+  /// loading. Logging stays at the `print` level rather than going
+  /// through a logging framework because this code only runs once
+  /// per install and an operator looking at console output sees the
+  /// drop directly.
+  Future<void> _seedVerifiedScopes() async {
+    // Step 1 -- scopes.json -> ScopeManufacturers + ScopeModels.
+    final scopesRoot = await _readJsonObject('scopes.json');
+    final manufacturers =
+        (scopesRoot['manufacturers'] as List<dynamic>? ?? const <dynamic>[]);
+    // Map of display name -> inserted scope-manufacturer id, used to
+    // wire models to their parent without re-querying.
+    final mfgIdByName = <String, int>{};
+    // Map of (manufacturer name, model name) -> inserted scope-model id,
+    // used to wire scope_reticle_options entries to their scope row.
+    final modelIdByKey = <(String, String), int>{};
+    for (final entry in manufacturers) {
+      final m = entry as Map<String, dynamic>;
+      final mfgName = m['name'] as String?;
+      if (mfgName == null) continue;
+      final mfgId = await db.into(db.scopeManufacturers).insert(
+            ScopeManufacturersCompanion.insert(
+              name: mfgName,
+              country: Value(m['country'] as String?),
+              website: Value(m['website'] as String?),
+            ),
+          );
+      mfgIdByName[mfgName] = mfgId;
+      final models = (m['models'] as List<dynamic>? ?? const <dynamic>[]);
+      for (final modelEntry in models) {
+        final mm = modelEntry as Map<String, dynamic>;
+        final modelName = mm['model_name'] as String?;
+        if (modelName == null) continue;
+        final sourceUrl = mm['source_url'] as String?;
+        final verifiedAtStr = mm['verified_at'] as String?;
+        // Defensive: a verified scope row MUST carry a source URL +
+        // verified_at date. Skip the row if either is missing -- the
+        // table schema requires both, and accepting a stub would
+        // silently violate the source-of-truth rule.
+        if (sourceUrl == null || verifiedAtStr == null) {
+          // Cannot persist row without provenance; log and skip.
+          // Using print here matches the rest of the seed pipeline.
+          // ignore: avoid_print
+          print(
+            'seed_loader: skipping scope row "$mfgName / $modelName": '
+            'missing source_url or verified_at',
+          );
+          continue;
+        }
+        final verifiedAt = DateTime.tryParse(verifiedAtStr);
+        if (verifiedAt == null) {
+          // ignore: avoid_print
+          print(
+            'seed_loader: skipping scope row "$mfgName / $modelName": '
+            'unparseable verified_at "$verifiedAtStr"',
+          );
+          continue;
+        }
+        final modelId = await db.into(db.scopeModels).insert(
+              ScopeModelsCompanion.insert(
+                manufacturerId: mfgId,
+                modelName: modelName,
+                category: mm['category'] as String? ?? 'rifle-scope',
+                magnificationMin: Value(
+                  (mm['magnification_min'] as num?)?.toDouble(),
+                ),
+                magnificationMax: Value(
+                  (mm['magnification_max'] as num?)?.toDouble(),
+                ),
+                objectiveDiameterMm: Value(
+                  (mm['objective_diameter_mm'] as num?)?.toInt(),
+                ),
+                tubeDiameterMm: Value(
+                  (mm['tube_diameter_mm'] as num?)?.toInt(),
+                ),
+                focalPlane: mm['focal_plane'] as String? ?? 'first',
+                reticleClass: mm['reticle_class'] as String? ?? 'mrad',
+                clickValueMil: Value(
+                  (mm['click_value_mil'] as num?)?.toDouble(),
+                ),
+                clickValueMoa: Value(
+                  (mm['click_value_moa'] as num?)?.toDouble(),
+                ),
+                travelPerRevMil: Value(
+                  (mm['travel_per_rev_mil'] as num?)?.toDouble(),
+                ),
+                travelPerRevMoa: Value(
+                  (mm['travel_per_rev_moa'] as num?)?.toDouble(),
+                ),
+                maxElevationMil: Value(
+                  (mm['max_elevation_mil'] as num?)?.toDouble(),
+                ),
+                maxElevationMoa: Value(
+                  (mm['max_elevation_moa'] as num?)?.toDouble(),
+                ),
+                maxWindageMil: Value(
+                  (mm['max_windage_mil'] as num?)?.toDouble(),
+                ),
+                maxWindageMoa: Value(
+                  (mm['max_windage_moa'] as num?)?.toDouble(),
+                ),
+                eyeReliefIn: Value(
+                  (mm['eye_relief_in'] as num?)?.toDouble(),
+                ),
+                weightOz: Value(
+                  (mm['weight_oz'] as num?)?.toDouble(),
+                ),
+                lengthIn: Value(
+                  (mm['length_in'] as num?)?.toDouble(),
+                ),
+                parallaxMinYd: Value(
+                  (mm['parallax_min_yd'] as num?)?.toInt(),
+                ),
+                sourceUrl: sourceUrl,
+                verifiedAt: verifiedAt,
+                notes: Value(mm['notes'] as String?),
+              ),
+            );
+        modelIdByKey[(mfgName, modelName)] = modelId;
+      }
+    }
+
+    // Step 2 -- reticles_v2.json -> additive rows in `Reticles` table.
+    // Each row carries a stable string id (e.g. "vortex_ebr7d_mrad_v2")
+    // that the join file references. We accumulate a name -> db id map
+    // for the join step that follows.
+    final reticleIdBySeedId = <String, int>{};
+    final reticlesV2 = await _readJsonList('reticles_v2.json');
+    for (final entry in reticlesV2) {
+      final r = entry as Map<String, dynamic>;
+      final seedId = r['id'] as String?;
+      if (seedId == null) continue;
+      final manufacturerName = r['manufacturer'] as String?;
+      final model = r['model'] as String?;
+      final type = r['type'] as String?;
+      final nativeUnit = r['nativeUnit'] as String?;
+      if (manufacturerName == null ||
+          model == null ||
+          type == null ||
+          nativeUnit == null) {
+        // ignore: avoid_print
+        print(
+          'seed_loader: skipping reticles_v2 row "$seedId": missing '
+          'required field (manufacturer/model/type/nativeUnit)',
+        );
+        continue;
+      }
+      final maxExtent = (r['maxExtentUnits'] as num?)?.toDouble() ?? 10.0;
+      final elementsValue = r['elements'];
+      // The element list may be an empty array on intentionally-
+      // unverified rows (e.g. Horus TReMoR3 placeholder). We persist
+      // the empty list as JSON `[]` so the renderer's defensive
+      // empty-list check kicks in.
+      final elementsJson =
+          json.encode(elementsValue is List<dynamic> ? elementsValue : <dynamic>[]);
+      final verifiedFlag = r['verified'] as bool? ?? false;
+      final sourceUrl = r['sourceUrl'] as String?;
+      final verifiedAtStr = r['verifiedAt'] as String?;
+      final verifiedAt = verifiedAtStr != null
+          ? DateTime.tryParse(verifiedAtStr)
+          : null;
+      final subtensionsValue = r['subtensions'];
+      final subtensionsJson = subtensionsValue == null
+          ? null
+          : json.encode(subtensionsValue);
+      final reticleId = await db.into(db.reticles).insert(
+            ReticlesCompanion.insert(
+              manufacturerId: manufacturerName,
+              model: model,
+              family: Value(r['family'] as String?),
+              type: type,
+              nativeUnit: nativeUnit,
+              maxExtentUnits: maxExtent,
+              definitionJson: elementsJson,
+              notes: Value(r['notes'] as String?),
+              verified: Value(verifiedFlag),
+              sourceUrl: Value(sourceUrl),
+              verifiedAt: Value(verifiedAt),
+              designer: Value(r['designer'] as String?),
+              license: Value(r['license'] as String?),
+              subtensionsJson: Value(subtensionsJson),
+            ),
+          );
+      reticleIdBySeedId[seedId] = reticleId;
+    }
+
+    // Step 3 -- scope_reticle_options.json -> ScopeReticleOptions join.
+    final optionsRoot = await _readJsonObject('scope_reticle_options.json');
+    final options =
+        (optionsRoot['options'] as List<dynamic>? ?? const <dynamic>[]);
+    final optBatch = <ScopeReticleOptionsCompanion>[];
+    for (final entry in options) {
+      final o = entry as Map<String, dynamic>;
+      final mfgName = o['scope_manufacturer'] as String?;
+      final modelName = o['scope_model'] as String?;
+      final reticleSeedId = o['reticle_id'] as String?;
+      if (mfgName == null || modelName == null || reticleSeedId == null) {
+        // ignore: avoid_print
+        print(
+          'seed_loader: skipping scope_reticle_options row: '
+          'missing scope_manufacturer / scope_model / reticle_id',
+        );
+        continue;
+      }
+      final scopeModelId = modelIdByKey[(mfgName, modelName)];
+      final reticleId = reticleIdBySeedId[reticleSeedId];
+      if (scopeModelId == null || reticleId == null) {
+        // Soft failure: a join row that doesn't resolve is dropped
+        // rather than crashing the whole seed pass. Logged so an
+        // operator looking at the console can spot the broken link.
+        // ignore: avoid_print
+        print(
+          'seed_loader: skipping scope_reticle_options row "$mfgName / '
+          '$modelName / $reticleSeedId": parent row missing '
+          '(scopeModelId=$scopeModelId, reticleId=$reticleId)',
+        );
+        continue;
+      }
+      optBatch.add(ScopeReticleOptionsCompanion.insert(
+        scopeModelId: scopeModelId,
+        reticleId: reticleId,
+        manufacturerSku: Value(o['manufacturer_sku'] as String?),
+        isDefault: Value(o['is_default'] as bool? ?? false),
+        notes: Value(o['notes'] as String?),
+      ));
+    }
+    if (optBatch.isNotEmpty) {
+      await db.batch((b) => b.insertAll(db.scopeReticleOptions, optBatch));
+    }
   }
 }

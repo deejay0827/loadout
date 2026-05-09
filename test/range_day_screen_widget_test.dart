@@ -4,10 +4,12 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Widget smoke tests for `lib/screens/range_day/range_day_screen.dart` —
-// the Range Day tab's list screen. Every test pumps the screen via the
-// shared harness in `test/_range_day_test_harness.dart` and asserts that
-// the screen renders without crashing across the matrix of states the
-// production app actually surfaces:
+// the Range Day **History** screen (renamed in title only — the class
+// is still `RangeDayScreen`, kept that way to avoid churn across the
+// codebase and the test harness). Every test pumps the screen via the
+// shared harness in `test/_range_day_test_harness.dart` and asserts
+// that the screen renders without crashing across the matrix of states
+// the production app actually surfaces:
 //
 //   * fresh-install user (empty DB),
 //   * anonymous user,
@@ -16,7 +18,13 @@
 //   * platforms with no sensors (the test host already has no sensors,
 //     so this is a free check that the screen tolerates that posture),
 //   * a populated DB with three sessions,
-//   * the FAB / "+" action firing a Navigator.push.
+//   * tapping a session row pushes the detail route.
+//
+// History is **browse-only** — there is no "+ new session" affordance
+// on this screen. Users start a new session by tapping the Range Day
+// tab in the bottom nav (which now goes straight to a fresh
+// `RangeDayDetailScreen`). The legacy "AppBar + action" tests that
+// used to live here were removed for that reason.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -35,11 +43,11 @@
 //     (drift's `watchAll()`). `pumpAndSettle()` is required to drain
 //     the initial empty emission before assertions run; otherwise the
 //     test sees the loading spinner.
-//   * The "+" FAB pushes a route to `RangeDayDetailScreen`, which itself
-//     has a heavy initState that reads many providers. We use a
-//     NavigatorObserver to ASSERT the push happened without actually
-//     letting the new screen pump (the parent pop handler short-circuits
-//     after `didPush`).
+//   * Tapping a saved-session row pushes a route to
+//     `RangeDayDetailScreen`, which has a heavy initState that reads
+//     many providers. We use a NavigatorObserver to ASSERT the push
+//     happened without actually letting the new screen pump (the
+//     parent pop handler short-circuits after `didPush`).
 //   * `tester.takeException()` is checked after each pumpAndSettle to
 //     catch silent layout exceptions Flutter would otherwise route
 //     through `FlutterError.onError` (the production code's
@@ -83,11 +91,13 @@ void main() {
     await pumpRangeDayScreen(tester, screen: const RangeDayScreen());
     await tester.pumpAndSettle();
 
-    // AppBar title is present.
-    expect(find.text('Range Day'), findsOneWidget);
-    // Empty-state CTA shows.
+    // AppBar title is the History label now.
+    expect(find.text('Range Day History'), findsOneWidget);
+    // Empty-state copy still uses "No range sessions yet" but no
+    // longer surfaces a "Start a session" CTA — History is browse-
+    // only, so the CTA was removed.
     expect(find.text('No range sessions yet'), findsOneWidget);
-    expect(find.text('Start a session'), findsOneWidget);
+    expect(find.text('Start a session'), findsNothing);
     // No silent layout exceptions.
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
@@ -102,7 +112,7 @@ void main() {
     await pumpRangeDayScreen(tester, screen: const RangeDayScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('Range Day'), findsOneWidget);
+    expect(find.text('Range Day History'), findsOneWidget);
     expect(find.text('No range sessions yet'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
@@ -118,7 +128,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // The list screen has no Pro-gated UI itself; everything renders.
-    expect(find.text('Range Day'), findsOneWidget);
+    expect(find.text('Range Day History'), findsOneWidget);
     // Empty state is shown for free users on a fresh DB.
     expect(find.text('No range sessions yet'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -133,7 +143,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Range Day'), findsOneWidget);
+    expect(find.text('Range Day History'), findsOneWidget);
     // The list screen looks identical for Pro and free users — assert
     // the same invariants.
     expect(find.text('No range sessions yet'), findsOneWidget);
@@ -152,7 +162,7 @@ void main() {
     await pumpRangeDayScreen(tester, screen: const RangeDayScreen());
     await tester.pumpAndSettle();
 
-    expect(find.text('Range Day'), findsOneWidget);
+    expect(find.text('Range Day History'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -197,50 +207,21 @@ void main() {
     await tearDownRangeDayWidgetTree(tester);
   });
 
-  testWidgets('tapping the AppBar "+" action calls Navigator.push',
+  testWidgets('History AppBar has no "New session" affordance',
       (tester) async {
-    final observer = _RecordingNavigatorObserver();
-    final harness = await pumpRangeDayScreen(
-      tester,
-      screen: const RangeDayScreen(),
-      navigatorObserver: observer,
-    );
-    // Insert one session so the empty-state CTA disappears (which
-    // would otherwise be a second `Icons.add` in the tree). After
-    // the insert there's exactly one Icons.add in the AppBar.
-    final repo = RangeDayRepository(harness.db);
-    await repo.insertSession(
-      RangeDaySessionsCompanion.insert(
-        name: 'Existing',
-        date: DateTime.utc(2026, 5, 8, 8, 0, 0),
-        distanceYd: 100,
-      ),
-    );
+    // Range Day History is browse-only — the legacy "+" / FAB / "New
+    // session" affordance was removed when the bottom-nav tab took
+    // over new-session creation. Assert the screen does NOT surface
+    // a New session button or an Icons.add in the AppBar.
+    await pumpRangeDayScreen(tester, screen: const RangeDayScreen());
     await tester.pumpAndSettle();
-    // Reset to ignore the initial home-route push.
-    observer.pushedRoutes.clear();
 
-    // The AppBar action is the only IconButton with the "+" icon now.
-    final addButton = find.byTooltip('New session');
-    expect(addButton, findsOneWidget);
-    await tester.tap(addButton);
-    // Let the route push register, then settle the new screen's
-    // initState so the subsequent teardown's Hero scan finds a
-    // fully-mounted destination tree. Without the settle the
-    // destination route is mid-mount and `Hero._allHeroesFor`
-    // dereferences a null element.widget. The push is what we're
-    // asserting; the settle is just hygiene.
-    await tester.pump();
-    await tester.pumpAndSettle(const Duration(seconds: 2));
-
-    // At least one new route was pushed (the MaterialPageRoute for
-    // the detail screen). Other animation routes can also register
-    // via NavigatorObserver — we only require ours.
-    expect(
-      observer.pushedRoutes.whereType<MaterialPageRoute<dynamic>>().length,
-      greaterThanOrEqualTo(1),
-    );
-    // Tear down before the verifier checks for pending timers.
+    expect(find.byTooltip('New session'), findsNothing);
+    // The empty state used to host an `Icons.add` inside its CTA
+    // button. With the CTA removed, the empty state has no add icon
+    // either.
+    expect(find.byIcon(Icons.add), findsNothing);
+    expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
 
@@ -286,22 +267,14 @@ void main() {
     await tearDownRangeDayWidgetTree(tester);
   });
 
-  testWidgets('AppBar action button has the "New session" tooltip',
-      (tester) async {
+  testWidgets('AppBar title reads "Range Day History"', (tester) async {
+    // Confirms the rename from "Range Day" to "Range Day History" so
+    // the production title sticks even after future refactors of the
+    // surrounding shell.
     await pumpRangeDayScreen(tester, screen: const RangeDayScreen());
     await tester.pumpAndSettle();
 
-    // The AppBar IconButton wraps an Icons.add with a tooltip — verify
-    // the tooltip is on the right icon.
-    final iconButton = tester.widget<IconButton>(
-      find
-          .ancestor(
-            of: find.byIcon(Icons.add),
-            matching: find.byType(IconButton),
-          )
-          .first,
-    );
-    expect(iconButton.tooltip, 'New session');
+    expect(find.text('Range Day History'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });

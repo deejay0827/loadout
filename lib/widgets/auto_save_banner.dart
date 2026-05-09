@@ -5,16 +5,20 @@
 // ============================================================================
 // A slim status banner that sits between the AppBar and the form
 // content on every screen wired into [AutoSaveController]. Renders one
-// of three states:
+// of these states:
 //
-// * Autosave **on, idle / never saved** — "Auto-save on — your changes
-//   save automatically." (Reassures beginners on first open.)
-// * Autosave **on, saving** — small spinner + "Saving..."
-// * Autosave **on, saved at least once** — check icon + "Saved · 2:34 PM".
-// * Autosave **off** — save icon + "Auto-save off — tap [save icon] to
-//   save manually." (Hint that they have to scroll to the bottom save
+// * Autosave **off** — save icon + "Auto-save off — tap save to save
+//   manually." (Hint that they have to scroll to the bottom save
 //   button.)
-// * Autosave **on, error** — error icon + "Save failed".
+// * Autosave **onChange / periodic, idle / never saved** — bolt icon
+//   plus a copy line that mentions the active frequency
+//   ("Auto-save on — saves after any change", "Auto-save on — saves
+//   every 5 minutes", etc.).
+// * Autosave **active, saving** — small spinner + "Saving..."
+// * Autosave **active, saved at least once** — check icon + "Saved
+//   · 2:34 PM".
+// * Autosave **active, error** — error icon + "Save failed — tap
+//   save to retry".
 //
 // On the right edge it also hosts a tiny [CloudSyncDot] — green when
 // synced, amber while syncing, red on error. The dot self-hides for
@@ -24,9 +28,10 @@
 // the per-form save status.
 //
 // Subscribes to both the global [AutoSaveService] preference (so
-// toggling it in Settings updates the banner) and the per-form
-// controller's `status` / `lastSavedAt` notifiers (so it reflects the
-// current save state without rebuilding the parent form).
+// changing the frequency in Settings updates the banner) and the
+// per-form controller's `status` / `lastSavedAt` notifiers (so it
+// reflects the current save state without rebuilding the parent
+// form).
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -78,7 +83,7 @@ class AutoSaveBanner extends StatelessWidget {
               return _buildBanner(
                 context,
                 theme: theme,
-                enabled: service.isEnabled,
+                frequency: service.frequency,
                 status: status,
                 lastSavedAt: lastSavedAt,
               );
@@ -92,7 +97,7 @@ class AutoSaveBanner extends StatelessWidget {
   Widget _buildBanner(
     BuildContext context, {
     required ThemeData theme,
-    required bool enabled,
+    required AutoSaveFrequency frequency,
     required AutoSaveStatus status,
     required DateTime? lastSavedAt,
   }) {
@@ -104,7 +109,7 @@ class AutoSaveBanner extends StatelessWidget {
     Widget? leading;
     final String label;
 
-    if (!enabled) {
+    if (frequency == AutoSaveFrequency.off) {
       icon = Icons.save_outlined;
       label = 'Auto-save off — tap save to save manually';
       leading = Icon(icon, size: 14, color: scheme.onSurfaceVariant);
@@ -137,7 +142,7 @@ class AutoSaveBanner extends StatelessWidget {
           icon = Icons.bolt_outlined;
           leading = Icon(icon, size: 14, color: scheme.primary);
           label = lastSavedAt == null
-              ? 'Auto-save on — your changes save automatically'
+              ? _idleLabelForFrequency(frequency)
               : 'Saved · ${_formatTime(lastSavedAt)}';
           break;
       }
@@ -168,6 +173,24 @@ class AutoSaveBanner extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Idle-state banner copy for each frequency. Shown only before
+  /// the first save lands; after that the banner shows "Saved · h:mm
+  /// AM/PM" instead.
+  static String _idleLabelForFrequency(AutoSaveFrequency f) {
+    switch (f) {
+      case AutoSaveFrequency.off:
+        return 'Auto-save off — tap save to save manually';
+      case AutoSaveFrequency.onChange:
+        return 'Auto-save on — saves after any change';
+      case AutoSaveFrequency.every1min:
+        return 'Auto-save on — saves every minute';
+      case AutoSaveFrequency.every5min:
+        return 'Auto-save on — saves every 5 minutes';
+      case AutoSaveFrequency.every10min:
+        return 'Auto-save on — saves every 10 minutes';
+    }
   }
 
   /// Format `dt` as a localized 12h "h:mm a" string. Avoids the

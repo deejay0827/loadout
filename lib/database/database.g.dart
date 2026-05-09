@@ -23429,6 +23429,76 @@ class $ReticlesTable extends Reticles
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _verifiedMeta = const VerificationMeta(
+    'verified',
+  );
+  @override
+  late final GeneratedColumn<bool> verified = GeneratedColumn<bool>(
+    'verified',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("verified" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _sourceUrlMeta = const VerificationMeta(
+    'sourceUrl',
+  );
+  @override
+  late final GeneratedColumn<String> sourceUrl = GeneratedColumn<String>(
+    'source_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _verifiedAtMeta = const VerificationMeta(
+    'verifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> verifiedAt = GeneratedColumn<DateTime>(
+    'verified_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _designerMeta = const VerificationMeta(
+    'designer',
+  );
+  @override
+  late final GeneratedColumn<String> designer = GeneratedColumn<String>(
+    'designer',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _licenseMeta = const VerificationMeta(
+    'license',
+  );
+  @override
+  late final GeneratedColumn<String> license = GeneratedColumn<String>(
+    'license',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _subtensionsJsonMeta = const VerificationMeta(
+    'subtensionsJson',
+  );
+  @override
+  late final GeneratedColumn<String> subtensionsJson = GeneratedColumn<String>(
+    'subtensions_json',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -23441,6 +23511,12 @@ class $ReticlesTable extends Reticles
     definitionJson,
     notes,
     createdAt,
+    verified,
+    sourceUrl,
+    verifiedAt,
+    designer,
+    license,
+    subtensionsJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -23532,6 +23608,45 @@ class $ReticlesTable extends Reticles
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
       );
     }
+    if (data.containsKey('verified')) {
+      context.handle(
+        _verifiedMeta,
+        verified.isAcceptableOrUnknown(data['verified']!, _verifiedMeta),
+      );
+    }
+    if (data.containsKey('source_url')) {
+      context.handle(
+        _sourceUrlMeta,
+        sourceUrl.isAcceptableOrUnknown(data['source_url']!, _sourceUrlMeta),
+      );
+    }
+    if (data.containsKey('verified_at')) {
+      context.handle(
+        _verifiedAtMeta,
+        verifiedAt.isAcceptableOrUnknown(data['verified_at']!, _verifiedAtMeta),
+      );
+    }
+    if (data.containsKey('designer')) {
+      context.handle(
+        _designerMeta,
+        designer.isAcceptableOrUnknown(data['designer']!, _designerMeta),
+      );
+    }
+    if (data.containsKey('license')) {
+      context.handle(
+        _licenseMeta,
+        license.isAcceptableOrUnknown(data['license']!, _licenseMeta),
+      );
+    }
+    if (data.containsKey('subtensions_json')) {
+      context.handle(
+        _subtensionsJsonMeta,
+        subtensionsJson.isAcceptableOrUnknown(
+          data['subtensions_json']!,
+          _subtensionsJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -23581,6 +23696,30 @@ class $ReticlesTable extends Reticles
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      verified: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}verified'],
+      )!,
+      sourceUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_url'],
+      ),
+      verifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}verified_at'],
+      ),
+      designer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}designer'],
+      ),
+      license: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}license'],
+      ),
+      subtensionsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}subtensions_json'],
+      ),
     );
   }
 
@@ -23618,6 +23757,43 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
   final String definitionJson;
   final String? notes;
   final DateTime createdAt;
+
+  /// Whether the row's geometry has been hand-checked against a
+  /// manufacturer / patent-holder published spec. `false` (the default)
+  /// means the entry is a placeholder or generic stand-in; UI surfaces
+  /// MUST refuse to render unverified rows as if they were the named
+  /// reticle. The audit pass that introduced this column flagged most
+  /// existing rows as `false` — see `lib/data/reticle_library.dart`
+  /// header for the verification rules.
+  final bool verified;
+
+  /// URL of the manufacturer / patent-holder spec document the row was
+  /// verified against. Required when `verified = true`; ignored when
+  /// `verified = false`. Stored verbatim so a future re-audit can hit
+  /// the same page.
+  final String? sourceUrl;
+
+  /// Date the row was last verified against `sourceUrl`. Ignored when
+  /// `verified = false`.
+  final DateTime? verifiedAt;
+
+  /// Designer / patent-holder for licensed designs (e.g. "Horus Vision
+  /// LLC" for every TReMoR3 / TReMoR5 / H59 / H37 row, regardless of
+  /// the scope brand the row is wired to via `ScopeReticleOptions`).
+  /// Free-form text. Null for in-house brand reticles whose designer
+  /// is the same as the manufacturer.
+  final String? designer;
+
+  /// License attribution string shown next to the reticle in the
+  /// picker (e.g. "Horus Vision LLC"). Free-form. Null when the
+  /// reticle is the manufacturer's own design.
+  final String? license;
+
+  /// JSON-encoded subtension dictionary keyed by the patent-holder /
+  /// manufacturer's published vocabulary (see `assets/seed_data/
+  /// reticles_v2.json` for the canonical shape). Optional — null when
+  /// the geometry in `definitionJson` is sufficient on its own.
+  final String? subtensionsJson;
   const ReticleRow({
     required this.id,
     required this.manufacturerId,
@@ -23629,6 +23805,12 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     required this.definitionJson,
     this.notes,
     required this.createdAt,
+    required this.verified,
+    this.sourceUrl,
+    this.verifiedAt,
+    this.designer,
+    this.license,
+    this.subtensionsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -23647,6 +23829,22 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
       map['notes'] = Variable<String>(notes);
     }
     map['created_at'] = Variable<DateTime>(createdAt);
+    map['verified'] = Variable<bool>(verified);
+    if (!nullToAbsent || sourceUrl != null) {
+      map['source_url'] = Variable<String>(sourceUrl);
+    }
+    if (!nullToAbsent || verifiedAt != null) {
+      map['verified_at'] = Variable<DateTime>(verifiedAt);
+    }
+    if (!nullToAbsent || designer != null) {
+      map['designer'] = Variable<String>(designer);
+    }
+    if (!nullToAbsent || license != null) {
+      map['license'] = Variable<String>(license);
+    }
+    if (!nullToAbsent || subtensionsJson != null) {
+      map['subtensions_json'] = Variable<String>(subtensionsJson);
+    }
     return map;
   }
 
@@ -23666,6 +23864,22 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
           ? const Value.absent()
           : Value(notes),
       createdAt: Value(createdAt),
+      verified: Value(verified),
+      sourceUrl: sourceUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceUrl),
+      verifiedAt: verifiedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verifiedAt),
+      designer: designer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(designer),
+      license: license == null && nullToAbsent
+          ? const Value.absent()
+          : Value(license),
+      subtensionsJson: subtensionsJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(subtensionsJson),
     );
   }
 
@@ -23685,6 +23899,12 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
       definitionJson: serializer.fromJson<String>(json['definitionJson']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      verified: serializer.fromJson<bool>(json['verified']),
+      sourceUrl: serializer.fromJson<String?>(json['sourceUrl']),
+      verifiedAt: serializer.fromJson<DateTime?>(json['verifiedAt']),
+      designer: serializer.fromJson<String?>(json['designer']),
+      license: serializer.fromJson<String?>(json['license']),
+      subtensionsJson: serializer.fromJson<String?>(json['subtensionsJson']),
     );
   }
   @override
@@ -23701,6 +23921,12 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
       'definitionJson': serializer.toJson<String>(definitionJson),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'verified': serializer.toJson<bool>(verified),
+      'sourceUrl': serializer.toJson<String?>(sourceUrl),
+      'verifiedAt': serializer.toJson<DateTime?>(verifiedAt),
+      'designer': serializer.toJson<String?>(designer),
+      'license': serializer.toJson<String?>(license),
+      'subtensionsJson': serializer.toJson<String?>(subtensionsJson),
     };
   }
 
@@ -23715,6 +23941,12 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     String? definitionJson,
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
+    bool? verified,
+    Value<String?> sourceUrl = const Value.absent(),
+    Value<DateTime?> verifiedAt = const Value.absent(),
+    Value<String?> designer = const Value.absent(),
+    Value<String?> license = const Value.absent(),
+    Value<String?> subtensionsJson = const Value.absent(),
   }) => ReticleRow(
     id: id ?? this.id,
     manufacturerId: manufacturerId ?? this.manufacturerId,
@@ -23726,6 +23958,14 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     definitionJson: definitionJson ?? this.definitionJson,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
+    verified: verified ?? this.verified,
+    sourceUrl: sourceUrl.present ? sourceUrl.value : this.sourceUrl,
+    verifiedAt: verifiedAt.present ? verifiedAt.value : this.verifiedAt,
+    designer: designer.present ? designer.value : this.designer,
+    license: license.present ? license.value : this.license,
+    subtensionsJson: subtensionsJson.present
+        ? subtensionsJson.value
+        : this.subtensionsJson,
   );
   ReticleRow copyWithCompanion(ReticlesCompanion data) {
     return ReticleRow(
@@ -23747,6 +23987,16 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
           : this.definitionJson,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      verified: data.verified.present ? data.verified.value : this.verified,
+      sourceUrl: data.sourceUrl.present ? data.sourceUrl.value : this.sourceUrl,
+      verifiedAt: data.verifiedAt.present
+          ? data.verifiedAt.value
+          : this.verifiedAt,
+      designer: data.designer.present ? data.designer.value : this.designer,
+      license: data.license.present ? data.license.value : this.license,
+      subtensionsJson: data.subtensionsJson.present
+          ? data.subtensionsJson.value
+          : this.subtensionsJson,
     );
   }
 
@@ -23762,7 +24012,13 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
           ..write('maxExtentUnits: $maxExtentUnits, ')
           ..write('definitionJson: $definitionJson, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('verified: $verified, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('verifiedAt: $verifiedAt, ')
+          ..write('designer: $designer, ')
+          ..write('license: $license, ')
+          ..write('subtensionsJson: $subtensionsJson')
           ..write(')'))
         .toString();
   }
@@ -23779,6 +24035,12 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
     definitionJson,
     notes,
     createdAt,
+    verified,
+    sourceUrl,
+    verifiedAt,
+    designer,
+    license,
+    subtensionsJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -23793,7 +24055,13 @@ class ReticleRow extends DataClass implements Insertable<ReticleRow> {
           other.maxExtentUnits == this.maxExtentUnits &&
           other.definitionJson == this.definitionJson &&
           other.notes == this.notes &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.verified == this.verified &&
+          other.sourceUrl == this.sourceUrl &&
+          other.verifiedAt == this.verifiedAt &&
+          other.designer == this.designer &&
+          other.license == this.license &&
+          other.subtensionsJson == this.subtensionsJson);
 }
 
 class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
@@ -23807,6 +24075,12 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
   final Value<String> definitionJson;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
+  final Value<bool> verified;
+  final Value<String?> sourceUrl;
+  final Value<DateTime?> verifiedAt;
+  final Value<String?> designer;
+  final Value<String?> license;
+  final Value<String?> subtensionsJson;
   const ReticlesCompanion({
     this.id = const Value.absent(),
     this.manufacturerId = const Value.absent(),
@@ -23818,6 +24092,12 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     this.definitionJson = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.verified = const Value.absent(),
+    this.sourceUrl = const Value.absent(),
+    this.verifiedAt = const Value.absent(),
+    this.designer = const Value.absent(),
+    this.license = const Value.absent(),
+    this.subtensionsJson = const Value.absent(),
   });
   ReticlesCompanion.insert({
     this.id = const Value.absent(),
@@ -23830,6 +24110,12 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     required String definitionJson,
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.verified = const Value.absent(),
+    this.sourceUrl = const Value.absent(),
+    this.verifiedAt = const Value.absent(),
+    this.designer = const Value.absent(),
+    this.license = const Value.absent(),
+    this.subtensionsJson = const Value.absent(),
   }) : manufacturerId = Value(manufacturerId),
        model = Value(model),
        type = Value(type),
@@ -23847,6 +24133,12 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     Expression<String>? definitionJson,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
+    Expression<bool>? verified,
+    Expression<String>? sourceUrl,
+    Expression<DateTime>? verifiedAt,
+    Expression<String>? designer,
+    Expression<String>? license,
+    Expression<String>? subtensionsJson,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -23859,6 +24151,12 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
       if (definitionJson != null) 'definition_json': definitionJson,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
+      if (verified != null) 'verified': verified,
+      if (sourceUrl != null) 'source_url': sourceUrl,
+      if (verifiedAt != null) 'verified_at': verifiedAt,
+      if (designer != null) 'designer': designer,
+      if (license != null) 'license': license,
+      if (subtensionsJson != null) 'subtensions_json': subtensionsJson,
     });
   }
 
@@ -23873,6 +24171,12 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     Value<String>? definitionJson,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
+    Value<bool>? verified,
+    Value<String?>? sourceUrl,
+    Value<DateTime?>? verifiedAt,
+    Value<String?>? designer,
+    Value<String?>? license,
+    Value<String?>? subtensionsJson,
   }) {
     return ReticlesCompanion(
       id: id ?? this.id,
@@ -23885,6 +24189,12 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
       definitionJson: definitionJson ?? this.definitionJson,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
+      verified: verified ?? this.verified,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      verifiedAt: verifiedAt ?? this.verifiedAt,
+      designer: designer ?? this.designer,
+      license: license ?? this.license,
+      subtensionsJson: subtensionsJson ?? this.subtensionsJson,
     );
   }
 
@@ -23921,6 +24231,24 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
+    if (verified.present) {
+      map['verified'] = Variable<bool>(verified.value);
+    }
+    if (sourceUrl.present) {
+      map['source_url'] = Variable<String>(sourceUrl.value);
+    }
+    if (verifiedAt.present) {
+      map['verified_at'] = Variable<DateTime>(verifiedAt.value);
+    }
+    if (designer.present) {
+      map['designer'] = Variable<String>(designer.value);
+    }
+    if (license.present) {
+      map['license'] = Variable<String>(license.value);
+    }
+    if (subtensionsJson.present) {
+      map['subtensions_json'] = Variable<String>(subtensionsJson.value);
+    }
     return map;
   }
 
@@ -23936,7 +24264,13 @@ class ReticlesCompanion extends UpdateCompanion<ReticleRow> {
           ..write('maxExtentUnits: $maxExtentUnits, ')
           ..write('definitionJson: $definitionJson, ')
           ..write('notes: $notes, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('verified: $verified, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('verifiedAt: $verifiedAt, ')
+          ..write('designer: $designer, ')
+          ..write('license: $license, ')
+          ..write('subtensionsJson: $subtensionsJson')
           ..write(')'))
         .toString();
   }
@@ -29426,6 +29760,2395 @@ class TargetRackChildrenCompanion extends UpdateCompanion<TargetRackChildRow> {
   }
 }
 
+class $ScopeManufacturersTable extends ScopeManufacturers
+    with TableInfo<$ScopeManufacturersTable, ScopeManufacturerRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScopeManufacturersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _countryMeta = const VerificationMeta(
+    'country',
+  );
+  @override
+  late final GeneratedColumn<String> country = GeneratedColumn<String>(
+    'country',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _websiteMeta = const VerificationMeta(
+    'website',
+  );
+  @override
+  late final GeneratedColumn<String> website = GeneratedColumn<String>(
+    'website',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, name, country, website, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scope_manufacturers';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScopeManufacturerRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('country')) {
+      context.handle(
+        _countryMeta,
+        country.isAcceptableOrUnknown(data['country']!, _countryMeta),
+      );
+    }
+    if (data.containsKey('website')) {
+      context.handle(
+        _websiteMeta,
+        website.isAcceptableOrUnknown(data['website']!, _websiteMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ScopeManufacturerRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScopeManufacturerRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      country: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}country'],
+      ),
+      website: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}website'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ScopeManufacturersTable createAlias(String alias) {
+    return $ScopeManufacturersTable(attachedDatabase, alias);
+  }
+}
+
+class ScopeManufacturerRow extends DataClass
+    implements Insertable<ScopeManufacturerRow> {
+  final int id;
+
+  /// Manufacturer display name (e.g. "Vortex Optics").
+  final String name;
+
+  /// ISO-style country of headquarters (e.g. "USA", "Germany", "Austria").
+  final String? country;
+
+  /// Manufacturer's primary website (no trailing slash).
+  final String? website;
+  final DateTime createdAt;
+  const ScopeManufacturerRow({
+    required this.id,
+    required this.name,
+    this.country,
+    this.website,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || country != null) {
+      map['country'] = Variable<String>(country);
+    }
+    if (!nullToAbsent || website != null) {
+      map['website'] = Variable<String>(website);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ScopeManufacturersCompanion toCompanion(bool nullToAbsent) {
+    return ScopeManufacturersCompanion(
+      id: Value(id),
+      name: Value(name),
+      country: country == null && nullToAbsent
+          ? const Value.absent()
+          : Value(country),
+      website: website == null && nullToAbsent
+          ? const Value.absent()
+          : Value(website),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ScopeManufacturerRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScopeManufacturerRow(
+      id: serializer.fromJson<int>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      country: serializer.fromJson<String?>(json['country']),
+      website: serializer.fromJson<String?>(json['website']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'name': serializer.toJson<String>(name),
+      'country': serializer.toJson<String?>(country),
+      'website': serializer.toJson<String?>(website),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ScopeManufacturerRow copyWith({
+    int? id,
+    String? name,
+    Value<String?> country = const Value.absent(),
+    Value<String?> website = const Value.absent(),
+    DateTime? createdAt,
+  }) => ScopeManufacturerRow(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    country: country.present ? country.value : this.country,
+    website: website.present ? website.value : this.website,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ScopeManufacturerRow copyWithCompanion(ScopeManufacturersCompanion data) {
+    return ScopeManufacturerRow(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      country: data.country.present ? data.country.value : this.country,
+      website: data.website.present ? data.website.value : this.website,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScopeManufacturerRow(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('country: $country, ')
+          ..write('website: $website, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, country, website, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScopeManufacturerRow &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.country == this.country &&
+          other.website == this.website &&
+          other.createdAt == this.createdAt);
+}
+
+class ScopeManufacturersCompanion
+    extends UpdateCompanion<ScopeManufacturerRow> {
+  final Value<int> id;
+  final Value<String> name;
+  final Value<String?> country;
+  final Value<String?> website;
+  final Value<DateTime> createdAt;
+  const ScopeManufacturersCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.country = const Value.absent(),
+    this.website = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ScopeManufacturersCompanion.insert({
+    this.id = const Value.absent(),
+    required String name,
+    this.country = const Value.absent(),
+    this.website = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : name = Value(name);
+  static Insertable<ScopeManufacturerRow> custom({
+    Expression<int>? id,
+    Expression<String>? name,
+    Expression<String>? country,
+    Expression<String>? website,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (country != null) 'country': country,
+      if (website != null) 'website': website,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ScopeManufacturersCompanion copyWith({
+    Value<int>? id,
+    Value<String>? name,
+    Value<String?>? country,
+    Value<String?>? website,
+    Value<DateTime>? createdAt,
+  }) {
+    return ScopeManufacturersCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      country: country ?? this.country,
+      website: website ?? this.website,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (country.present) {
+      map['country'] = Variable<String>(country.value);
+    }
+    if (website.present) {
+      map['website'] = Variable<String>(website.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScopeManufacturersCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('country: $country, ')
+          ..write('website: $website, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ScopeModelsTable extends ScopeModels
+    with TableInfo<$ScopeModelsTable, ScopeModelRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScopeModelsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _manufacturerIdMeta = const VerificationMeta(
+    'manufacturerId',
+  );
+  @override
+  late final GeneratedColumn<int> manufacturerId = GeneratedColumn<int>(
+    'manufacturer_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES scope_manufacturers (id)',
+    ),
+  );
+  static const VerificationMeta _modelNameMeta = const VerificationMeta(
+    'modelName',
+  );
+  @override
+  late final GeneratedColumn<String> modelName = GeneratedColumn<String>(
+    'model_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
+  @override
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _magnificationMinMeta = const VerificationMeta(
+    'magnificationMin',
+  );
+  @override
+  late final GeneratedColumn<double> magnificationMin = GeneratedColumn<double>(
+    'magnification_min',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _magnificationMaxMeta = const VerificationMeta(
+    'magnificationMax',
+  );
+  @override
+  late final GeneratedColumn<double> magnificationMax = GeneratedColumn<double>(
+    'magnification_max',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _objectiveDiameterMmMeta =
+      const VerificationMeta('objectiveDiameterMm');
+  @override
+  late final GeneratedColumn<int> objectiveDiameterMm = GeneratedColumn<int>(
+    'objective_diameter_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tubeDiameterMmMeta = const VerificationMeta(
+    'tubeDiameterMm',
+  );
+  @override
+  late final GeneratedColumn<int> tubeDiameterMm = GeneratedColumn<int>(
+    'tube_diameter_mm',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _focalPlaneMeta = const VerificationMeta(
+    'focalPlane',
+  );
+  @override
+  late final GeneratedColumn<String> focalPlane = GeneratedColumn<String>(
+    'focal_plane',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reticleClassMeta = const VerificationMeta(
+    'reticleClass',
+  );
+  @override
+  late final GeneratedColumn<String> reticleClass = GeneratedColumn<String>(
+    'reticle_class',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _clickValueMilMeta = const VerificationMeta(
+    'clickValueMil',
+  );
+  @override
+  late final GeneratedColumn<double> clickValueMil = GeneratedColumn<double>(
+    'click_value_mil',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _clickValueMoaMeta = const VerificationMeta(
+    'clickValueMoa',
+  );
+  @override
+  late final GeneratedColumn<double> clickValueMoa = GeneratedColumn<double>(
+    'click_value_moa',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _travelPerRevMilMeta = const VerificationMeta(
+    'travelPerRevMil',
+  );
+  @override
+  late final GeneratedColumn<double> travelPerRevMil = GeneratedColumn<double>(
+    'travel_per_rev_mil',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _travelPerRevMoaMeta = const VerificationMeta(
+    'travelPerRevMoa',
+  );
+  @override
+  late final GeneratedColumn<double> travelPerRevMoa = GeneratedColumn<double>(
+    'travel_per_rev_moa',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxElevationMilMeta = const VerificationMeta(
+    'maxElevationMil',
+  );
+  @override
+  late final GeneratedColumn<double> maxElevationMil = GeneratedColumn<double>(
+    'max_elevation_mil',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxElevationMoaMeta = const VerificationMeta(
+    'maxElevationMoa',
+  );
+  @override
+  late final GeneratedColumn<double> maxElevationMoa = GeneratedColumn<double>(
+    'max_elevation_moa',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxWindageMilMeta = const VerificationMeta(
+    'maxWindageMil',
+  );
+  @override
+  late final GeneratedColumn<double> maxWindageMil = GeneratedColumn<double>(
+    'max_windage_mil',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _maxWindageMoaMeta = const VerificationMeta(
+    'maxWindageMoa',
+  );
+  @override
+  late final GeneratedColumn<double> maxWindageMoa = GeneratedColumn<double>(
+    'max_windage_moa',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _eyeReliefInMeta = const VerificationMeta(
+    'eyeReliefIn',
+  );
+  @override
+  late final GeneratedColumn<double> eyeReliefIn = GeneratedColumn<double>(
+    'eye_relief_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _weightOzMeta = const VerificationMeta(
+    'weightOz',
+  );
+  @override
+  late final GeneratedColumn<double> weightOz = GeneratedColumn<double>(
+    'weight_oz',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lengthInMeta = const VerificationMeta(
+    'lengthIn',
+  );
+  @override
+  late final GeneratedColumn<double> lengthIn = GeneratedColumn<double>(
+    'length_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _parallaxMinYdMeta = const VerificationMeta(
+    'parallaxMinYd',
+  );
+  @override
+  late final GeneratedColumn<int> parallaxMinYd = GeneratedColumn<int>(
+    'parallax_min_yd',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sourceUrlMeta = const VerificationMeta(
+    'sourceUrl',
+  );
+  @override
+  late final GeneratedColumn<String> sourceUrl = GeneratedColumn<String>(
+    'source_url',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _verifiedAtMeta = const VerificationMeta(
+    'verifiedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> verifiedAt = GeneratedColumn<DateTime>(
+    'verified_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manufacturerId,
+    modelName,
+    category,
+    magnificationMin,
+    magnificationMax,
+    objectiveDiameterMm,
+    tubeDiameterMm,
+    focalPlane,
+    reticleClass,
+    clickValueMil,
+    clickValueMoa,
+    travelPerRevMil,
+    travelPerRevMoa,
+    maxElevationMil,
+    maxElevationMoa,
+    maxWindageMil,
+    maxWindageMoa,
+    eyeReliefIn,
+    weightOz,
+    lengthIn,
+    parallaxMinYd,
+    sourceUrl,
+    verifiedAt,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scope_models';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScopeModelRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('manufacturer_id')) {
+      context.handle(
+        _manufacturerIdMeta,
+        manufacturerId.isAcceptableOrUnknown(
+          data['manufacturer_id']!,
+          _manufacturerIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manufacturerIdMeta);
+    }
+    if (data.containsKey('model_name')) {
+      context.handle(
+        _modelNameMeta,
+        modelName.isAcceptableOrUnknown(data['model_name']!, _modelNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelNameMeta);
+    }
+    if (data.containsKey('category')) {
+      context.handle(
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_categoryMeta);
+    }
+    if (data.containsKey('magnification_min')) {
+      context.handle(
+        _magnificationMinMeta,
+        magnificationMin.isAcceptableOrUnknown(
+          data['magnification_min']!,
+          _magnificationMinMeta,
+        ),
+      );
+    }
+    if (data.containsKey('magnification_max')) {
+      context.handle(
+        _magnificationMaxMeta,
+        magnificationMax.isAcceptableOrUnknown(
+          data['magnification_max']!,
+          _magnificationMaxMeta,
+        ),
+      );
+    }
+    if (data.containsKey('objective_diameter_mm')) {
+      context.handle(
+        _objectiveDiameterMmMeta,
+        objectiveDiameterMm.isAcceptableOrUnknown(
+          data['objective_diameter_mm']!,
+          _objectiveDiameterMmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tube_diameter_mm')) {
+      context.handle(
+        _tubeDiameterMmMeta,
+        tubeDiameterMm.isAcceptableOrUnknown(
+          data['tube_diameter_mm']!,
+          _tubeDiameterMmMeta,
+        ),
+      );
+    }
+    if (data.containsKey('focal_plane')) {
+      context.handle(
+        _focalPlaneMeta,
+        focalPlane.isAcceptableOrUnknown(data['focal_plane']!, _focalPlaneMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_focalPlaneMeta);
+    }
+    if (data.containsKey('reticle_class')) {
+      context.handle(
+        _reticleClassMeta,
+        reticleClass.isAcceptableOrUnknown(
+          data['reticle_class']!,
+          _reticleClassMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_reticleClassMeta);
+    }
+    if (data.containsKey('click_value_mil')) {
+      context.handle(
+        _clickValueMilMeta,
+        clickValueMil.isAcceptableOrUnknown(
+          data['click_value_mil']!,
+          _clickValueMilMeta,
+        ),
+      );
+    }
+    if (data.containsKey('click_value_moa')) {
+      context.handle(
+        _clickValueMoaMeta,
+        clickValueMoa.isAcceptableOrUnknown(
+          data['click_value_moa']!,
+          _clickValueMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('travel_per_rev_mil')) {
+      context.handle(
+        _travelPerRevMilMeta,
+        travelPerRevMil.isAcceptableOrUnknown(
+          data['travel_per_rev_mil']!,
+          _travelPerRevMilMeta,
+        ),
+      );
+    }
+    if (data.containsKey('travel_per_rev_moa')) {
+      context.handle(
+        _travelPerRevMoaMeta,
+        travelPerRevMoa.isAcceptableOrUnknown(
+          data['travel_per_rev_moa']!,
+          _travelPerRevMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_elevation_mil')) {
+      context.handle(
+        _maxElevationMilMeta,
+        maxElevationMil.isAcceptableOrUnknown(
+          data['max_elevation_mil']!,
+          _maxElevationMilMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_elevation_moa')) {
+      context.handle(
+        _maxElevationMoaMeta,
+        maxElevationMoa.isAcceptableOrUnknown(
+          data['max_elevation_moa']!,
+          _maxElevationMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_windage_mil')) {
+      context.handle(
+        _maxWindageMilMeta,
+        maxWindageMil.isAcceptableOrUnknown(
+          data['max_windage_mil']!,
+          _maxWindageMilMeta,
+        ),
+      );
+    }
+    if (data.containsKey('max_windage_moa')) {
+      context.handle(
+        _maxWindageMoaMeta,
+        maxWindageMoa.isAcceptableOrUnknown(
+          data['max_windage_moa']!,
+          _maxWindageMoaMeta,
+        ),
+      );
+    }
+    if (data.containsKey('eye_relief_in')) {
+      context.handle(
+        _eyeReliefInMeta,
+        eyeReliefIn.isAcceptableOrUnknown(
+          data['eye_relief_in']!,
+          _eyeReliefInMeta,
+        ),
+      );
+    }
+    if (data.containsKey('weight_oz')) {
+      context.handle(
+        _weightOzMeta,
+        weightOz.isAcceptableOrUnknown(data['weight_oz']!, _weightOzMeta),
+      );
+    }
+    if (data.containsKey('length_in')) {
+      context.handle(
+        _lengthInMeta,
+        lengthIn.isAcceptableOrUnknown(data['length_in']!, _lengthInMeta),
+      );
+    }
+    if (data.containsKey('parallax_min_yd')) {
+      context.handle(
+        _parallaxMinYdMeta,
+        parallaxMinYd.isAcceptableOrUnknown(
+          data['parallax_min_yd']!,
+          _parallaxMinYdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('source_url')) {
+      context.handle(
+        _sourceUrlMeta,
+        sourceUrl.isAcceptableOrUnknown(data['source_url']!, _sourceUrlMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceUrlMeta);
+    }
+    if (data.containsKey('verified_at')) {
+      context.handle(
+        _verifiedAtMeta,
+        verifiedAt.isAcceptableOrUnknown(data['verified_at']!, _verifiedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_verifiedAtMeta);
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {manufacturerId, modelName},
+  ];
+  @override
+  ScopeModelRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScopeModelRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      manufacturerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}manufacturer_id'],
+      )!,
+      modelName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model_name'],
+      )!,
+      category: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}category'],
+      )!,
+      magnificationMin: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}magnification_min'],
+      ),
+      magnificationMax: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}magnification_max'],
+      ),
+      objectiveDiameterMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}objective_diameter_mm'],
+      ),
+      tubeDiameterMm: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}tube_diameter_mm'],
+      ),
+      focalPlane: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}focal_plane'],
+      )!,
+      reticleClass: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reticle_class'],
+      )!,
+      clickValueMil: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}click_value_mil'],
+      ),
+      clickValueMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}click_value_moa'],
+      ),
+      travelPerRevMil: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}travel_per_rev_mil'],
+      ),
+      travelPerRevMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}travel_per_rev_moa'],
+      ),
+      maxElevationMil: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_elevation_mil'],
+      ),
+      maxElevationMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_elevation_moa'],
+      ),
+      maxWindageMil: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_windage_mil'],
+      ),
+      maxWindageMoa: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}max_windage_moa'],
+      ),
+      eyeReliefIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}eye_relief_in'],
+      ),
+      weightOz: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}weight_oz'],
+      ),
+      lengthIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}length_in'],
+      ),
+      parallaxMinYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}parallax_min_yd'],
+      ),
+      sourceUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_url'],
+      )!,
+      verifiedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}verified_at'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ScopeModelsTable createAlias(String alias) {
+    return $ScopeModelsTable(attachedDatabase, alias);
+  }
+}
+
+class ScopeModelRow extends DataClass implements Insertable<ScopeModelRow> {
+  final int id;
+  final int manufacturerId;
+
+  /// Model + magnification string as the manufacturer markets it
+  /// (e.g. "Razor HD Gen III 6-36x56 FFP").
+  final String modelName;
+
+  /// 'rifle-scope' | 'lpvo' | 'red-dot' | 'prism' | 'spotting'.
+  final String category;
+
+  /// Minimum magnification (e.g. 6 for a 6-36x scope, 1 for a 1-6x LPVO).
+  final double? magnificationMin;
+
+  /// Maximum magnification.
+  final double? magnificationMax;
+
+  /// Objective lens diameter in mm. 0 / null for tubeless red dots.
+  final int? objectiveDiameterMm;
+
+  /// Main tube diameter in mm (typical: 30, 34, 35, 36).
+  final int? tubeDiameterMm;
+
+  /// 'first' | 'second' | 'fixed'.
+  final String focalPlane;
+
+  /// 'mrad' | 'moa' | 'switchable'. Drives unit-display defaults; the
+  /// per-turret click value below is the authoritative numeric source.
+  final String reticleClass;
+
+  /// Click value in MRAD (e.g. 0.1 for a 0.1-MRAD turret). Null when
+  /// this SKU only ships in MOA.
+  final double? clickValueMil;
+
+  /// Click value in MOA (e.g. 0.25 for a 1/4-MOA turret). Null when
+  /// this SKU only ships in MRAD.
+  final double? clickValueMoa;
+
+  /// Mil per full elevation-turret rotation (e.g. 10 for "10 mil per
+  /// rev"). Null when only the MOA equivalent is published.
+  final double? travelPerRevMil;
+
+  /// MOA per full elevation-turret rotation (e.g. 25 for "25 MOA per
+  /// rev"). Null when only the MRAD equivalent is published.
+  final double? travelPerRevMoa;
+
+  /// Total elevation travel in MRAD (e.g. 36.1 for the Razor Gen III).
+  final double? maxElevationMil;
+
+  /// Total elevation travel in MOA (e.g. 120 for the Razor Gen III).
+  final double? maxElevationMoa;
+
+  /// Total windage travel in MRAD (e.g. 15.5 for the Razor Gen III).
+  final double? maxWindageMil;
+
+  /// Total windage travel in MOA (e.g. 52.5 for the Razor Gen III).
+  final double? maxWindageMoa;
+
+  /// Eye relief in inches.
+  final double? eyeReliefIn;
+
+  /// Manufacturer-published weight in ounces.
+  final double? weightOz;
+
+  /// Overall length in inches.
+  final double? lengthIn;
+
+  /// Minimum side-focus / parallax setting in yards.
+  final int? parallaxMinYd;
+
+  /// Manufacturer's product page URL (the row's citation). Required —
+  /// any row without a source URL has not been verified and must not
+  /// be inserted via the seed loader.
+  final String sourceUrl;
+
+  /// Date the row was verified against `sourceUrl` (ISO-8601 day
+  /// precision is fine).
+  final DateTime verifiedAt;
+  final String? notes;
+  final DateTime createdAt;
+  const ScopeModelRow({
+    required this.id,
+    required this.manufacturerId,
+    required this.modelName,
+    required this.category,
+    this.magnificationMin,
+    this.magnificationMax,
+    this.objectiveDiameterMm,
+    this.tubeDiameterMm,
+    required this.focalPlane,
+    required this.reticleClass,
+    this.clickValueMil,
+    this.clickValueMoa,
+    this.travelPerRevMil,
+    this.travelPerRevMoa,
+    this.maxElevationMil,
+    this.maxElevationMoa,
+    this.maxWindageMil,
+    this.maxWindageMoa,
+    this.eyeReliefIn,
+    this.weightOz,
+    this.lengthIn,
+    this.parallaxMinYd,
+    required this.sourceUrl,
+    required this.verifiedAt,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['manufacturer_id'] = Variable<int>(manufacturerId);
+    map['model_name'] = Variable<String>(modelName);
+    map['category'] = Variable<String>(category);
+    if (!nullToAbsent || magnificationMin != null) {
+      map['magnification_min'] = Variable<double>(magnificationMin);
+    }
+    if (!nullToAbsent || magnificationMax != null) {
+      map['magnification_max'] = Variable<double>(magnificationMax);
+    }
+    if (!nullToAbsent || objectiveDiameterMm != null) {
+      map['objective_diameter_mm'] = Variable<int>(objectiveDiameterMm);
+    }
+    if (!nullToAbsent || tubeDiameterMm != null) {
+      map['tube_diameter_mm'] = Variable<int>(tubeDiameterMm);
+    }
+    map['focal_plane'] = Variable<String>(focalPlane);
+    map['reticle_class'] = Variable<String>(reticleClass);
+    if (!nullToAbsent || clickValueMil != null) {
+      map['click_value_mil'] = Variable<double>(clickValueMil);
+    }
+    if (!nullToAbsent || clickValueMoa != null) {
+      map['click_value_moa'] = Variable<double>(clickValueMoa);
+    }
+    if (!nullToAbsent || travelPerRevMil != null) {
+      map['travel_per_rev_mil'] = Variable<double>(travelPerRevMil);
+    }
+    if (!nullToAbsent || travelPerRevMoa != null) {
+      map['travel_per_rev_moa'] = Variable<double>(travelPerRevMoa);
+    }
+    if (!nullToAbsent || maxElevationMil != null) {
+      map['max_elevation_mil'] = Variable<double>(maxElevationMil);
+    }
+    if (!nullToAbsent || maxElevationMoa != null) {
+      map['max_elevation_moa'] = Variable<double>(maxElevationMoa);
+    }
+    if (!nullToAbsent || maxWindageMil != null) {
+      map['max_windage_mil'] = Variable<double>(maxWindageMil);
+    }
+    if (!nullToAbsent || maxWindageMoa != null) {
+      map['max_windage_moa'] = Variable<double>(maxWindageMoa);
+    }
+    if (!nullToAbsent || eyeReliefIn != null) {
+      map['eye_relief_in'] = Variable<double>(eyeReliefIn);
+    }
+    if (!nullToAbsent || weightOz != null) {
+      map['weight_oz'] = Variable<double>(weightOz);
+    }
+    if (!nullToAbsent || lengthIn != null) {
+      map['length_in'] = Variable<double>(lengthIn);
+    }
+    if (!nullToAbsent || parallaxMinYd != null) {
+      map['parallax_min_yd'] = Variable<int>(parallaxMinYd);
+    }
+    map['source_url'] = Variable<String>(sourceUrl);
+    map['verified_at'] = Variable<DateTime>(verifiedAt);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ScopeModelsCompanion toCompanion(bool nullToAbsent) {
+    return ScopeModelsCompanion(
+      id: Value(id),
+      manufacturerId: Value(manufacturerId),
+      modelName: Value(modelName),
+      category: Value(category),
+      magnificationMin: magnificationMin == null && nullToAbsent
+          ? const Value.absent()
+          : Value(magnificationMin),
+      magnificationMax: magnificationMax == null && nullToAbsent
+          ? const Value.absent()
+          : Value(magnificationMax),
+      objectiveDiameterMm: objectiveDiameterMm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(objectiveDiameterMm),
+      tubeDiameterMm: tubeDiameterMm == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tubeDiameterMm),
+      focalPlane: Value(focalPlane),
+      reticleClass: Value(reticleClass),
+      clickValueMil: clickValueMil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clickValueMil),
+      clickValueMoa: clickValueMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clickValueMoa),
+      travelPerRevMil: travelPerRevMil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(travelPerRevMil),
+      travelPerRevMoa: travelPerRevMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(travelPerRevMoa),
+      maxElevationMil: maxElevationMil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxElevationMil),
+      maxElevationMoa: maxElevationMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxElevationMoa),
+      maxWindageMil: maxWindageMil == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxWindageMil),
+      maxWindageMoa: maxWindageMoa == null && nullToAbsent
+          ? const Value.absent()
+          : Value(maxWindageMoa),
+      eyeReliefIn: eyeReliefIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(eyeReliefIn),
+      weightOz: weightOz == null && nullToAbsent
+          ? const Value.absent()
+          : Value(weightOz),
+      lengthIn: lengthIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lengthIn),
+      parallaxMinYd: parallaxMinYd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parallaxMinYd),
+      sourceUrl: Value(sourceUrl),
+      verifiedAt: Value(verifiedAt),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ScopeModelRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScopeModelRow(
+      id: serializer.fromJson<int>(json['id']),
+      manufacturerId: serializer.fromJson<int>(json['manufacturerId']),
+      modelName: serializer.fromJson<String>(json['modelName']),
+      category: serializer.fromJson<String>(json['category']),
+      magnificationMin: serializer.fromJson<double?>(json['magnificationMin']),
+      magnificationMax: serializer.fromJson<double?>(json['magnificationMax']),
+      objectiveDiameterMm: serializer.fromJson<int?>(
+        json['objectiveDiameterMm'],
+      ),
+      tubeDiameterMm: serializer.fromJson<int?>(json['tubeDiameterMm']),
+      focalPlane: serializer.fromJson<String>(json['focalPlane']),
+      reticleClass: serializer.fromJson<String>(json['reticleClass']),
+      clickValueMil: serializer.fromJson<double?>(json['clickValueMil']),
+      clickValueMoa: serializer.fromJson<double?>(json['clickValueMoa']),
+      travelPerRevMil: serializer.fromJson<double?>(json['travelPerRevMil']),
+      travelPerRevMoa: serializer.fromJson<double?>(json['travelPerRevMoa']),
+      maxElevationMil: serializer.fromJson<double?>(json['maxElevationMil']),
+      maxElevationMoa: serializer.fromJson<double?>(json['maxElevationMoa']),
+      maxWindageMil: serializer.fromJson<double?>(json['maxWindageMil']),
+      maxWindageMoa: serializer.fromJson<double?>(json['maxWindageMoa']),
+      eyeReliefIn: serializer.fromJson<double?>(json['eyeReliefIn']),
+      weightOz: serializer.fromJson<double?>(json['weightOz']),
+      lengthIn: serializer.fromJson<double?>(json['lengthIn']),
+      parallaxMinYd: serializer.fromJson<int?>(json['parallaxMinYd']),
+      sourceUrl: serializer.fromJson<String>(json['sourceUrl']),
+      verifiedAt: serializer.fromJson<DateTime>(json['verifiedAt']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'manufacturerId': serializer.toJson<int>(manufacturerId),
+      'modelName': serializer.toJson<String>(modelName),
+      'category': serializer.toJson<String>(category),
+      'magnificationMin': serializer.toJson<double?>(magnificationMin),
+      'magnificationMax': serializer.toJson<double?>(magnificationMax),
+      'objectiveDiameterMm': serializer.toJson<int?>(objectiveDiameterMm),
+      'tubeDiameterMm': serializer.toJson<int?>(tubeDiameterMm),
+      'focalPlane': serializer.toJson<String>(focalPlane),
+      'reticleClass': serializer.toJson<String>(reticleClass),
+      'clickValueMil': serializer.toJson<double?>(clickValueMil),
+      'clickValueMoa': serializer.toJson<double?>(clickValueMoa),
+      'travelPerRevMil': serializer.toJson<double?>(travelPerRevMil),
+      'travelPerRevMoa': serializer.toJson<double?>(travelPerRevMoa),
+      'maxElevationMil': serializer.toJson<double?>(maxElevationMil),
+      'maxElevationMoa': serializer.toJson<double?>(maxElevationMoa),
+      'maxWindageMil': serializer.toJson<double?>(maxWindageMil),
+      'maxWindageMoa': serializer.toJson<double?>(maxWindageMoa),
+      'eyeReliefIn': serializer.toJson<double?>(eyeReliefIn),
+      'weightOz': serializer.toJson<double?>(weightOz),
+      'lengthIn': serializer.toJson<double?>(lengthIn),
+      'parallaxMinYd': serializer.toJson<int?>(parallaxMinYd),
+      'sourceUrl': serializer.toJson<String>(sourceUrl),
+      'verifiedAt': serializer.toJson<DateTime>(verifiedAt),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ScopeModelRow copyWith({
+    int? id,
+    int? manufacturerId,
+    String? modelName,
+    String? category,
+    Value<double?> magnificationMin = const Value.absent(),
+    Value<double?> magnificationMax = const Value.absent(),
+    Value<int?> objectiveDiameterMm = const Value.absent(),
+    Value<int?> tubeDiameterMm = const Value.absent(),
+    String? focalPlane,
+    String? reticleClass,
+    Value<double?> clickValueMil = const Value.absent(),
+    Value<double?> clickValueMoa = const Value.absent(),
+    Value<double?> travelPerRevMil = const Value.absent(),
+    Value<double?> travelPerRevMoa = const Value.absent(),
+    Value<double?> maxElevationMil = const Value.absent(),
+    Value<double?> maxElevationMoa = const Value.absent(),
+    Value<double?> maxWindageMil = const Value.absent(),
+    Value<double?> maxWindageMoa = const Value.absent(),
+    Value<double?> eyeReliefIn = const Value.absent(),
+    Value<double?> weightOz = const Value.absent(),
+    Value<double?> lengthIn = const Value.absent(),
+    Value<int?> parallaxMinYd = const Value.absent(),
+    String? sourceUrl,
+    DateTime? verifiedAt,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => ScopeModelRow(
+    id: id ?? this.id,
+    manufacturerId: manufacturerId ?? this.manufacturerId,
+    modelName: modelName ?? this.modelName,
+    category: category ?? this.category,
+    magnificationMin: magnificationMin.present
+        ? magnificationMin.value
+        : this.magnificationMin,
+    magnificationMax: magnificationMax.present
+        ? magnificationMax.value
+        : this.magnificationMax,
+    objectiveDiameterMm: objectiveDiameterMm.present
+        ? objectiveDiameterMm.value
+        : this.objectiveDiameterMm,
+    tubeDiameterMm: tubeDiameterMm.present
+        ? tubeDiameterMm.value
+        : this.tubeDiameterMm,
+    focalPlane: focalPlane ?? this.focalPlane,
+    reticleClass: reticleClass ?? this.reticleClass,
+    clickValueMil: clickValueMil.present
+        ? clickValueMil.value
+        : this.clickValueMil,
+    clickValueMoa: clickValueMoa.present
+        ? clickValueMoa.value
+        : this.clickValueMoa,
+    travelPerRevMil: travelPerRevMil.present
+        ? travelPerRevMil.value
+        : this.travelPerRevMil,
+    travelPerRevMoa: travelPerRevMoa.present
+        ? travelPerRevMoa.value
+        : this.travelPerRevMoa,
+    maxElevationMil: maxElevationMil.present
+        ? maxElevationMil.value
+        : this.maxElevationMil,
+    maxElevationMoa: maxElevationMoa.present
+        ? maxElevationMoa.value
+        : this.maxElevationMoa,
+    maxWindageMil: maxWindageMil.present
+        ? maxWindageMil.value
+        : this.maxWindageMil,
+    maxWindageMoa: maxWindageMoa.present
+        ? maxWindageMoa.value
+        : this.maxWindageMoa,
+    eyeReliefIn: eyeReliefIn.present ? eyeReliefIn.value : this.eyeReliefIn,
+    weightOz: weightOz.present ? weightOz.value : this.weightOz,
+    lengthIn: lengthIn.present ? lengthIn.value : this.lengthIn,
+    parallaxMinYd: parallaxMinYd.present
+        ? parallaxMinYd.value
+        : this.parallaxMinYd,
+    sourceUrl: sourceUrl ?? this.sourceUrl,
+    verifiedAt: verifiedAt ?? this.verifiedAt,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ScopeModelRow copyWithCompanion(ScopeModelsCompanion data) {
+    return ScopeModelRow(
+      id: data.id.present ? data.id.value : this.id,
+      manufacturerId: data.manufacturerId.present
+          ? data.manufacturerId.value
+          : this.manufacturerId,
+      modelName: data.modelName.present ? data.modelName.value : this.modelName,
+      category: data.category.present ? data.category.value : this.category,
+      magnificationMin: data.magnificationMin.present
+          ? data.magnificationMin.value
+          : this.magnificationMin,
+      magnificationMax: data.magnificationMax.present
+          ? data.magnificationMax.value
+          : this.magnificationMax,
+      objectiveDiameterMm: data.objectiveDiameterMm.present
+          ? data.objectiveDiameterMm.value
+          : this.objectiveDiameterMm,
+      tubeDiameterMm: data.tubeDiameterMm.present
+          ? data.tubeDiameterMm.value
+          : this.tubeDiameterMm,
+      focalPlane: data.focalPlane.present
+          ? data.focalPlane.value
+          : this.focalPlane,
+      reticleClass: data.reticleClass.present
+          ? data.reticleClass.value
+          : this.reticleClass,
+      clickValueMil: data.clickValueMil.present
+          ? data.clickValueMil.value
+          : this.clickValueMil,
+      clickValueMoa: data.clickValueMoa.present
+          ? data.clickValueMoa.value
+          : this.clickValueMoa,
+      travelPerRevMil: data.travelPerRevMil.present
+          ? data.travelPerRevMil.value
+          : this.travelPerRevMil,
+      travelPerRevMoa: data.travelPerRevMoa.present
+          ? data.travelPerRevMoa.value
+          : this.travelPerRevMoa,
+      maxElevationMil: data.maxElevationMil.present
+          ? data.maxElevationMil.value
+          : this.maxElevationMil,
+      maxElevationMoa: data.maxElevationMoa.present
+          ? data.maxElevationMoa.value
+          : this.maxElevationMoa,
+      maxWindageMil: data.maxWindageMil.present
+          ? data.maxWindageMil.value
+          : this.maxWindageMil,
+      maxWindageMoa: data.maxWindageMoa.present
+          ? data.maxWindageMoa.value
+          : this.maxWindageMoa,
+      eyeReliefIn: data.eyeReliefIn.present
+          ? data.eyeReliefIn.value
+          : this.eyeReliefIn,
+      weightOz: data.weightOz.present ? data.weightOz.value : this.weightOz,
+      lengthIn: data.lengthIn.present ? data.lengthIn.value : this.lengthIn,
+      parallaxMinYd: data.parallaxMinYd.present
+          ? data.parallaxMinYd.value
+          : this.parallaxMinYd,
+      sourceUrl: data.sourceUrl.present ? data.sourceUrl.value : this.sourceUrl,
+      verifiedAt: data.verifiedAt.present
+          ? data.verifiedAt.value
+          : this.verifiedAt,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScopeModelRow(')
+          ..write('id: $id, ')
+          ..write('manufacturerId: $manufacturerId, ')
+          ..write('modelName: $modelName, ')
+          ..write('category: $category, ')
+          ..write('magnificationMin: $magnificationMin, ')
+          ..write('magnificationMax: $magnificationMax, ')
+          ..write('objectiveDiameterMm: $objectiveDiameterMm, ')
+          ..write('tubeDiameterMm: $tubeDiameterMm, ')
+          ..write('focalPlane: $focalPlane, ')
+          ..write('reticleClass: $reticleClass, ')
+          ..write('clickValueMil: $clickValueMil, ')
+          ..write('clickValueMoa: $clickValueMoa, ')
+          ..write('travelPerRevMil: $travelPerRevMil, ')
+          ..write('travelPerRevMoa: $travelPerRevMoa, ')
+          ..write('maxElevationMil: $maxElevationMil, ')
+          ..write('maxElevationMoa: $maxElevationMoa, ')
+          ..write('maxWindageMil: $maxWindageMil, ')
+          ..write('maxWindageMoa: $maxWindageMoa, ')
+          ..write('eyeReliefIn: $eyeReliefIn, ')
+          ..write('weightOz: $weightOz, ')
+          ..write('lengthIn: $lengthIn, ')
+          ..write('parallaxMinYd: $parallaxMinYd, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('verifiedAt: $verifiedAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    id,
+    manufacturerId,
+    modelName,
+    category,
+    magnificationMin,
+    magnificationMax,
+    objectiveDiameterMm,
+    tubeDiameterMm,
+    focalPlane,
+    reticleClass,
+    clickValueMil,
+    clickValueMoa,
+    travelPerRevMil,
+    travelPerRevMoa,
+    maxElevationMil,
+    maxElevationMoa,
+    maxWindageMil,
+    maxWindageMoa,
+    eyeReliefIn,
+    weightOz,
+    lengthIn,
+    parallaxMinYd,
+    sourceUrl,
+    verifiedAt,
+    notes,
+    createdAt,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScopeModelRow &&
+          other.id == this.id &&
+          other.manufacturerId == this.manufacturerId &&
+          other.modelName == this.modelName &&
+          other.category == this.category &&
+          other.magnificationMin == this.magnificationMin &&
+          other.magnificationMax == this.magnificationMax &&
+          other.objectiveDiameterMm == this.objectiveDiameterMm &&
+          other.tubeDiameterMm == this.tubeDiameterMm &&
+          other.focalPlane == this.focalPlane &&
+          other.reticleClass == this.reticleClass &&
+          other.clickValueMil == this.clickValueMil &&
+          other.clickValueMoa == this.clickValueMoa &&
+          other.travelPerRevMil == this.travelPerRevMil &&
+          other.travelPerRevMoa == this.travelPerRevMoa &&
+          other.maxElevationMil == this.maxElevationMil &&
+          other.maxElevationMoa == this.maxElevationMoa &&
+          other.maxWindageMil == this.maxWindageMil &&
+          other.maxWindageMoa == this.maxWindageMoa &&
+          other.eyeReliefIn == this.eyeReliefIn &&
+          other.weightOz == this.weightOz &&
+          other.lengthIn == this.lengthIn &&
+          other.parallaxMinYd == this.parallaxMinYd &&
+          other.sourceUrl == this.sourceUrl &&
+          other.verifiedAt == this.verifiedAt &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class ScopeModelsCompanion extends UpdateCompanion<ScopeModelRow> {
+  final Value<int> id;
+  final Value<int> manufacturerId;
+  final Value<String> modelName;
+  final Value<String> category;
+  final Value<double?> magnificationMin;
+  final Value<double?> magnificationMax;
+  final Value<int?> objectiveDiameterMm;
+  final Value<int?> tubeDiameterMm;
+  final Value<String> focalPlane;
+  final Value<String> reticleClass;
+  final Value<double?> clickValueMil;
+  final Value<double?> clickValueMoa;
+  final Value<double?> travelPerRevMil;
+  final Value<double?> travelPerRevMoa;
+  final Value<double?> maxElevationMil;
+  final Value<double?> maxElevationMoa;
+  final Value<double?> maxWindageMil;
+  final Value<double?> maxWindageMoa;
+  final Value<double?> eyeReliefIn;
+  final Value<double?> weightOz;
+  final Value<double?> lengthIn;
+  final Value<int?> parallaxMinYd;
+  final Value<String> sourceUrl;
+  final Value<DateTime> verifiedAt;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const ScopeModelsCompanion({
+    this.id = const Value.absent(),
+    this.manufacturerId = const Value.absent(),
+    this.modelName = const Value.absent(),
+    this.category = const Value.absent(),
+    this.magnificationMin = const Value.absent(),
+    this.magnificationMax = const Value.absent(),
+    this.objectiveDiameterMm = const Value.absent(),
+    this.tubeDiameterMm = const Value.absent(),
+    this.focalPlane = const Value.absent(),
+    this.reticleClass = const Value.absent(),
+    this.clickValueMil = const Value.absent(),
+    this.clickValueMoa = const Value.absent(),
+    this.travelPerRevMil = const Value.absent(),
+    this.travelPerRevMoa = const Value.absent(),
+    this.maxElevationMil = const Value.absent(),
+    this.maxElevationMoa = const Value.absent(),
+    this.maxWindageMil = const Value.absent(),
+    this.maxWindageMoa = const Value.absent(),
+    this.eyeReliefIn = const Value.absent(),
+    this.weightOz = const Value.absent(),
+    this.lengthIn = const Value.absent(),
+    this.parallaxMinYd = const Value.absent(),
+    this.sourceUrl = const Value.absent(),
+    this.verifiedAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ScopeModelsCompanion.insert({
+    this.id = const Value.absent(),
+    required int manufacturerId,
+    required String modelName,
+    required String category,
+    this.magnificationMin = const Value.absent(),
+    this.magnificationMax = const Value.absent(),
+    this.objectiveDiameterMm = const Value.absent(),
+    this.tubeDiameterMm = const Value.absent(),
+    required String focalPlane,
+    required String reticleClass,
+    this.clickValueMil = const Value.absent(),
+    this.clickValueMoa = const Value.absent(),
+    this.travelPerRevMil = const Value.absent(),
+    this.travelPerRevMoa = const Value.absent(),
+    this.maxElevationMil = const Value.absent(),
+    this.maxElevationMoa = const Value.absent(),
+    this.maxWindageMil = const Value.absent(),
+    this.maxWindageMoa = const Value.absent(),
+    this.eyeReliefIn = const Value.absent(),
+    this.weightOz = const Value.absent(),
+    this.lengthIn = const Value.absent(),
+    this.parallaxMinYd = const Value.absent(),
+    required String sourceUrl,
+    required DateTime verifiedAt,
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : manufacturerId = Value(manufacturerId),
+       modelName = Value(modelName),
+       category = Value(category),
+       focalPlane = Value(focalPlane),
+       reticleClass = Value(reticleClass),
+       sourceUrl = Value(sourceUrl),
+       verifiedAt = Value(verifiedAt);
+  static Insertable<ScopeModelRow> custom({
+    Expression<int>? id,
+    Expression<int>? manufacturerId,
+    Expression<String>? modelName,
+    Expression<String>? category,
+    Expression<double>? magnificationMin,
+    Expression<double>? magnificationMax,
+    Expression<int>? objectiveDiameterMm,
+    Expression<int>? tubeDiameterMm,
+    Expression<String>? focalPlane,
+    Expression<String>? reticleClass,
+    Expression<double>? clickValueMil,
+    Expression<double>? clickValueMoa,
+    Expression<double>? travelPerRevMil,
+    Expression<double>? travelPerRevMoa,
+    Expression<double>? maxElevationMil,
+    Expression<double>? maxElevationMoa,
+    Expression<double>? maxWindageMil,
+    Expression<double>? maxWindageMoa,
+    Expression<double>? eyeReliefIn,
+    Expression<double>? weightOz,
+    Expression<double>? lengthIn,
+    Expression<int>? parallaxMinYd,
+    Expression<String>? sourceUrl,
+    Expression<DateTime>? verifiedAt,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manufacturerId != null) 'manufacturer_id': manufacturerId,
+      if (modelName != null) 'model_name': modelName,
+      if (category != null) 'category': category,
+      if (magnificationMin != null) 'magnification_min': magnificationMin,
+      if (magnificationMax != null) 'magnification_max': magnificationMax,
+      if (objectiveDiameterMm != null)
+        'objective_diameter_mm': objectiveDiameterMm,
+      if (tubeDiameterMm != null) 'tube_diameter_mm': tubeDiameterMm,
+      if (focalPlane != null) 'focal_plane': focalPlane,
+      if (reticleClass != null) 'reticle_class': reticleClass,
+      if (clickValueMil != null) 'click_value_mil': clickValueMil,
+      if (clickValueMoa != null) 'click_value_moa': clickValueMoa,
+      if (travelPerRevMil != null) 'travel_per_rev_mil': travelPerRevMil,
+      if (travelPerRevMoa != null) 'travel_per_rev_moa': travelPerRevMoa,
+      if (maxElevationMil != null) 'max_elevation_mil': maxElevationMil,
+      if (maxElevationMoa != null) 'max_elevation_moa': maxElevationMoa,
+      if (maxWindageMil != null) 'max_windage_mil': maxWindageMil,
+      if (maxWindageMoa != null) 'max_windage_moa': maxWindageMoa,
+      if (eyeReliefIn != null) 'eye_relief_in': eyeReliefIn,
+      if (weightOz != null) 'weight_oz': weightOz,
+      if (lengthIn != null) 'length_in': lengthIn,
+      if (parallaxMinYd != null) 'parallax_min_yd': parallaxMinYd,
+      if (sourceUrl != null) 'source_url': sourceUrl,
+      if (verifiedAt != null) 'verified_at': verifiedAt,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ScopeModelsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? manufacturerId,
+    Value<String>? modelName,
+    Value<String>? category,
+    Value<double?>? magnificationMin,
+    Value<double?>? magnificationMax,
+    Value<int?>? objectiveDiameterMm,
+    Value<int?>? tubeDiameterMm,
+    Value<String>? focalPlane,
+    Value<String>? reticleClass,
+    Value<double?>? clickValueMil,
+    Value<double?>? clickValueMoa,
+    Value<double?>? travelPerRevMil,
+    Value<double?>? travelPerRevMoa,
+    Value<double?>? maxElevationMil,
+    Value<double?>? maxElevationMoa,
+    Value<double?>? maxWindageMil,
+    Value<double?>? maxWindageMoa,
+    Value<double?>? eyeReliefIn,
+    Value<double?>? weightOz,
+    Value<double?>? lengthIn,
+    Value<int?>? parallaxMinYd,
+    Value<String>? sourceUrl,
+    Value<DateTime>? verifiedAt,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return ScopeModelsCompanion(
+      id: id ?? this.id,
+      manufacturerId: manufacturerId ?? this.manufacturerId,
+      modelName: modelName ?? this.modelName,
+      category: category ?? this.category,
+      magnificationMin: magnificationMin ?? this.magnificationMin,
+      magnificationMax: magnificationMax ?? this.magnificationMax,
+      objectiveDiameterMm: objectiveDiameterMm ?? this.objectiveDiameterMm,
+      tubeDiameterMm: tubeDiameterMm ?? this.tubeDiameterMm,
+      focalPlane: focalPlane ?? this.focalPlane,
+      reticleClass: reticleClass ?? this.reticleClass,
+      clickValueMil: clickValueMil ?? this.clickValueMil,
+      clickValueMoa: clickValueMoa ?? this.clickValueMoa,
+      travelPerRevMil: travelPerRevMil ?? this.travelPerRevMil,
+      travelPerRevMoa: travelPerRevMoa ?? this.travelPerRevMoa,
+      maxElevationMil: maxElevationMil ?? this.maxElevationMil,
+      maxElevationMoa: maxElevationMoa ?? this.maxElevationMoa,
+      maxWindageMil: maxWindageMil ?? this.maxWindageMil,
+      maxWindageMoa: maxWindageMoa ?? this.maxWindageMoa,
+      eyeReliefIn: eyeReliefIn ?? this.eyeReliefIn,
+      weightOz: weightOz ?? this.weightOz,
+      lengthIn: lengthIn ?? this.lengthIn,
+      parallaxMinYd: parallaxMinYd ?? this.parallaxMinYd,
+      sourceUrl: sourceUrl ?? this.sourceUrl,
+      verifiedAt: verifiedAt ?? this.verifiedAt,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (manufacturerId.present) {
+      map['manufacturer_id'] = Variable<int>(manufacturerId.value);
+    }
+    if (modelName.present) {
+      map['model_name'] = Variable<String>(modelName.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
+    }
+    if (magnificationMin.present) {
+      map['magnification_min'] = Variable<double>(magnificationMin.value);
+    }
+    if (magnificationMax.present) {
+      map['magnification_max'] = Variable<double>(magnificationMax.value);
+    }
+    if (objectiveDiameterMm.present) {
+      map['objective_diameter_mm'] = Variable<int>(objectiveDiameterMm.value);
+    }
+    if (tubeDiameterMm.present) {
+      map['tube_diameter_mm'] = Variable<int>(tubeDiameterMm.value);
+    }
+    if (focalPlane.present) {
+      map['focal_plane'] = Variable<String>(focalPlane.value);
+    }
+    if (reticleClass.present) {
+      map['reticle_class'] = Variable<String>(reticleClass.value);
+    }
+    if (clickValueMil.present) {
+      map['click_value_mil'] = Variable<double>(clickValueMil.value);
+    }
+    if (clickValueMoa.present) {
+      map['click_value_moa'] = Variable<double>(clickValueMoa.value);
+    }
+    if (travelPerRevMil.present) {
+      map['travel_per_rev_mil'] = Variable<double>(travelPerRevMil.value);
+    }
+    if (travelPerRevMoa.present) {
+      map['travel_per_rev_moa'] = Variable<double>(travelPerRevMoa.value);
+    }
+    if (maxElevationMil.present) {
+      map['max_elevation_mil'] = Variable<double>(maxElevationMil.value);
+    }
+    if (maxElevationMoa.present) {
+      map['max_elevation_moa'] = Variable<double>(maxElevationMoa.value);
+    }
+    if (maxWindageMil.present) {
+      map['max_windage_mil'] = Variable<double>(maxWindageMil.value);
+    }
+    if (maxWindageMoa.present) {
+      map['max_windage_moa'] = Variable<double>(maxWindageMoa.value);
+    }
+    if (eyeReliefIn.present) {
+      map['eye_relief_in'] = Variable<double>(eyeReliefIn.value);
+    }
+    if (weightOz.present) {
+      map['weight_oz'] = Variable<double>(weightOz.value);
+    }
+    if (lengthIn.present) {
+      map['length_in'] = Variable<double>(lengthIn.value);
+    }
+    if (parallaxMinYd.present) {
+      map['parallax_min_yd'] = Variable<int>(parallaxMinYd.value);
+    }
+    if (sourceUrl.present) {
+      map['source_url'] = Variable<String>(sourceUrl.value);
+    }
+    if (verifiedAt.present) {
+      map['verified_at'] = Variable<DateTime>(verifiedAt.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScopeModelsCompanion(')
+          ..write('id: $id, ')
+          ..write('manufacturerId: $manufacturerId, ')
+          ..write('modelName: $modelName, ')
+          ..write('category: $category, ')
+          ..write('magnificationMin: $magnificationMin, ')
+          ..write('magnificationMax: $magnificationMax, ')
+          ..write('objectiveDiameterMm: $objectiveDiameterMm, ')
+          ..write('tubeDiameterMm: $tubeDiameterMm, ')
+          ..write('focalPlane: $focalPlane, ')
+          ..write('reticleClass: $reticleClass, ')
+          ..write('clickValueMil: $clickValueMil, ')
+          ..write('clickValueMoa: $clickValueMoa, ')
+          ..write('travelPerRevMil: $travelPerRevMil, ')
+          ..write('travelPerRevMoa: $travelPerRevMoa, ')
+          ..write('maxElevationMil: $maxElevationMil, ')
+          ..write('maxElevationMoa: $maxElevationMoa, ')
+          ..write('maxWindageMil: $maxWindageMil, ')
+          ..write('maxWindageMoa: $maxWindageMoa, ')
+          ..write('eyeReliefIn: $eyeReliefIn, ')
+          ..write('weightOz: $weightOz, ')
+          ..write('lengthIn: $lengthIn, ')
+          ..write('parallaxMinYd: $parallaxMinYd, ')
+          ..write('sourceUrl: $sourceUrl, ')
+          ..write('verifiedAt: $verifiedAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ScopeReticleOptionsTable extends ScopeReticleOptions
+    with TableInfo<$ScopeReticleOptionsTable, ScopeReticleOptionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ScopeReticleOptionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _scopeModelIdMeta = const VerificationMeta(
+    'scopeModelId',
+  );
+  @override
+  late final GeneratedColumn<int> scopeModelId = GeneratedColumn<int>(
+    'scope_model_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES scope_models (id)',
+    ),
+  );
+  static const VerificationMeta _reticleIdMeta = const VerificationMeta(
+    'reticleId',
+  );
+  @override
+  late final GeneratedColumn<int> reticleId = GeneratedColumn<int>(
+    'reticle_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES reticles (id)',
+    ),
+  );
+  static const VerificationMeta _manufacturerSkuMeta = const VerificationMeta(
+    'manufacturerSku',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturerSku = GeneratedColumn<String>(
+    'manufacturer_sku',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    scopeModelId,
+    reticleId,
+    manufacturerSku,
+    isDefault,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'scope_reticle_options';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ScopeReticleOptionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('scope_model_id')) {
+      context.handle(
+        _scopeModelIdMeta,
+        scopeModelId.isAcceptableOrUnknown(
+          data['scope_model_id']!,
+          _scopeModelIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scopeModelIdMeta);
+    }
+    if (data.containsKey('reticle_id')) {
+      context.handle(
+        _reticleIdMeta,
+        reticleId.isAcceptableOrUnknown(data['reticle_id']!, _reticleIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reticleIdMeta);
+    }
+    if (data.containsKey('manufacturer_sku')) {
+      context.handle(
+        _manufacturerSkuMeta,
+        manufacturerSku.isAcceptableOrUnknown(
+          data['manufacturer_sku']!,
+          _manufacturerSkuMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {scopeModelId, reticleId},
+  ];
+  @override
+  ScopeReticleOptionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ScopeReticleOptionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      scopeModelId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}scope_model_id'],
+      )!,
+      reticleId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reticle_id'],
+      )!,
+      manufacturerSku: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer_sku'],
+      ),
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ScopeReticleOptionsTable createAlias(String alias) {
+    return $ScopeReticleOptionsTable(attachedDatabase, alias);
+  }
+}
+
+class ScopeReticleOptionRow extends DataClass
+    implements Insertable<ScopeReticleOptionRow> {
+  final int id;
+  final int scopeModelId;
+  final int reticleId;
+
+  /// Manufacturer's stock-keeping unit (e.g. "RZR-42708"). Optional
+  /// because some scope-reticle pairs aren't sold under their own SKU.
+  final String? manufacturerSku;
+
+  /// True for the manufacturer's default / most-popular reticle for
+  /// this scope. Exactly zero or one row per `scopeModelId` should be
+  /// flagged. Not enforced as a DB constraint — the seed pipeline
+  /// validates.
+  final bool isDefault;
+  final String? notes;
+  final DateTime createdAt;
+  const ScopeReticleOptionRow({
+    required this.id,
+    required this.scopeModelId,
+    required this.reticleId,
+    this.manufacturerSku,
+    required this.isDefault,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['scope_model_id'] = Variable<int>(scopeModelId);
+    map['reticle_id'] = Variable<int>(reticleId);
+    if (!nullToAbsent || manufacturerSku != null) {
+      map['manufacturer_sku'] = Variable<String>(manufacturerSku);
+    }
+    map['is_default'] = Variable<bool>(isDefault);
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ScopeReticleOptionsCompanion toCompanion(bool nullToAbsent) {
+    return ScopeReticleOptionsCompanion(
+      id: Value(id),
+      scopeModelId: Value(scopeModelId),
+      reticleId: Value(reticleId),
+      manufacturerSku: manufacturerSku == null && nullToAbsent
+          ? const Value.absent()
+          : Value(manufacturerSku),
+      isDefault: Value(isDefault),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ScopeReticleOptionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ScopeReticleOptionRow(
+      id: serializer.fromJson<int>(json['id']),
+      scopeModelId: serializer.fromJson<int>(json['scopeModelId']),
+      reticleId: serializer.fromJson<int>(json['reticleId']),
+      manufacturerSku: serializer.fromJson<String?>(json['manufacturerSku']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'scopeModelId': serializer.toJson<int>(scopeModelId),
+      'reticleId': serializer.toJson<int>(reticleId),
+      'manufacturerSku': serializer.toJson<String?>(manufacturerSku),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ScopeReticleOptionRow copyWith({
+    int? id,
+    int? scopeModelId,
+    int? reticleId,
+    Value<String?> manufacturerSku = const Value.absent(),
+    bool? isDefault,
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => ScopeReticleOptionRow(
+    id: id ?? this.id,
+    scopeModelId: scopeModelId ?? this.scopeModelId,
+    reticleId: reticleId ?? this.reticleId,
+    manufacturerSku: manufacturerSku.present
+        ? manufacturerSku.value
+        : this.manufacturerSku,
+    isDefault: isDefault ?? this.isDefault,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ScopeReticleOptionRow copyWithCompanion(ScopeReticleOptionsCompanion data) {
+    return ScopeReticleOptionRow(
+      id: data.id.present ? data.id.value : this.id,
+      scopeModelId: data.scopeModelId.present
+          ? data.scopeModelId.value
+          : this.scopeModelId,
+      reticleId: data.reticleId.present ? data.reticleId.value : this.reticleId,
+      manufacturerSku: data.manufacturerSku.present
+          ? data.manufacturerSku.value
+          : this.manufacturerSku,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScopeReticleOptionRow(')
+          ..write('id: $id, ')
+          ..write('scopeModelId: $scopeModelId, ')
+          ..write('reticleId: $reticleId, ')
+          ..write('manufacturerSku: $manufacturerSku, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    scopeModelId,
+    reticleId,
+    manufacturerSku,
+    isDefault,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ScopeReticleOptionRow &&
+          other.id == this.id &&
+          other.scopeModelId == this.scopeModelId &&
+          other.reticleId == this.reticleId &&
+          other.manufacturerSku == this.manufacturerSku &&
+          other.isDefault == this.isDefault &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class ScopeReticleOptionsCompanion
+    extends UpdateCompanion<ScopeReticleOptionRow> {
+  final Value<int> id;
+  final Value<int> scopeModelId;
+  final Value<int> reticleId;
+  final Value<String?> manufacturerSku;
+  final Value<bool> isDefault;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const ScopeReticleOptionsCompanion({
+    this.id = const Value.absent(),
+    this.scopeModelId = const Value.absent(),
+    this.reticleId = const Value.absent(),
+    this.manufacturerSku = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ScopeReticleOptionsCompanion.insert({
+    this.id = const Value.absent(),
+    required int scopeModelId,
+    required int reticleId,
+    this.manufacturerSku = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : scopeModelId = Value(scopeModelId),
+       reticleId = Value(reticleId);
+  static Insertable<ScopeReticleOptionRow> custom({
+    Expression<int>? id,
+    Expression<int>? scopeModelId,
+    Expression<int>? reticleId,
+    Expression<String>? manufacturerSku,
+    Expression<bool>? isDefault,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (scopeModelId != null) 'scope_model_id': scopeModelId,
+      if (reticleId != null) 'reticle_id': reticleId,
+      if (manufacturerSku != null) 'manufacturer_sku': manufacturerSku,
+      if (isDefault != null) 'is_default': isDefault,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ScopeReticleOptionsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? scopeModelId,
+    Value<int>? reticleId,
+    Value<String?>? manufacturerSku,
+    Value<bool>? isDefault,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return ScopeReticleOptionsCompanion(
+      id: id ?? this.id,
+      scopeModelId: scopeModelId ?? this.scopeModelId,
+      reticleId: reticleId ?? this.reticleId,
+      manufacturerSku: manufacturerSku ?? this.manufacturerSku,
+      isDefault: isDefault ?? this.isDefault,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (scopeModelId.present) {
+      map['scope_model_id'] = Variable<int>(scopeModelId.value);
+    }
+    if (reticleId.present) {
+      map['reticle_id'] = Variable<int>(reticleId.value);
+    }
+    if (manufacturerSku.present) {
+      map['manufacturer_sku'] = Variable<String>(manufacturerSku.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ScopeReticleOptionsCompanion(')
+          ..write('id: $id, ')
+          ..write('scopeModelId: $scopeModelId, ')
+          ..write('reticleId: $reticleId, ')
+          ..write('manufacturerSku: $manufacturerSku, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -29480,6 +32203,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $TargetRacksTable targetRacks = $TargetRacksTable(this);
   late final $TargetRackChildrenTable targetRackChildren =
       $TargetRackChildrenTable(this);
+  late final $ScopeManufacturersTable scopeManufacturers =
+      $ScopeManufacturersTable(this);
+  late final $ScopeModelsTable scopeModels = $ScopeModelsTable(this);
+  late final $ScopeReticleOptionsTable scopeReticleOptions =
+      $ScopeReticleOptionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -29520,6 +32248,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     atmospherePresets,
     targetRacks,
     targetRackChildren,
+    scopeManufacturers,
+    scopeModels,
+    scopeReticleOptions,
   ];
 }
 
@@ -45175,6 +47906,12 @@ typedef $$ReticlesTableCreateCompanionBuilder =
       required String definitionJson,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      Value<bool> verified,
+      Value<String?> sourceUrl,
+      Value<DateTime?> verifiedAt,
+      Value<String?> designer,
+      Value<String?> license,
+      Value<String?> subtensionsJson,
     });
 typedef $$ReticlesTableUpdateCompanionBuilder =
     ReticlesCompanion Function({
@@ -45188,7 +47925,45 @@ typedef $$ReticlesTableUpdateCompanionBuilder =
       Value<String> definitionJson,
       Value<String?> notes,
       Value<DateTime> createdAt,
+      Value<bool> verified,
+      Value<String?> sourceUrl,
+      Value<DateTime?> verifiedAt,
+      Value<String?> designer,
+      Value<String?> license,
+      Value<String?> subtensionsJson,
     });
+
+final class $$ReticlesTableReferences
+    extends BaseReferences<_$AppDatabase, $ReticlesTable, ReticleRow> {
+  $$ReticlesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<
+    $ScopeReticleOptionsTable,
+    List<ScopeReticleOptionRow>
+  >
+  _scopeReticleOptionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scopeReticleOptions,
+        aliasName: $_aliasNameGenerator(
+          db.reticles.id,
+          db.scopeReticleOptions.reticleId,
+        ),
+      );
+
+  $$ScopeReticleOptionsTableProcessedTableManager get scopeReticleOptionsRefs {
+    final manager = $$ScopeReticleOptionsTableTableManager(
+      $_db,
+      $_db.scopeReticleOptions,
+    ).filter((f) => f.reticleId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scopeReticleOptionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
 
 class $$ReticlesTableFilterComposer
     extends Composer<_$AppDatabase, $ReticlesTable> {
@@ -45248,6 +48023,61 @@ class $$ReticlesTableFilterComposer
     column: $table.createdAt,
     builder: (column) => ColumnFilters(column),
   );
+
+  ColumnFilters<bool> get verified => $composableBuilder(
+    column: $table.verified,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get designer => $composableBuilder(
+    column: $table.designer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get license => $composableBuilder(
+    column: $table.license,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get subtensionsJson => $composableBuilder(
+    column: $table.subtensionsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> scopeReticleOptionsRefs(
+    Expression<bool> Function($$ScopeReticleOptionsTableFilterComposer f) f,
+  ) {
+    final $$ScopeReticleOptionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scopeReticleOptions,
+      getReferencedColumn: (t) => t.reticleId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeReticleOptionsTableFilterComposer(
+            $db: $db,
+            $table: $db.scopeReticleOptions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$ReticlesTableOrderingComposer
@@ -45308,6 +48138,36 @@ class $$ReticlesTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get verified => $composableBuilder(
+    column: $table.verified,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get designer => $composableBuilder(
+    column: $table.designer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get license => $composableBuilder(
+    column: $table.license,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get subtensionsJson => $composableBuilder(
+    column: $table.subtensionsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$ReticlesTableAnnotationComposer
@@ -45356,6 +48216,54 @@ class $$ReticlesTableAnnotationComposer
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get verified =>
+      $composableBuilder(column: $table.verified, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceUrl =>
+      $composableBuilder(column: $table.sourceUrl, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get designer =>
+      $composableBuilder(column: $table.designer, builder: (column) => column);
+
+  GeneratedColumn<String> get license =>
+      $composableBuilder(column: $table.license, builder: (column) => column);
+
+  GeneratedColumn<String> get subtensionsJson => $composableBuilder(
+    column: $table.subtensionsJson,
+    builder: (column) => column,
+  );
+
+  Expression<T> scopeReticleOptionsRefs<T extends Object>(
+    Expression<T> Function($$ScopeReticleOptionsTableAnnotationComposer a) f,
+  ) {
+    final $$ScopeReticleOptionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scopeReticleOptions,
+          getReferencedColumn: (t) => t.reticleId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScopeReticleOptionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scopeReticleOptions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ReticlesTableTableManager
@@ -45369,12 +48277,9 @@ class $$ReticlesTableTableManager
           $$ReticlesTableAnnotationComposer,
           $$ReticlesTableCreateCompanionBuilder,
           $$ReticlesTableUpdateCompanionBuilder,
-          (
-            ReticleRow,
-            BaseReferences<_$AppDatabase, $ReticlesTable, ReticleRow>,
-          ),
+          (ReticleRow, $$ReticlesTableReferences),
           ReticleRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool scopeReticleOptionsRefs})
         > {
   $$ReticlesTableTableManager(_$AppDatabase db, $ReticlesTable table)
     : super(
@@ -45399,6 +48304,12 @@ class $$ReticlesTableTableManager
                 Value<String> definitionJson = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> verified = const Value.absent(),
+                Value<String?> sourceUrl = const Value.absent(),
+                Value<DateTime?> verifiedAt = const Value.absent(),
+                Value<String?> designer = const Value.absent(),
+                Value<String?> license = const Value.absent(),
+                Value<String?> subtensionsJson = const Value.absent(),
               }) => ReticlesCompanion(
                 id: id,
                 manufacturerId: manufacturerId,
@@ -45410,6 +48321,12 @@ class $$ReticlesTableTableManager
                 definitionJson: definitionJson,
                 notes: notes,
                 createdAt: createdAt,
+                verified: verified,
+                sourceUrl: sourceUrl,
+                verifiedAt: verifiedAt,
+                designer: designer,
+                license: license,
+                subtensionsJson: subtensionsJson,
               ),
           createCompanionCallback:
               ({
@@ -45423,6 +48340,12 @@ class $$ReticlesTableTableManager
                 required String definitionJson,
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> verified = const Value.absent(),
+                Value<String?> sourceUrl = const Value.absent(),
+                Value<DateTime?> verifiedAt = const Value.absent(),
+                Value<String?> designer = const Value.absent(),
+                Value<String?> license = const Value.absent(),
+                Value<String?> subtensionsJson = const Value.absent(),
               }) => ReticlesCompanion.insert(
                 id: id,
                 manufacturerId: manufacturerId,
@@ -45434,11 +48357,52 @@ class $$ReticlesTableTableManager
                 definitionJson: definitionJson,
                 notes: notes,
                 createdAt: createdAt,
+                verified: verified,
+                sourceUrl: sourceUrl,
+                verifiedAt: verifiedAt,
+                designer: designer,
+                license: license,
+                subtensionsJson: subtensionsJson,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ReticlesTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({scopeReticleOptionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (scopeReticleOptionsRefs) db.scopeReticleOptions,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (scopeReticleOptionsRefs)
+                    await $_getPrefetchedData<
+                      ReticleRow,
+                      $ReticlesTable,
+                      ScopeReticleOptionRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ReticlesTableReferences
+                          ._scopeReticleOptionsRefsTable(db),
+                      managerFromTypedResult: (p0) => $$ReticlesTableReferences(
+                        db,
+                        table,
+                        p0,
+                      ).scopeReticleOptionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.reticleId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
         ),
       );
 }
@@ -45453,9 +48417,9 @@ typedef $$ReticlesTableProcessedTableManager =
       $$ReticlesTableAnnotationComposer,
       $$ReticlesTableCreateCompanionBuilder,
       $$ReticlesTableUpdateCompanionBuilder,
-      (ReticleRow, BaseReferences<_$AppDatabase, $ReticlesTable, ReticleRow>),
+      (ReticleRow, $$ReticlesTableReferences),
       ReticleRow,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool scopeReticleOptionsRefs})
     >;
 typedef $$DragCurvesTableCreateCompanionBuilder =
     DragCurvesCompanion Function({
@@ -48932,6 +51896,1646 @@ typedef $$TargetRackChildrenTableProcessedTableManager =
       TargetRackChildRow,
       PrefetchHooks Function({bool rackId})
     >;
+typedef $$ScopeManufacturersTableCreateCompanionBuilder =
+    ScopeManufacturersCompanion Function({
+      Value<int> id,
+      required String name,
+      Value<String?> country,
+      Value<String?> website,
+      Value<DateTime> createdAt,
+    });
+typedef $$ScopeManufacturersTableUpdateCompanionBuilder =
+    ScopeManufacturersCompanion Function({
+      Value<int> id,
+      Value<String> name,
+      Value<String?> country,
+      Value<String?> website,
+      Value<DateTime> createdAt,
+    });
+
+final class $$ScopeManufacturersTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ScopeManufacturersTable,
+          ScopeManufacturerRow
+        > {
+  $$ScopeManufacturersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$ScopeModelsTable, List<ScopeModelRow>>
+  _scopeModelsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.scopeModels,
+    aliasName: $_aliasNameGenerator(
+      db.scopeManufacturers.id,
+      db.scopeModels.manufacturerId,
+    ),
+  );
+
+  $$ScopeModelsTableProcessedTableManager get scopeModelsRefs {
+    final manager = $$ScopeModelsTableTableManager(
+      $_db,
+      $_db.scopeModels,
+    ).filter((f) => f.manufacturerId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_scopeModelsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ScopeManufacturersTableFilterComposer
+    extends Composer<_$AppDatabase, $ScopeManufacturersTable> {
+  $$ScopeManufacturersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get website => $composableBuilder(
+    column: $table.website,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> scopeModelsRefs(
+    Expression<bool> Function($$ScopeModelsTableFilterComposer f) f,
+  ) {
+    final $$ScopeModelsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scopeModels,
+      getReferencedColumn: (t) => t.manufacturerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeModelsTableFilterComposer(
+            $db: $db,
+            $table: $db.scopeModels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ScopeManufacturersTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScopeManufacturersTable> {
+  $$ScopeManufacturersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get country => $composableBuilder(
+    column: $table.country,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get website => $composableBuilder(
+    column: $table.website,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ScopeManufacturersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScopeManufacturersTable> {
+  $$ScopeManufacturersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get country =>
+      $composableBuilder(column: $table.country, builder: (column) => column);
+
+  GeneratedColumn<String> get website =>
+      $composableBuilder(column: $table.website, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  Expression<T> scopeModelsRefs<T extends Object>(
+    Expression<T> Function($$ScopeModelsTableAnnotationComposer a) f,
+  ) {
+    final $$ScopeModelsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scopeModels,
+      getReferencedColumn: (t) => t.manufacturerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeModelsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.scopeModels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ScopeManufacturersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScopeManufacturersTable,
+          ScopeManufacturerRow,
+          $$ScopeManufacturersTableFilterComposer,
+          $$ScopeManufacturersTableOrderingComposer,
+          $$ScopeManufacturersTableAnnotationComposer,
+          $$ScopeManufacturersTableCreateCompanionBuilder,
+          $$ScopeManufacturersTableUpdateCompanionBuilder,
+          (ScopeManufacturerRow, $$ScopeManufacturersTableReferences),
+          ScopeManufacturerRow,
+          PrefetchHooks Function({bool scopeModelsRefs})
+        > {
+  $$ScopeManufacturersTableTableManager(
+    _$AppDatabase db,
+    $ScopeManufacturersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScopeManufacturersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScopeManufacturersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScopeManufacturersTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> country = const Value.absent(),
+                Value<String?> website = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ScopeManufacturersCompanion(
+                id: id,
+                name: name,
+                country: country,
+                website: website,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String name,
+                Value<String?> country = const Value.absent(),
+                Value<String?> website = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ScopeManufacturersCompanion.insert(
+                id: id,
+                name: name,
+                country: country,
+                website: website,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScopeManufacturersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({scopeModelsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [if (scopeModelsRefs) db.scopeModels],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (scopeModelsRefs)
+                    await $_getPrefetchedData<
+                      ScopeManufacturerRow,
+                      $ScopeManufacturersTable,
+                      ScopeModelRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ScopeManufacturersTableReferences
+                          ._scopeModelsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ScopeManufacturersTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).scopeModelsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.manufacturerId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ScopeManufacturersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScopeManufacturersTable,
+      ScopeManufacturerRow,
+      $$ScopeManufacturersTableFilterComposer,
+      $$ScopeManufacturersTableOrderingComposer,
+      $$ScopeManufacturersTableAnnotationComposer,
+      $$ScopeManufacturersTableCreateCompanionBuilder,
+      $$ScopeManufacturersTableUpdateCompanionBuilder,
+      (ScopeManufacturerRow, $$ScopeManufacturersTableReferences),
+      ScopeManufacturerRow,
+      PrefetchHooks Function({bool scopeModelsRefs})
+    >;
+typedef $$ScopeModelsTableCreateCompanionBuilder =
+    ScopeModelsCompanion Function({
+      Value<int> id,
+      required int manufacturerId,
+      required String modelName,
+      required String category,
+      Value<double?> magnificationMin,
+      Value<double?> magnificationMax,
+      Value<int?> objectiveDiameterMm,
+      Value<int?> tubeDiameterMm,
+      required String focalPlane,
+      required String reticleClass,
+      Value<double?> clickValueMil,
+      Value<double?> clickValueMoa,
+      Value<double?> travelPerRevMil,
+      Value<double?> travelPerRevMoa,
+      Value<double?> maxElevationMil,
+      Value<double?> maxElevationMoa,
+      Value<double?> maxWindageMil,
+      Value<double?> maxWindageMoa,
+      Value<double?> eyeReliefIn,
+      Value<double?> weightOz,
+      Value<double?> lengthIn,
+      Value<int?> parallaxMinYd,
+      required String sourceUrl,
+      required DateTime verifiedAt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$ScopeModelsTableUpdateCompanionBuilder =
+    ScopeModelsCompanion Function({
+      Value<int> id,
+      Value<int> manufacturerId,
+      Value<String> modelName,
+      Value<String> category,
+      Value<double?> magnificationMin,
+      Value<double?> magnificationMax,
+      Value<int?> objectiveDiameterMm,
+      Value<int?> tubeDiameterMm,
+      Value<String> focalPlane,
+      Value<String> reticleClass,
+      Value<double?> clickValueMil,
+      Value<double?> clickValueMoa,
+      Value<double?> travelPerRevMil,
+      Value<double?> travelPerRevMoa,
+      Value<double?> maxElevationMil,
+      Value<double?> maxElevationMoa,
+      Value<double?> maxWindageMil,
+      Value<double?> maxWindageMoa,
+      Value<double?> eyeReliefIn,
+      Value<double?> weightOz,
+      Value<double?> lengthIn,
+      Value<int?> parallaxMinYd,
+      Value<String> sourceUrl,
+      Value<DateTime> verifiedAt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$ScopeModelsTableReferences
+    extends BaseReferences<_$AppDatabase, $ScopeModelsTable, ScopeModelRow> {
+  $$ScopeModelsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $ScopeManufacturersTable _manufacturerIdTable(_$AppDatabase db) =>
+      db.scopeManufacturers.createAlias(
+        $_aliasNameGenerator(
+          db.scopeModels.manufacturerId,
+          db.scopeManufacturers.id,
+        ),
+      );
+
+  $$ScopeManufacturersTableProcessedTableManager get manufacturerId {
+    final $_column = $_itemColumn<int>('manufacturer_id')!;
+
+    final manager = $$ScopeManufacturersTableTableManager(
+      $_db,
+      $_db.scopeManufacturers,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_manufacturerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ScopeReticleOptionsTable,
+    List<ScopeReticleOptionRow>
+  >
+  _scopeReticleOptionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.scopeReticleOptions,
+        aliasName: $_aliasNameGenerator(
+          db.scopeModels.id,
+          db.scopeReticleOptions.scopeModelId,
+        ),
+      );
+
+  $$ScopeReticleOptionsTableProcessedTableManager get scopeReticleOptionsRefs {
+    final manager = $$ScopeReticleOptionsTableTableManager(
+      $_db,
+      $_db.scopeReticleOptions,
+    ).filter((f) => f.scopeModelId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _scopeReticleOptionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ScopeModelsTableFilterComposer
+    extends Composer<_$AppDatabase, $ScopeModelsTable> {
+  $$ScopeModelsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get magnificationMin => $composableBuilder(
+    column: $table.magnificationMin,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get magnificationMax => $composableBuilder(
+    column: $table.magnificationMax,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get objectiveDiameterMm => $composableBuilder(
+    column: $table.objectiveDiameterMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tubeDiameterMm => $composableBuilder(
+    column: $table.tubeDiameterMm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get focalPlane => $composableBuilder(
+    column: $table.focalPlane,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reticleClass => $composableBuilder(
+    column: $table.reticleClass,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get clickValueMil => $composableBuilder(
+    column: $table.clickValueMil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get clickValueMoa => $composableBuilder(
+    column: $table.clickValueMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get travelPerRevMil => $composableBuilder(
+    column: $table.travelPerRevMil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get travelPerRevMoa => $composableBuilder(
+    column: $table.travelPerRevMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxElevationMil => $composableBuilder(
+    column: $table.maxElevationMil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxElevationMoa => $composableBuilder(
+    column: $table.maxElevationMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxWindageMil => $composableBuilder(
+    column: $table.maxWindageMil,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get maxWindageMoa => $composableBuilder(
+    column: $table.maxWindageMoa,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get eyeReliefIn => $composableBuilder(
+    column: $table.eyeReliefIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get weightOz => $composableBuilder(
+    column: $table.weightOz,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get lengthIn => $composableBuilder(
+    column: $table.lengthIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get parallaxMinYd => $composableBuilder(
+    column: $table.parallaxMinYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ScopeManufacturersTableFilterComposer get manufacturerId {
+    final $$ScopeManufacturersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.scopeManufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeManufacturersTableFilterComposer(
+            $db: $db,
+            $table: $db.scopeManufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> scopeReticleOptionsRefs(
+    Expression<bool> Function($$ScopeReticleOptionsTableFilterComposer f) f,
+  ) {
+    final $$ScopeReticleOptionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.scopeReticleOptions,
+      getReferencedColumn: (t) => t.scopeModelId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeReticleOptionsTableFilterComposer(
+            $db: $db,
+            $table: $db.scopeReticleOptions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ScopeModelsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScopeModelsTable> {
+  $$ScopeModelsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get modelName => $composableBuilder(
+    column: $table.modelName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get magnificationMin => $composableBuilder(
+    column: $table.magnificationMin,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get magnificationMax => $composableBuilder(
+    column: $table.magnificationMax,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get objectiveDiameterMm => $composableBuilder(
+    column: $table.objectiveDiameterMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tubeDiameterMm => $composableBuilder(
+    column: $table.tubeDiameterMm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get focalPlane => $composableBuilder(
+    column: $table.focalPlane,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reticleClass => $composableBuilder(
+    column: $table.reticleClass,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get clickValueMil => $composableBuilder(
+    column: $table.clickValueMil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get clickValueMoa => $composableBuilder(
+    column: $table.clickValueMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get travelPerRevMil => $composableBuilder(
+    column: $table.travelPerRevMil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get travelPerRevMoa => $composableBuilder(
+    column: $table.travelPerRevMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxElevationMil => $composableBuilder(
+    column: $table.maxElevationMil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxElevationMoa => $composableBuilder(
+    column: $table.maxElevationMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxWindageMil => $composableBuilder(
+    column: $table.maxWindageMil,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get maxWindageMoa => $composableBuilder(
+    column: $table.maxWindageMoa,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get eyeReliefIn => $composableBuilder(
+    column: $table.eyeReliefIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get weightOz => $composableBuilder(
+    column: $table.weightOz,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get lengthIn => $composableBuilder(
+    column: $table.lengthIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get parallaxMinYd => $composableBuilder(
+    column: $table.parallaxMinYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceUrl => $composableBuilder(
+    column: $table.sourceUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ScopeManufacturersTableOrderingComposer get manufacturerId {
+    final $$ScopeManufacturersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manufacturerId,
+      referencedTable: $db.scopeManufacturers,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeManufacturersTableOrderingComposer(
+            $db: $db,
+            $table: $db.scopeManufacturers,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScopeModelsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScopeModelsTable> {
+  $$ScopeModelsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get modelName =>
+      $composableBuilder(column: $table.modelName, builder: (column) => column);
+
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<double> get magnificationMin => $composableBuilder(
+    column: $table.magnificationMin,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get magnificationMax => $composableBuilder(
+    column: $table.magnificationMax,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get objectiveDiameterMm => $composableBuilder(
+    column: $table.objectiveDiameterMm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get tubeDiameterMm => $composableBuilder(
+    column: $table.tubeDiameterMm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get focalPlane => $composableBuilder(
+    column: $table.focalPlane,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reticleClass => $composableBuilder(
+    column: $table.reticleClass,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get clickValueMil => $composableBuilder(
+    column: $table.clickValueMil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get clickValueMoa => $composableBuilder(
+    column: $table.clickValueMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get travelPerRevMil => $composableBuilder(
+    column: $table.travelPerRevMil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get travelPerRevMoa => $composableBuilder(
+    column: $table.travelPerRevMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get maxElevationMil => $composableBuilder(
+    column: $table.maxElevationMil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get maxElevationMoa => $composableBuilder(
+    column: $table.maxElevationMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get maxWindageMil => $composableBuilder(
+    column: $table.maxWindageMil,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get maxWindageMoa => $composableBuilder(
+    column: $table.maxWindageMoa,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get eyeReliefIn => $composableBuilder(
+    column: $table.eyeReliefIn,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get weightOz =>
+      $composableBuilder(column: $table.weightOz, builder: (column) => column);
+
+  GeneratedColumn<double> get lengthIn =>
+      $composableBuilder(column: $table.lengthIn, builder: (column) => column);
+
+  GeneratedColumn<int> get parallaxMinYd => $composableBuilder(
+    column: $table.parallaxMinYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceUrl =>
+      $composableBuilder(column: $table.sourceUrl, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get verifiedAt => $composableBuilder(
+    column: $table.verifiedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ScopeManufacturersTableAnnotationComposer get manufacturerId {
+    final $$ScopeManufacturersTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.manufacturerId,
+          referencedTable: $db.scopeManufacturers,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScopeManufacturersTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scopeManufacturers,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+
+  Expression<T> scopeReticleOptionsRefs<T extends Object>(
+    Expression<T> Function($$ScopeReticleOptionsTableAnnotationComposer a) f,
+  ) {
+    final $$ScopeReticleOptionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.scopeReticleOptions,
+          getReferencedColumn: (t) => t.scopeModelId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ScopeReticleOptionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.scopeReticleOptions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ScopeModelsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScopeModelsTable,
+          ScopeModelRow,
+          $$ScopeModelsTableFilterComposer,
+          $$ScopeModelsTableOrderingComposer,
+          $$ScopeModelsTableAnnotationComposer,
+          $$ScopeModelsTableCreateCompanionBuilder,
+          $$ScopeModelsTableUpdateCompanionBuilder,
+          (ScopeModelRow, $$ScopeModelsTableReferences),
+          ScopeModelRow,
+          PrefetchHooks Function({
+            bool manufacturerId,
+            bool scopeReticleOptionsRefs,
+          })
+        > {
+  $$ScopeModelsTableTableManager(_$AppDatabase db, $ScopeModelsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScopeModelsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScopeModelsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ScopeModelsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> manufacturerId = const Value.absent(),
+                Value<String> modelName = const Value.absent(),
+                Value<String> category = const Value.absent(),
+                Value<double?> magnificationMin = const Value.absent(),
+                Value<double?> magnificationMax = const Value.absent(),
+                Value<int?> objectiveDiameterMm = const Value.absent(),
+                Value<int?> tubeDiameterMm = const Value.absent(),
+                Value<String> focalPlane = const Value.absent(),
+                Value<String> reticleClass = const Value.absent(),
+                Value<double?> clickValueMil = const Value.absent(),
+                Value<double?> clickValueMoa = const Value.absent(),
+                Value<double?> travelPerRevMil = const Value.absent(),
+                Value<double?> travelPerRevMoa = const Value.absent(),
+                Value<double?> maxElevationMil = const Value.absent(),
+                Value<double?> maxElevationMoa = const Value.absent(),
+                Value<double?> maxWindageMil = const Value.absent(),
+                Value<double?> maxWindageMoa = const Value.absent(),
+                Value<double?> eyeReliefIn = const Value.absent(),
+                Value<double?> weightOz = const Value.absent(),
+                Value<double?> lengthIn = const Value.absent(),
+                Value<int?> parallaxMinYd = const Value.absent(),
+                Value<String> sourceUrl = const Value.absent(),
+                Value<DateTime> verifiedAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ScopeModelsCompanion(
+                id: id,
+                manufacturerId: manufacturerId,
+                modelName: modelName,
+                category: category,
+                magnificationMin: magnificationMin,
+                magnificationMax: magnificationMax,
+                objectiveDiameterMm: objectiveDiameterMm,
+                tubeDiameterMm: tubeDiameterMm,
+                focalPlane: focalPlane,
+                reticleClass: reticleClass,
+                clickValueMil: clickValueMil,
+                clickValueMoa: clickValueMoa,
+                travelPerRevMil: travelPerRevMil,
+                travelPerRevMoa: travelPerRevMoa,
+                maxElevationMil: maxElevationMil,
+                maxElevationMoa: maxElevationMoa,
+                maxWindageMil: maxWindageMil,
+                maxWindageMoa: maxWindageMoa,
+                eyeReliefIn: eyeReliefIn,
+                weightOz: weightOz,
+                lengthIn: lengthIn,
+                parallaxMinYd: parallaxMinYd,
+                sourceUrl: sourceUrl,
+                verifiedAt: verifiedAt,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int manufacturerId,
+                required String modelName,
+                required String category,
+                Value<double?> magnificationMin = const Value.absent(),
+                Value<double?> magnificationMax = const Value.absent(),
+                Value<int?> objectiveDiameterMm = const Value.absent(),
+                Value<int?> tubeDiameterMm = const Value.absent(),
+                required String focalPlane,
+                required String reticleClass,
+                Value<double?> clickValueMil = const Value.absent(),
+                Value<double?> clickValueMoa = const Value.absent(),
+                Value<double?> travelPerRevMil = const Value.absent(),
+                Value<double?> travelPerRevMoa = const Value.absent(),
+                Value<double?> maxElevationMil = const Value.absent(),
+                Value<double?> maxElevationMoa = const Value.absent(),
+                Value<double?> maxWindageMil = const Value.absent(),
+                Value<double?> maxWindageMoa = const Value.absent(),
+                Value<double?> eyeReliefIn = const Value.absent(),
+                Value<double?> weightOz = const Value.absent(),
+                Value<double?> lengthIn = const Value.absent(),
+                Value<int?> parallaxMinYd = const Value.absent(),
+                required String sourceUrl,
+                required DateTime verifiedAt,
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ScopeModelsCompanion.insert(
+                id: id,
+                manufacturerId: manufacturerId,
+                modelName: modelName,
+                category: category,
+                magnificationMin: magnificationMin,
+                magnificationMax: magnificationMax,
+                objectiveDiameterMm: objectiveDiameterMm,
+                tubeDiameterMm: tubeDiameterMm,
+                focalPlane: focalPlane,
+                reticleClass: reticleClass,
+                clickValueMil: clickValueMil,
+                clickValueMoa: clickValueMoa,
+                travelPerRevMil: travelPerRevMil,
+                travelPerRevMoa: travelPerRevMoa,
+                maxElevationMil: maxElevationMil,
+                maxElevationMoa: maxElevationMoa,
+                maxWindageMil: maxWindageMil,
+                maxWindageMoa: maxWindageMoa,
+                eyeReliefIn: eyeReliefIn,
+                weightOz: weightOz,
+                lengthIn: lengthIn,
+                parallaxMinYd: parallaxMinYd,
+                sourceUrl: sourceUrl,
+                verifiedAt: verifiedAt,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScopeModelsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({manufacturerId = false, scopeReticleOptionsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (scopeReticleOptionsRefs) db.scopeReticleOptions,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (manufacturerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.manufacturerId,
+                                    referencedTable:
+                                        $$ScopeModelsTableReferences
+                                            ._manufacturerIdTable(db),
+                                    referencedColumn:
+                                        $$ScopeModelsTableReferences
+                                            ._manufacturerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (scopeReticleOptionsRefs)
+                        await $_getPrefetchedData<
+                          ScopeModelRow,
+                          $ScopeModelsTable,
+                          ScopeReticleOptionRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ScopeModelsTableReferences
+                              ._scopeReticleOptionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ScopeModelsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).scopeReticleOptionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.scopeModelId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ScopeModelsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScopeModelsTable,
+      ScopeModelRow,
+      $$ScopeModelsTableFilterComposer,
+      $$ScopeModelsTableOrderingComposer,
+      $$ScopeModelsTableAnnotationComposer,
+      $$ScopeModelsTableCreateCompanionBuilder,
+      $$ScopeModelsTableUpdateCompanionBuilder,
+      (ScopeModelRow, $$ScopeModelsTableReferences),
+      ScopeModelRow,
+      PrefetchHooks Function({
+        bool manufacturerId,
+        bool scopeReticleOptionsRefs,
+      })
+    >;
+typedef $$ScopeReticleOptionsTableCreateCompanionBuilder =
+    ScopeReticleOptionsCompanion Function({
+      Value<int> id,
+      required int scopeModelId,
+      required int reticleId,
+      Value<String?> manufacturerSku,
+      Value<bool> isDefault,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$ScopeReticleOptionsTableUpdateCompanionBuilder =
+    ScopeReticleOptionsCompanion Function({
+      Value<int> id,
+      Value<int> scopeModelId,
+      Value<int> reticleId,
+      Value<String?> manufacturerSku,
+      Value<bool> isDefault,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$ScopeReticleOptionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ScopeReticleOptionsTable,
+          ScopeReticleOptionRow
+        > {
+  $$ScopeReticleOptionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ScopeModelsTable _scopeModelIdTable(_$AppDatabase db) =>
+      db.scopeModels.createAlias(
+        $_aliasNameGenerator(
+          db.scopeReticleOptions.scopeModelId,
+          db.scopeModels.id,
+        ),
+      );
+
+  $$ScopeModelsTableProcessedTableManager get scopeModelId {
+    final $_column = $_itemColumn<int>('scope_model_id')!;
+
+    final manager = $$ScopeModelsTableTableManager(
+      $_db,
+      $_db.scopeModels,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_scopeModelIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ReticlesTable _reticleIdTable(_$AppDatabase db) =>
+      db.reticles.createAlias(
+        $_aliasNameGenerator(db.scopeReticleOptions.reticleId, db.reticles.id),
+      );
+
+  $$ReticlesTableProcessedTableManager get reticleId {
+    final $_column = $_itemColumn<int>('reticle_id')!;
+
+    final manager = $$ReticlesTableTableManager(
+      $_db,
+      $_db.reticles,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_reticleIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ScopeReticleOptionsTableFilterComposer
+    extends Composer<_$AppDatabase, $ScopeReticleOptionsTable> {
+  $$ScopeReticleOptionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturerSku => $composableBuilder(
+    column: $table.manufacturerSku,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ScopeModelsTableFilterComposer get scopeModelId {
+    final $$ScopeModelsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.scopeModelId,
+      referencedTable: $db.scopeModels,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeModelsTableFilterComposer(
+            $db: $db,
+            $table: $db.scopeModels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ReticlesTableFilterComposer get reticleId {
+    final $$ReticlesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.reticleId,
+      referencedTable: $db.reticles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReticlesTableFilterComposer(
+            $db: $db,
+            $table: $db.reticles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScopeReticleOptionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ScopeReticleOptionsTable> {
+  $$ScopeReticleOptionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturerSku => $composableBuilder(
+    column: $table.manufacturerSku,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ScopeModelsTableOrderingComposer get scopeModelId {
+    final $$ScopeModelsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.scopeModelId,
+      referencedTable: $db.scopeModels,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeModelsTableOrderingComposer(
+            $db: $db,
+            $table: $db.scopeModels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ReticlesTableOrderingComposer get reticleId {
+    final $$ReticlesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.reticleId,
+      referencedTable: $db.reticles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReticlesTableOrderingComposer(
+            $db: $db,
+            $table: $db.reticles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScopeReticleOptionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ScopeReticleOptionsTable> {
+  $$ScopeReticleOptionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturerSku => $composableBuilder(
+    column: $table.manufacturerSku,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ScopeModelsTableAnnotationComposer get scopeModelId {
+    final $$ScopeModelsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.scopeModelId,
+      referencedTable: $db.scopeModels,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ScopeModelsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.scopeModels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ReticlesTableAnnotationComposer get reticleId {
+    final $$ReticlesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.reticleId,
+      referencedTable: $db.reticles,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ReticlesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.reticles,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ScopeReticleOptionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ScopeReticleOptionsTable,
+          ScopeReticleOptionRow,
+          $$ScopeReticleOptionsTableFilterComposer,
+          $$ScopeReticleOptionsTableOrderingComposer,
+          $$ScopeReticleOptionsTableAnnotationComposer,
+          $$ScopeReticleOptionsTableCreateCompanionBuilder,
+          $$ScopeReticleOptionsTableUpdateCompanionBuilder,
+          (ScopeReticleOptionRow, $$ScopeReticleOptionsTableReferences),
+          ScopeReticleOptionRow,
+          PrefetchHooks Function({bool scopeModelId, bool reticleId})
+        > {
+  $$ScopeReticleOptionsTableTableManager(
+    _$AppDatabase db,
+    $ScopeReticleOptionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ScopeReticleOptionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ScopeReticleOptionsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ScopeReticleOptionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> scopeModelId = const Value.absent(),
+                Value<int> reticleId = const Value.absent(),
+                Value<String?> manufacturerSku = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ScopeReticleOptionsCompanion(
+                id: id,
+                scopeModelId: scopeModelId,
+                reticleId: reticleId,
+                manufacturerSku: manufacturerSku,
+                isDefault: isDefault,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int scopeModelId,
+                required int reticleId,
+                Value<String?> manufacturerSku = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ScopeReticleOptionsCompanion.insert(
+                id: id,
+                scopeModelId: scopeModelId,
+                reticleId: reticleId,
+                manufacturerSku: manufacturerSku,
+                isDefault: isDefault,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ScopeReticleOptionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({scopeModelId = false, reticleId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (scopeModelId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.scopeModelId,
+                                referencedTable:
+                                    $$ScopeReticleOptionsTableReferences
+                                        ._scopeModelIdTable(db),
+                                referencedColumn:
+                                    $$ScopeReticleOptionsTableReferences
+                                        ._scopeModelIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (reticleId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.reticleId,
+                                referencedTable:
+                                    $$ScopeReticleOptionsTableReferences
+                                        ._reticleIdTable(db),
+                                referencedColumn:
+                                    $$ScopeReticleOptionsTableReferences
+                                        ._reticleIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ScopeReticleOptionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ScopeReticleOptionsTable,
+      ScopeReticleOptionRow,
+      $$ScopeReticleOptionsTableFilterComposer,
+      $$ScopeReticleOptionsTableOrderingComposer,
+      $$ScopeReticleOptionsTableAnnotationComposer,
+      $$ScopeReticleOptionsTableCreateCompanionBuilder,
+      $$ScopeReticleOptionsTableUpdateCompanionBuilder,
+      (ScopeReticleOptionRow, $$ScopeReticleOptionsTableReferences),
+      ScopeReticleOptionRow,
+      PrefetchHooks Function({bool scopeModelId, bool reticleId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -49009,4 +53613,10 @@ class $AppDatabaseManager {
       $$TargetRacksTableTableManager(_db, _db.targetRacks);
   $$TargetRackChildrenTableTableManager get targetRackChildren =>
       $$TargetRackChildrenTableTableManager(_db, _db.targetRackChildren);
+  $$ScopeManufacturersTableTableManager get scopeManufacturers =>
+      $$ScopeManufacturersTableTableManager(_db, _db.scopeManufacturers);
+  $$ScopeModelsTableTableManager get scopeModels =>
+      $$ScopeModelsTableTableManager(_db, _db.scopeModels);
+  $$ScopeReticleOptionsTableTableManager get scopeReticleOptions =>
+      $$ScopeReticleOptionsTableTableManager(_db, _db.scopeReticleOptions);
 }

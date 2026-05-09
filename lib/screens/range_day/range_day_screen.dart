@@ -3,10 +3,13 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// The Range Day tab's list screen — a calm, low-clutter index of every
-// `RangeDaySession` the user has created. Tapping a row opens
-// `RangeDayDetailScreen` for that session; the AppBar has a single "+" action
-// for spinning up a brand-new session.
+// The Range Day **History** screen — a calm, low-clutter index of every
+// `RangeDaySession` the user has created, sorted newest-first. Tapping a row
+// opens `RangeDayDetailScreen` for that session. Browse-only: there is no
+// "+ new session" affordance here. New sessions are always started by
+// tapping the "Range Day" tab in the bottom nav, which now opens a fresh
+// `RangeDayDetailScreen` directly. This screen is reached only from the
+// History `IconButton` in that detail screen's AppBar.
 //
 // Range-day UX is deliberately mode-shift work. The user opens this screen
 // at the range, often with gloves, sun glare, and one eye on the clock — so
@@ -16,7 +19,8 @@
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
-// - lib/screens/home/home_screen.dart adds it as the fifth bottom-nav tab.
+// - lib/screens/range_day/range_day_detail_screen.dart pushes it from the
+//   AppBar's History action (`_openHistory`).
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -34,14 +38,7 @@ class RangeDayScreen extends StatelessWidget {
     final repo = context.read<RangeDayRepository>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Range Day'),
-        actions: [
-          IconButton(
-            tooltip: 'New session',
-            icon: const Icon(Icons.add),
-            onPressed: () => _openDetail(context),
-          ),
-        ],
+        title: const Text('Range Day History'),
       ),
       body: RangeDayErrorBoundary(
         label: 'Range Day list',
@@ -65,7 +62,7 @@ class RangeDayScreen extends StatelessWidget {
             }
             final rows = snap.data ?? const <RangeDaySessionRow>[];
             if (rows.isEmpty) {
-              return _EmptyState(onCreate: () => _openDetail(context));
+              return const _EmptyState();
             }
             return ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -273,10 +270,12 @@ class _SessionsLoadError extends StatelessWidget {
   }
 }
 
-/// First-run state shown when the user has zero sessions. One CTA button.
+/// Empty state shown when the user has zero saved sessions. Browse-only —
+/// History never spawns a new session; the user returns to the Range Day
+/// tab in the bottom nav (or pops back to the in-progress detail screen
+/// they opened History from) to do that.
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onCreate});
-  final VoidCallback onCreate;
+  const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -299,16 +298,10 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Pick a target, dial in distance and conditions, and track '
-              'where each shot lands. Sessions stay on your device.',
+              'Sessions you save will show up here. Open the Range Day '
+              'tab to start a new session.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onCreate,
-              icon: const Icon(Icons.add),
-              label: const Text('Start a session'),
             ),
           ],
         ),

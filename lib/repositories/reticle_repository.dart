@@ -118,7 +118,10 @@ class ReticleRepository {
 
   /// Resolve a row into a fully-parsed `ReticleDefinition` (with the
   /// element list decoded). Convenience for callers that don't want to
-  /// re-implement the `fromRow` plumbing.
+  /// re-implement the `fromRow` plumbing. Verified-data fields
+  /// (`verified`, `sourceUrl`, `verifiedAt`, `designer`, `license`,
+  /// `subtensions`) added in v22 are surfaced here so picker UI can
+  /// gate rendering on them without re-querying the row.
   ReticleDefinition definitionFromRow(ReticleRow row) {
     return ReticleDefinition.fromRow(
       id: 'reticle_${row.id}',
@@ -130,6 +133,12 @@ class ReticleRepository {
       maxExtentUnits: row.maxExtentUnits,
       definitionJson: row.definitionJson,
       notes: row.notes,
+      verified: row.verified,
+      sourceUrl: row.sourceUrl,
+      verifiedAt: row.verifiedAt,
+      designer: row.designer,
+      license: row.license,
+      subtensionsJson: row.subtensionsJson,
     );
   }
 

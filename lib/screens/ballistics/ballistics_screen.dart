@@ -127,7 +127,9 @@ import '../../services/ballistics/projectile.dart';
 import '../../services/ballistics/solver.dart';
 import '../../services/ballistics/units.dart';
 import '../../services/ballistics/wind_bracket_service.dart';
+import '../../services/auto_save_service.dart';
 import '../../services/ble/kestrel_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
@@ -135,6 +137,7 @@ import '../../utils/responsive.dart';
 import '../../screens/atmosphere/atmosphere_presets_screen.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
 import '../../widgets/pro_gate.dart';
+import '../../widgets/unsaved_changes_dispatcher.dart';
 import 'widgets/contribution_breakdown.dart';
 import 'widgets/trajectory_chart.dart';
 
@@ -197,6 +200,13 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// refreshes automatically after any insert / update / delete.
   Stream<List<BallisticProfileRow>>? _profilesStream;
   BallisticProfileRow? _activeProfile;
+
+  /// Per-screen autosave plumbing. Shared with Recipe so the user's
+  /// frequency + unsaved-changes preferences govern this screen the
+  /// same way. Constructed in initState; only fires when an active
+  /// profile is set (otherwise `onSave` returns null, which the
+  /// controller treats as "form not valid yet, skip this save").
+  late final AutoSaveController _autoSave;
 
   // ─────────────────────── Rifle picker ───────────────────────
   /// One-shot list of the user's firearms, fetched on initState. Null until
@@ -368,6 +378,96 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
     _restoreRangePreferences();
     _loadWeatherHintFlag();
+    _autoSave = AutoSaveController(
+      service: context.read<AutoSaveService>(),
+      onSave: _runAutoSave,
+      onSavedToCloud: () =>
+          context.read<CloudSyncService>().scheduleSyncUp(),
+    );
+    // Wire every text controller to autosave's notifyDirty so the
+    // dirty flag flips on edits even when the user has the
+    // "no profile selected" state — the dispatcher uses that to
+    // decide whether to engage the unsaved-changes dialog. We route
+    // through `_notifyDirtyFromController` so programmatic writes
+    // (load profile, unit conversion, weather pull, Kestrel push)
+    // can suppress the spurious dirty flag they would otherwise
+    // produce.
+    for (final c in _autoSaveControllers()) {
+      c.addListener(_notifyDirtyFromController);
+    }
+  }
+
+  /// True while a programmatic batch of controller assignments is in
+  /// flight (loading a profile, unit conversion, weather fetch). The
+  /// per-controller listener defers to this — when set, listener
+  /// callbacks become no-ops so the controller's text writes don't
+  /// pretend the user typed something.
+  bool _suppressAutoSaveDirty = false;
+
+  void _notifyDirtyFromController() {
+    if (_suppressAutoSaveDirty) return;
+    _autoSave.notifyDirty();
+  }
+
+  /// Every text controller that should mark the form dirty when the
+  /// user types into it. Centralized so initState wiring +
+  /// dispose-time unwiring stay in sync.
+  List<TextEditingController> _autoSaveControllers() => <TextEditingController>[
+        _diameterCtrl,
+        _weightCtrl,
+        _lengthCtrl,
+        _bcCtrl,
+        _twistCtrl,
+        _muzzleVelCtrl,
+        _sightHeightCtrl,
+        _zeroRangeCtrl,
+        _shotAzimuthCtrl,
+        _targetElevationCtrl,
+        _tempCtrl,
+        _pressureCtrl,
+        _humidityCtrl,
+        _altitudeCtrl,
+        _windSpeedCtrl,
+        _windDirCtrl,
+        _windUncertaintyCtrl,
+        _latitudeCtrl,
+        _twistDirCtrl,
+        _sightScaleVerticalCtrl,
+        _sightScaleHorizontalCtrl,
+        _zeroPressureInHgCtrl,
+        _zeroTemperatureFCtrl,
+        _zeroHumidityPctCtrl,
+        _powderTempSensitivityCtrl,
+        _powderReferenceTempCtrl,
+        _aerodynamicJumpCtrl,
+        _inclineAngleCtrl,
+        _rangeMinCtrl,
+        _rangeMaxCtrl,
+      ];
+
+  /// AutoSave entry point. The Ballistics screen autosaves changes
+  /// back to the *active profile*; if no profile is selected, this
+  /// returns null to tell the controller to skip the save and stay
+  /// idle (no profile = nowhere to write).
+  ///
+  /// Returns the active profile's row id on success.
+  Future<int?> _runAutoSave() async {
+    final p = _activeProfile;
+    if (p == null) return null;
+    final repo = context.read<BallisticProfileRepository>();
+    await repo.update(p.id, _buildProfileCompanion(p.name));
+    final fresh = await repo.getById(p.id);
+    if (!mounted) return p.id;
+    if (fresh != null) {
+      // Don't call setState — the controller's status notifier
+      // already drives the banner. Updating _activeProfile here just
+      // keeps the in-memory copy of the row aligned with what we
+      // just persisted. setState would trigger a rebuild that
+      // re-reads the controllers, which (in metric mode) re-runs
+      // unit conversion on every save.
+      _activeProfile = fresh;
+    }
+    return p.id;
   }
 
   /// Reads the latest [UnitService] state and rewrites the controllers
@@ -378,7 +478,21 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// when the user toggles, we invert from the OLD display unit back
   /// to canonical (imperial), then forward to the NEW display unit.
   /// This preserves the physical quantity the user typed.
+  ///
+  /// Sets `_suppressAutoSaveDirty` for the duration of the batch so
+  /// the listener-triggered `notifyDirty()` calls don't pretend the
+  /// user typed anything. The active ballistic profile is only ever
+  /// dirty from real edits.
   void _syncDisplayedUnits(UnitService units) {
+    _suppressAutoSaveDirty = true;
+    try {
+      _syncDisplayedUnitsInner(units);
+    } finally {
+      _suppressAutoSaveDirty = false;
+    }
+  }
+
+  void _syncDisplayedUnitsInner(UnitService units) {
     // Velocity (fps / m/s).
     final velUnit = units.unitFor(UnitCategory.velocity);
     if (_lastSeenVelocity != null && _lastSeenVelocity != velUnit) {
@@ -635,6 +749,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// row was saved in grains / inches / yards.
   void _applyProfile(BallisticProfileRow p) {
     final units = context.read<UnitService>();
+    _suppressAutoSaveDirty = true;
     setState(() {
       _activeProfile = p;
       _weightCtrl.text = _formatNumber(_bulletWeightFromCanonical(
@@ -687,6 +802,12 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       _rangeMaxCtrl.text = _formatNumber(_rangeFromCanonical(
           p.rangeMaxYd.toDouble(), units.unitFor(UnitCategory.range)));
     });
+    // The controller assignments above were ignored by the
+    // autosave-listener wrapper because we set `_suppressAutoSaveDirty`
+    // first. Clear it now that the batch is done and explicitly
+    // mark the form clean — nothing changed semantically.
+    _suppressAutoSaveDirty = false;
+    _autoSave.markClean();
   }
 
   String _trimTrailingZeros(double v) {
@@ -832,6 +953,12 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
 
   @override
   void dispose() {
+    // Tear down autosave first so a final tick can't fire after the
+    // controllers have been disposed.
+    for (final c in _autoSaveControllers()) {
+      c.removeListener(_notifyDirtyFromController);
+    }
+    _autoSave.dispose();
     for (final c in [
       _diameterCtrl,
       _weightCtrl,
@@ -1307,6 +1434,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     setState(() {
       _rangeIncrement = incrementYd;
     });
+    _autoSave.notifyDirty();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kRangeIncrementKey, incrementYd);
   }
@@ -1411,7 +1539,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     // category just changed.
     final units = context.watch<UnitService>();
     _syncDisplayedUnits(units);
-    return Scaffold(
+    return UnsavedChangesScope(
+      controller: _autoSave,
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Ballistics Calculator'),
       ),
@@ -1447,6 +1577,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -1922,6 +2053,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           setState(() {
             _useCustomDragCurve = true;
           });
+          _autoSave.notifyDirty();
           return;
         }
         setState(() {
@@ -1929,6 +2061,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           _selectedDragCurve = null;
           _dragModel = DragModel.values[v];
         });
+        _autoSave.notifyDirty();
       },
     );
   }
@@ -2016,6 +2149,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
             setState(() {
               _selectedDragCurve = picked;
             });
+            _autoSave.notifyDirty();
           },
         );
       },
@@ -2880,8 +3014,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     ),
                   ],
                   selected: {_twistDirection},
-                  onSelectionChanged: (s) =>
-                      setState(() => _twistDirection = s.first),
+                  onSelectionChanged: (s) {
+                    setState(() => _twistDirection = s.first);
+                    _autoSave.notifyDirty();
+                  },
                 ),
               ],
             ),

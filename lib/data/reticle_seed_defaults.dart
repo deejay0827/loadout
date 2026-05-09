@@ -6,9 +6,8 @@
 // Hard-coded fallback library of reticle definitions to seed into the
 // `Reticles` SQLite table when no `reticles.json` is present in
 // `assets/seed_data/`. Without it the dropdown in the Range Day picker
-// would be empty on a fresh install — instead we ship the four most
-// recognisable patterns so the picker has something useful from minute
-// one.
+// would be empty on a fresh install — instead we ship a small set of
+// generic patterns so the picker has something useful from minute one.
 //
 // `seedDefaultReticlesIfEmpty(db)` is idempotent: it only writes when
 // `db.reticlesAreEmpty` is true. Callers can fire-and-forget on app
@@ -17,6 +16,26 @@
 // The actual definition data lives in `_defaultDefinitions` below. Each
 // entry is a [ReticleDefinition] built directly in code — no JSON
 // round-trip — because the structures are tiny.
+//
+// ============================================================================
+// VERIFIED VS UNVERIFIED
+// ============================================================================
+// EVERY entry in `_defaultDefinitions` is labeled with `manufacturer:
+// "Generic"` and a generic pattern name (e.g. "Mil hash · ±5 mil",
+// "Mil-Dot · ±5 mil", "Duplex"). They are ACCEPTABLE-GENERIC under the
+// schema-v22 audit rules: the rendered shape matches a recognised
+// generic pattern, and the label does NOT claim to be any specific
+// brand's licensed design. None of them claim to be a Vortex EBR-7C,
+// a Nightforce TReMoR3, or a Schmidt & Bender H59 — those rows live
+// in the verified `reticles_v2.json` catalog where they have a
+// `sourceUrl` and a `verifiedAt` date.
+//
+// Every row inserted here flows through the schema-v22 `verified`
+// column with its safe default (`false`). The picker UI is responsible
+// for either hiding unverified rows or surfacing a "generic — not a
+// brand-specific reticle" guard. This file deliberately does not pass
+// `verified: true` on any entry, because the in-code fallback library
+// has no `sourceUrl` to cite.
 
 import 'package:drift/drift.dart';
 

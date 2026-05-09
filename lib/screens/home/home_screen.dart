@@ -70,6 +70,17 @@
 // keeps every tab in the tree, which is fine here because all five tabs are
 // cheap stream-backed list screens.
 //
+// The one tab that deliberately does NOT preserve state is Range Day. The
+// product requirement is "tapping the Range Day tab always starts a brand-
+// new session"; the saved-sessions list moved out of the bottom nav and is
+// now reachable as a History action inside the detail screen's AppBar.
+// We honor that without abandoning [IndexedStack] for the other tabs by
+// keying the [RangeDayDetailScreen] inside the stack with [_rangeDayEpoch],
+// a counter that's incremented every time [_onTabSelected] sees the Range
+// Day index. The new key forces Flutter's element machinery to discard the
+// previous detail-screen state and mount a fresh one, even though the
+// surrounding [IndexedStack] structure is otherwise stable.
+//
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
@@ -108,7 +119,7 @@ import '../firearms/firearms_list_screen.dart';
 import '../glossary/glossary_screen.dart';
 import '../load_development/load_development_list_screen.dart';
 import '../process_steps/process_steps_screen.dart';
-import '../range_day/range_day_screen.dart';
+import '../range_day/range_day_detail_screen.dart';
 import '../guide/reloading_guide_screen.dart';
 import '../how_it_works/how_it_works_screen.dart';
 import '../paywall/paywall_screen.dart';
@@ -140,6 +151,23 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   int _index = 0;
 
+  /// Index of the Range Day tab inside [_navItems] / [_pages]. Held as
+  /// a named const so the tap interceptor in [_onTabSelected] doesn't
+  /// have to magic-number it.
+  static const int _rangeDayTabIndex = 4;
+
+  /// Bumped every time the user taps the Range Day tab. Used as the
+  /// key on the [RangeDayDetailScreen] inside the IndexedStack so each
+  /// tap re-instantiates the screen with a fresh, empty session draft —
+  /// the saved-sessions list moved to a History action inside the
+  /// detail screen's AppBar (see `range_day_detail_screen.dart`'s
+  /// `_openHistory`). We deliberately keep [IndexedStack] for the
+  /// other tabs (so their scroll position / search query / form state
+  /// survive a tab switch) and only sacrifice state preservation on
+  /// Range Day, where "always start fresh" is the new product
+  /// requirement.
+  int _rangeDayEpoch = 0;
+
   static const _titles = [
     'Recipes',
     'Firearms',
@@ -149,14 +177,31 @@ class HomeScreenState extends State<HomeScreen> {
     'SAAMI Specs',
   ];
 
-  static const _pages = <Widget>[
-    RecipesListScreen(),
-    FirearmsListScreen(),
-    BatchesListScreen(),
-    BallisticsScreen(),
-    RangeDayScreen(),
-    SaamiScreen(),
-  ];
+  /// Builds the per-tab pages that back the [IndexedStack]. The Range
+  /// Day tab gets a fresh [RangeDayDetailScreen] keyed by
+  /// [_rangeDayEpoch] so every tap of the bottom-nav / rail item
+  /// throws away the prior draft and starts a brand-new session. All
+  /// other tabs are rebuilt with stable identities so their state is
+  /// preserved across tab switches.
+  List<Widget> _buildPages() {
+    return <Widget>[
+      const RecipesListScreen(),
+      const FirearmsListScreen(),
+      const BatchesListScreen(),
+      const BallisticsScreen(),
+      // Key bound to _rangeDayEpoch — incremented on every tap of the
+      // Range Day tab in _onTabSelected — forces the IndexedStack to
+      // discard the previous detail-screen state and mount a fresh
+      // one. Without this key, IndexedStack would preserve the prior
+      // session draft (and its auto-save row, in-flight BLE
+      // subscriptions, etc.) across tabs, defeating "tab tap = new
+      // session".
+      RangeDayDetailScreen(
+        key: ValueKey<int>(_rangeDayEpoch),
+      ),
+      const SaamiScreen(),
+    ];
+  }
 
   static const _navItems = <_NavItemData>[
     _NavItemData(
@@ -195,9 +240,30 @@ class HomeScreenState extends State<HomeScreen> {
   /// [HomeScreen.switchTab]. Bounds-checked and a no-op if [index]
   /// is out of range. Valid indexes: 0=Recipes, 1=Firearms,
   /// 2=Batches, 3=Ballistics, 4=Range Day, 5=SAAMI.
+  ///
+  /// Routes through [_onTabSelected] so a deep-link into Range Day
+  /// from a topic CTA also bumps the epoch counter and shows a fresh
+  /// detail screen, matching the bottom-nav behavior.
   void switchTab(int index) {
-    if (index < 0 || index >= _pages.length) return;
-    setState(() => _index = index);
+    if (index < 0 || index >= _navItems.length) return;
+    _onTabSelected(index);
+  }
+
+  /// Centralized tab-selection handler. Sets [_index] and, if the
+  /// caller is selecting the Range Day tab, bumps [_rangeDayEpoch] so
+  /// the [IndexedStack] re-instantiates [RangeDayDetailScreen] with a
+  /// fresh state on every tap. Selecting any other tab leaves the
+  /// epoch alone — switching away from Range Day and back later
+  /// returns to a fresh tab too because the epoch increments on every
+  /// Range Day tap regardless of where the user came from.
+  void _onTabSelected(int index) {
+    if (index < 0 || index >= _navItems.length) return;
+    setState(() {
+      _index = index;
+      if (index == _rangeDayTabIndex) {
+        _rangeDayEpoch++;
+      }
+    });
   }
 
   void _openPaywall() {
@@ -254,6 +320,12 @@ class HomeScreenState extends State<HomeScreen> {
       ),
     ];
 
+    // Build the page list once per frame. The Range Day entry is
+    // keyed by [_rangeDayEpoch] so each Range Day tab tap rebuilds it
+    // fresh; the other tabs keep stable identities and preserve their
+    // state across switches.
+    final pages = _buildPages();
+
     return Scaffold(
       drawer: const _MainDrawer(),
       appBar: AppBar(
@@ -264,17 +336,17 @@ class HomeScreenState extends State<HomeScreen> {
           ? _WideShell(
               navItems: _navItems,
               selectedIndex: _index,
-              onSelected: (i) => setState(() => _index = i),
+              onSelected: _onTabSelected,
               extended: isDesktop,
-              child: IndexedStack(index: _index, children: _pages),
+              child: IndexedStack(index: _index, children: pages),
             )
-          : IndexedStack(index: _index, children: _pages),
+          : IndexedStack(index: _index, children: pages),
       bottomNavigationBar: isWide
           ? null
           : _ScrollableBottomNav(
               items: _navItems,
               selectedIndex: _index,
-              onSelected: (i) => setState(() => _index = i),
+              onSelected: _onTabSelected,
             ),
     );
   }

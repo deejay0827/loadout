@@ -47,6 +47,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/reticle_library.dart';
 import '../../database/database.dart';
@@ -91,6 +92,7 @@ import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
 import '../ballistics/ballistics_screen.dart';
 import 'bc_truing_screen.dart';
+import 'range_day_screen.dart';
 import 'scope_view_screen.dart';
 import 'sight_calibration_screen.dart';
 import 'wez_analysis_screen.dart';
@@ -103,6 +105,26 @@ import 'widgets/target_plot.dart';
 /// it can be referenced from the state class without leaking it into
 /// the public surface of the screen.
 enum _TargetPickerMode { single, rack }
+
+/// SharedPreferences key for the per-user Target Plot view-mode choice
+/// (`realistic` vs `targetFocused`). Stored as the enum's `.name` so
+/// the parser tolerates an unknown / corrupt value by falling back to
+/// `targetFocused` (the existing default). File-private const because
+/// no other surface needs the preference today.
+const String _kTargetPlotViewModePrefKey = 'range_day_target_plot_view_mode';
+
+/// Tolerant parser for the persisted [TargetPlotViewMode] string.
+/// Returns `targetFocused` for any unknown / null input so a corrupt
+/// prefs entry can't brick the screen.
+TargetPlotViewMode _targetPlotViewModeFromString(String? raw) {
+  switch (raw) {
+    case 'realistic':
+      return TargetPlotViewMode.realistic;
+    case 'targetFocused':
+    default:
+      return TargetPlotViewMode.targetFocused;
+  }
+}
 
 class RangeDayDetailScreen extends StatefulWidget {
   const RangeDayDetailScreen({super.key, this.sessionId});
@@ -321,6 +343,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// user can set up before the first shot.
   TargetPlotTapMode _tapMode = TargetPlotTapMode.aimPoint;
 
+  /// Visual presentation of the target plot — `targetFocused` (the
+  /// target fills the box, default for accurate dot placement) or
+  /// `realistic` (target sits inside a wider frame, breathing room for
+  /// the reticle overlay). Defaults to `targetFocused` so existing
+  /// users who never touch the toggle keep their current behaviour.
+  /// Persisted under [_kTargetPlotViewModePrefKey] in SharedPreferences;
+  /// hydration is fire-and-forget during [initState].
+  TargetPlotViewMode _targetPlotViewMode = TargetPlotViewMode.targetFocused;
+
   /// User's known group capability at 100yd, in MOA. Drives dispersion.
   double _assumedGroupMoa = 1.0;
   double _windUncertaintyMph = 2.0;
@@ -337,6 +368,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   /// Whether the "shooter capability" expansion in Setup is open.
   bool _capabilityExpanded = false;
+
+  // Stable controllers for the three Shooter Capability number fields.
+  // WHY: the previous implementation allocated a new TextEditingController
+  // inside `_capabilityNumberField()` on every `build()`, which (a) leaked
+  // controllers on every rebuild and (b) discarded any text the user had
+  // typed mid-debounce when an unrelated `setState` reflowed the screen.
+  // Hoisted here, seeded in `initState`, kept in sync via `_syncCapabilityCtrls`,
+  // disposed in `dispose`. Each value is also re-seeded after `setState`
+  // updates it (see callers below) so external mutations (e.g. session
+  // hydration) update the displayed text.
+  late final TextEditingController _capabilityGroupMoaCtrl;
+  late final TextEditingController _capabilityWindUncertaintyCtrl;
+  late final TextEditingController _capabilityRangeUncertaintyCtrl;
 
   // ─────────────────────── Captured sensor readings (v13) ───────────────────────
   //
@@ -378,6 +422,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   @override
   void initState() {
     super.initState();
+    // Seed the hoisted Shooter Capability controllers from the current
+    // state values so the field text matches before the first build runs.
+    _capabilityGroupMoaCtrl =
+        TextEditingController(text: _trimZeros(_assumedGroupMoa));
+    _capabilityWindUncertaintyCtrl =
+        TextEditingController(text: _trimZeros(_windUncertaintyMph));
+    _capabilityRangeUncertaintyCtrl =
+        TextEditingController(text: _trimZeros(_rangeUncertaintyYd));
     _targetsFuture = context.read<TargetRepository>().allTargets();
     // Kick off the rack catalog read up-front so the rack tab of the
     // target picker doesn't show a spinner the first time the user
@@ -412,6 +464,44 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _scheduleSolve();
         _scheduleHitProb();
       });
+    }
+    // Pull the persisted Target Plot view mode (Realistic vs
+    // Target-Focused). Default is `targetFocused`; the read swaps in
+    // `realistic` if the user previously chose it. Fire-and-forget by
+    // design — the screen renders the default before the read
+    // completes and switches in place once it lands.
+    // ignore: discarded_futures
+    _hydrateTargetPlotViewMode();
+  }
+
+  /// Read the persisted [TargetPlotViewMode] from SharedPreferences and
+  /// apply it. Wrapped in try/catch so a corrupt prefs entry can't
+  /// brick the screen — [_targetPlotViewModeFromString] tolerates
+  /// unknown values by returning [TargetPlotViewMode.targetFocused].
+  Future<void> _hydrateTargetPlotViewMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_kTargetPlotViewModePrefKey);
+      final next = _targetPlotViewModeFromString(raw);
+      if (!mounted) return;
+      if (next != _targetPlotViewMode) {
+        setState(() => _targetPlotViewMode = next);
+      }
+    } catch (e) {
+      debugPrint('[range_day] _hydrateTargetPlotViewMode failed: $e');
+    }
+  }
+
+  /// Persist the user's chosen [TargetPlotViewMode]. Called from the
+  /// Target Plot card's mini-toggle. Fire-and-forget — the local
+  /// `_targetPlotViewMode` is updated synchronously via setState so
+  /// the UI flips immediately even if the prefs write is slow.
+  Future<void> _persistTargetPlotViewMode(TargetPlotViewMode mode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kTargetPlotViewModePrefKey, mode.name);
+    } catch (e) {
+      debugPrint('[range_day] _persistTargetPlotViewMode failed: $e');
     }
   }
 
@@ -515,6 +605,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _assumedGroupMoa = s.assumedGroupMoa ?? 1.0;
       _windUncertaintyMph = s.windUncertaintyMph ?? 2.0;
       _rangeUncertaintyYd = s.rangeUncertaintyYd ?? 5.0;
+      // Re-seed the hoisted Shooter Capability controllers so the input
+      // text reflects the hydrated values when an existing session opens.
+      _capabilityGroupMoaCtrl.text = _trimZeros(_assumedGroupMoa);
+      _capabilityWindUncertaintyCtrl.text = _trimZeros(_windUncertaintyMph);
+      _capabilityRangeUncertaintyCtrl.text = _trimZeros(_rangeUncertaintyYd);
       _correctionUnit =
           (s.correctionUnit.isEmpty ? 'mil' : s.correctionUnit);
       // v13 — captured shot azimuth. If the previous save included a
@@ -635,6 +730,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _windDirCtrl,
       _moverSpeedCtrl,
       _notesCtrl,
+      // Hoisted Shooter Capability controllers — see field declarations.
+      _capabilityGroupMoaCtrl,
+      _capabilityWindUncertaintyCtrl,
+      _capabilityRangeUncertaintyCtrl,
     ]) {
       c.dispose();
     }
@@ -1531,6 +1630,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          // History entry point. The bottom-nav "Range Day" tab now
+          // always opens a fresh detail screen; users reach the saved-
+          // sessions list through this action instead of from a
+          // dedicated tab. Pushed (not replaced) on top of the current
+          // detail so backing out of History returns the user to their
+          // in-progress session draft without losing state.
+          IconButton(
+            tooltip: 'History',
+            icon: const Icon(Icons.history),
+            onPressed: _openHistory,
+          ),
           IconButton(
             tooltip: 'Recalculate',
             icon: const Icon(Icons.refresh),
@@ -1552,6 +1662,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Pinned solver-error banner. Renders only when _solveError is
+        // set; otherwise SizedBox.shrink so the layout above the
+        // scroll view is unchanged. The banner replaces the inline
+        // error tile that used to live inside _solutionCard, which
+        // was invisible once the user scrolled past it.
+        _solveErrorBanner(),
         _solutionStrip(),
         Expanded(
           child: SingleChildScrollView(
@@ -1602,6 +1718,8 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Pinned solver-error banner — same role as in `_phoneBody`.
+        _solveErrorBanner(),
         _solutionStrip(),
         Expanded(
           child: Row(
@@ -1623,10 +1741,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       const SizedBox(height: 12),
                       _solutionCard(),
                       const SizedBox(height: 12),
+                      // HitProb sits directly under Solution in the wide
+                      // layout so the user sees their odds-of-a-hit gauge
+                      // before the wind-bracket diagnostic — it's the
+                      // headline number, not a footnote.
+                      _hitProbCard(),
+                      const SizedBox(height: 12),
                       ..._windBracketSection(),
                       _groupStatsCard(),
-                      const SizedBox(height: 12),
-                      _hitProbCard(),
                       const SizedBox(height: 12),
                       _notesCard(),
                     ],
@@ -2067,51 +2189,60 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Widget _captureEnvironmentFromSensorsButton() {
     final theme = Theme.of(context);
     final isPro = context.watch<EntitlementNotifier>().isPro;
-    return Card(
-      margin: EdgeInsets.zero,
-      color: theme.colorScheme.surfaceContainerHigh,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.my_location,
-                    size: 16, color: theme.colorScheme.primary),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'One-tap environment capture',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
+    // Container instead of Card here — this affordance is rendered
+    // INSIDE the Environment card body, and a nested Card produced a
+    // visual "card-inside-a-card" with a double border. A subtle filled
+    // container with a soft outline reads as a content block rather
+    // than a separate surface.
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant,
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.my_location,
+                  size: 16, color: theme.colorScheme.primary),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'One-tap environment capture',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              isPro
-                  ? 'Pulls GPS lat/lon, altitude, station pressure, true '
-                      'azimuth (compass), cant (rifle level), and incline '
-                      '(slope of fire) into the session in one tap.'
-                  : 'Pulls true azimuth (compass), cant (rifle level), '
-                      'and incline (slope of fire) from device sensors. '
-                      'Altitude requires Pro.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
               ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isPro
+                ? 'Pulls GPS lat/lon, altitude, station pressure, true '
+                    'azimuth (compass), cant (rifle level), and incline '
+                    '(slope of fire) into the session in one tap.'
+                : 'Pulls true azimuth (compass), cant (rifle level), '
+                    'and incline (slope of fire) from device sensors. '
+                    'Altitude requires Pro.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(height: 8),
-            FilledButton.tonalIcon(
-              onPressed: _captureEnvironmentFromSensors,
-              icon: const Icon(Icons.sensors, size: 18),
-              label: const Text('Capture environment from sensors'),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.tonalIcon(
+            onPressed: _captureEnvironmentFromSensors,
+            icon: const Icon(Icons.sensors, size: 18),
+            label: const Text('Capture environment from sensors'),
+          ),
+        ],
       ),
     );
   }
@@ -2728,9 +2859,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _capabilityNumberField(
+                    controller: _capabilityGroupMoaCtrl,
                     label: 'Group at 100 yd',
                     suffix: 'MOA',
-                    value: _assumedGroupMoa,
                     onChanged: (v) {
                       setState(() => _assumedGroupMoa = v);
                       _scheduleHitProb();
@@ -2739,9 +2870,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   _capabilityNumberField(
+                    controller: _capabilityWindUncertaintyCtrl,
                     label: 'Wind uncertainty',
                     suffix: '± mph',
-                    value: _windUncertaintyMph,
                     onChanged: (v) {
                       setState(() => _windUncertaintyMph = v);
                       _scheduleHitProb();
@@ -2750,9 +2881,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   ),
                   const SizedBox(height: 8),
                   _capabilityNumberField(
+                    controller: _capabilityRangeUncertaintyCtrl,
                     label: 'Range uncertainty',
                     suffix: '± yd',
-                    value: _rangeUncertaintyYd,
                     onChanged: (v) {
                       setState(() => _rangeUncertaintyYd = v);
                       _scheduleHitProb();
@@ -2773,15 +2904,23 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     );
   }
 
+  /// Renders a single Shooter Capability number-input row.
+  ///
+  /// WHY a passed-in controller: a previous version allocated a fresh
+  /// `TextEditingController` inside this helper on every build, which
+  /// leaked controllers and broke setState-driven re-seeding (the field
+  /// would snap back to its old text whenever an unrelated rebuild
+  /// fired between keystrokes). Owning the controllers in State and
+  /// disposing them in `dispose()` is the canonical Flutter pattern;
+  /// this helper is now a thin renderer.
   Widget _capabilityNumberField({
+    required TextEditingController controller,
     required String label,
     required String suffix,
-    required double value,
     required void Function(double) onChanged,
   }) {
-    final ctrl = TextEditingController(text: _trimZeros(value));
     return TextField(
-      controller: ctrl,
+      controller: controller,
       keyboardType:
           const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(
@@ -3379,8 +3518,47 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// or a rack with at least one loaded child. Use this anywhere the
   /// pre-rack code checked `_selectedTarget != null` and would also
   /// want to accept rack mode.
+  ///
+  /// Currently no caller branches on "is anything selected" — every
+  /// downstream consumer prefers the typed helpers above
+  /// (`_activeTargetWidthIn`, `_activeTargetSpec`, etc.) which return
+  /// nullable values directly. Kept as a documented helper so future
+  /// callers (e.g. an "Add target" empty-state CTA) don't have to
+  /// re-derive the rack/single discriminator.
+  // ignore: unused_element
   bool get _hasActiveTarget =>
       _selectedTarget != null || _hasActiveRack;
+
+  /// When a rack is active, build the [RackChildSpec] list the
+  /// realistic-mode `TargetPlot` needs to render the rack hanging
+  /// from chains. Returns null when no rack is active so the
+  /// realistic painter falls back to single-target-on-pole.
+  ///
+  /// `offsetXFromCenterIn` is sourced from `TargetRackChildRow.offsetXIn`,
+  /// which is the rack's intended geometric layout in inches relative
+  /// to the rack's center. Children with negative offsets render to
+  /// the left of center; positive to the right. The realistic
+  /// painter divides this by the rack's spread to position children
+  /// across the canvas.
+  List<RackChildSpec>? get _rackChildrenSpec {
+    if (!_hasActiveRack) return null;
+    return _selectedRackChildren
+        .map((c) => RackChildSpec(
+              widthIn: c.widthIn,
+              heightIn: c.heightIn,
+              shape: c.shape,
+              offsetXFromCenterIn: c.offsetXIn,
+              colorHex: c.colorHex,
+            ))
+        .toList();
+  }
+
+  /// 0-indexed position of the active rack child, or null when no
+  /// rack is active. The realistic painter highlights this child
+  /// (full opacity + bolder outline) and renders the others at 70%
+  /// opacity.
+  int? get _activeRackChildIndex =>
+      _hasActiveRack ? _selectedRackChildPosition : null;
 
   /// Build a [TargetSpec] from the current active aim point so the
   /// [TargetPlot] widget can render whichever geometry is in play
@@ -4014,6 +4192,27 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     });
   }
 
+  /// Opens the saved-sessions list (a.k.a. Range Day History) on top of
+  /// this detail screen. Pushing rather than replacing keeps the user's
+  /// current draft session intact — backing out of History returns them
+  /// to wherever they left off. Wrapped in [safeAsync] so a navigator
+  /// failure surfaces a SnackBar instead of an unhandled exception
+  /// during a range-day handoff.
+  Future<void> _openHistory() async {
+    await safeAsync<void>(
+      context,
+      userMessage: 'Could not open Range Day history.',
+      mounted: () => mounted,
+      body: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (_) => const RangeDayScreen(),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _firearmPicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -4374,6 +4573,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   Widget _solutionCard() {
     final theme = Theme.of(context);
+    // The solver-error tile that used to live here was removed —
+    // when the user had scrolled past Solution it was effectively
+    // invisible. Errors now render as a top-pinned MaterialBanner
+    // built by `_solveErrorBanner`, so the user sees them even mid-
+    // scroll. The Solution card still falls back to "Solving…" while
+    // a recompute is pending; in error states the body simply shows
+    // the previous valid solution if there was one (no flicker), or
+    // the "Solving…" placeholder.
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -4390,25 +4597,41 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            if (_solveError != null)
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  _solveError!,
-                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
-                ),
-              )
-            else if (_solution == null)
+            if (_solution == null)
               Text('Solving…', style: theme.textTheme.bodyMedium)
             else
               _solutionBody(_solution!),
           ],
         ),
       ),
+    );
+  }
+
+  /// Top-pinned solver-error banner. Returns SizedBox.shrink when
+  /// there is no error so the Column above the scroll view collapses
+  /// cleanly. Built with `MaterialBanner` (Flutter's standard inline
+  /// alert) rather than a custom widget so accessibility and theming
+  /// come for free.
+  Widget _solveErrorBanner() {
+    if (_solveError == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return MaterialBanner(
+      backgroundColor: theme.colorScheme.errorContainer,
+      contentTextStyle:
+          TextStyle(color: theme.colorScheme.onErrorContainer),
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      forceActionsBelow: false,
+      leading: Icon(
+        Icons.error_outline,
+        color: theme.colorScheme.error,
+      ),
+      content: Text(_solveError!),
+      actions: [
+        TextButton(
+          onPressed: () => setState(() => _solveError = null),
+          child: const Text('Dismiss'),
+        ),
+      ],
     );
   }
 
@@ -5166,6 +5389,57 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       'Long-press a hit to edit or delete.',
               style: theme.textTheme.bodySmall,
             ),
+            const SizedBox(height: 8),
+            // View-mode toggle. Realistic = the target sits inside a
+            // larger frame (room for the reticle holdovers); Target-
+            // Focused = the target fills the box (default; easier dot
+            // placement). The (-1..1, -1..1) coordinate space is
+            // anchored to the target rectangle in BOTH modes so
+            // previously placed aim points + recorded shots stay in
+            // the right spot when the user flips the toggle. Compact
+            // styling matches other Range Day inline toggles.
+            //
+            // Bare Row (no Expanded) — `Column.stretch` would make an
+            // Expanded child throw, so we keep the toggle at its
+            // natural width on the leading edge of the row.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SegmentedButton<TargetPlotViewMode>(
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    textStyle: theme.textTheme.bodySmall,
+                  ),
+                  segments: const [
+                    ButtonSegment(
+                      value: TargetPlotViewMode.realistic,
+                      label: Text('Realistic'),
+                      tooltip:
+                          'Realistic - target sits inside a wider frame, '
+                          'closer to what you see through the scope.',
+                    ),
+                    ButtonSegment(
+                      value: TargetPlotViewMode.targetFocused,
+                      label: Text('Target-Focused'),
+                      tooltip:
+                          'Target-Focused - the target fills the box; '
+                          'best for accurate dot placement.',
+                    ),
+                  ],
+                  selected: {_targetPlotViewMode},
+                  onSelectionChanged: (sel) {
+                    final next = sel.first;
+                    if (next == _targetPlotViewMode) return;
+                    setState(() => _targetPlotViewMode = next);
+                    // ignore: discarded_futures
+                    _persistTargetPlotViewMode(next);
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             if (_shotsStream != null)
               StreamBuilder<List<ShotImpactRow>>(
@@ -5198,11 +5472,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           onTapAt: _recordShot,
                           onLongPressShot: _editShotDialog,
                           tapMode: _tapMode,
+                          viewMode: _targetPlotViewMode,
                           aimPointX: _aimPointX,
                           aimPointY: _aimPointY,
                           onAimPointSet: _setAimPoint,
                           reticle: _selectedReticle,
                           reticleDisplayUnit: reticleUnit,
+                          rackChildren: _rackChildrenSpec,
+                          activeRackChildIndex: _activeRackChildIndex,
                         ),
                       ],
                     );
@@ -5222,11 +5499,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     onTapAt: _recordShot,
                     onLongPressShot: _editShotDialog,
                     tapMode: _tapMode,
+                    viewMode: _targetPlotViewMode,
                     aimPointX: _aimPointX,
                     aimPointY: _aimPointY,
                     onAimPointSet: _setAimPoint,
                     reticle: _selectedReticle,
                     reticleDisplayUnit: reticleUnit,
+                    rackChildren: _rackChildrenSpec,
+                    activeRackChildIndex: _activeRackChildIndex,
                   );
                 },
               )
@@ -5237,11 +5517,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 onTapAt: _recordShot,
                 onLongPressShot: (_) {},
                 tapMode: _tapMode,
+                viewMode: _targetPlotViewMode,
                 aimPointX: _aimPointX,
                 aimPointY: _aimPointY,
                 onAimPointSet: _setAimPoint,
                 reticle: _selectedReticle,
                 reticleDisplayUnit: reticleUnit,
+                rackChildren: _rackChildrenSpec,
+                activeRackChildIndex: _activeRackChildIndex,
               ),
             const SizedBox(height: 12),
             Row(
@@ -5766,26 +6049,42 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               ],
             ),
             const SizedBox(height: 6),
-            Text(
-              'In MIL: ${dyIn >= 0 ? "↑" : "↓"} '
-              '${dyMil.toStringAsFixed(2)} mil  '
-              '${dxIn >= 0 ? "→" : "←"} '
-              '${dxMil.toStringAsFixed(2)} mil',
-              style: theme.textTheme.bodySmall,
-            ),
-            Text(
-              'In MOA: ${dyIn >= 0 ? "↑" : "↓"} '
-              '${dyMoa.toStringAsFixed(1)} MOA  '
-              '${dxIn >= 0 ? "→" : "←"} '
-              '${dxMoa.toStringAsFixed(1)} MOA',
-              style: theme.textTheme.bodySmall,
-            ),
-            Text(
-              'In inches at ${dist.toStringAsFixed(0)} yd: '
-              '${dyIn >= 0 ? "↑" : "↓"} ${dyIn.abs().toStringAsFixed(1)}"  '
-              '${dxIn >= 0 ? "→" : "←"} ${dxIn.abs().toStringAsFixed(1)}"',
-              style: theme.textTheme.bodySmall,
-            ),
+            // Single secondary unit instead of three stacked rows.
+            // WHY: showing the correction in MIL + MOA + inches all at
+            // once is information overload during a live session — the
+            // shooter only needs the unit they actually dial, plus one
+            // sanity-check unit. Pick the secondary by the user's
+            // preference: mil shooters cross-reference MOA, MOA shooters
+            // cross-reference mil, inches users cross-reference mil.
+            Builder(builder: (context) {
+              final String secondaryUnit;
+              final double secondaryDx;
+              final double secondaryDy;
+              switch (headlineUnit) {
+                case 'moa':
+                  secondaryUnit = 'mil';
+                  secondaryDx = dxMil;
+                  secondaryDy = dyMil;
+                  break;
+                case 'inches':
+                  secondaryUnit = 'mil';
+                  secondaryDx = dxMil;
+                  secondaryDy = dyMil;
+                  break;
+                default:
+                  secondaryUnit = 'moa';
+                  secondaryDx = dxMoa;
+                  secondaryDy = dyMoa;
+              }
+              return Text(
+                'In ${secondaryUnit == 'mil' ? 'MIL' : 'MOA'}: '
+                '${dyIn >= 0 ? "↑" : "↓"} '
+                '${fmt(secondaryDy, secondaryUnit)}  '
+                '${dxIn >= 0 ? "→" : "←"} '
+                '${fmt(secondaryDx, secondaryUnit)}',
+                style: theme.textTheme.bodySmall,
+              );
+            }),
           ],
         ),
       ),

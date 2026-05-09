@@ -187,7 +187,19 @@
       "Bash(grep -E \"\\\\[E\\\\]$\")",
       "Bash(kill 8231 8283 2799 2751 2699)",
       "Bash(awk '{print $2}')",
-      "Bash(xargs kill)"
+      "Bash(xargs kill)",
+      "Bash(pkill -9 flutter_tester)",
+      "Bash(pkill -f \"flutter test\")",
+      "WebFetch(domain:www.nightforceoptics.com)",
+      "WebFetch(domain:www.schmidtundbender.de)",
+      "WebFetch(domain:www.eurooptic.com)",
+      "WebFetch(domain:www.leupold.com)",
+      "WebFetch(domain:op1.0ps.us)",
+      "WebFetch(domain:koskov-billeder.s3.eu-west-1.amazonaws.com)",
+      "Bash(ps -p 70292 -o pid,stat,command)",
+      "Bash(break)",
+      "Bash(kill 70292 70298 70411 70786)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

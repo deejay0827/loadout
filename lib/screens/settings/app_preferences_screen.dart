@@ -3,16 +3,23 @@
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Settings → App preferences submenu. Hosts the four shipping
-// preferences that affect day-to-day editing experience:
+// Settings → App preferences submenu. Hosts the shipping preferences
+// that affect day-to-day editing experience:
 //   * Beginner Mode toggle
-//   * Auto-save toggle
+//   * Auto-save frequency picker + leave-without-saving policy picker
 //   * Language picker
 //   * Units of Measurement (master + per-category)
 //
-// Each row is the same widget that previously lived on the flat Settings
-// screen — moved here verbatim so muscle-memory taps still find the
-// same controls.
+// The auto-save controls are two list tiles backed by single-choice
+// modal sheets:
+//   * "Auto-save frequency" — `Off`, `After Any Change`, `Every
+//     Minute`, `Every 5 Minutes`, `Every 10 Minutes`. Persists via
+//     [AutoSaveService.setFrequency] under
+//     `auto_save_frequency`.
+//   * "When you leave without saving" — `Ask me each time`, `Discard
+//     changes`, `Save changes automatically`. Persists via
+//     [AutoSaveService.setUnsavedChangesPolicy] under
+//     `unsaved_changes_policy`.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
@@ -60,20 +67,9 @@ class AppPreferencesScreen extends StatelessWidget {
               beginner.setEnabled(v);
             },
           ),
-          SwitchListTile(
-            secondary: const Icon(Icons.bolt_outlined),
-            title: const Text('Auto-save forms'),
-            subtitle: const Text(
-              'Your edits save automatically as you type, so you never have '
-              'to scroll to a save button. Turn off if you prefer manual '
-              'saves while experimenting.',
-            ),
-            value: autoSave.isEnabled,
-            onChanged: (v) {
-              // ignore: discarded_futures
-              autoSave.setEnabled(v);
-            },
-          ),
+          const _SectionHeader('Auto-save'),
+          _AutoSaveFrequencyTile(service: autoSave),
+          _UnsavedChangesPolicyTile(service: autoSave),
           // Language picker.
           _LanguageTile(
             localeService: localeService,
@@ -330,4 +326,155 @@ class _LanguagePickerRowData {
 class _LanguagePickerResult {
   const _LanguagePickerResult(this.code);
   final String? code;
+}
+
+/// Settings list-tile for the auto-save frequency. The trailing label
+/// reflects the current selection ("Off" / "After Any Change" / etc.)
+/// and tapping the row opens a single-choice modal sheet of the five
+/// [AutoSaveFrequency] values.
+class _AutoSaveFrequencyTile extends StatelessWidget {
+  const _AutoSaveFrequencyTile({required this.service});
+
+  final AutoSaveService service;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.bolt_outlined),
+      title: const Text('Auto-save frequency'),
+      subtitle: Text(
+        'Your edits save ${_frequencySubtitleSuffix(service.frequency)}.',
+      ),
+      trailing: Text(
+        service.frequency.label,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      ),
+      onTap: () => _openFrequencyPicker(context),
+    );
+  }
+
+  static String _frequencySubtitleSuffix(AutoSaveFrequency f) {
+    switch (f) {
+      case AutoSaveFrequency.off:
+        return 'only when you tap Done / Save';
+      case AutoSaveFrequency.onChange:
+        return 'a couple seconds after each change';
+      case AutoSaveFrequency.every1min:
+        return 'every minute while there are changes';
+      case AutoSaveFrequency.every5min:
+        return 'every 5 minutes while there are changes';
+      case AutoSaveFrequency.every10min:
+        return 'every 10 minutes while there are changes';
+    }
+  }
+
+  Future<void> _openFrequencyPicker(BuildContext context) async {
+    final selected = await showModalBottomSheet<AutoSaveFrequency>(
+      context: context,
+      builder: (ctx) => _SingleChoiceSheet<AutoSaveFrequency>(
+        title: 'Auto-save frequency',
+        values: AutoSaveFrequency.values,
+        labelOf: (v) => v.label,
+        current: service.frequency,
+      ),
+    );
+    if (selected == null) return;
+    // ignore: discarded_futures
+    service.setFrequency(selected);
+  }
+}
+
+/// Settings list-tile for what to do when the user pops the form
+/// with unsaved changes pending. Same pattern as
+/// [_AutoSaveFrequencyTile].
+class _UnsavedChangesPolicyTile extends StatelessWidget {
+  const _UnsavedChangesPolicyTile({required this.service});
+
+  final AutoSaveService service;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.exit_to_app_outlined),
+      title: const Text('When you leave without saving'),
+      subtitle: const Text(
+        'Choose what happens to pending edits when you back out of '
+        'a form before the next auto-save fires.',
+      ),
+      trailing: Text(
+        service.unsavedChangesPolicy.label,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      ),
+      onTap: () => _openPolicyPicker(context),
+    );
+  }
+
+  Future<void> _openPolicyPicker(BuildContext context) async {
+    final selected = await showModalBottomSheet<UnsavedChangesPolicy>(
+      context: context,
+      builder: (ctx) => _SingleChoiceSheet<UnsavedChangesPolicy>(
+        title: 'When you leave without saving',
+        values: UnsavedChangesPolicy.values,
+        labelOf: (v) => v.label,
+        current: service.unsavedChangesPolicy,
+      ),
+    );
+    if (selected == null) return;
+    // ignore: discarded_futures
+    service.setUnsavedChangesPolicy(selected);
+  }
+}
+
+/// Small reusable single-choice sheet. One radio-style row per
+/// value; tapping pops the sheet with the selected value, the parent
+/// persists it to its service.
+class _SingleChoiceSheet<T> extends StatelessWidget {
+  const _SingleChoiceSheet({
+    required this.title,
+    required this.values,
+    required this.labelOf,
+    required this.current,
+  });
+
+  final String title;
+  final List<T> values;
+  final String Function(T) labelOf;
+  final T current;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          for (final v in values)
+            ListTile(
+              leading: Icon(
+                v == current
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
+                color: v == current
+                    ? Theme.of(context).colorScheme.primary
+                    : null,
+              ),
+              title: Text(labelOf(v)),
+              onTap: () => Navigator.of(context).pop(v),
+            ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
 }

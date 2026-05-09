@@ -713,7 +713,8 @@
       }
     ],
     "family": "Razor HD reticles",
-    "notes": "Vortex's flagship MRAD precision reticle. Half-mil hashes to 5 mil, full-mil hashes to 10 mil, labelled at 2, 4, 6, 8."
+    "notes": "Vortex's flagship MRAD precision reticle. Half-mil hashes to 5 mil, full-mil hashes to 10 mil, labelled at 2, 4, 6, 8.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_7c_moa",
@@ -1236,7 +1237,8 @@
       }
     ],
     "family": "Razor HD reticles",
-    "notes": "MOA variant of the EBR-7C grid."
+    "notes": "MOA variant of the EBR-7C grid.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_2c_mrad",
@@ -2053,7 +2055,8 @@
       }
     ],
     "family": "Razor HD reticles",
-    "notes": "Symmetric MRAD grid with full hashes top and bottom."
+    "notes": "Symmetric MRAD grid with full hashes top and bottom.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_2c_moa",
@@ -2653,7 +2656,8 @@
         "open": false
       }
     ],
-    "family": "Razor HD reticles"
+    "family": "Razor HD reticles",
+    "verified": false
   },
   {
     "id": "vortex_ebr_2d_moa",
@@ -3206,7 +3210,8 @@
         "open": false
       }
     ],
-    "family": "Razor HD reticles"
+    "family": "Razor HD reticles",
+    "verified": false
   },
   {
     "id": "vortex_ebr_4_moa",
@@ -3527,7 +3532,8 @@
         "open": false
       }
     ],
-    "family": "Razor HD reticles"
+    "family": "Razor HD reticles",
+    "verified": false
   },
   {
     "id": "vortex_ebr_3_mrad",
@@ -4023,7 +4029,8 @@
         "open": false
       }
     ],
-    "family": "Razor HD reticles"
+    "family": "Razor HD reticles",
+    "verified": false
   },
   {
     "id": "vortex_ebr_7b_mrad",
@@ -4738,7 +4745,8 @@
         "open": false
       }
     ],
-    "family": "Razor HD reticles"
+    "family": "Razor HD reticles",
+    "verified": false
   },
   {
     "id": "vortex_mrad",
@@ -5188,7 +5196,8 @@
         "open": false
       }
     ],
-    "notes": "Generic MRAD ladder."
+    "notes": "Generic MRAD ladder.",
+    "verified": false
   },
   {
     "id": "vortex_moar",
@@ -5740,7 +5749,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_dead_hold_bdc",
@@ -5799,7 +5809,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_v_brite",
@@ -5871,7 +5882,8 @@
         "open": false
       }
     ],
-    "notes": "Illuminated duplex."
+    "notes": "Illuminated duplex.",
+    "verified": false
   },
   {
     "id": "vortex_v_plex",
@@ -5942,7 +5954,8 @@
         "radius": 0.04,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_mil_dot",
@@ -6089,7 +6102,8 @@
         "radius": 0.04,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_mil_hash",
@@ -6538,7 +6552,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_ar_bdc3",
@@ -6597,7 +6612,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_ar_bdc4",
@@ -6656,7 +6672,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_vmr_1_mrad",
@@ -7393,7 +7410,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_vmr_1_moa",
@@ -7992,7 +8010,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_bdc3",
@@ -8045,7 +8064,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_tmr",
@@ -8862,7 +8882,8 @@
       }
     ],
     "family": "Mark 5HD reticles",
-    "notes": "Tactical Milling Reticle. Half-mil hashes throughout."
+    "notes": "Tactical Milling Reticle. Half-mil hashes throughout.",
+    "verified": false
   },
   {
     "id": "leupold_tmoa",
@@ -9462,7 +9483,8 @@
         "open": false
       }
     ],
-    "family": "Mark 5HD reticles"
+    "family": "Mark 5HD reticles",
+    "verified": false
   },
   {
     "id": "leupold_cch",
@@ -9534,7 +9556,8 @@
         "open": false
       }
     ],
-    "notes": "Custom Connect Hunter \u2014 duplex with calibrated turret."
+    "notes": "Custom Connect Hunter — duplex with calibrated turret.",
+    "verified": false
   },
   {
     "id": "leupold_boone_crockett",
@@ -9587,7 +9610,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_wind_plex",
@@ -9690,7 +9714,8 @@
         "thickness": 0.04,
         "axis": "vertical"
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_moar",
@@ -10693,7 +10718,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_moa_ring",
@@ -10735,7 +10761,8 @@
         "radius": 0.1,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_duplex",
@@ -10807,7 +10834,8 @@
         "open": false
       }
     ],
-    "notes": "The grand-daddy hunting reticle."
+    "notes": "The grand-daddy hunting reticle.",
+    "verified": false
   },
   {
     "id": "leupold_pig_plex",
@@ -10886,7 +10914,8 @@
         "open": false
       }
     ],
-    "notes": "Heavy duplex with center dot."
+    "notes": "Heavy duplex with center dot.",
+    "verified": false
   },
   {
     "id": "leupold_heavy_duplex",
@@ -10957,7 +10986,8 @@
         "radius": 0.04,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_mil_dot",
@@ -11104,7 +11134,8 @@
         "radius": 0.04,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_firedot_duplex",
@@ -11183,7 +11214,8 @@
         "open": false
       }
     ],
-    "notes": "Illuminated duplex with center dot."
+    "notes": "Illuminated duplex with center dot.",
+    "verified": false
   },
   {
     "id": "nightforce_moar",
@@ -11922,7 +11954,8 @@
       }
     ],
     "family": "ATACR / NX8 reticles",
-    "notes": "Top-end MOA precision reticle. 1-MOA grid throughout."
+    "notes": "Top-end MOA precision reticle. 1-MOA grid throughout.",
+    "verified": false
   },
   {
     "id": "nightforce_mil_r",
@@ -13478,7 +13511,8 @@
       }
     ],
     "family": "ATACR / NX8 reticles",
-    "notes": "Nightforce's flagship MRAD reticle. 0.2-mil hashes around center, full-mil labels."
+    "notes": "Nightforce's flagship MRAD reticle. 0.2-mil hashes around center, full-mil labels.",
+    "verified": false
   },
   {
     "id": "nightforce_mil_xt",
@@ -15255,7 +15289,8 @@
       }
     ],
     "family": "ATACR / NX8 reticles",
-    "notes": "Higher-density MRAD tree popular for PRS."
+    "notes": "Higher-density MRAD tree popular for PRS.",
+    "verified": false
   },
   {
     "id": "nightforce_t3",
@@ -16258,7 +16293,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "nightforce_npr_1",
@@ -17259,7 +17295,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "nightforce_mil_c",
@@ -17996,7 +18033,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "nightforce_moar_t",
@@ -18999,7 +19037,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "nightforce_mil_xt_las",
@@ -20774,7 +20813,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "nightforce_tremor3",
@@ -21528,7 +21568,8 @@
         "open": false
       }
     ],
-    "notes": "Christmas-tree-style PRS reticle."
+    "notes": "Christmas-tree-style PRS reticle.",
+    "verified": false
   },
   {
     "id": "nightforce_velocity_600",
@@ -21581,7 +21622,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "schmidt_bender_p4f",
@@ -22297,7 +22339,8 @@
       }
     ],
     "family": "PM II reticles",
-    "notes": "Flagship precision-rifle MRAD. Half-mil hashes to 5 mil, full-mil to 10. The German benchmark."
+    "notes": "Flagship precision-rifle MRAD. Half-mil hashes to 5 mil, full-mil to 10. The German benchmark.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_msr2",
@@ -23939,7 +23982,8 @@
         "open": false
       }
     ],
-    "family": "PM II reticles"
+    "family": "PM II reticles",
+    "verified": false
   },
   {
     "id": "schmidt_bender_gr2id",
@@ -25580,7 +25624,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "schmidt_bender_h59",
@@ -27222,7 +27267,8 @@
         "open": false
       }
     ],
-    "notes": "Horus H59 wind-bracket grid."
+    "notes": "Horus H59 wind-bracket grid.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_h37",
@@ -28037,7 +28083,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "schmidt_bender_p3",
@@ -29040,7 +29087,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "schmidt_bender_lrr_mil",
@@ -29855,7 +29903,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "schmidt_bender_klassik_4a",
@@ -29927,7 +29976,8 @@
         "open": false
       }
     ],
-    "notes": "European hunting classic."
+    "notes": "European hunting classic.",
+    "verified": false
   },
   {
     "id": "trijicon_mrad_quad",
@@ -30742,7 +30792,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_moa_quad",
@@ -31341,7 +31392,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_bdc",
@@ -31400,7 +31452,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_bac_acog_donut",
@@ -31434,7 +31487,8 @@
         "open": false
       }
     ],
-    "notes": "Iconic ACOG donut + chevron."
+    "notes": "Iconic ACOG donut + chevron.",
+    "verified": false
   },
   {
     "id": "trijicon_mil_square_crosshair",
@@ -31883,7 +31937,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_mil_hash",
@@ -32620,7 +32675,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_scr_mil",
@@ -33435,7 +33491,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_scr_moa",
@@ -34034,7 +34091,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_e_1_mil",
@@ -34771,7 +34829,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_e_1_moa",
@@ -35774,7 +35833,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_ballistic_plex_e1",
@@ -35833,7 +35893,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_ballistic_plex",
@@ -35886,7 +35947,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "bushnell_g2_mil",
@@ -36623,7 +36685,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "bushnell_g3_mil",
@@ -38177,7 +38240,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "bushnell_mil_dot",
@@ -38324,7 +38388,8 @@
         "radius": 0.04,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "bushnell_btr_1_mil",
@@ -39061,7 +39126,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "bushnell_btr_2_moa",
@@ -40064,7 +40130,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "sig_sauer_moa_milquad",
@@ -41067,7 +41134,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "sig_sauer_bdx_ffp_mil",
@@ -41882,7 +41950,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "sig_sauer_mil_quad_plex",
@@ -41985,7 +42054,8 @@
         "thickness": 0.04,
         "axis": "horizontal"
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "sig_sauer_bdx_mil",
@@ -42434,7 +42504,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "sig_sauer_levelplex_mil",
@@ -43171,7 +43242,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "athlon_aprs",
@@ -43986,7 +44058,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "athlon_aprs6_ffp_mil_ir",
@@ -45540,7 +45613,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "athlon_ir_mil2",
@@ -46277,7 +46351,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "athlon_ir_mil3",
@@ -47878,7 +47953,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "athlon_ahmr_mil_hash",
@@ -48327,7 +48403,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "steiner_scr_mil",
@@ -49142,7 +49219,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "steiner_scr2",
@@ -50696,7 +50774,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "steiner_msr2_mil",
@@ -51511,7 +51590,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "steiner_p4xi",
@@ -51960,7 +52040,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "kahles_skmr3",
@@ -53514,7 +53595,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "kahles_msr2_ki",
@@ -55289,7 +55371,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "kahles_msr_ki",
@@ -56104,7 +56187,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "primary_arms_acss_hud_dmr",
@@ -56165,7 +56249,8 @@
         "radius": 0.08
       }
     ],
-    "notes": "Heads-up display ACSS reticle."
+    "notes": "Heads-up display ACSS reticle.",
+    "verified": false
   },
   {
     "id": "primary_arms_acss_griffin_mil",
@@ -56902,7 +56987,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "primary_arms_acss_raptor_m2",
@@ -56962,7 +57048,8 @@
         "y": -4.5,
         "radius": 0.08
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "primary_arms_acss_apollo",
@@ -57022,7 +57109,8 @@
         "y": -4.5,
         "radius": 0.08
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "primary_arms_mil_dot",
@@ -57169,7 +57257,8 @@
         "radius": 0.04,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "aimpoint_1_moa_dot",
@@ -57187,7 +57276,8 @@
         "open": false
       }
     ],
-    "notes": "Compact red-dot reticle (1 MOA)."
+    "notes": "Compact red-dot reticle (1 MOA).",
+    "verified": false
   },
   {
     "id": "aimpoint_2_moa_dot",
@@ -57205,7 +57295,8 @@
         "open": false
       }
     ],
-    "notes": "Standard 2 MOA red-dot reticle."
+    "notes": "Standard 2 MOA red-dot reticle.",
+    "verified": false
   },
   {
     "id": "eotech_65_moa_ring_2_moa_dot",
@@ -57230,7 +57321,8 @@
         "open": false
       }
     ],
-    "notes": "EOTech HWS / EXPS3 hallmark reticle."
+    "notes": "EOTech HWS / EXPS3 hallmark reticle.",
+    "verified": false
   },
   {
     "id": "eotech_32_moa_donut",
@@ -57254,7 +57346,8 @@
         "radius": 0.4,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "primary_arms_acss_multi_optic",
@@ -57314,7 +57407,8 @@
         "y": -4.5,
         "radius": 0.08
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "holosun_circle_dot",
@@ -57339,7 +57433,8 @@
         "open": false
       }
     ],
-    "notes": "65 MOA circle + 2 MOA center dot."
+    "notes": "65 MOA circle + 2 MOA center dot.",
+    "verified": false
   },
   {
     "id": "generic_mil_dot_legacy_usmc",
@@ -60042,7 +60137,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_vmr_4_mrad",
@@ -61817,7 +61913,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_ebr_1c_moa",
@@ -62821,7 +62918,8 @@
         "open": false
       }
     ],
-    "family": "Razor HD reticles"
+    "family": "Razor HD reticles",
+    "verified": false
   },
   {
     "id": "vortex_hsr_5i_moa",
@@ -63424,7 +63522,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_xlr_2_mrad",
@@ -64161,7 +64260,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "leupold_pr1_mil",
@@ -65716,7 +65816,8 @@
         "open": false
       }
     ],
-    "family": "Mark 5HD reticles"
+    "family": "Mark 5HD reticles",
+    "verified": false
   },
   {
     "id": "leupold_pr2_mil",
@@ -67492,7 +67593,8 @@
         "open": false
       }
     ],
-    "family": "Mark 5HD reticles"
+    "family": "Mark 5HD reticles",
+    "verified": false
   },
   {
     "id": "leupold_tri_moa",
@@ -67595,7 +67697,8 @@
         "thickness": 0.04,
         "axis": "vertical"
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "nightforce_fc_mil",
@@ -67656,7 +67759,8 @@
         "radius": 0.08
       }
     ],
-    "notes": "LPVO Forge / ATACR FC-Mil reticle."
+    "notes": "LPVO Forge / ATACR FC-Mil reticle.",
+    "verified": false
   },
   {
     "id": "nightforce_fc_dmx",
@@ -68393,7 +68497,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "nightforce_ihr",
@@ -68447,7 +68552,8 @@
         "open": false
       }
     ],
-    "notes": "International Hunting Reticle."
+    "notes": "International Hunting Reticle.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_tremor3",
@@ -70090,7 +70196,8 @@
       }
     ],
     "family": "PM II reticles",
-    "notes": "Horus Tremor3 wind-bracket grid."
+    "notes": "Horus Tremor3 wind-bracket grid.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_flashdot",
@@ -70168,7 +70275,8 @@
         "radius": 0.15,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_mrad_long_range",
@@ -71722,7 +71830,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_moa_ranging",
@@ -72325,7 +72434,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_moa_center_dot",
@@ -72403,7 +72513,8 @@
         "radius": 0.18,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_pek",
@@ -73006,7 +73117,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "burris_scr_2_mil",
@@ -74560,7 +74672,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "trijicon_segmented_circle_mrad",
@@ -74621,7 +74734,8 @@
         "radius": 0.08
       }
     ],
-    "notes": "LPVO daytime CQB reticle."
+    "notes": "LPVO daytime CQB reticle.",
+    "verified": false
   },
   {
     "id": "vortex_vmr_2_moa",
@@ -75624,7 +75738,8 @@
         "radius": 0.05,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "holosun_65_moa_circle",
@@ -75642,7 +75757,8 @@
         "open": true
       }
     ],
-    "notes": "Open-circle reticle, no center dot."
+    "notes": "Open-circle reticle, no center dot.",
+    "verified": false
   },
   {
     "id": "aimpoint_aco_2_moa",
@@ -75659,7 +75775,8 @@
         "radius": 0.4,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "generic_german_4",
@@ -75802,7 +75919,8 @@
         "radius": 0.04,
         "open": false
       }
-    ]
+    ],
+    "verified": false
   },
   {
     "id": "vortex_glh",
@@ -76471,7 +76589,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "GLH glass-etched hash reticle (MRAD)."
+    "notes": "GLH glass-etched hash reticle (MRAD).",
+    "verified": false
   },
   {
     "id": "vortex_amg_mil",
@@ -77281,7 +77400,8 @@
       }
     ],
     "family": "Razor HD AMG",
-    "notes": "Razor HD AMG MIL precision reticle."
+    "notes": "Razor HD AMG MIL precision reticle.",
+    "verified": false
   },
   {
     "id": "vortex_amg_moa",
@@ -77631,7 +77751,8 @@
       }
     ],
     "family": "Razor HD AMG",
-    "notes": "Razor HD AMG MOA precision reticle."
+    "notes": "Razor HD AMG MOA precision reticle.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_7_lr_mrad",
@@ -78588,7 +78709,8 @@
       }
     ],
     "family": "EBR-7",
-    "notes": "EBR-7 LR long-range MRAD tree."
+    "notes": "EBR-7 LR long-range MRAD tree.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_9_mrad",
@@ -80217,7 +80339,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "EBR-9 fine 0.2 mil hash reticle."
+    "notes": "EBR-9 fine 0.2 mil hash reticle.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_2c_h59_mrad",
@@ -81341,7 +81464,8 @@
         "open": false
       }
     ],
-    "notes": "Tactical tree variant similar to H59."
+    "notes": "Tactical tree variant similar to H59.",
+    "verified": false
   },
   {
     "id": "vortex_dead_hold_bdc_22",
@@ -81400,7 +81524,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Rimfire BDC variant for .22 LR."
+    "notes": "Rimfire BDC variant for .22 LR.",
+    "verified": false
   },
   {
     "id": "vortex_v_brite_2",
@@ -81479,7 +81604,8 @@
         "open": false
       }
     ],
-    "notes": "Updated illuminated V-Brite hunting reticle."
+    "notes": "Updated illuminated V-Brite hunting reticle.",
+    "verified": false
   },
   {
     "id": "vortex_dead_hold_bdc_lr",
@@ -81575,7 +81701,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Long-range BDC holdover variant."
+    "notes": "Long-range BDC holdover variant.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_2c_v2_mrad",
@@ -82356,7 +82483,8 @@
         "size": 0.4
       }
     ],
-    "notes": "PST Gen II EBR-2C MRAD variant."
+    "notes": "PST Gen II EBR-2C MRAD variant.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_2c_v2_moa",
@@ -82705,7 +82833,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "PST Gen II EBR-2C MOA variant."
+    "notes": "PST Gen II EBR-2C MOA variant.",
+    "verified": false
   },
   {
     "id": "vortex_v_brite_22",
@@ -82801,7 +82930,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Rimfire illuminated reticle."
+    "notes": "Rimfire illuminated reticle.",
+    "verified": false
   },
   {
     "id": "vortex_ebr_4_mrad",
@@ -83536,7 +83666,8 @@
         "open": false
       }
     ],
-    "notes": "EBR-4 MRAD tactical/precision tree."
+    "notes": "EBR-4 MRAD tactical/precision tree.",
+    "verified": false
   },
   {
     "id": "vortex_ar_bdc1",
@@ -83638,7 +83769,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "AR-BDC1 reticle for 5.56/.223."
+    "notes": "AR-BDC1 reticle for 5.56/.223.",
+    "verified": false
   },
   {
     "id": "vortex_ar_bdc2",
@@ -83740,7 +83872,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "AR-BDC2 reticle for 5.56/.223."
+    "notes": "AR-BDC2 reticle for 5.56/.223.",
+    "verified": false
   },
   {
     "id": "leupold_cch_a",
@@ -83820,7 +83953,8 @@
       }
     ],
     "family": "CCH",
-    "notes": "Custom Connect Hunter A variant."
+    "notes": "Custom Connect Hunter A variant.",
+    "verified": false
   },
   {
     "id": "leupold_cch_b",
@@ -83911,7 +84045,8 @@
       }
     ],
     "family": "CCH",
-    "notes": "Custom Connect Hunter B with holdovers."
+    "notes": "Custom Connect Hunter B with holdovers.",
+    "verified": false
   },
   {
     "id": "leupold_h59_mil",
@@ -85260,7 +85395,8 @@
       }
     ],
     "family": "Mark 5HD",
-    "notes": "Horus H59 reticle option for Mark 5HD."
+    "notes": "Horus H59 reticle option for Mark 5HD.",
+    "verified": false
   },
   {
     "id": "leupold_t3_mil",
@@ -86070,7 +86206,8 @@
       }
     ],
     "family": "Mark 5HD",
-    "notes": "Mark 5HD/Mark 8 T3 tactical MIL reticle."
+    "notes": "Mark 5HD/Mark 8 T3 tactical MIL reticle.",
+    "verified": false
   },
   {
     "id": "leupold_t3_moa",
@@ -86420,7 +86557,8 @@
       }
     ],
     "family": "Mark 5HD",
-    "notes": "Mark 5HD T3 MOA variant."
+    "notes": "Mark 5HD T3 MOA variant.",
+    "verified": false
   },
   {
     "id": "leupold_vx3hd_duplex",
@@ -86493,7 +86631,8 @@
       }
     ],
     "family": "VX-3HD",
-    "notes": "VX-3HD standard Duplex."
+    "notes": "VX-3HD standard Duplex.",
+    "verified": false
   },
   {
     "id": "leupold_vx5hd_firedot_duplex",
@@ -86573,7 +86712,8 @@
       }
     ],
     "family": "VX-5HD",
-    "notes": "VX-5HD illuminated FireDot Duplex."
+    "notes": "VX-5HD illuminated FireDot Duplex.",
+    "verified": false
   },
   {
     "id": "leupold_vx6hd_firedot_4_pt",
@@ -86671,7 +86811,8 @@
       }
     ],
     "family": "VX-6HD",
-    "notes": "VX-6HD FireDot 4-Pt BDC."
+    "notes": "VX-6HD FireDot 4-Pt BDC.",
+    "verified": false
   },
   {
     "id": "leupold_vx5hd_cds_zl2",
@@ -86744,7 +86885,8 @@
       }
     ],
     "family": "VX-5HD",
-    "notes": "VX-5HD with CDS-ZL2 turret."
+    "notes": "VX-5HD with CDS-ZL2 turret.",
+    "verified": false
   },
   {
     "id": "leupold_rx_plex_with_yardage",
@@ -86817,7 +86959,8 @@
       }
     ],
     "family": "RX",
-    "notes": "Rangefinder reticle with internal yardage display."
+    "notes": "Rangefinder reticle with internal yardage display.",
+    "verified": false
   },
   {
     "id": "leupold_lrduplex",
@@ -86913,7 +87056,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Long Range Duplex with BDC."
+    "notes": "Long Range Duplex with BDC.",
+    "verified": false
   },
   {
     "id": "leupold_impact_29_moa",
@@ -87070,7 +87214,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "Impact-29 MOA hunting reticle."
+    "notes": "Impact-29 MOA hunting reticle.",
+    "verified": false
   },
   {
     "id": "nightforce_moar_cf",
@@ -87782,7 +87927,8 @@
       }
     ],
     "family": "ATACR",
-    "notes": "MOAR Capped F1 floating reticle (ATACR)."
+    "notes": "MOAR Capped F1 floating reticle (ATACR).",
+    "verified": false
   },
   {
     "id": "nightforce_npr2_hd",
@@ -87951,7 +88097,8 @@
         "open": false
       }
     ],
-    "notes": "Nightforce NPR2-HD precision rifle reticle."
+    "notes": "Nightforce NPR2-HD precision rifle reticle.",
+    "verified": false
   },
   {
     "id": "nightforce_nx8_mil_xt",
@@ -88873,7 +89020,8 @@
       }
     ],
     "family": "NX8",
-    "notes": "MIL-XT for NX8 series."
+    "notes": "MIL-XT for NX8 series.",
+    "verified": false
   },
   {
     "id": "nightforce_nx8_moar",
@@ -89543,7 +89691,8 @@
       }
     ],
     "family": "NX8",
-    "notes": "MOAR for NX8 series."
+    "notes": "MOAR for NX8 series.",
+    "verified": false
   },
   {
     "id": "nightforce_beast_t3",
@@ -90353,7 +90502,8 @@
       }
     ],
     "family": "BEAST",
-    "notes": "BEAST T3 tactical MIL reticle."
+    "notes": "BEAST T3 tactical MIL reticle.",
+    "verified": false
   },
   {
     "id": "nightforce_velocity_1000",
@@ -90425,7 +90575,8 @@
       }
     ],
     "family": "Velocity",
-    "notes": "Velocity 1000 hunting BDC."
+    "notes": "Velocity 1000 hunting BDC.",
+    "verified": false
   },
   {
     "id": "nightforce_npr_2",
@@ -90614,7 +90765,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "Nightforce NPR-2 mil reticle."
+    "notes": "Nightforce NPR-2 mil reticle.",
+    "verified": false
   },
   {
     "id": "nightforce_dot_dotdot",
@@ -90661,7 +90813,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "DotDotDot hunting BDC."
+    "notes": "DotDotDot hunting BDC.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_pmr",
@@ -91358,7 +91511,8 @@
         "open": false
       }
     ],
-    "notes": "Police Marksman reticle."
+    "notes": "Police Marksman reticle.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_gridh",
@@ -92223,7 +92377,8 @@
         "size": 0.4
       }
     ],
-    "notes": "Grid Identification System Horus-style reticle."
+    "notes": "Grid Identification System Horus-style reticle.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_msr_d",
@@ -92927,7 +93082,8 @@
         "open": false
       }
     ],
-    "notes": "MSR-D double-turret variant."
+    "notes": "MSR-D double-turret variant.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_msr2_dt",
@@ -93627,7 +93783,8 @@
       }
     ],
     "family": "MSR2",
-    "notes": "MSR2 double-turret variant."
+    "notes": "MSR2 double-turret variant.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_dt2_mrad",
@@ -94296,7 +94453,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "Double-turret 2 MRAD reticle."
+    "notes": "Double-turret 2 MRAD reticle.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_lm",
@@ -94480,7 +94638,8 @@
         "open": false
       }
     ],
-    "notes": "Klassik Long-Mil hunting reticle."
+    "notes": "Klassik Long-Mil hunting reticle.",
+    "verified": false
   },
   {
     "id": "schmidt_bender_p3l",
@@ -94692,7 +94851,8 @@
         "open": false
       }
     ],
-    "notes": "Police 3 Long mil reticle."
+    "notes": "Police 3 Long mil reticle.",
+    "verified": false
   },
   {
     "id": "hawke_mil_dot_17x",
@@ -94879,7 +95039,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Mil Dot 17X for varmint scopes."
+    "notes": "Mil Dot 17X for varmint scopes.",
+    "verified": false
   },
   {
     "id": "hawke_amx",
@@ -94975,7 +95136,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "AMX air rifle BDC reticle."
+    "notes": "AMX air rifle BDC reticle.",
+    "verified": false
   },
   {
     "id": "hawke_ir_mil_dot",
@@ -95151,7 +95313,8 @@
         "open": false
       }
     ],
-    "notes": "Illuminated Mil Dot."
+    "notes": "Illuminated Mil Dot.",
+    "verified": false
   },
   {
     "id": "hawke_sidewinder_ed_mil",
@@ -95848,7 +96011,8 @@
         "open": false
       }
     ],
-    "notes": "Sidewinder ED Mil tactical reticle."
+    "notes": "Sidewinder ED Mil tactical reticle.",
+    "verified": false
   },
   {
     "id": "hawke_lr_dot",
@@ -95944,7 +96108,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Long Range Dot reticle."
+    "notes": "Long Range Dot reticle.",
+    "verified": false
   },
   {
     "id": "riton_x3_prs",
@@ -96740,7 +96905,8 @@
       }
     ],
     "family": "X3",
-    "notes": "X3 PRS precision MIL."
+    "notes": "X3 PRS precision MIL.",
+    "verified": false
   },
   {
     "id": "riton_x5_conquer_mil",
@@ -97557,7 +97723,8 @@
       }
     ],
     "family": "X5",
-    "notes": "X5 Conquer MIL tactical."
+    "notes": "X5 Conquer MIL tactical.",
+    "verified": false
   },
   {
     "id": "riton_x5_conquer_moa",
@@ -97907,7 +98074,8 @@
       }
     ],
     "family": "X5",
-    "notes": "X5 Conquer MOA tactical."
+    "notes": "X5 Conquer MOA tactical.",
+    "verified": false
   },
   {
     "id": "riton_x7_conquer_mil",
@@ -99256,7 +99424,8 @@
       }
     ],
     "family": "X7",
-    "notes": "X7 Conquer MIL flagship."
+    "notes": "X7 Conquer MIL flagship.",
+    "verified": false
   },
   {
     "id": "riton_x7_conquer_moa",
@@ -99670,7 +99839,8 @@
       }
     ],
     "family": "X7",
-    "notes": "X7 Conquer MOA flagship."
+    "notes": "X7 Conquer MOA flagship.",
+    "verified": false
   },
   {
     "id": "maven_rs1_sfp_mil",
@@ -99840,7 +100010,8 @@
       }
     ],
     "family": "RS.1",
-    "notes": "RS.1 SFP MIL hunter."
+    "notes": "RS.1 SFP MIL hunter.",
+    "verified": false
   },
   {
     "id": "maven_rs2_sfp_moa",
@@ -99913,7 +100084,8 @@
       }
     ],
     "family": "RS.2",
-    "notes": "RS.2 SFP MOA."
+    "notes": "RS.2 SFP MOA.",
+    "verified": false
   },
   {
     "id": "maven_rs3_sfp_mil",
@@ -100107,7 +100279,8 @@
       }
     ],
     "family": "RS.3",
-    "notes": "RS.3 SFP long-range hunter."
+    "notes": "RS.3 SFP long-range hunter.",
+    "verified": false
   },
   {
     "id": "maven_rs4_ffp_mil",
@@ -100847,7 +101020,8 @@
       }
     ],
     "family": "RS.4",
-    "notes": "RS.4 FFP MIL tactical."
+    "notes": "RS.4 FFP MIL tactical.",
+    "verified": false
   },
   {
     "id": "maven_chr_2",
@@ -100937,7 +101111,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Capped Hunting Reticle 2."
+    "notes": "Capped Hunting Reticle 2.",
+    "verified": false
   },
   {
     "id": "us_optics_gap",
@@ -101691,7 +101866,8 @@
       }
     ],
     "family": "GAP",
-    "notes": "Gunwerks/GA Precision MIL reticle."
+    "notes": "Gunwerks/GA Precision MIL reticle.",
+    "verified": false
   },
   {
     "id": "us_optics_gap_2",
@@ -102536,7 +102712,8 @@
       }
     ],
     "family": "GAP",
-    "notes": "GAP 2 tree-style precision reticle."
+    "notes": "GAP 2 tree-style precision reticle.",
+    "verified": false
   },
   {
     "id": "us_optics_mgr",
@@ -103235,7 +103412,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Modern Generic Ranging reticle."
+    "notes": "Modern Generic Ranging reticle.",
+    "verified": false
   },
   {
     "id": "us_optics_jng_mil",
@@ -103939,7 +104117,8 @@
         "open": false
       }
     ],
-    "notes": "Jim Newkirk Garand MIL reticle."
+    "notes": "Jim Newkirk Garand MIL reticle.",
+    "verified": false
   },
   {
     "id": "us_optics_h25",
@@ -104608,7 +104787,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "H-25 christmas tree mil reticle."
+    "notes": "H-25 christmas tree mil reticle.",
+    "verified": false
   },
   {
     "id": "zeiss_zbr_2",
@@ -105302,7 +105482,8 @@
       }
     ],
     "family": "LRP",
-    "notes": "Zeiss Ballistic Reticle 2 (LRP)."
+    "notes": "Zeiss Ballistic Reticle 2 (LRP).",
+    "verified": false
   },
   {
     "id": "zeiss_zmoai_t20",
@@ -105658,7 +105839,8 @@
         "open": false
       }
     ],
-    "notes": "Zeiss illuminated MOA T20 reticle."
+    "notes": "Zeiss illuminated MOA T20 reticle.",
+    "verified": false
   },
   {
     "id": "zeiss_zmoai_t20w",
@@ -106026,7 +106208,8 @@
         "open": false
       }
     ],
-    "notes": "Zeiss illuminated MOA T20W with windage."
+    "notes": "Zeiss illuminated MOA T20W with windage.",
+    "verified": false
   },
   {
     "id": "zeiss_zf_mri",
@@ -107375,7 +107558,8 @@
       }
     ],
     "family": "LRP S5",
-    "notes": "Zeiss LRP S5 ZF-MRi precision tree."
+    "notes": "Zeiss LRP S5 ZF-MRi precision tree.",
+    "verified": false
   },
   {
     "id": "zeiss_rapid_z_800",
@@ -107477,7 +107661,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Rapid Z 800 BDC hunting reticle."
+    "notes": "Rapid Z 800 BDC hunting reticle.",
+    "verified": false
   },
   {
     "id": "steiner_scr_2",
@@ -108286,7 +108471,8 @@
         "size": 0.4
       }
     ],
-    "notes": "Special Competition Reticle 2."
+    "notes": "Special Competition Reticle 2.",
+    "verified": false
   },
   {
     "id": "steiner_msr3",
@@ -109634,7 +109820,8 @@
         "open": false
       }
     ],
-    "notes": "Modern Sniper Reticle 3."
+    "notes": "Modern Sniper Reticle 3.",
+    "verified": false
   },
   {
     "id": "steiner_msr3_xr",
@@ -110963,7 +111150,8 @@
         "size": 0.4
       }
     ],
-    "notes": "Modern Sniper Reticle 3 Extended Range."
+    "notes": "Modern Sniper Reticle 3 Extended Range.",
+    "verified": false
   },
   {
     "id": "tract_bdc",
@@ -111059,7 +111247,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Tract BDC hunting reticle."
+    "notes": "Tract BDC hunting reticle.",
+    "verified": false
   },
   {
     "id": "tract_moa_plex",
@@ -111227,7 +111416,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "MOA-Plex hunting reticle."
+    "notes": "MOA-Plex hunting reticle.",
+    "verified": false
   },
   {
     "id": "tract_mil_match",
@@ -111952,7 +112142,8 @@
         "size": 0.4
       }
     ],
-    "notes": "MIL-Match precision reticle."
+    "notes": "MIL-Match precision reticle.",
+    "verified": false
   },
   {
     "id": "holosun_he509t_2_moa_dot",
@@ -111970,7 +112161,8 @@
         "open": false
       }
     ],
-    "notes": "HE509T 2 MOA enclosed pistol dot."
+    "notes": "HE509T 2 MOA enclosed pistol dot.",
+    "verified": false
   },
   {
     "id": "holosun_he509t_acss_vulcan",
@@ -111995,7 +112187,8 @@
         "open": true
       }
     ],
-    "notes": "HE509T with ACSS Vulcan circle-dot."
+    "notes": "HE509T with ACSS Vulcan circle-dot.",
+    "verified": false
   },
   {
     "id": "holosun_eps_carry",
@@ -112013,7 +112206,8 @@
         "open": false
       }
     ],
-    "notes": "EPS Carry 6 MOA dot for pistols."
+    "notes": "EPS Carry 6 MOA dot for pistols.",
+    "verified": false
   },
   {
     "id": "holosun_510c_circle_dot",
@@ -112038,7 +112232,8 @@
         "open": false
       }
     ],
-    "notes": "510C 65 MOA ring + 2 MOA dot."
+    "notes": "510C 65 MOA ring + 2 MOA dot.",
+    "verified": false
   },
   {
     "id": "holosun_503",
@@ -112056,7 +112251,8 @@
         "open": false
       }
     ],
-    "notes": "503 series 2 MOA dot."
+    "notes": "503 series 2 MOA dot.",
+    "verified": false
   },
   {
     "id": "holosun_aems",
@@ -112074,7 +112270,8 @@
         "open": false
       }
     ],
-    "notes": "AEMS Advanced Enclosed Micro Sight 2 MOA dot."
+    "notes": "AEMS Advanced Enclosed Micro Sight 2 MOA dot.",
+    "verified": false
   },
   {
     "id": "holosun_scs",
@@ -112092,7 +112289,8 @@
         "open": false
       }
     ],
-    "notes": "SCS pistol-cut solar charging sight."
+    "notes": "SCS pistol-cut solar charging sight.",
+    "verified": false
   },
   {
     "id": "holosun_507c_circle_dot",
@@ -112117,7 +112315,8 @@
         "open": false
       }
     ],
-    "notes": "507C 32 MOA ring + 2 MOA dot."
+    "notes": "507C 32 MOA ring + 2 MOA dot.",
+    "verified": false
   },
   {
     "id": "aimpoint_pro_4_moa",
@@ -112135,7 +112334,8 @@
         "open": false
       }
     ],
-    "notes": "Patrol Rifle Optic 4 MOA dot."
+    "notes": "Patrol Rifle Optic 4 MOA dot.",
+    "verified": false
   },
   {
     "id": "aimpoint_t2_4_moa",
@@ -112153,7 +112353,8 @@
         "open": false
       }
     ],
-    "notes": "Micro T-2 4 MOA dot."
+    "notes": "Micro T-2 4 MOA dot.",
+    "verified": false
   },
   {
     "id": "aimpoint_m5b",
@@ -112171,7 +112372,8 @@
         "open": false
       }
     ],
-    "notes": "M5b 2 MOA dot for hunting."
+    "notes": "M5b 2 MOA dot for hunting.",
+    "verified": false
   },
   {
     "id": "aimpoint_acro_p2_3_5_moa",
@@ -112189,7 +112391,8 @@
         "open": false
       }
     ],
-    "notes": "ACRO P-2 enclosed 3.5 MOA pistol dot."
+    "notes": "ACRO P-2 enclosed 3.5 MOA pistol dot.",
+    "verified": false
   },
   {
     "id": "aimpoint_compm5",
@@ -112207,7 +112410,8 @@
         "open": false
       }
     ],
-    "notes": "CompM5 2 MOA combat optic."
+    "notes": "CompM5 2 MOA combat optic.",
+    "verified": false
   },
   {
     "id": "eotech_vudu_h59",
@@ -113556,7 +113760,8 @@
       }
     ],
     "family": "Vudu",
-    "notes": "Vudu Horus H59 precision reticle."
+    "notes": "Vudu Horus H59 precision reticle.",
+    "verified": false
   },
   {
     "id": "eotech_vudu_md3",
@@ -114296,7 +114501,8 @@
       }
     ],
     "family": "Vudu",
-    "notes": "Vudu MD3 mil-dot tactical."
+    "notes": "Vudu MD3 mil-dot tactical.",
+    "verified": false
   },
   {
     "id": "eotech_vudu_hc3",
@@ -114387,7 +114593,8 @@
       }
     ],
     "family": "Vudu",
-    "notes": "Vudu HC3 hunting BDC."
+    "notes": "Vudu HC3 hunting BDC.",
+    "verified": false
   },
   {
     "id": "eotech_exps3_2_dot",
@@ -114420,7 +114627,8 @@
       }
     ],
     "family": "HWS",
-    "notes": "EXPS3-2 with 2 BDC dots."
+    "notes": "EXPS3-2 with 2 BDC dots.",
+    "verified": false
   },
   {
     "id": "eotech_eflx_3_moa",
@@ -114438,7 +114646,8 @@
         "open": false
       }
     ],
-    "notes": "EFLX miniature reflex 3 MOA dot."
+    "notes": "EFLX miniature reflex 3 MOA dot.",
+    "verified": false
   },
   {
     "id": "trijicon_acog_chevron_223",
@@ -114487,7 +114696,8 @@
       }
     ],
     "family": "ACOG",
-    "notes": "ACOG Chevron BDC for 5.56/.223."
+    "notes": "ACOG Chevron BDC for 5.56/.223.",
+    "verified": false
   },
   {
     "id": "trijicon_acog_chevron_308",
@@ -114536,7 +114746,8 @@
       }
     ],
     "family": "ACOG",
-    "notes": "ACOG Chevron BDC for 7.62/.308."
+    "notes": "ACOG Chevron BDC for 7.62/.308.",
+    "verified": false
   },
   {
     "id": "trijicon_acog_horseshoe",
@@ -114579,7 +114790,8 @@
       }
     ],
     "family": "ACOG",
-    "notes": "ACOG Horseshoe close-quarters reticle."
+    "notes": "ACOG Horseshoe close-quarters reticle.",
+    "verified": false
   },
   {
     "id": "trijicon_rmr_3_25_moa",
@@ -114598,7 +114810,8 @@
       }
     ],
     "family": "RMR",
-    "notes": "Ruggedized Miniature Reflex 3.25 MOA dot."
+    "notes": "Ruggedized Miniature Reflex 3.25 MOA dot.",
+    "verified": false
   },
   {
     "id": "trijicon_rmr_6_5_moa",
@@ -114617,7 +114830,8 @@
       }
     ],
     "family": "RMR",
-    "notes": "RMR 6.5 MOA dot for pistols/shotguns."
+    "notes": "RMR 6.5 MOA dot for pistols/shotguns.",
+    "verified": false
   },
   {
     "id": "trijicon_mro_patrol",
@@ -114636,7 +114850,8 @@
       }
     ],
     "family": "MRO",
-    "notes": "Miniature Rifle Optic 2 MOA dot."
+    "notes": "Miniature Rifle Optic 2 MOA dot.",
+    "verified": false
   },
   {
     "id": "trijicon_mro_hd",
@@ -114662,7 +114877,8 @@
       }
     ],
     "family": "MRO",
-    "notes": "MRO HD 68 MOA ring + 2 MOA dot."
+    "notes": "MRO HD 68 MOA ring + 2 MOA dot.",
+    "verified": false
   },
   {
     "id": "trijicon_ir_hunter",
@@ -114741,7 +114957,8 @@
         "open": false
       }
     ],
-    "notes": "IR Hunter MK series thermal reticle."
+    "notes": "IR Hunter MK series thermal reticle.",
+    "verified": false
   },
   {
     "id": "trijicon_credo_hx_bdc",
@@ -114844,7 +115061,8 @@
       }
     ],
     "family": "Credo",
-    "notes": "Credo HX BDC Hunter reticle."
+    "notes": "Credo HX BDC Hunter reticle.",
+    "verified": false
   },
   {
     "id": "burris_ar_1x",
@@ -114887,7 +115105,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "AR-1X prism reticle for 5.56."
+    "notes": "AR-1X prism reticle for 5.56.",
+    "verified": false
   },
   {
     "id": "burris_fastfire_3_moa",
@@ -114905,7 +115124,8 @@
         "open": false
       }
     ],
-    "notes": "FastFire III 3 MOA red dot."
+    "notes": "FastFire III 3 MOA red dot.",
+    "verified": false
   },
   {
     "id": "burris_fastfire_8_moa",
@@ -114923,7 +115143,8 @@
         "open": false
       }
     ],
-    "notes": "FastFire III 8 MOA red dot."
+    "notes": "FastFire III 8 MOA red dot.",
+    "verified": false
   },
   {
     "id": "burris_signature_hd_4a_g",
@@ -115002,7 +115223,8 @@
         "open": false
       }
     ],
-    "notes": "Signature HD German #4 with center dot."
+    "notes": "Signature HD German #4 with center dot.",
+    "verified": false
   },
   {
     "id": "burris_xtr_iii_scr_mil_2",
@@ -115756,7 +115978,8 @@
       }
     ],
     "family": "XTR III",
-    "notes": "XTR III with Special Competition Reticle."
+    "notes": "XTR III with Special Competition Reticle.",
+    "verified": false
   },
   {
     "id": "elcan_specterdr_223",
@@ -115805,7 +116028,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "SpecterDR dual-role 5.56 BDC."
+    "notes": "SpecterDR dual-role 5.56 BDC.",
+    "verified": false
   },
   {
     "id": "elcan_specterdr_308",
@@ -115854,7 +116078,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "SpecterDR dual-role 7.62 BDC."
+    "notes": "SpecterDR dual-role 7.62 BDC.",
+    "verified": false
   },
   {
     "id": "elcan_specterog",
@@ -115897,7 +116122,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "SpecterOG fixed-power BDC."
+    "notes": "SpecterOG fixed-power BDC.",
+    "verified": false
   },
   {
     "id": "primary_arms_acss_aurora",
@@ -115985,7 +116211,8 @@
       }
     ],
     "family": "ACSS",
-    "notes": "ACSS Aurora 5.56 BDC for LPVO."
+    "notes": "ACSS Aurora 5.56 BDC for LPVO.",
+    "verified": false
   },
   {
     "id": "primary_arms_acss_5_56_762_316",
@@ -116041,7 +116268,8 @@
       }
     ],
     "family": "ACSS",
-    "notes": "ACSS multi-cartridge BDC."
+    "notes": "ACSS multi-cartridge BDC.",
+    "verified": false
   },
   {
     "id": "vortex_vmr_2_mrad",
@@ -116710,7 +116938,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "VMR-2 MRAD reticle for SFP scopes."
+    "notes": "VMR-2 MRAD reticle for SFP scopes.",
+    "verified": false
   },
   {
     "id": "vortex_jm_1_bdc",
@@ -116806,7 +117035,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Jerry Miculek BDC for LPVO."
+    "notes": "Jerry Miculek BDC for LPVO.",
+    "verified": false
   },
   {
     "id": "sig_sauer_horseshoe_dot",
@@ -116855,7 +117085,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "TANGO6 Horseshoe-Dot LPVO reticle."
+    "notes": "TANGO6 Horseshoe-Dot LPVO reticle.",
+    "verified": false
   },
   {
     "id": "kahles_msr2",
@@ -117665,7 +117896,8 @@
       }
     ],
     "family": "K-series",
-    "notes": "MSR2 single-turret precision MIL."
+    "notes": "MSR2 single-turret precision MIL.",
+    "verified": false
   },
   {
     "id": "kahles_amr",
@@ -117761,7 +117993,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Automatic Movement Range hunting reticle."
+    "notes": "Automatic Movement Range hunting reticle.",
+    "verified": false
   },
   {
     "id": "kahles_g4b",
@@ -117833,7 +118066,8 @@
         "open": false
       }
     ],
-    "notes": "G4B German 4 hunting reticle."
+    "notes": "G4B German 4 hunting reticle.",
+    "verified": false
   },
   {
     "id": "athlon_aprs2_ffp_ir_mil",
@@ -118537,7 +118771,8 @@
         "open": false
       }
     ],
-    "notes": "Argos BTR APRS2 illuminated MIL."
+    "notes": "Argos BTR APRS2 illuminated MIL.",
+    "verified": false
   },
   {
     "id": "athlon_aprs3_ffp_ir_mil",
@@ -119668,7 +119903,8 @@
         "open": false
       }
     ],
-    "notes": "Cronus BTR APRS3 illuminated MIL."
+    "notes": "Cronus BTR APRS3 illuminated MIL.",
+    "verified": false
   },
   {
     "id": "athlon_aprs6_ffp_moa",
@@ -120081,7 +120317,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "Cronus BTR APRS6 MOA."
+    "notes": "Cronus BTR APRS6 MOA.",
+    "verified": false
   },
   {
     "id": "athlon_atmr_2",
@@ -120750,7 +120987,8 @@
         "axis": "vertical"
       }
     ],
-    "notes": "Athlon mid-tier MRAD hash reticle."
+    "notes": "Athlon mid-tier MRAD hash reticle.",
+    "verified": false
   },
   {
     "id": "bushnell_dz_223",
@@ -120852,7 +121090,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Drop Zone 223 BDC."
+    "notes": "Drop Zone 223 BDC.",
+    "verified": false
   },
   {
     "id": "bushnell_dz_22_lr",
@@ -120948,7 +121187,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "Drop Zone Rimfire BDC."
+    "notes": "Drop Zone Rimfire BDC.",
+    "verified": false
   },
   {
     "id": "bushnell_multi_x",
@@ -121020,7 +121260,8 @@
         "open": false
       }
     ],
-    "notes": "Bushnell Multi-X classic duplex."
+    "notes": "Bushnell Multi-X classic duplex.",
+    "verified": false
   },
   {
     "id": "bushnell_g4_mil",
@@ -121794,7 +122035,8 @@
         "size": 0.4
       }
     ],
-    "notes": "Bushnell G4 christmas-tree MIL."
+    "notes": "Bushnell G4 christmas-tree MIL.",
+    "verified": false
   },
   {
     "id": "sig_sauer_dev_l_mrad",
@@ -122604,7 +122846,8 @@
       }
     ],
     "family": "Tango6T",
-    "notes": "Tango6T Dev-L MRAD precision tree."
+    "notes": "Tango6T Dev-L MRAD precision tree.",
+    "verified": false
   },
   {
     "id": "sig_sauer_dev_l_moa",
@@ -123018,7 +123261,8 @@
       }
     ],
     "family": "Tango6T",
-    "notes": "Tango6T Dev-L MOA precision."
+    "notes": "Tango6T Dev-L MOA precision.",
+    "verified": false
   },
   {
     "id": "sig_sauer_msr_762_5_56",
@@ -123120,7 +123364,8 @@
         "radius": 0.07
       }
     ],
-    "notes": "MSR multi-cartridge BDC."
+    "notes": "MSR multi-cartridge BDC.",
+    "verified": false
   },
   {
     "id": "sig_sauer_romeo5_2_moa",
@@ -123138,7 +123383,8 @@
         "open": false
       }
     ],
-    "notes": "Romeo5 2 MOA red dot."
+    "notes": "Romeo5 2 MOA red dot.",
+    "verified": false
   },
   {
     "id": "sig_sauer_romeo_zero_3_moa",
@@ -123156,7 +123402,8 @@
         "open": false
       }
     ],
-    "notes": "Romeo Zero 3 MOA pistol-cut dot."
+    "notes": "Romeo Zero 3 MOA pistol-cut dot.",
+    "verified": false
   },
   {
     "id": "generic_german_4a",
