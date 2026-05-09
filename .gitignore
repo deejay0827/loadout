@@ -61,3 +61,4 @@ key.properties
 .env.*
 serviceAccountKey.json
 firebase-adminsdk-*.json
+/.claude/worktrees
