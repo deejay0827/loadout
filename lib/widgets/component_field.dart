@@ -156,6 +156,8 @@ import 'package:provider/provider.dart';
 
 import '../repositories/component_repository.dart';
 import '../repositories/favorites_repository.dart';
+import '../repositories/recipe_repository.dart';
+import '../services/component_favorites_service.dart';
 
 /// Text field with autocomplete suggestions from a component catalog.
 /// Users can pick a suggestion or type a new value; values not in the
@@ -201,11 +203,16 @@ class _ComponentFieldState extends State<ComponentField> {
   /// For `kind == 'cartridge'` we additionally fetch the cartridge
   /// rows so we can map an option label back to a cartridge id and
   /// check whether it's currently favorited. The bullet/powder/primer
-  /// /brass kinds do NOT have a per-row favorite contract today —
-  /// favorites for reference data only cover cartridges (plus reticles
-  /// and targets, which aren't reachable from this widget). When the
-  /// future is null the dropdown renders without star indicators.
+  /// /brass kinds use the name-keyed [ComponentFavoritesService]
+  /// instead, so this map stays null for those.
   Future<Map<String, int>>? _futureCartridgeNameToId;
+
+  /// "Frequently used" labels for this kind, derived from the user's
+  /// saved recipes. Refreshed in [initState] (one-shot — close-and-
+  /// reopen the field to pick up brand-new entries during the same
+  /// session, which matches the granularity of `componentLabels`).
+  /// Empty list when the user has no recipes touching this kind yet.
+  late Future<List<String>> _futureFrequent;
 
   /// The TextEditingController owned by [Autocomplete] — captured the
   /// first time `fieldViewBuilder` runs so we can attach the listener
@@ -218,6 +225,8 @@ class _ComponentFieldState extends State<ComponentField> {
     super.initState();
     final repo = context.read<ComponentRepository>();
     _futureOptions = repo.componentLabels(widget.kind);
+    final recipes = context.read<RecipeRepository>();
+    _futureFrequent = recipes.mostUsedComponentNames(widget.kind);
     if (widget.kind == 'cartridge') {
       // Build a label → id lookup for the cartridge catalog so we can
       // resolve a dropdown option string back to a row id and check
@@ -271,35 +280,50 @@ class _ComponentFieldState extends State<ComponentField> {
       future: _futureOptions,
       builder: (context, snap) {
         final options = snap.data ?? const <String>[];
-        // For non-cartridge kinds we render the original autocomplete
-        // (no favorites, no star indicators) — favorites for reference
-        // data only cover cartridges today.
-        if (widget.kind != 'cartridge') {
-          return _buildAutocomplete(
-            options: options,
-            favoriteCartridgeIds: const <int>{},
-            cartridgeNameToId: const <String, int>{},
-          );
-        }
-        // Cartridge kind: layer in the live favorites set + the
-        // name→id map and re-sort favorites to the top of the
-        // dropdown options.
-        return FutureBuilder<Map<String, int>>(
-          future: _futureCartridgeNameToId,
-          builder: (context, mapSnap) {
-            final nameToId = mapSnap.data ?? const <String, int>{};
-            return StreamBuilder<Set<int>>(
-              stream: context
-                  .read<FavoritesRepository>()
-                  .watchFavoriteIds(kFavoriteCartridge),
-              builder: (context, favSnap) {
-                final favIds = favSnap.data ?? const <int>{};
-                return _buildAutocomplete(
-                  options: options,
-                  favoriteCartridgeIds: favIds,
-                  cartridgeNameToId: nameToId,
-                );
-              },
+        return FutureBuilder<List<String>>(
+          future: _futureFrequent,
+          builder: (context, freqSnap) {
+            final frequent = freqSnap.data ?? const <String>[];
+            if (widget.kind == 'cartridge') {
+              // Cartridge kind keeps using FavoritesRepository (the
+              // existing UserFavorites table) — see `kFavoriteCartridge`.
+              // We layer the favorites set + the name→id map and the
+              // frequent list into a single `_buildAutocomplete` call.
+              return FutureBuilder<Map<String, int>>(
+                future: _futureCartridgeNameToId,
+                builder: (context, mapSnap) {
+                  final nameToId = mapSnap.data ?? const <String, int>{};
+                  return StreamBuilder<Set<int>>(
+                    stream: context
+                        .read<FavoritesRepository>()
+                        .watchFavoriteIds(kFavoriteCartridge),
+                    builder: (context, favSnap) {
+                      final favIds = favSnap.data ?? const <int>{};
+                      final favoriteLabels = <String>{
+                        for (final entry in nameToId.entries)
+                          if (favIds.contains(entry.value)) entry.key,
+                      };
+                      return _buildAutocomplete(
+                        options: options,
+                        frequentLabels: frequent,
+                        favoriteLabels: favoriteLabels,
+                        cartridgeNameToId: nameToId,
+                      );
+                    },
+                  );
+                },
+              );
+            }
+            // Powder / bullet / primer / brass: name-keyed favorites
+            // via [ComponentFavoritesService]. Watch so toggling a
+            // star in the dropdown reflows the list immediately.
+            final favorites =
+                context.watch<ComponentFavoritesService>().favorites(widget.kind);
+            return _buildAutocomplete(
+              options: options,
+              frequentLabels: frequent,
+              favoriteLabels: favorites,
+              cartridgeNameToId: const <String, int>{},
             );
           },
         );
@@ -308,53 +332,74 @@ class _ComponentFieldState extends State<ComponentField> {
   }
 
   /// Internal helper that builds the actual `Autocomplete<String>`.
-  /// When [favoriteCartridgeIds] is non-empty the options builder
-  /// floats favorited entries to the top of the dropdown, and the
-  /// options view renders a small star icon next to each favorited
-  /// row. The star is purely a visual indicator — taps on the row
-  /// still select the cartridge, matching the existing component-
-  /// field behavior. Favorites toggling lives on the SAAMI screen so
-  /// the dropdown stays uncluttered.
+  /// Applies the priority ordering rule
+  /// (`Favorites → Frequently used → general`) to the dropdown options
+  /// in [optionsBuilder], and renders a tappable star icon on each
+  /// dropdown row so users can toggle favorites without leaving the
+  /// recipe form.
+  ///
+  /// [favoriteLabels]: the labels currently favorited for this kind.
+  /// Always non-null; an empty set means "no favorites yet" and the
+  /// favorites-first prefix is skipped.
+  ///
+  /// [frequentLabels]: the labels the user has used most often,
+  /// already in usage-count-desc order. The dropdown shows them as
+  /// the second tier — favorites at top, then frequents that aren't
+  /// already favorited, then everything else (alphabetical via
+  /// upstream `componentLabels`).
+  ///
+  /// [cartridgeNameToId]: empty for non-cartridge kinds. For
+  /// cartridge, lets the star toggle resolve a label back to its
+  /// row id so we can reach into [FavoritesRepository] correctly.
   Widget _buildAutocomplete({
     required List<String> options,
-    required Set<int> favoriteCartridgeIds,
+    required List<String> frequentLabels,
+    required Set<String> favoriteLabels,
     required Map<String, int> cartridgeNameToId,
   }) {
-    // Pre-compute the favorited label set. Doing this once per build
-    // is cheaper than checking inside every itemBuilder rebuild.
-    final favoriteLabels = <String>{
-      for (final entry in cartridgeNameToId.entries)
-        if (favoriteCartridgeIds.contains(entry.value)) entry.key,
-    };
-
-    /// Apply favorites-first ordering to the post-filter list of
-    /// candidate options. Stable: order within each bucket is
-    /// preserved from the input (the input is already sorted
-    /// upstream by `componentLabels`).
-    Iterable<String> withFavoritesFirst(Iterable<String> filtered) {
-      if (favoriteLabels.isEmpty) return filtered;
-      final favs = <String>[];
-      final rest = <String>[];
+    /// Apply the `Favorites → Frequently used → general` ordering to
+    /// a candidate list of post-filter options. Stable inside each
+    /// bucket (favorites preserve upstream ordering, frequent
+    /// preserves usage-count desc, general preserves the alphabetical
+    /// upstream ordering from `componentLabels`). Skips entries
+    /// already surfaced in an earlier bucket so each label appears
+    /// at most once.
+    Iterable<String> withPriorityOrder(Iterable<String> filtered) {
+      if (favoriteLabels.isEmpty && frequentLabels.isEmpty) {
+        return filtered;
+      }
+      final filteredSet = filtered.toSet();
+      final seen = <String>{};
+      final ordered = <String>[];
+      // Bucket 1: favorites that survived the filter.
       for (final o in filtered) {
-        if (favoriteLabels.contains(o)) {
-          favs.add(o);
-        } else {
-          rest.add(o);
+        if (favoriteLabels.contains(o) && seen.add(o)) {
+          ordered.add(o);
         }
       }
-      return [...favs, ...rest];
+      // Bucket 2: frequent (excluding anything already shown).
+      for (final f in frequentLabels) {
+        if (filteredSet.contains(f) && seen.add(f)) {
+          ordered.add(f);
+        }
+      }
+      // Bucket 3: everything else, in upstream order.
+      for (final o in filtered) {
+        if (seen.add(o)) ordered.add(o);
+      }
+      return ordered;
     }
 
     return Autocomplete<String>(
       initialValue: TextEditingValue(text: widget.controller.text),
       optionsBuilder: (te) {
         final query = te.text.trim().toLowerCase();
-        if (query.isEmpty) return withFavoritesFirst(options).take(60);
+        if (query.isEmpty) return withPriorityOrder(options).take(60);
         final tokens = query
             .split(RegExp(r'\s+'))
             .where((t) => t.isNotEmpty)
             .toList(growable: false);
-        if (tokens.isEmpty) return withFavoritesFirst(options).take(60);
+        if (tokens.isEmpty) return withPriorityOrder(options).take(60);
         final filtered = options.where((o) {
           final lower = o.toLowerCase();
           for (final t in tokens) {
@@ -362,7 +407,7 @@ class _ComponentFieldState extends State<ComponentField> {
           }
           return true;
         });
-        return withFavoritesFirst(filtered).take(60);
+        return withPriorityOrder(filtered).take(60);
       },
       fieldViewBuilder: (context, textCtrl, focusNode, _) {
         // Wire up exactly once — repeated builds of fieldViewBuilder
@@ -391,12 +436,20 @@ class _ComponentFieldState extends State<ComponentField> {
       },
       optionsViewBuilder: (context, onSelected, options) {
         final theme = Theme.of(context);
+        // Pre-compute the "frequent but not favorited" set so the
+        // row builder can render its leading icon in O(1). Frequent
+        // labels that ARE favorited just get the favorite star —
+        // we don't double-decorate.
+        final frequentSet = <String>{
+          for (final f in frequentLabels)
+            if (!favoriteLabels.contains(f)) f,
+        };
         return Align(
           alignment: Alignment.topLeft,
           child: Material(
             elevation: 4,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxHeight: 280),
+              constraints: const BoxConstraints(maxHeight: 320),
               child: ListView.builder(
                 shrinkWrap: true,
                 padding: EdgeInsets.zero,
@@ -404,21 +457,45 @@ class _ComponentFieldState extends State<ComponentField> {
                 itemBuilder: (context, i) {
                   final opt = options.elementAt(i);
                   final isFav = favoriteLabels.contains(opt);
+                  final isFrequent = frequentSet.contains(opt);
+                  // Leading icon: history clock for "frequent",
+                  // nothing otherwise. Favorites get their star in
+                  // the trailing slot (along with the toggle hit-
+                  // target), so we don't double up.
+                  final leading = isFrequent
+                      ? Icon(
+                          Icons.history,
+                          size: 16,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        )
+                      : null;
                   return ListTile(
                     dense: true,
+                    leading: leading,
                     title: Text(opt),
-                    // Visual-only star — favorites toggling lives on
-                    // the SAAMI screen so the dropdown can stay
-                    // un-cluttered. Showing the indicator here gives
-                    // recipe-form users a way to recognize their
-                    // pinned cartridges at a glance.
-                    trailing: isFav
-                        ? Icon(
-                            Icons.star,
-                            size: 16,
-                            color: theme.colorScheme.primary,
-                          )
-                        : null,
+                    // Trailing star is now TAPPABLE for every kind.
+                    // Tap row body → pick the component (existing
+                    // behaviour); tap the star → toggle favorite
+                    // without dismissing the dropdown. Hit target
+                    // is a small `IconButton` so users don't fat-
+                    // finger the row tap.
+                    trailing: IconButton(
+                      icon: Icon(
+                        isFav ? Icons.star : Icons.star_border,
+                        size: 18,
+                        color: isFav
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      tooltip: isFav
+                          ? 'Remove from favorites'
+                          : 'Add to favorites',
+                      onPressed: () => _toggleFavorite(
+                        opt,
+                        cartridgeNameToId: cartridgeNameToId,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
                     onTap: () => onSelected(opt),
                   );
                 },
@@ -428,5 +505,29 @@ class _ComponentFieldState extends State<ComponentField> {
         );
       },
     );
+  }
+
+  /// Toggle the favorite state for [name] in the right backend.
+  /// Cartridge favorites live in the [FavoritesRepository] (int
+  /// row-id keyed via `UserFavorites`); every other kind lives in
+  /// the name-keyed [ComponentFavoritesService]. The row id lookup
+  /// runs through [cartridgeNameToId] which the caller already
+  /// pre-computed for cartridge kind, so the toggle stays
+  /// synchronous from the user's perspective.
+  Future<void> _toggleFavorite(
+    String name, {
+    required Map<String, int> cartridgeNameToId,
+  }) async {
+    if (widget.kind == 'cartridge') {
+      final id = cartridgeNameToId[name];
+      if (id == null) return;
+      await context
+          .read<FavoritesRepository>()
+          .toggleFavorite(kFavoriteCartridge, id);
+    } else {
+      await context
+          .read<ComponentFavoritesService>()
+          .toggleFavorite(widget.kind, name);
+    }
   }
 }

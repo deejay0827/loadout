@@ -64,6 +64,7 @@ import '../../database/database.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../utils/natural_sort.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/empty_state_card.dart';
 import '../../widgets/favorite_star_button.dart';
 import 'firearm_form_screen.dart';
 
@@ -163,8 +164,30 @@ class _FirearmsList extends StatelessWidget {
         }
         final raw = snap.data ?? const <UserFirearmRow>[];
         if (raw.isEmpty) {
-          return const Center(
-            child: Text('No firearms yet. Tap + to add your first.'),
+          // First-launch nudge. Disappears once the user has saved a
+          // firearm. The inline button mirrors the FAB so a beginner
+          // who hasn't noticed the floating + can still get unstuck
+          // in one tap.
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            child: EmptyStateCard(
+              heading: 'Add your first firearm',
+              body:
+                  'Track barrel length, twist rate, action, and shots '
+                  'fired so your loads can reference the gun they '
+                  'were tuned for.',
+              actions: [
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const FirearmFormScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add firearm'),
+                ),
+              ],
+            ),
           );
         }
         // Favorites-first sort. The underlying stream is already

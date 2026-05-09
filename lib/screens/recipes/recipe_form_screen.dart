@@ -531,6 +531,33 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _searchController = TextEditingController();
 
+  /// ScrollController for the form's main ListView. Owning the
+  /// controller (rather than letting ListView allocate one
+  /// internally) lets us:
+  ///   * Preserve scroll offset across rebuilds — without an owned
+  ///     controller, an ExpansionTile re-mount triggered by a mode
+  ///     switch (which changes every section's PageStorageKey) loses
+  ///     the scroll offset and snaps back to top.
+  ///   * Programmatically scroll to a section's GlobalKey on mode
+  ///     switch (see [_scrollToSection]).
+  final ScrollController _formScrollCtrl = ScrollController();
+
+  /// One [GlobalKey] per section, used by [_scrollToSection] to find
+  /// the section in the rendered tree and call
+  /// `Scrollable.ensureVisible(...)` on it. Allocated lazily in
+  /// [initState] from [_sections] so the keys' lifetime matches
+  /// the form's.
+  late final Map<String, GlobalKey> _sectionKeys;
+
+  /// Section id of the most recently expanded section. Tracks the
+  /// "where the user is working right now" intent so a switch from
+  /// Core → Full lands them back in the same section instead of at
+  /// the top of the form. Updated by [ExpansionTile.onExpansionChanged]
+  /// in [_buildSection]. Null when the user hasn't expanded any
+  /// section since opening the form (in which case mode-switch keeps
+  /// the scroll offset but doesn't re-target).
+  String? _lastExpandedSectionId;
+
   // ─────────────────────── Text controllers ───────────────────────
 
   late final TextEditingController _name;
@@ -640,6 +667,13 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   @override
   void initState() {
     super.initState();
+    // Allocate one GlobalKey per section once. Keys must be stable for
+    // [_scrollToSection] to find them in the rendered tree across
+    // builds — re-allocating on every build would cause the framework
+    // to think the widget moved and lose state.
+    _sectionKeys = {
+      for (final s in _sections) s.id: GlobalKey(),
+    };
     final e = widget.existing;
     final d = e == null ? widget.initialDraft : null;
     // The Quick Add → Regular bridge passes a draft companion when the
@@ -1004,6 +1038,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   void dispose() {
     _autoSave.dispose();
     _searchController.dispose();
+    _formScrollCtrl.dispose();
     for (final c in [
       _name,
       _caliber,
@@ -1481,7 +1516,16 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           return TextFormField(
             controller: _chargeTolerance,
             decoration: InputDecoration(
-              labelText: 'Charge Tolerance ($wt)',
+              // GlossaryLabel resolves "Charge weight" from the
+              // glossary so a tap surfaces the definition. The
+              // visible label still includes the unit suffix; the
+              // lookup key (`glossaryTerm`) points at the canonical
+              // entry. See [GlossaryLabel] for the soft-fail
+              // behaviour that keeps un-glossarized labels working.
+              label: GlossaryLabel(
+                text: 'Charge Tolerance ($wt)',
+                glossaryTerm: 'Charge weight',
+              ),
               suffixText: wt,
               helperText: '± spread / scale resolution',
             ),
@@ -2523,6 +2567,17 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     };
   }
 
+  /// Section ids that stay expanded by default in Full mode. Every
+  /// recipe needs a name + caliber + powder + charge — these two
+  /// sections cover that path; everything else (primer, bullet,
+  /// brass, dimensions, pressure indicators, process, custom fields,
+  /// notes) collapses so the user can scan section headers and
+  /// expand only what they need.
+  static const Set<String> _kFullModePrimarySectionIds = {
+    'load_id',
+    'powder',
+  };
+
   /// The on-screen ordering of sections and the field ids inside each.
   static const List<_Section> _sections = [
     _Section(
@@ -2847,9 +2902,24 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                         selected: {_detailLevel},
                         onSelectionChanged: (s) {
                           final next = s.first;
+                          if (next == _detailLevel) return;
                           setState(() => _detailLevel = next);
                           // ignore: discarded_futures
                           _persistDetailLevel(next);
+                          // Set A.2: keep the user anchored on the
+                          // section they were working in. After the
+                          // build commits with the new detail level
+                          // the section's ExpansionTile is in its new
+                          // position; we then scroll to it. The
+                          // post-frame callback ensures
+                          // `Scrollable.ensureVisible` runs against the
+                          // freshly-laid-out tree, not the pre-switch
+                          // one. Soft-fail if no section was tracked —
+                          // the user just stays at whatever offset the
+                          // ScrollController held onto.
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _scrollToSection(_lastExpandedSectionId);
+                          });
                         },
                       ),
                     ),
@@ -2860,6 +2930,17 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             const Divider(height: 1),
             Expanded(
               child: ListView(
+                controller: _formScrollCtrl,
+                // Dismiss the keyboard the moment the user starts
+                // dragging. Without this, a tap-then-flick gesture can
+                // leave the keyboard up while the form scrolls
+                // underneath; iOS then auto-scrolls the focused field
+                // back into view, fighting the user's gesture. The
+                // observed symptom is "the form jumps to top or
+                // bottom" mid-scroll. onDrag dismissal is the
+                // canonical Flutter fix.
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 children: [
                   for (final section in _sections)
@@ -2961,6 +3042,32 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     return true;
   }
 
+  /// Scroll the form so the section identified by [sectionId] is
+  /// visible, with a small leading inset so the section header
+  /// doesn't sit flush against the sticky search/detail-level bar.
+  /// Soft-fail when the id is null or the corresponding GlobalKey
+  /// hasn't attached yet (e.g. the user toggled detail level before
+  /// expanding any section); in that case the form just keeps the
+  /// scroll offset the [ScrollController] already preserved.
+  void _scrollToSection(String? sectionId) {
+    if (sectionId == null) return;
+    final key = _sectionKeys[sectionId];
+    final ctx = key?.currentContext;
+    if (ctx == null) return;
+    // `Scrollable.ensureVisible` uses the section's RenderObject to
+    // compute the right scroll offset relative to the parent
+    // ScrollController. The 0.0 alignment puts the section's top
+    // edge at the top of the viewport; 120ms feels intentional
+    // without being slow on a long form.
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+      alignment: 0.0,
+      alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+    );
+  }
+
   Widget _buildSection({
     required BuildContext context,
     required _Section section,
@@ -2992,13 +3099,39 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
 
     // Default expansion:
     //   * searching: expand iff the section has matches
-    //   * otherwise: always expanded by default
-    final initiallyExpanded = isSearching ? visibleFields.isNotEmpty : true;
+    //   * Core / Extended: always expanded (the surface is small
+    //     enough that the user can scroll comfortably)
+    //   * Full: only the two primary sections (Load Identification
+    //     and Powder) PLUS the user's last-active section start
+    //     expanded — the form surfaces 9+ sections in Full mode and
+    //     an all-expanded accordion is just one long scroll.
+    //     Defaulting secondary sections to collapsed makes the
+    //     section list itself the navigation affordance, and
+    //     auto-expanding the user's active section means a
+    //     Core→Full switch lands them right where they were
+    //     working.
+    final bool initiallyExpanded;
+    if (isSearching) {
+      initiallyExpanded = visibleFields.isNotEmpty;
+    } else if (_detailLevel == DetailLevel.all) {
+      initiallyExpanded = _kFullModePrimarySectionIds.contains(section.id) ||
+          section.id == _lastExpandedSectionId;
+    } else {
+      initiallyExpanded = true;
+    }
 
-    // Re-key on the search state so ExpansionTile picks up the new
-    // initiallyExpanded value when the filter toggles.
+    // Re-key on search state, detail level, AND last-active section
+    // so ExpansionTile picks up the new `initiallyExpanded` value
+    // whenever any of the inputs change. Without the level token,
+    // switching Core → Full would inherit Core's all-expanded state
+    // and the Full-mode collapse default would never visibly take
+    // effect; without the last-active token, switching modes a
+    // second time wouldn't re-expand the section the user has been
+    // editing.
     final tileKey = PageStorageKey<String>(
-      'recipe_section_${section.id}_search_$isSearching',
+      'recipe_section_${section.id}_search_$isSearching'
+      '_level_${_detailLevel.name}'
+      '_active_${_lastExpandedSectionId ?? ''}',
     );
 
     // Compute the rendering plan for this section's visible fields.
@@ -3013,13 +3146,34 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       pairOnRow: isDesktop,
     );
 
+    // GlobalKey on the outer Padding so [_scrollToSection] can find
+    // this section in the rendered tree even when ExpansionTile is
+    // collapsed (the key has to be on a widget that's always
+    // mounted, not on a child that's hidden inside the
+    // ExpansionTile's children slot).
     return Padding(
+      key: _sectionKeys[section.id],
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: ExpansionTile(
           key: tileKey,
           initiallyExpanded: initiallyExpanded,
+          // Track the section the user is "in" so a mode switch
+          // (Core ↔ Extended ↔ Full) can re-expand the same section
+          // and scroll back to it. We capture only `expanded == true`
+          // so collapsing a section doesn't immediately overwrite the
+          // tracked id with `null` — the user is still "working in"
+          // this section even after they fold its accordion.
+          onExpansionChanged: (expanded) {
+            if (!expanded) return;
+            if (_lastExpandedSectionId == section.id) return;
+            // No setState — this rebuild would just re-key every
+            // tile and undo the user's expansion. The tracked id is
+            // consulted on the next mode switch via the PageStorageKey
+            // and `initiallyExpanded` rules above.
+            _lastExpandedSectionId = section.id;
+          },
           // Keep children mounted across collapse/expand. Two reasons:
           //   1. Pickers wrapping `Autocomplete<String>` (recipe name,
           //      caliber, powder, etc.) own internal controllers and an

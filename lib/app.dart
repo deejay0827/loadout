@@ -155,9 +155,11 @@ import 'services/ble/vectronix_terrapin_service.dart';
 import 'services/ble/vortex_rangefinder_service.dart';
 import 'services/cloud_backup.dart';
 import 'services/cloud_sync_service.dart';
+import 'services/component_favorites_service.dart';
 import 'services/drive_backup_service.dart';
 import 'services/entitlement_notifier.dart';
 import 'services/bc_truing_service.dart';
+import 'services/glossary_first_seen_tracker.dart';
 import 'services/hit_probability_service.dart';
 import 'services/sight_calibration_service.dart';
 import 'services/wez_analysis_service.dart';
@@ -271,6 +273,23 @@ class LoadOutApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<BeginnerModeService>(
           create: (_) => BeginnerModeService(),
+        ),
+        // Session-scoped (in-memory) registry of glossary terms the
+        // user has already encountered. Backs the first-occurrence
+        // emphasis behaviour in [GlossaryLabel] when Beginner Mode
+        // is on. No persistence — fresh app launch resets the set.
+        Provider<GlossaryFirstSeenTracker>(
+          create: (_) => GlossaryFirstSeenTracker(),
+        ),
+        // Per-kind favorite component NAMES (powder / bullet / primer
+        // / brass), persisted to SharedPreferences. Backs the
+        // "Favorites first" prefix of the smart-defaults ordering
+        // rule in [ComponentField]. Cartridges keep using the
+        // existing FavoritesRepository (UserFavorites table) — see
+        // the file header on [ComponentFavoritesService] for why
+        // the two systems coexist.
+        ChangeNotifierProvider<ComponentFavoritesService>(
+          create: (_) => ComponentFavoritesService(),
         ),
         ChangeNotifierProvider<UnitService>(
           create: (_) => UnitService(),

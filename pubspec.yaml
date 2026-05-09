@@ -359,6 +359,13 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
 
+  # Local biometric authentication (Face ID / Touch ID on iOS,
+  # fingerprint on Android, Windows Hello on desktop). Used purely
+  # as a local "unlock the app" gate on top of Firebase Auth's
+  # cached credentials — biometric never sees the user's password
+  # or any account material. See lib/services/biometric_service.dart.
+  local_auth: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

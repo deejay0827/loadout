@@ -418,25 +418,51 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                         ),
                       );
                     }
+                    // Group by category for discoverability. Beginner
+                    // scrolling sees "Mil reticles", "MOA reticles",
+                    // "Public domain", "Combat", "Red dots" headers
+                    // instead of a wall of 40+ flat rows. We still
+                    // render flat when only one category ends up with
+                    // any rows (e.g. user tapped the "MOA Hash" chip
+                    // — splitting that into a single-section view
+                    // adds noise without context).
+                    final grouped = _groupByCategory(filtered);
+                    final showHeaders = grouped.length > 1;
+                    final items = _flattenForListView(
+                      grouped: grouped,
+                      includeHeaders: showHeaders,
+                    );
                     return FutureBuilder<int?>(
                       future: _defaultIdFuture ?? Future.value(null),
                       builder: (context, defaultSnap) {
                         final defaultId = defaultSnap.data;
-                        return ListView.separated(
-                          itemCount: filtered.length,
-                          separatorBuilder: (_, _) =>
-                              Divider(height: 1, color: theme.dividerColor),
+                        return ListView.builder(
+                          itemCount: items.length,
                           itemBuilder: (context, i) {
-                            final row = filtered[i];
+                            final entry = items[i];
+                            if (entry is _CategoryHeaderItem) {
+                              return _CategoryHeader(
+                                label: entry.category.label,
+                                count: entry.count,
+                              );
+                            }
+                            final rowItem = entry as _ReticleRowItem;
+                            final row = rowItem.row;
                             final selected = row.id == widget.selectedId;
                             final isDefault = defaultId == row.id;
-                            return _ReticleListRow(
-                              row: row,
-                              repo: widget.repo,
-                              selected: selected,
-                              isDefault: isDefault,
-                              onPick: () => Navigator.of(context)
-                                  .pop(_ReticleSelection(row: row)),
+                            return Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _ReticleListRow(
+                                  row: row,
+                                  repo: widget.repo,
+                                  selected: selected,
+                                  isDefault: isDefault,
+                                  onPick: () => Navigator.of(context)
+                                      .pop(_ReticleSelection(row: row)),
+                                ),
+                                Divider(height: 1, color: theme.dividerColor),
+                              ],
                             );
                           },
                         );
@@ -586,6 +612,173 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
       return 'No reticles tagged "$_popularTag".';
     }
     return 'No reticles match "${_searchController.text}".';
+  }
+
+  /// Bucket the filtered list into [_ReticleCategory] groups. Returns a
+  /// LinkedHashMap-equivalent (insertion-ordered Map) so the iteration
+  /// order matches [_kCategoryOrder]. Categories that end up with zero
+  /// rows are dropped entirely so the rendered list never shows an
+  /// empty section header.
+  Map<_ReticleCategory, List<ReticleRow>> _groupByCategory(
+    List<ReticleRow> rows,
+  ) {
+    final out = <_ReticleCategory, List<ReticleRow>>{};
+    for (final cat in _kCategoryOrder) {
+      out[cat] = <ReticleRow>[];
+    }
+    for (final r in rows) {
+      out[_categorizeReticle(r)]!.add(r);
+    }
+    out.removeWhere((_, list) => list.isEmpty);
+    return out;
+  }
+
+  /// Flatten the grouped map into a single list of `_ListEntry` values
+  /// for `ListView.builder` consumption. When `includeHeaders` is
+  /// false (single-category result), skip the header rows entirely.
+  List<_ListEntry> _flattenForListView({
+    required Map<_ReticleCategory, List<ReticleRow>> grouped,
+    required bool includeHeaders,
+  }) {
+    final out = <_ListEntry>[];
+    grouped.forEach((cat, rows) {
+      if (includeHeaders) {
+        out.add(_CategoryHeaderItem(category: cat, count: rows.length));
+      }
+      for (final r in rows) {
+        out.add(_ReticleRowItem(row: r));
+      }
+    });
+    return out;
+  }
+}
+
+/// Bucket a reticle into one of five user-facing categories. The
+/// classifier reads the catalog's `nativeUnit` (mil / moa) plus the
+/// derived tag set so a reticle's category survives any future rename
+/// of the row's `family` string.
+///
+/// Order of checks matters — the first match wins:
+///   1. Public Domain (manufacturer / family says so)
+///   2. Red Dots / Holographic (single-dot or dot+ring patterns)
+///   3. Combat / Tactical (DMR-style horseshoe + dot, BDC drop reticles)
+///   4. MOA reticles (`nativeUnit == 'moa'`)
+///   5. Mil reticles (the catch-all default — `nativeUnit == 'mil'`)
+_ReticleCategory _categorizeReticle(ReticleRow r) {
+  final manufacturer = r.manufacturerId.toLowerCase();
+  final family = (r.family ?? '').toLowerCase();
+  if (manufacturer.contains('public') || family.contains('public-domain') ||
+      family.contains('public domain')) {
+    return _ReticleCategory.publicDomain;
+  }
+  final tags = deriveReticleTags(
+    manufacturer: r.manufacturerId,
+    model: r.model,
+    family: r.family,
+  );
+  if (tags.contains('red-dot') ||
+      tags.contains('reddot') ||
+      tags.contains('holographic')) {
+    return _ReticleCategory.redDots;
+  }
+  if (tags.contains('combat') ||
+      tags.contains('dmr') ||
+      tags.contains('bdc')) {
+    return _ReticleCategory.combat;
+  }
+  if (r.nativeUnit.toLowerCase() == 'moa') {
+    return _ReticleCategory.moa;
+  }
+  return _ReticleCategory.mil;
+}
+
+/// User-facing reticle category. Drives the section headers on the
+/// picker. Order is set by [_kCategoryOrder]; the labels live on the
+/// extension below.
+enum _ReticleCategory { mil, moa, publicDomain, combat, redDots }
+
+extension on _ReticleCategory {
+  /// Section-header label rendered above the rows. Sentence case to
+  /// match the rest of the LoadOut form vocabulary.
+  String get label => switch (this) {
+        _ReticleCategory.mil => 'Mil reticles',
+        _ReticleCategory.moa => 'MOA reticles',
+        _ReticleCategory.publicDomain => 'Public domain',
+        _ReticleCategory.combat => 'Combat / Tactical',
+        _ReticleCategory.redDots => 'Red dots',
+      };
+}
+
+/// Display order. Mil reticles come first because they're the modern
+/// PRS standard and the catalog's plurality. MOA next for hunters.
+/// Public-domain (Mil-Dot, Plex, German #4) for the historical
+/// patterns. Combat for the DMR / BDC drop reticles. Red dots last —
+/// they're a different optic class entirely and most users browsing
+/// "scope reticles" aren't here for a red dot.
+const List<_ReticleCategory> _kCategoryOrder = [
+  _ReticleCategory.mil,
+  _ReticleCategory.moa,
+  _ReticleCategory.publicDomain,
+  _ReticleCategory.combat,
+  _ReticleCategory.redDots,
+];
+
+/// Sealed-style sum type for the picker's flat ListView. Either a
+/// section header or a reticle row. Using a typed entry rather than a
+/// `Widget` directly so the builder can reason about index → row
+/// mappings (selection highlighting, "default for selected optic"
+/// badges) without rebuilding the entire list.
+sealed class _ListEntry {
+  const _ListEntry();
+}
+
+class _CategoryHeaderItem extends _ListEntry {
+  const _CategoryHeaderItem({required this.category, required this.count});
+  final _ReticleCategory category;
+  final int count;
+}
+
+class _ReticleRowItem extends _ListEntry {
+  const _ReticleRowItem({required this.row});
+  final ReticleRow row;
+}
+
+/// Small section header rendered above each category's rows. Matches
+/// the visual weight of the "Popular reticles" label above the chip
+/// row so the picker reads as one coherent list with section breaks
+/// rather than two competing layouts.
+class _CategoryHeader extends StatelessWidget {
+  const _CategoryHeader({required this.label, required this.count});
+  final String label;
+  final int count;
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+          Text(
+            '$count',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

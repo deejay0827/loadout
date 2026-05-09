@@ -94,8 +94,11 @@
 // - No persistent state, no I/O, no analytics.
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../screens/glossary/glossary_screen.dart';
+import '../services/beginner_mode_service.dart';
+import '../services/glossary_first_seen_tracker.dart';
 import '../services/glossary_lookup.dart';
 
 /// Tappable form-field label that surfaces the glossary definition
@@ -156,6 +159,44 @@ class GlossaryLabel extends StatelessWidget {
     }
     final theme = Theme.of(context);
     final color = style?.color ?? DefaultTextStyle.of(context).style.color;
+
+    // Beginner Mode → first-occurrence emphasis. We consult the
+    // BeginnerModeService and the session-scoped seen-tracker; when
+    // the term is "new" to this session AND Beginner Mode is on,
+    // the (?) glyph renders in the theme's primary colour at full
+    // opacity so the user actually NOTICES that an explainer exists.
+    // Subsequent appearances of the same term render in the muted
+    // gray below — the emphasis fires once per session per term, not
+    // every build.
+    //
+    // Safe-fallback: if either provider isn't in scope (e.g. a
+    // standalone widget test pumping just this label), the lookup
+    // returns false / null and the emphasis path silently degrades
+    // to the existing subtle look.
+    final beginnerOn = _readBeginnerOn(context);
+    final seen = _readSeen(context);
+    final emphasized = beginnerOn &&
+        showHelpIcon &&
+        seen != null &&
+        !seen.hasSeen(entry.term);
+    if (emphasized) {
+      // `emphasized == true` implies `seen != null` per the && chain
+      // above; Dart's flow analysis narrows the type for us inside
+      // this branch. Schedule mark-seen for after this frame so we
+      // don't mutate shared state during a build pass. The next
+      // rebuild reads `seen.hasSeen(entry.term) == true` and falls
+      // back to the muted glyph.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        seen.markSeen(entry.term);
+      });
+    }
+
+    final glyphColor = emphasized
+        ? theme.colorScheme.primary
+        : (color?.withValues(alpha: 0.6) ??
+            theme.colorScheme.onSurfaceVariant);
+    final glyphSize = emphasized ? 16.0 : 14.0;
+
     return InkWell(
       onTap: () => _showSheet(context, entry),
       borderRadius: BorderRadius.circular(6),
@@ -177,9 +218,8 @@ class GlossaryLabel extends StatelessWidget {
               const SizedBox(width: 4),
               Icon(
                 Icons.help_outline,
-                size: 14,
-                color: color?.withValues(alpha: 0.6) ??
-                    theme.colorScheme.onSurfaceVariant,
+                size: glyphSize,
+                color: glyphColor,
                 semanticLabel: 'Show definition',
               ),
             ],
@@ -187,6 +227,30 @@ class GlossaryLabel extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Read the session-scoped first-seen tracker if it's been provided.
+  /// Returns null when no `Provider<GlossaryFirstSeenTracker>` is in
+  /// scope so widget tests that pump just a label compile cleanly.
+  GlossaryFirstSeenTracker? _readSeen(BuildContext context) {
+    try {
+      return Provider.of<GlossaryFirstSeenTracker>(context, listen: false);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Read [BeginnerModeService.isEnabled] without throwing when no
+  /// provider is in scope. Mirrors [_readSeen]'s defensive pattern so
+  /// widget tests for this label don't have to scaffold the whole
+  /// provider tree just to render one (?) glyph.
+  bool _readBeginnerOn(BuildContext context) {
+    try {
+      return Provider.of<BeginnerModeService>(context, listen: false)
+          .isEnabled;
+    } catch (_) {
+      return false;
+    }
   }
 
   static void _showSheet(BuildContext context, GlossaryTerm entry) {

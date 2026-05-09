@@ -91,6 +91,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../services/ai_smart_import_config.dart';
 import '../../services/ai_smart_import_service.dart';
+import '../../services/beginner_mode_service.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../widgets/pro_gate.dart';
 
@@ -275,6 +276,14 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPro = context.watch<EntitlementNotifier>().isPro;
+    // Beginner Mode hides the BYOK ("Bring your own Anthropic key")
+    // section entirely. The hosted-proxy toggle is enough surface for
+    // a beginner; "use your own API key" is a power-user concept that
+    // most reloaders don't need and that, if surfaced too early,
+    // suggests "you have to set this up to use AI" — which is wrong.
+    // Power users turn Beginner Mode off in App Preferences and the
+    // BYOK card reappears.
+    final beginnerOn = context.watch<BeginnerModeService>().isEnabled;
     if (_loading) {
       return Scaffold(
         appBar: AppBar(title: const Text('AI')),
@@ -308,32 +317,34 @@ class _AiSettingsScreenState extends State<AiSettingsScreen> {
             ),
             if (_enabled && (_byokKey != null || isPro))
               _UsageTile(usage: _usage, byokActive: _byokKey != null),
-            const _SectionHeader('Bring your own key'),
-            SwitchListTile(
-              secondary: const Icon(Icons.vpn_key_outlined),
-              title: const Text('Use my own Anthropic key'),
-              subtitle: const Text(
-                'Skip LoadOut\'s hosted proxy and use your own Anthropic '
-                'API key. The key is stored only on this device, in the '
-                'iOS Keychain or Android Keystore. No monthly cap from us; '
-                'you pay Anthropic directly.',
+            if (!beginnerOn) ...[
+              const _SectionHeader('Bring your own key'),
+              SwitchListTile(
+                secondary: const Icon(Icons.vpn_key_outlined),
+                title: const Text('Use my own Anthropic key'),
+                subtitle: const Text(
+                  'Skip LoadOut\'s hosted proxy and use your own Anthropic '
+                  'API key. The key is stored only on this device, in the '
+                  'iOS Keychain or Android Keystore. No monthly cap from us; '
+                  'you pay Anthropic directly.',
+                ),
+                value: _byokToggle,
+                onChanged: (v) {
+                  // ignore: discarded_futures
+                  _setByokToggle(v);
+                },
               ),
-              value: _byokToggle,
-              onChanged: (v) {
-                // ignore: discarded_futures
-                _setByokToggle(v);
-              },
-            ),
-            if (_byokToggle) _ByokInputCard(
-              controller: _byokController,
-              obscure: _byokObscure,
-              onToggleObscure: () =>
-                  setState(() => _byokObscure = !_byokObscure),
-              onTest: _testByok,
-              onSave: _saveByok,
-              onRemove: _byokKey == null ? null : _removeByok,
-              busy: _busy,
-            ),
+              if (_byokToggle) _ByokInputCard(
+                controller: _byokController,
+                obscure: _byokObscure,
+                onToggleObscure: () =>
+                    setState(() => _byokObscure = !_byokObscure),
+                onTest: _testByok,
+                onSave: _saveByok,
+                onRemove: _byokKey == null ? null : _removeByok,
+                busy: _busy,
+              ),
+            ],
             const SizedBox(height: 24),
           ],
         ),

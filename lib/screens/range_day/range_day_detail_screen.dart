@@ -96,6 +96,7 @@ import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
 import '../ballistics/ballistics_screen.dart';
 import 'bc_truing_screen.dart';
+import 'range_day_mode.dart';
 import 'range_day_screen.dart';
 import 'scope_view_screen.dart';
 import 'sight_calibration_screen.dart';
@@ -384,6 +385,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// hydration is fire-and-forget during [initState].
   TargetPlotViewMode _targetPlotViewMode = TargetPlotViewMode.targetFocused;
 
+  /// Whole-screen Quick vs Full visibility mode. Quick collapses the
+  /// scroll surface to Setup + Firing Solution (the bare minimum at
+  /// the firing line); Full reveals every advanced card (environment
+  /// editor, group stats, target plot, hit probability, DOPE, moving
+  /// target, wind bracket, notes). Persisted under
+  /// [kRangeDayModePrefKey] in SharedPreferences; the screen renders
+  /// the default ([RangeDayMode.quick] — the calmer surface) before
+  /// the read settles. See [lib/screens/range_day/range_day_mode.dart].
+  RangeDayMode _mode = RangeDayMode.quick;
+
   /// User's known group capability at 100yd, in MOA. Drives dispersion.
   double _assumedGroupMoa = 1.0;
   double _windUncertaintyMph = 2.0;
@@ -520,6 +531,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // completes and switches in place once it lands.
     // ignore: discarded_futures
     _hydrateTargetPlotViewMode();
+    // Same pattern for the whole-screen Quick vs Full mode.
+    // ignore: discarded_futures
+    _hydrateRangeDayMode();
   }
 
   /// On a fresh session, pre-populate the reticle and target with the
@@ -640,6 +654,38 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       await prefs.setString(_kTargetPlotViewModePrefKey, mode.name);
     } catch (e) {
       debugPrint('[range_day] _persistTargetPlotViewMode failed: $e');
+    }
+  }
+
+  /// Read the persisted whole-screen [RangeDayMode] (Quick vs Full)
+  /// from SharedPreferences and apply it. Mirror of
+  /// [_hydrateTargetPlotViewMode] — soft-fails on a corrupt entry by
+  /// keeping the default [RangeDayMode.quick]. The parser
+  /// ([rangeDayModeFromString]) tolerates unknown / null inputs.
+  Future<void> _hydrateRangeDayMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(kRangeDayModePrefKey);
+      final next = rangeDayModeFromString(raw);
+      if (!mounted) return;
+      if (next != _mode) {
+        setState(() => _mode = next);
+      }
+    } catch (e) {
+      debugPrint('[range_day] _hydrateRangeDayMode failed: $e');
+    }
+  }
+
+  /// Persist the user's chosen [RangeDayMode]. Called from the AppBar
+  /// segmented toggle. Fire-and-forget — `_mode` is updated
+  /// synchronously via setState so the screen reflows immediately
+  /// even if the prefs write is slow.
+  Future<void> _persistRangeDayMode(RangeDayMode mode) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(kRangeDayModePrefKey, mode.name);
+    } catch (e) {
+      debugPrint('[range_day] _persistRangeDayMode failed: $e');
     }
   }
 
@@ -1818,6 +1864,44 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         // History list, not the AppBar.
         title: const Text('Range Day'),
         actions: [
+          // Quick / Full toggle. Quick (default) collapses the screen
+          // to Setup + Solution — what a user actually needs at the
+          // firing line. Full reveals every advanced card. Persisted
+          // per-user via SharedPreferences (see [_persistRangeDayMode]).
+          // Compact icon-segmented form chosen over labeled segments to
+          // keep the AppBar usable on narrow phones alongside the
+          // existing History + Recalculate icons.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: SegmentedButton<RangeDayMode>(
+              segments: const [
+                ButtonSegment<RangeDayMode>(
+                  value: RangeDayMode.quick,
+                  icon: Icon(Icons.bolt),
+                  tooltip: 'Quick — Setup + Solution only',
+                ),
+                ButtonSegment<RangeDayMode>(
+                  value: RangeDayMode.full,
+                  icon: Icon(Icons.tune),
+                  tooltip: 'Full — every card',
+                ),
+              ],
+              selected: {_mode},
+              showSelectedIcon: false,
+              style: SegmentedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onSelectionChanged: (sel) {
+                final next = sel.first;
+                if (next == _mode) return;
+                setState(() => _mode = next);
+                // Fire-and-forget — the UI has already reflowed.
+                // ignore: discarded_futures
+                _persistRangeDayMode(next);
+              },
+            ),
+          ),
           // History entry point. The bottom-nav "Range Day" tab now
           // always opens a fresh detail screen; users reach the saved-
           // sessions list through this action instead of from a
@@ -1871,27 +1955,37 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _setupCard(),
-                const SizedBox(height: 12),
-                _environmentCard(),
-                const SizedBox(height: 12),
-                _solutionCard(),
-                const SizedBox(height: 12),
-                ..._windBracketSection(),
-                _hitProbCard(),
-                const SizedBox(height: 12),
-                _targetPlotCard(),
-                const SizedBox(height: 12),
-                _groupStatsCard(),
-                if (_shots.isNotEmpty) ...[
+                // Everything below Setup except the Solution card is
+                // gated to Full mode. Quick mode keeps the surface
+                // calm — Setup + Solution only — for the at-the-line
+                // user. The session still solves in Quick mode (the
+                // solver reads its inputs from the persisted state,
+                // not from card visibility).
+                if (_mode == RangeDayMode.full) ...[
                   const SizedBox(height: 12),
-                  _correctionCard(),
+                  _environmentCard(),
                 ],
                 const SizedBox(height: 12),
-                _movingTargetCard(),
-                const SizedBox(height: 12),
-                _dopeCard(),
-                const SizedBox(height: 12),
-                _notesCard(),
+                _solutionCard(),
+                if (_mode == RangeDayMode.full) ...[
+                  const SizedBox(height: 12),
+                  ..._windBracketSection(),
+                  _hitProbCard(),
+                  const SizedBox(height: 12),
+                  _targetPlotCard(),
+                  const SizedBox(height: 12),
+                  _groupStatsCard(),
+                  if (_shots.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    _correctionCard(),
+                  ],
+                  const SizedBox(height: 12),
+                  _movingTargetCard(),
+                  const SizedBox(height: 12),
+                  _dopeCard(),
+                  const SizedBox(height: 12),
+                  _notesCard(),
+                ],
               ],
             ),
           ),
@@ -1902,7 +1996,43 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
 
   /// Two-column tablet / desktop layout. Left: setup / env / solution.
   /// Right: target plot / DOPE / moving target.
+  ///
+  /// Quick mode collapses the wide layout back to a single centered
+  /// column — the right-hand cards are all advanced and would render
+  /// an empty pane otherwise. The single column is width-capped so it
+  /// doesn't stretch awkwardly on a 27" monitor.
   Widget _wideBody() {
+    if (_mode == RangeDayMode.quick) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _solveErrorBanner(),
+          _solutionStrip(),
+          Expanded(
+            child: SingleChildScrollView(
+              controller: _wideLeftScrollCtrl,
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _setupCard(),
+                      const SizedBox(height: 12),
+                      _solutionCard(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -52,6 +52,7 @@ import 'package:provider/provider.dart';
 import '../../database/database.dart';
 import '../../repositories/brass_lot_repository.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/empty_state_card.dart';
 import 'brass_lot_form_screen.dart';
 
 /// Threshold (firings since last anneal) at which we show the soft
@@ -83,8 +84,28 @@ class _BrassLotsListScreenState extends State<BrassLotsListScreen> {
         }
         final lots = snap.data ?? const <BrassLotRow>[];
         if (lots.isEmpty) {
-          return const Center(
-            child: Text('No brass lots yet. Tap + to add your first.'),
+          // First-launch nudge. Disappears the moment the user saves
+          // their first lot. Inline button mirrors the FAB.
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            child: EmptyStateCard(
+              heading: 'Add your first brass lot',
+              body:
+                  'A lot tracks one batch of brass through the '
+                  'sizing, trimming, and reload counts. Helps you '
+                  'retire brass before it splits.',
+              actions: [
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const BrassLotFormScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add brass lot'),
+                ),
+              ],
+            ),
           );
         }
         return ListView.separated(

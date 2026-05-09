@@ -212,6 +212,79 @@ class RecipeRepository {
     return next;
   }
 
+  /// "Frequently used" component names for one [kind] (`'cartridge'`
+  /// → caliber column, `'powder'`/`'bullet'`/`'primer'`/`'brass'` →
+  /// the same-named column on [UserLoads]). Drives the second tier
+  /// of the `Favorites → Frequently used → general` ordering rule
+  /// in [ComponentField].
+  ///
+  /// Implementation: a `GROUP BY` over the relevant text column on
+  /// [UserLoads], counting non-null / non-empty values, sorted by
+  /// usage count desc. Ties break alphabetically so the order is
+  /// stable when two components have been used the same number of
+  /// times. Returns at most [limit] entries (default 5 — we want
+  /// the dropdown's "frequent" prefix to stay short so it doesn't
+  /// dominate the list).
+  ///
+  /// Returns an empty list for unknown kinds and for kinds where
+  /// the user has zero saved recipes; the caller treats that as
+  /// "no frequency signal yet" and falls back to the general list.
+  ///
+  /// Drift's typed query API doesn't take a runtime column name, so
+  /// the kind → column mapping switches over the [UserLoads] table
+  /// columns explicitly. This keeps the SQL parameterised and avoids
+  /// `customSelect` string injection at the cost of a short branch.
+  Future<List<String>> mostUsedComponentNames(
+    String kind, {
+    int limit = 5,
+  }) async {
+    final loads = db.userLoads;
+    final GeneratedColumn<String> column;
+    switch (kind) {
+      case 'cartridge':
+        column = loads.caliber;
+        break;
+      case 'powder':
+        column = loads.powder;
+        break;
+      case 'bullet':
+        column = loads.bullet;
+        break;
+      case 'primer':
+        column = loads.primer;
+        break;
+      case 'brass':
+        column = loads.brass;
+        break;
+      default:
+        return const <String>[];
+    }
+    // selectOnly + addColumns + groupBy gives a typed GROUP BY result
+    // so we don't need to drop into customSelect for this. The COUNT
+    // expression is built once and reused for both the SELECT projection
+    // and the ORDER BY clause.
+    final countExp = column.count();
+    final query = db.selectOnly(loads)
+      ..addColumns([column, countExp])
+      ..where(column.isNotNull() & column.trim().equals('').not())
+      ..groupBy([column])
+      ..orderBy([
+        OrderingTerm(expression: countExp, mode: OrderingMode.desc),
+        OrderingTerm(expression: column, mode: OrderingMode.asc),
+      ])
+      ..limit(limit);
+    final rows = await query.get();
+    final out = <String>[];
+    for (final r in rows) {
+      final v = r.read(column);
+      if (v == null) continue;
+      final trimmed = v.trim();
+      if (trimmed.isEmpty) continue;
+      out.add(trimmed);
+    }
+    return out;
+  }
+
   // ─────────────────────── Powder Lots ───────────────────────
 
   Future<List<PowderLotRow>> allPowderLots() async {

@@ -1203,6 +1203,14 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   late final TextEditingController _searchController;
   String _query = '';
 
+  /// Active landing-tile filter, when the user tapped one of the
+  /// "Suggested for new reloaders" / "Suggested for the Range Day
+  /// workflow" tiles. Restricts the visible glossary to a curated
+  /// subset whose `term` strings are listed in [_LandingFilter.terms].
+  /// Null means no landing filter is active (search-only view, or the
+  /// initial overview with the tiles visible).
+  _LandingFilter? _landingFilter;
+
   @override
   void initState() {
     super.initState();
@@ -1218,7 +1226,13 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   }
 
   Map<String, List<GlossaryTerm>> _filterAndGroup() {
-    final filtered = kGlossaryTerms.where((t) => t.matches(_query)).toList();
+    Iterable<GlossaryTerm> stream = kGlossaryTerms.where((t) => t.matches(_query));
+    final landing = _landingFilter;
+    if (landing != null) {
+      final allowed = landing.terms;
+      stream = stream.where((t) => allowed.contains(t.term));
+    }
+    final filtered = stream.toList();
     final grouped = <String, List<GlossaryTerm>>{};
     for (final term in filtered) {
       grouped.putIfAbsent(term.category, () => []).add(term);
@@ -1237,6 +1251,11 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     final textTheme = theme.textTheme;
     final grouped = _filterAndGroup();
     final isSearching = _query.isNotEmpty;
+    final hasLandingFilter = _landingFilter != null;
+    // Landing tiles only show on the "fresh" overview state — no
+    // search query AND no landing filter active. The moment the user
+    // engages either, we hide the tiles to make room for results.
+    final showLandingTiles = !isSearching && !hasLandingFilter;
     final visibleCategories =
         _categoryOrder.where((c) => grouped.containsKey(c)).toList();
     final totalMatches = grouped.values.fold<int>(0, (a, b) => a + b.length);
@@ -1285,6 +1304,35 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                   ),
                 ),
               ),
+            // Active-landing-filter chip. Lets the user back out of a
+            // landing-tile filter without first having to clear the
+            // (empty) search box. Shown as a row with the filter
+            // label + a clear-X button.
+            if (hasLandingFilter)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Showing: ${_landingFilter!.label}'
+                        '  ($totalMatches term${totalMatches == 1 ? '' : 's'})',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => setState(() => _landingFilter = null),
+                      icon: const Icon(Icons.clear, size: 16),
+                      label: const Text('Show all'),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: visibleCategories.isEmpty
                   ? Center(
@@ -1299,14 +1347,31 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                     )
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
-                      itemCount: visibleCategories.length,
+                      // +1 row when landing tiles are visible (rendered
+                      // before any category section).
+                      itemCount: visibleCategories.length +
+                          (showLandingTiles ? 1 : 0),
                       itemBuilder: (context, index) {
-                        final category = visibleCategories[index];
+                        if (showLandingTiles && index == 0) {
+                          return _LandingTilesRow(
+                            onPick: (filter) =>
+                                setState(() => _landingFilter = filter),
+                          );
+                        }
+                        final catIndex =
+                            showLandingTiles ? index - 1 : index;
+                        final category = visibleCategories[catIndex];
                         final entries = grouped[category]!;
                         return _CategorySection(
                           category: category,
+                          // When the user tapped a landing tile, expand
+                          // every category since the user has already
+                          // declared what they want to see — no point
+                          // making them tap again to expand each
+                          // section. Otherwise expand only when
+                          // searching (existing behaviour).
                           terms: entries,
-                          autoExpand: isSearching,
+                          autoExpand: isSearching || hasLandingFilter,
                         );
                       },
                     ),
@@ -1317,6 +1382,222 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     );
   }
 }
+
+/// Curated set of glossary terms surfaced behind one landing tile.
+/// Both lists are deliberately short — the goal is "give a beginner
+/// 15-25 essential terms to anchor on", not "show every relevant
+/// term." Entries that don't match a real `kGlossaryTerms` entry
+/// silently drop out via the `where` filter in `_filterAndGroup`.
+class _LandingFilter {
+  const _LandingFilter({required this.label, required this.terms});
+  final String label;
+  final Set<String> terms;
+}
+
+/// Suggested-terms tile rendering above the category list. Two tiles
+/// side-by-side on tablet widths, stacked on phones. Each tile spells
+/// out a short rationale so a beginner immediately understands which
+/// path to start on.
+class _LandingTilesRow extends StatelessWidget {
+  const _LandingTilesRow({required this.onPick});
+  final ValueChanged<_LandingFilter> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+            child: Text(
+              'Suggested terms',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Two cards side-by-side once the body is at least
+              // 560px wide; stacked vertically below that. Avoids a
+              // half-width tile that wraps awkwardly on phones.
+              final wide = constraints.maxWidth >= 560;
+              final cards = [
+                _LandingTile(
+                  heading: 'New to reloading',
+                  body:
+                      'Foundational vocabulary every reloader hits in '
+                      'the first few sessions: COAL, headspace, '
+                      'pressure signs, charge weight, neck tension.',
+                  icon: Icons.school_outlined,
+                  onTap: () => onPick(_kBeginnerLandingFilter),
+                ),
+                _LandingTile(
+                  heading: 'Range Day workflow',
+                  body:
+                      'Terms a shooter sees at the firing line: mil, '
+                      'MOA, drop, wind drift, DOPE, density altitude, '
+                      'cant, hold-over.',
+                  icon: Icons.gps_fixed,
+                  onTap: () => onPick(_kRangeDayLandingFilter),
+                ),
+              ];
+              if (wide) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: cards[0]),
+                    const SizedBox(width: 8),
+                    Expanded(child: cards[1]),
+                  ],
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  cards[0],
+                  const SizedBox(height: 8),
+                  cards[1],
+                ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LandingTile extends StatelessWidget {
+  const _LandingTile({
+    required this.heading,
+    required this.body,
+    required this.icon,
+    required this.onTap,
+  });
+  final String heading;
+  final String body;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 20, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      heading,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                body,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Beginner-essentials filter — the foundational reloading vocabulary
+/// a new reloader meets in their first 5–10 sessions. Each term must
+/// appear in [kGlossaryTerms]; orphan strings silently drop out. Keep
+/// this list tight: the point of the tile is "where to start," not
+/// "every term that might apply."
+final _LandingFilter _kBeginnerLandingFilter = _LandingFilter(
+  label: 'New to reloading',
+  terms: const {
+    'Cartridge Overall Length',
+    'Cartridge Base To Ogive',
+    'Headspace',
+    'Crimp',
+    'Neck tension',
+    'Twist rate',
+    'Charge weight',
+    'Pressure',
+    'Pressure signs',
+    'Annealing',
+    'Full length sizing',
+    'Shoulder bump',
+    'Trimming',
+    'Chamfer / deburr',
+    'Magnum primer',
+    'Small / large pistol / rifle primers',
+    'Boxer primer',
+    'Standard Deviation (sample)',
+    'Extreme Spread',
+    'Muzzle Velocity',
+    'Ladder test',
+  },
+);
+
+/// Range-day-workflow filter — the terms a shooter encounters at the
+/// firing line, on the wind call, and in the ballistics solver.
+final _LandingFilter _kRangeDayLandingFilter = _LandingFilter(
+  label: 'Range Day workflow',
+  terms: const {
+    'Minute of Angle',
+    'Milliradian',
+    'Drop',
+    'Wind drift',
+    'Spin drift',
+    'Coriolis effect',
+    'DOPE',
+    'Hold / Holdover',
+    'Cant / level your reticle',
+    'Density altitude',
+    'Station pressure',
+    'Azimuth',
+    'Incline / decline angle',
+    'Group MOA',
+    'Mean radius',
+    'Hit probability',
+    'Ballistic Coefficient — G1',
+    'Ballistic Coefficient — G7',
+    'Reticle',
+    'First Focal Plane',
+    'Second Focal Plane',
+    'Click value',
+  },
+);
 
 class _CategorySection extends StatelessWidget {
   final String category;

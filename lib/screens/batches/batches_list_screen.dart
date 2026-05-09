@@ -54,6 +54,7 @@ import 'package:provider/provider.dart';
 
 import '../../repositories/batch_repository.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/empty_state_card.dart';
 import 'batch_detail_screen.dart';
 import 'batch_form_screen.dart';
 
@@ -82,8 +83,28 @@ class _BatchesListScreenState extends State<BatchesListScreen> {
         }
         final rows = snap.data ?? const <BatchWithRefs>[];
         if (rows.isEmpty) {
-          return const Center(
-            child: Text('No batches yet. Tap + to start your first.'),
+          // First-launch nudge. Disappears the moment the user opens
+          // a batch. Inline button mirrors the FAB.
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            child: EmptyStateCard(
+              heading: 'Start your first batch',
+              body:
+                  'A batch is one production run — pick a recipe, '
+                  'pick a brass lot, set how many rounds you\'re '
+                  'loading, and step through the process.',
+              actions: [
+                FilledButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const BatchFormScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Start batch'),
+                ),
+              ],
+            ),
           );
         }
         return ListView.separated(

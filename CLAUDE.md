@@ -628,10 +628,22 @@ Detailed READMEs live next to the source:
   (`org.jetbrains.kotlin.plugin.compose` v2.2.20) is declared at the
   settings level but only the `:wear` module applies it — the Flutter
   `:app` module is unaffected.
+- **Phone-side bridges are activated automatically.**
+  `MainActivity.configureFlutterEngine` instantiates `WatchBridge`
+  (and tears it down in `onDestroy`); `AppDelegate.didInitializeImplicitFlutterEngine`
+  calls `WatchSessionBridge.shared.activate(messenger:)` via a
+  registrar pulled from the implicit-engine plugin registry. As soon
+  as the Flutter engine is up, the Dart `WatchBridgeService` has live
+  channels — even if no companion app is paired yet, the channel
+  handlers respond to `isWatchPaired` / `isReachable` queries
+  correctly.
 - **iOS:** the Swift sources, plist, entitlements, and asset catalog
-  exist on disk under `ios/RunnerWatchApp/`, plus an iPhone-side bridge
-  stub at `ios/Runner/WatchSessionBridge.swift`. Neither is in the
-  Xcode project file — see manual steps below.
+  exist on disk under `ios/RunnerWatchApp/`, plus the iPhone-side
+  bridge at `ios/Runner/WatchSessionBridge.swift`. The bridge file
+  must still be in the Runner target's Sources build phase (Xcode
+  GUI step below); the watchOS target itself still needs to be added
+  in Xcode (the project file isn't safe to edit by hand for
+  multi-platform targets).
 
 ### What requires manual Xcode wiring (one-time)
 
@@ -658,14 +670,15 @@ Xcode's GUI:
    - `WATCHOS_DEPLOYMENT_TARGET = 10.0`
    - `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`
    - `ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor`
-5. Add `ios/Runner/WatchSessionBridge.swift` to the **Runner** (iPhone)
-   target's Sources build phase. Then in `AppDelegate.swift`, after the
-   `GeneratedPluginRegistrant.register(with: self)` call, add:
-   ```swift
-   if let controller = window?.rootViewController as? FlutterViewController {
-       WatchSessionBridge.shared.activate(with: controller)
-   }
-   ```
+5. The bridge file `ios/Runner/WatchSessionBridge.swift` is already
+   in the Runner target's Sources build phase (committed in
+   `Runner.xcodeproj/project.pbxproj`). The activation call in
+   `AppDelegate` is also already wired —
+   `didInitializeImplicitFlutterEngine` pulls a registrar out of the
+   implicit-engine `pluginRegistry` and calls
+   `WatchSessionBridge.shared.activate(messenger:)`. Confirm both
+   are still in place after any future Flutter SDK migration that
+   touches `AppDelegate.swift` or rewrites the Xcode project file.
 6. Provision App Group `group.com.johnsondigital.loadout` on
    developer.apple.com and enable it on **both** the Runner and the
    RunnerWatchApp targets. (Optional today — only needed once a feature
@@ -1138,7 +1151,8 @@ call:
 
 The Worker validates the Firebase token against Firebase's public
 JWKs, increments a per-user-per-month counter in KV (default cap
-30), forwards to Anthropic on the LoadOut secret key, and returns
+20 — see `cloud_worker/anthropic-proxy/src/quota.ts:43`), forwards
+to Anthropic on the LoadOut secret key, and returns
 `{ improved_draft, fields_changed, quota }`. Worker logs only
 timestamp, short UID prefix, status, latency, and token counts —
 **never the request body**.

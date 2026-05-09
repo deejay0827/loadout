@@ -6,15 +6,20 @@
 // feature code (DOPE glance, shot logging, load picker) can talk to the
 // watch without writing more Swift each time.
 //
-// To wire this up:
-//   1. Make sure this file is added to the Runner target in Xcode.
-//   2. In `AppDelegate.swift`, after `GeneratedPluginRegistrant.register(with: self)`,
-//      add:
+// Wiring (currently live in `AppDelegate.swift`):
+//   - Runner uses Flutter's newer `FlutterImplicitEngineDelegate` pattern,
+//     so the activation site is `didInitializeImplicitFlutterEngine` —
+//     not `didFinishLaunchingWithOptions`. The delegate hands us a
+//     `FlutterImplicitEngineBridge`; pulling a registrar out of its
+//     `pluginRegistry` gives a `FlutterBinaryMessenger`, which is all
+//     this bridge actually needs to construct the MethodChannel /
+//     EventChannel pair. See `activate(messenger:)`.
+//   - On the Dart side, see `lib/services/watch_bridge_service.dart`
+//     for the matching MethodChannel client.
 //
-//         WatchSessionBridge.shared.activate(with: self)
-//
-//   3. On the Dart side, see `lib/services/watch_bridge_service.dart`
-//      (when you create it) for the matching MethodChannel client.
+// One file change required outside this directory: confirm this file is
+// added to the **Runner** target in `Runner.xcworkspace` (Build Phases →
+// Compile Sources). It is NOT auto-discovered the way Pods are.
 
 import Foundation
 import Flutter
@@ -41,12 +46,31 @@ final class WatchSessionBridge: NSObject {
         super.init()
     }
 
+    /// Convenience entry point retained from the legacy
+    /// `FlutterAppDelegate` pattern, where activation happened inside
+    /// `didFinishLaunchingWithOptions` with the root view controller in
+    /// hand. New code should prefer [activate(messenger:)] — it doesn't
+    /// require pulling the controller out of the window hierarchy and
+    /// works with both the implicit-engine pattern AND the legacy one.
     func activate(with controller: FlutterViewController) {
+        activate(messenger: controller.binaryMessenger)
+    }
+
+    /// Activate the bridge on a known [FlutterBinaryMessenger]. This is
+    /// the activation path used by the implicit-engine pattern in
+    /// `AppDelegate.didInitializeImplicitFlutterEngine` — pulling a
+    /// registrar out of `engineBridge.pluginRegistry` and forwarding
+    /// `registrar.messenger()` here.
+    func activate(messenger: FlutterBinaryMessenger) {
         guard let session else { return }
+        // Idempotent — calling activate twice (e.g. if both the legacy
+        // and implicit paths fire on a future Flutter SDK migration)
+        // shouldn't double-register the channel handlers.
+        guard methodChannel == nil else { return }
+
         session.delegate = self
         session.activate()
 
-        let messenger = controller.binaryMessenger
         let method = FlutterMethodChannel(
             name: Self.methodChannelName,
             binaryMessenger: messenger

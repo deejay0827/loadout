@@ -259,7 +259,14 @@
       "Bash(git -C /Users/general/Development/Applications/LoadOut diff HEAD lib/widgets/reticle_picker.dart)",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('count:', len\\(d.get\\('ammo', d\\)\\)\\)\")",
       "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('total:', len\\(d\\)\\); [print\\('-', r.get\\('cartridge', '?'\\), r.get\\('name', '?'\\)\\) for r in d]\")",
-      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('total:', len\\(d\\)\\); [print\\('-', r.get\\('id','?'\\), '|', r.get\\('name','?'\\)\\) for r in d]\")"
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('total:', len\\(d\\)\\); [print\\('-', r.get\\('id','?'\\), '|', r.get\\('name','?'\\)\\) for r in d]\")",
+      "Bash(xargs ls -la)",
+      "Bash(git -C /Users/general/Development/Applications/LoadOut diff --stat HEAD lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(git -C /Users/general/Development/Applications/LoadOut diff HEAD lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(git -C /Users/general/Development/Applications/LoadOut diff HEAD -- lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(git -C /Users/general/Development/Applications/LoadOut diff --cached --stat lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(git -C /Users/general/Development/Applications/LoadOut status lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(ruby -e \"require 'xcodeproj'; puts 'xcodeproj available'\")"
     ]
   }
 }

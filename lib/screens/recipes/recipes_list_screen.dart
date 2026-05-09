@@ -86,6 +86,7 @@ import '../../repositories/recipe_repository.dart';
 import '../../services/recipe_pdf_service.dart';
 import '../../utils/natural_sort.dart';
 import '../../utils/responsive.dart';
+import '../../widgets/empty_state_card.dart';
 import '../../widgets/favorite_star_button.dart';
 import '../../widgets/quick_add_fab_stack.dart';
 import 'quick_add_recipe_screen.dart';
@@ -384,8 +385,45 @@ class _RecipesList extends StatelessWidget {
         // Tell the parent so it can prune stale selection ids.
         onListChanged(raw);
         if (raw.isEmpty) {
-          return const Center(
-            child: Text('No recipes yet. Tap + to create your first.'),
+          // First-launch nudge. Visible on every empty Recipes list,
+          // disappears the moment the user saves their first recipe
+          // (the parent StreamBuilder reflows). Inline buttons mirror
+          // the QuickAddFabStack so a beginner can act without
+          // hunting for the FAB; an expert who's already comfortable
+          // with the FAB can ignore the card and tap as usual.
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+            child: EmptyStateCard(
+              heading: 'Add your first recipe',
+              body:
+                  'A recipe is one load — caliber, powder, charge, '
+                  'bullet, primer, brass. Quick captures the four '
+                  'fields that matter; Standard opens the full form.',
+              actions: [
+                FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const QuickAddRecipeScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.bolt),
+                  label: const Text('Quick recipe'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const RecipeFormScreen(),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Standard recipe'),
+                ),
+              ],
+            ),
           );
         }
         // Favorites-first sort. The underlying stream is ordered by
