@@ -1871,6 +1871,142 @@ class UserComponentFavorites extends Table {
       ];
 }
 
+// ─────────────────────── Component Inventory (schema v32) ───────────────────────
+//
+// On-hand quantity tracking for the consumable components a reloader keeps
+// in the cabinet — powder (in grains), primers (count), bullets (count),
+// brass cases (count), and finished factory cartridges (rounds). Lives
+// under the Resources menu rather than the bottom nav by design: this
+// is parity-with-competitors-only and is NOT a stated focus of LoadOut.
+// See `lib/screens/inventory/inventory_list_screen.dart` for the entry
+// point and CLAUDE.md § 26 for the placement rationale.
+//
+// Two tables make this work:
+//
+//   * `ComponentInventory` — one row per "container" the user has on
+//     hand (one jug of powder, one box of primers, one tray of bullets,
+//     one batch of brass, one box of factory ammo). Quantity decreases
+//     as the component is consumed; the unit is fixed per-kind so
+//     summary math doesn't have to special-case per-row.
+//   * `ComponentInventoryAdjustments` — append-only ledger of every
+//     change to a `ComponentInventory.quantity` field. Keeps an audit
+//     trail so the user can answer "where did 60 grains of Varget go?"
+//     and so the auto-deduct hook from the batch-completion flow is
+//     traceable.
+//
+// Privacy contract is the same as every other user-data table: stays
+// on device, gets dumped into the export blob and the encrypted Cloud
+// Sync payload, NEVER touches a LoadOut-operated backend.
+
+@DataClassName('ComponentInventoryRow')
+class ComponentInventory extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// 'powder' | 'primer' | 'bullet' | 'brass' | 'cartridge'.
+  /// Unconstrained text rather than an enum so future kinds (e.g.
+  /// 'wad' for shotshell) don't need a schema migration.
+  TextColumn get kind => text()();
+
+  /// User-visible name. For powders / primers / brass this is the
+  /// component label as it appears in the recipe-form pickers
+  /// (e.g. "Hodgdon H4350", "Federal #210M", "Lapua"). For bullets
+  /// it's "Mfg Line WeightGr" (e.g. "Hornady ELD-Match 140gr"). For
+  /// cartridges (factory ammo) it's the cartridge name plus optional
+  /// brand suffix.
+  TextColumn get componentName => text()();
+
+  /// Optional FK back to the reference catalog row id when one
+  /// exists, for joining back. Nullable because user-typed customs
+  /// may not have a catalog row. NO `references()` constraint —
+  /// deleting a (theoretically read-only) catalog row should not
+  /// delete the user's inventory.
+  IntColumn get referenceId => integer().nullable()();
+
+  /// Quantity remaining. Units depend on `kind`:
+  ///   - powder: grains (gr)
+  ///   - primer: individual primer count (ct)
+  ///   - bullet: individual bullet count (ct)
+  ///   - brass:  individual case count (ct)
+  ///   - cartridge: rounds (rd)
+  /// Stored as `double` so powder can carry a fractional remainder
+  /// after partial scoops (e.g. 1462.4 gr); count-units always
+  /// store whole numbers but the type stays `real()` for uniformity.
+  RealColumn get quantity => real()();
+
+  /// Unit string for display ("gr", "ct", "rd"). Computed from
+  /// `kind` at insert time and stored so the UI doesn't have to
+  /// re-derive it on every render.
+  TextColumn get unit => text()();
+
+  /// Optional cost-per-unit at purchase, USD. Used by the "total
+  /// value on hand" rollup on the inventory list. Null means
+  /// "user didn't track cost" — the rollup excludes those rows
+  /// rather than treating them as $0.
+  RealColumn get unitCostUsd => real().nullable()();
+
+  /// Optional reorder threshold. When `quantity` falls below this
+  /// value the list view renders a "Low Stock" pill. Null disables
+  /// the warning for this row.
+  RealColumn get reorderThreshold => real().nullable()();
+
+  /// Free-form lot / batch identifier (e.g. powder lot number,
+  /// primer carton SKU). Distinct from the [PowderLots] / etc.
+  /// tables because those represent in-process fired brass batches;
+  /// this is just a label for the container itself.
+  TextColumn get lotNumber => text().nullable()();
+
+  /// When the user opened this container. Drives the powder shelf-life
+  /// hint shown on the list view. Null means "never opened" or
+  /// "opened date unknown".
+  DateTimeColumn get openedAt => dateTime().nullable()();
+
+  /// Free-form notes — vendor, sale price, intended use case, anything
+  /// the user wants to remember next time they reach for this jug.
+  TextColumn get notes => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Append-only ledger of every change applied to a
+/// [ComponentInventory.quantity]. Each row records the delta, the
+/// reason, and (for batch-driven deductions) the [Batches] row that
+/// consumed the stock. The repository writes adjustments inside the
+/// same transaction that updates the master `quantity`, so the
+/// ledger and the running total can never drift apart.
+@DataClassName('ComponentInventoryAdjustmentRow')
+class ComponentInventoryAdjustments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+
+  /// FK to the [ComponentInventory] row this adjustment applies to.
+  /// `references()` is intentional here — deleting an inventory row
+  /// should also delete its history. Cascade is handled at the
+  /// application layer in [ComponentInventoryRepository.delete].
+  IntColumn get inventoryId =>
+      integer().references(ComponentInventory, #id)();
+
+  /// Positive = added stock (purchase, replenishment); negative =
+  /// consumed (manual decrement, batch loaded, container scrapped).
+  /// Same units as the parent row's `unit` column.
+  RealColumn get delta => real()();
+
+  /// Reason discriminator:
+  ///   - 'manual'     — user typed in a new quantity / used Quick Adjust
+  ///   - 'batch'      — auto-deducted by a completed Batch row (when wired)
+  ///   - 'adjustment' — periodic recount that reset the quantity
+  ///   - 'opened'     — meta-event; usually delta=0 with `notes`
+  TextColumn get reason => text()();
+
+  /// Optional FK to the [Batches] row that consumed the stock when
+  /// `reason == 'batch'`. Nullable for all other reason codes.
+  IntColumn get batchLogId => integer().nullable()();
+
+  /// Optional free-form note on the adjustment.
+  TextColumn get notes => text().nullable()();
+
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
 // ─────────────────────── Database ───────────────────────
 
 @DriftDatabase(
@@ -1943,6 +2079,13 @@ class UserComponentFavorites extends Table {
     // `LoadDevelopmentSessions` gained `methodKind`, `distanceYd`,
     // `shotsPerCharge` columns).
     LoadDevelopmentShots,
+    // Schema v32 additions (Component Inventory — on-hand quantity
+    // tracking for powder / primer / bullet / brass / factory
+    // cartridges, plus an append-only adjustments ledger). Reached
+    // from Resources, intentionally NOT promoted to the bottom nav
+    // — see CLAUDE.md § 26 for the placement rationale.
+    ComponentInventory,
+    ComponentInventoryAdjustments,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1951,7 +2094,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 31;
+  int get schemaVersion => 32;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2551,6 +2694,22 @@ class AppDatabase extends _$AppDatabase {
               "WHERE session_type = 'seating_ladder'",
             );
           }
+          if (from < 32) {
+            // v32 — Component Inventory. Two coordinated additions
+            // for parity-with-competitors on-hand quantity tracking.
+            // Both tables are additive; no existing user data is
+            // touched. The Resources screen surfaces the new
+            // inventory list; bottom nav and onboarding are
+            // intentionally untouched per CLAUDE.md § 26.
+            //
+            // ComponentInventory: master rows (one per container of
+            // powder / primer / bullet / brass / factory ammo).
+            // ComponentInventoryAdjustments: append-only ledger of
+            // every quantity change, with FK to the master row +
+            // optional FK to the Batch row that consumed the stock.
+            await m.createTable(componentInventory);
+            await m.createTable(componentInventoryAdjustments);
+          }
         },
       );
 
@@ -2668,6 +2827,9 @@ class AppDatabase extends _$AppDatabase {
       await delete(primerLots).go();
       await delete(bulletLots).go();
       await delete(powderLots).go();
+      // v32 — Component Inventory. Adjustments first (FK to master).
+      await delete(componentInventoryAdjustments).go();
+      await delete(componentInventory).go();
       await delete(userFirearms).go();
       await delete(userLoads).go();
       await delete(customComponents).go();

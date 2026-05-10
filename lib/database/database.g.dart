@@ -34561,6 +34561,1305 @@ class LoadDevelopmentShotsCompanion
   }
 }
 
+class $ComponentInventoryTable extends ComponentInventory
+    with TableInfo<$ComponentInventoryTable, ComponentInventoryRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ComponentInventoryTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _componentNameMeta = const VerificationMeta(
+    'componentName',
+  );
+  @override
+  late final GeneratedColumn<String> componentName = GeneratedColumn<String>(
+    'component_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _referenceIdMeta = const VerificationMeta(
+    'referenceId',
+  );
+  @override
+  late final GeneratedColumn<int> referenceId = GeneratedColumn<int>(
+    'reference_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
+    'quantity',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _unitCostUsdMeta = const VerificationMeta(
+    'unitCostUsd',
+  );
+  @override
+  late final GeneratedColumn<double> unitCostUsd = GeneratedColumn<double>(
+    'unit_cost_usd',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _reorderThresholdMeta = const VerificationMeta(
+    'reorderThreshold',
+  );
+  @override
+  late final GeneratedColumn<double> reorderThreshold = GeneratedColumn<double>(
+    'reorder_threshold',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lotNumberMeta = const VerificationMeta(
+    'lotNumber',
+  );
+  @override
+  late final GeneratedColumn<String> lotNumber = GeneratedColumn<String>(
+    'lot_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _openedAtMeta = const VerificationMeta(
+    'openedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> openedAt = GeneratedColumn<DateTime>(
+    'opened_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    componentName,
+    referenceId,
+    quantity,
+    unit,
+    unitCostUsd,
+    reorderThreshold,
+    lotNumber,
+    openedAt,
+    notes,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'component_inventory';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ComponentInventoryRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('component_name')) {
+      context.handle(
+        _componentNameMeta,
+        componentName.isAcceptableOrUnknown(
+          data['component_name']!,
+          _componentNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_componentNameMeta);
+    }
+    if (data.containsKey('reference_id')) {
+      context.handle(
+        _referenceIdMeta,
+        referenceId.isAcceptableOrUnknown(
+          data['reference_id']!,
+          _referenceIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_quantityMeta);
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_unitMeta);
+    }
+    if (data.containsKey('unit_cost_usd')) {
+      context.handle(
+        _unitCostUsdMeta,
+        unitCostUsd.isAcceptableOrUnknown(
+          data['unit_cost_usd']!,
+          _unitCostUsdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('reorder_threshold')) {
+      context.handle(
+        _reorderThresholdMeta,
+        reorderThreshold.isAcceptableOrUnknown(
+          data['reorder_threshold']!,
+          _reorderThresholdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('lot_number')) {
+      context.handle(
+        _lotNumberMeta,
+        lotNumber.isAcceptableOrUnknown(data['lot_number']!, _lotNumberMeta),
+      );
+    }
+    if (data.containsKey('opened_at')) {
+      context.handle(
+        _openedAtMeta,
+        openedAt.isAcceptableOrUnknown(data['opened_at']!, _openedAtMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ComponentInventoryRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ComponentInventoryRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      componentName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}component_name'],
+      )!,
+      referenceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reference_id'],
+      ),
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}quantity'],
+      )!,
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      )!,
+      unitCostUsd: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}unit_cost_usd'],
+      ),
+      reorderThreshold: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}reorder_threshold'],
+      ),
+      lotNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lot_number'],
+      ),
+      openedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}opened_at'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ComponentInventoryTable createAlias(String alias) {
+    return $ComponentInventoryTable(attachedDatabase, alias);
+  }
+}
+
+class ComponentInventoryRow extends DataClass
+    implements Insertable<ComponentInventoryRow> {
+  final int id;
+
+  /// 'powder' | 'primer' | 'bullet' | 'brass' | 'cartridge'.
+  /// Unconstrained text rather than an enum so future kinds (e.g.
+  /// 'wad' for shotshell) don't need a schema migration.
+  final String kind;
+
+  /// User-visible name. For powders / primers / brass this is the
+  /// component label as it appears in the recipe-form pickers
+  /// (e.g. "Hodgdon H4350", "Federal #210M", "Lapua"). For bullets
+  /// it's "Mfg Line WeightGr" (e.g. "Hornady ELD-Match 140gr"). For
+  /// cartridges (factory ammo) it's the cartridge name plus optional
+  /// brand suffix.
+  final String componentName;
+
+  /// Optional FK back to the reference catalog row id when one
+  /// exists, for joining back. Nullable because user-typed customs
+  /// may not have a catalog row. NO `references()` constraint —
+  /// deleting a (theoretically read-only) catalog row should not
+  /// delete the user's inventory.
+  final int? referenceId;
+
+  /// Quantity remaining. Units depend on `kind`:
+  ///   - powder: grains (gr)
+  ///   - primer: individual primer count (ct)
+  ///   - bullet: individual bullet count (ct)
+  ///   - brass:  individual case count (ct)
+  ///   - cartridge: rounds (rd)
+  /// Stored as `double` so powder can carry a fractional remainder
+  /// after partial scoops (e.g. 1462.4 gr); count-units always
+  /// store whole numbers but the type stays `real()` for uniformity.
+  final double quantity;
+
+  /// Unit string for display ("gr", "ct", "rd"). Computed from
+  /// `kind` at insert time and stored so the UI doesn't have to
+  /// re-derive it on every render.
+  final String unit;
+
+  /// Optional cost-per-unit at purchase, USD. Used by the "total
+  /// value on hand" rollup on the inventory list. Null means
+  /// "user didn't track cost" — the rollup excludes those rows
+  /// rather than treating them as $0.
+  final double? unitCostUsd;
+
+  /// Optional reorder threshold. When `quantity` falls below this
+  /// value the list view renders a "Low Stock" pill. Null disables
+  /// the warning for this row.
+  final double? reorderThreshold;
+
+  /// Free-form lot / batch identifier (e.g. powder lot number,
+  /// primer carton SKU). Distinct from the [PowderLots] / etc.
+  /// tables because those represent in-process fired brass batches;
+  /// this is just a label for the container itself.
+  final String? lotNumber;
+
+  /// When the user opened this container. Drives the powder shelf-life
+  /// hint shown on the list view. Null means "never opened" or
+  /// "opened date unknown".
+  final DateTime? openedAt;
+
+  /// Free-form notes — vendor, sale price, intended use case, anything
+  /// the user wants to remember next time they reach for this jug.
+  final String? notes;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const ComponentInventoryRow({
+    required this.id,
+    required this.kind,
+    required this.componentName,
+    this.referenceId,
+    required this.quantity,
+    required this.unit,
+    this.unitCostUsd,
+    this.reorderThreshold,
+    this.lotNumber,
+    this.openedAt,
+    this.notes,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['kind'] = Variable<String>(kind);
+    map['component_name'] = Variable<String>(componentName);
+    if (!nullToAbsent || referenceId != null) {
+      map['reference_id'] = Variable<int>(referenceId);
+    }
+    map['quantity'] = Variable<double>(quantity);
+    map['unit'] = Variable<String>(unit);
+    if (!nullToAbsent || unitCostUsd != null) {
+      map['unit_cost_usd'] = Variable<double>(unitCostUsd);
+    }
+    if (!nullToAbsent || reorderThreshold != null) {
+      map['reorder_threshold'] = Variable<double>(reorderThreshold);
+    }
+    if (!nullToAbsent || lotNumber != null) {
+      map['lot_number'] = Variable<String>(lotNumber);
+    }
+    if (!nullToAbsent || openedAt != null) {
+      map['opened_at'] = Variable<DateTime>(openedAt);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ComponentInventoryCompanion toCompanion(bool nullToAbsent) {
+    return ComponentInventoryCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      componentName: Value(componentName),
+      referenceId: referenceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(referenceId),
+      quantity: Value(quantity),
+      unit: Value(unit),
+      unitCostUsd: unitCostUsd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(unitCostUsd),
+      reorderThreshold: reorderThreshold == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reorderThreshold),
+      lotNumber: lotNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lotNumber),
+      openedAt: openedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(openedAt),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory ComponentInventoryRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ComponentInventoryRow(
+      id: serializer.fromJson<int>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      componentName: serializer.fromJson<String>(json['componentName']),
+      referenceId: serializer.fromJson<int?>(json['referenceId']),
+      quantity: serializer.fromJson<double>(json['quantity']),
+      unit: serializer.fromJson<String>(json['unit']),
+      unitCostUsd: serializer.fromJson<double?>(json['unitCostUsd']),
+      reorderThreshold: serializer.fromJson<double?>(json['reorderThreshold']),
+      lotNumber: serializer.fromJson<String?>(json['lotNumber']),
+      openedAt: serializer.fromJson<DateTime?>(json['openedAt']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'kind': serializer.toJson<String>(kind),
+      'componentName': serializer.toJson<String>(componentName),
+      'referenceId': serializer.toJson<int?>(referenceId),
+      'quantity': serializer.toJson<double>(quantity),
+      'unit': serializer.toJson<String>(unit),
+      'unitCostUsd': serializer.toJson<double?>(unitCostUsd),
+      'reorderThreshold': serializer.toJson<double?>(reorderThreshold),
+      'lotNumber': serializer.toJson<String?>(lotNumber),
+      'openedAt': serializer.toJson<DateTime?>(openedAt),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  ComponentInventoryRow copyWith({
+    int? id,
+    String? kind,
+    String? componentName,
+    Value<int?> referenceId = const Value.absent(),
+    double? quantity,
+    String? unit,
+    Value<double?> unitCostUsd = const Value.absent(),
+    Value<double?> reorderThreshold = const Value.absent(),
+    Value<String?> lotNumber = const Value.absent(),
+    Value<DateTime?> openedAt = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => ComponentInventoryRow(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    componentName: componentName ?? this.componentName,
+    referenceId: referenceId.present ? referenceId.value : this.referenceId,
+    quantity: quantity ?? this.quantity,
+    unit: unit ?? this.unit,
+    unitCostUsd: unitCostUsd.present ? unitCostUsd.value : this.unitCostUsd,
+    reorderThreshold: reorderThreshold.present
+        ? reorderThreshold.value
+        : this.reorderThreshold,
+    lotNumber: lotNumber.present ? lotNumber.value : this.lotNumber,
+    openedAt: openedAt.present ? openedAt.value : this.openedAt,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  ComponentInventoryRow copyWithCompanion(ComponentInventoryCompanion data) {
+    return ComponentInventoryRow(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      componentName: data.componentName.present
+          ? data.componentName.value
+          : this.componentName,
+      referenceId: data.referenceId.present
+          ? data.referenceId.value
+          : this.referenceId,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      unit: data.unit.present ? data.unit.value : this.unit,
+      unitCostUsd: data.unitCostUsd.present
+          ? data.unitCostUsd.value
+          : this.unitCostUsd,
+      reorderThreshold: data.reorderThreshold.present
+          ? data.reorderThreshold.value
+          : this.reorderThreshold,
+      lotNumber: data.lotNumber.present ? data.lotNumber.value : this.lotNumber,
+      openedAt: data.openedAt.present ? data.openedAt.value : this.openedAt,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ComponentInventoryRow(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('componentName: $componentName, ')
+          ..write('referenceId: $referenceId, ')
+          ..write('quantity: $quantity, ')
+          ..write('unit: $unit, ')
+          ..write('unitCostUsd: $unitCostUsd, ')
+          ..write('reorderThreshold: $reorderThreshold, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    componentName,
+    referenceId,
+    quantity,
+    unit,
+    unitCostUsd,
+    reorderThreshold,
+    lotNumber,
+    openedAt,
+    notes,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ComponentInventoryRow &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.componentName == this.componentName &&
+          other.referenceId == this.referenceId &&
+          other.quantity == this.quantity &&
+          other.unit == this.unit &&
+          other.unitCostUsd == this.unitCostUsd &&
+          other.reorderThreshold == this.reorderThreshold &&
+          other.lotNumber == this.lotNumber &&
+          other.openedAt == this.openedAt &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ComponentInventoryCompanion
+    extends UpdateCompanion<ComponentInventoryRow> {
+  final Value<int> id;
+  final Value<String> kind;
+  final Value<String> componentName;
+  final Value<int?> referenceId;
+  final Value<double> quantity;
+  final Value<String> unit;
+  final Value<double?> unitCostUsd;
+  final Value<double?> reorderThreshold;
+  final Value<String?> lotNumber;
+  final Value<DateTime?> openedAt;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  const ComponentInventoryCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.componentName = const Value.absent(),
+    this.referenceId = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.unit = const Value.absent(),
+    this.unitCostUsd = const Value.absent(),
+    this.reorderThreshold = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  ComponentInventoryCompanion.insert({
+    this.id = const Value.absent(),
+    required String kind,
+    required String componentName,
+    this.referenceId = const Value.absent(),
+    required double quantity,
+    required String unit,
+    this.unitCostUsd = const Value.absent(),
+    this.reorderThreshold = const Value.absent(),
+    this.lotNumber = const Value.absent(),
+    this.openedAt = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  }) : kind = Value(kind),
+       componentName = Value(componentName),
+       quantity = Value(quantity),
+       unit = Value(unit);
+  static Insertable<ComponentInventoryRow> custom({
+    Expression<int>? id,
+    Expression<String>? kind,
+    Expression<String>? componentName,
+    Expression<int>? referenceId,
+    Expression<double>? quantity,
+    Expression<String>? unit,
+    Expression<double>? unitCostUsd,
+    Expression<double>? reorderThreshold,
+    Expression<String>? lotNumber,
+    Expression<DateTime>? openedAt,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (componentName != null) 'component_name': componentName,
+      if (referenceId != null) 'reference_id': referenceId,
+      if (quantity != null) 'quantity': quantity,
+      if (unit != null) 'unit': unit,
+      if (unitCostUsd != null) 'unit_cost_usd': unitCostUsd,
+      if (reorderThreshold != null) 'reorder_threshold': reorderThreshold,
+      if (lotNumber != null) 'lot_number': lotNumber,
+      if (openedAt != null) 'opened_at': openedAt,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  ComponentInventoryCompanion copyWith({
+    Value<int>? id,
+    Value<String>? kind,
+    Value<String>? componentName,
+    Value<int?>? referenceId,
+    Value<double>? quantity,
+    Value<String>? unit,
+    Value<double?>? unitCostUsd,
+    Value<double?>? reorderThreshold,
+    Value<String?>? lotNumber,
+    Value<DateTime?>? openedAt,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+  }) {
+    return ComponentInventoryCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      componentName: componentName ?? this.componentName,
+      referenceId: referenceId ?? this.referenceId,
+      quantity: quantity ?? this.quantity,
+      unit: unit ?? this.unit,
+      unitCostUsd: unitCostUsd ?? this.unitCostUsd,
+      reorderThreshold: reorderThreshold ?? this.reorderThreshold,
+      lotNumber: lotNumber ?? this.lotNumber,
+      openedAt: openedAt ?? this.openedAt,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (componentName.present) {
+      map['component_name'] = Variable<String>(componentName.value);
+    }
+    if (referenceId.present) {
+      map['reference_id'] = Variable<int>(referenceId.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<double>(quantity.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
+    }
+    if (unitCostUsd.present) {
+      map['unit_cost_usd'] = Variable<double>(unitCostUsd.value);
+    }
+    if (reorderThreshold.present) {
+      map['reorder_threshold'] = Variable<double>(reorderThreshold.value);
+    }
+    if (lotNumber.present) {
+      map['lot_number'] = Variable<String>(lotNumber.value);
+    }
+    if (openedAt.present) {
+      map['opened_at'] = Variable<DateTime>(openedAt.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ComponentInventoryCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('componentName: $componentName, ')
+          ..write('referenceId: $referenceId, ')
+          ..write('quantity: $quantity, ')
+          ..write('unit: $unit, ')
+          ..write('unitCostUsd: $unitCostUsd, ')
+          ..write('reorderThreshold: $reorderThreshold, ')
+          ..write('lotNumber: $lotNumber, ')
+          ..write('openedAt: $openedAt, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ComponentInventoryAdjustmentsTable extends ComponentInventoryAdjustments
+    with
+        TableInfo<
+          $ComponentInventoryAdjustmentsTable,
+          ComponentInventoryAdjustmentRow
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ComponentInventoryAdjustmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _inventoryIdMeta = const VerificationMeta(
+    'inventoryId',
+  );
+  @override
+  late final GeneratedColumn<int> inventoryId = GeneratedColumn<int>(
+    'inventory_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES component_inventory (id)',
+    ),
+  );
+  static const VerificationMeta _deltaMeta = const VerificationMeta('delta');
+  @override
+  late final GeneratedColumn<double> delta = GeneratedColumn<double>(
+    'delta',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _batchLogIdMeta = const VerificationMeta(
+    'batchLogId',
+  );
+  @override
+  late final GeneratedColumn<int> batchLogId = GeneratedColumn<int>(
+    'batch_log_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    inventoryId,
+    delta,
+    reason,
+    batchLogId,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'component_inventory_adjustments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ComponentInventoryAdjustmentRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('inventory_id')) {
+      context.handle(
+        _inventoryIdMeta,
+        inventoryId.isAcceptableOrUnknown(
+          data['inventory_id']!,
+          _inventoryIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_inventoryIdMeta);
+    }
+    if (data.containsKey('delta')) {
+      context.handle(
+        _deltaMeta,
+        delta.isAcceptableOrUnknown(data['delta']!, _deltaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_deltaMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('batch_log_id')) {
+      context.handle(
+        _batchLogIdMeta,
+        batchLogId.isAcceptableOrUnknown(
+          data['batch_log_id']!,
+          _batchLogIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ComponentInventoryAdjustmentRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ComponentInventoryAdjustmentRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      inventoryId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}inventory_id'],
+      )!,
+      delta: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}delta'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      batchLogId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}batch_log_id'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ComponentInventoryAdjustmentsTable createAlias(String alias) {
+    return $ComponentInventoryAdjustmentsTable(attachedDatabase, alias);
+  }
+}
+
+class ComponentInventoryAdjustmentRow extends DataClass
+    implements Insertable<ComponentInventoryAdjustmentRow> {
+  final int id;
+
+  /// FK to the [ComponentInventory] row this adjustment applies to.
+  /// `references()` is intentional here — deleting an inventory row
+  /// should also delete its history. Cascade is handled at the
+  /// application layer in [ComponentInventoryRepository.delete].
+  final int inventoryId;
+
+  /// Positive = added stock (purchase, replenishment); negative =
+  /// consumed (manual decrement, batch loaded, container scrapped).
+  /// Same units as the parent row's `unit` column.
+  final double delta;
+
+  /// Reason discriminator:
+  ///   - 'manual'     — user typed in a new quantity / used Quick Adjust
+  ///   - 'batch'      — auto-deducted by a completed Batch row (when wired)
+  ///   - 'adjustment' — periodic recount that reset the quantity
+  ///   - 'opened'     — meta-event; usually delta=0 with `notes`
+  final String reason;
+
+  /// Optional FK to the [Batches] row that consumed the stock when
+  /// `reason == 'batch'`. Nullable for all other reason codes.
+  final int? batchLogId;
+
+  /// Optional free-form note on the adjustment.
+  final String? notes;
+  final DateTime createdAt;
+  const ComponentInventoryAdjustmentRow({
+    required this.id,
+    required this.inventoryId,
+    required this.delta,
+    required this.reason,
+    this.batchLogId,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['inventory_id'] = Variable<int>(inventoryId);
+    map['delta'] = Variable<double>(delta);
+    map['reason'] = Variable<String>(reason);
+    if (!nullToAbsent || batchLogId != null) {
+      map['batch_log_id'] = Variable<int>(batchLogId);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  ComponentInventoryAdjustmentsCompanion toCompanion(bool nullToAbsent) {
+    return ComponentInventoryAdjustmentsCompanion(
+      id: Value(id),
+      inventoryId: Value(inventoryId),
+      delta: Value(delta),
+      reason: Value(reason),
+      batchLogId: batchLogId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(batchLogId),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory ComponentInventoryAdjustmentRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ComponentInventoryAdjustmentRow(
+      id: serializer.fromJson<int>(json['id']),
+      inventoryId: serializer.fromJson<int>(json['inventoryId']),
+      delta: serializer.fromJson<double>(json['delta']),
+      reason: serializer.fromJson<String>(json['reason']),
+      batchLogId: serializer.fromJson<int?>(json['batchLogId']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'inventoryId': serializer.toJson<int>(inventoryId),
+      'delta': serializer.toJson<double>(delta),
+      'reason': serializer.toJson<String>(reason),
+      'batchLogId': serializer.toJson<int?>(batchLogId),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  ComponentInventoryAdjustmentRow copyWith({
+    int? id,
+    int? inventoryId,
+    double? delta,
+    String? reason,
+    Value<int?> batchLogId = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => ComponentInventoryAdjustmentRow(
+    id: id ?? this.id,
+    inventoryId: inventoryId ?? this.inventoryId,
+    delta: delta ?? this.delta,
+    reason: reason ?? this.reason,
+    batchLogId: batchLogId.present ? batchLogId.value : this.batchLogId,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  ComponentInventoryAdjustmentRow copyWithCompanion(
+    ComponentInventoryAdjustmentsCompanion data,
+  ) {
+    return ComponentInventoryAdjustmentRow(
+      id: data.id.present ? data.id.value : this.id,
+      inventoryId: data.inventoryId.present
+          ? data.inventoryId.value
+          : this.inventoryId,
+      delta: data.delta.present ? data.delta.value : this.delta,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      batchLogId: data.batchLogId.present
+          ? data.batchLogId.value
+          : this.batchLogId,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ComponentInventoryAdjustmentRow(')
+          ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
+          ..write('delta: $delta, ')
+          ..write('reason: $reason, ')
+          ..write('batchLogId: $batchLogId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, inventoryId, delta, reason, batchLogId, notes, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ComponentInventoryAdjustmentRow &&
+          other.id == this.id &&
+          other.inventoryId == this.inventoryId &&
+          other.delta == this.delta &&
+          other.reason == this.reason &&
+          other.batchLogId == this.batchLogId &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class ComponentInventoryAdjustmentsCompanion
+    extends UpdateCompanion<ComponentInventoryAdjustmentRow> {
+  final Value<int> id;
+  final Value<int> inventoryId;
+  final Value<double> delta;
+  final Value<String> reason;
+  final Value<int?> batchLogId;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const ComponentInventoryAdjustmentsCompanion({
+    this.id = const Value.absent(),
+    this.inventoryId = const Value.absent(),
+    this.delta = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.batchLogId = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  ComponentInventoryAdjustmentsCompanion.insert({
+    this.id = const Value.absent(),
+    required int inventoryId,
+    required double delta,
+    required String reason,
+    this.batchLogId = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : inventoryId = Value(inventoryId),
+       delta = Value(delta),
+       reason = Value(reason);
+  static Insertable<ComponentInventoryAdjustmentRow> custom({
+    Expression<int>? id,
+    Expression<int>? inventoryId,
+    Expression<double>? delta,
+    Expression<String>? reason,
+    Expression<int>? batchLogId,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (inventoryId != null) 'inventory_id': inventoryId,
+      if (delta != null) 'delta': delta,
+      if (reason != null) 'reason': reason,
+      if (batchLogId != null) 'batch_log_id': batchLogId,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  ComponentInventoryAdjustmentsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? inventoryId,
+    Value<double>? delta,
+    Value<String>? reason,
+    Value<int?>? batchLogId,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return ComponentInventoryAdjustmentsCompanion(
+      id: id ?? this.id,
+      inventoryId: inventoryId ?? this.inventoryId,
+      delta: delta ?? this.delta,
+      reason: reason ?? this.reason,
+      batchLogId: batchLogId ?? this.batchLogId,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (inventoryId.present) {
+      map['inventory_id'] = Variable<int>(inventoryId.value);
+    }
+    if (delta.present) {
+      map['delta'] = Variable<double>(delta.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (batchLogId.present) {
+      map['batch_log_id'] = Variable<int>(batchLogId.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ComponentInventoryAdjustmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('inventoryId: $inventoryId, ')
+          ..write('delta: $delta, ')
+          ..write('reason: $reason, ')
+          ..write('batchLogId: $batchLogId, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -34628,6 +35927,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $UserComponentFavoritesTable(this);
   late final $LoadDevelopmentShotsTable loadDevelopmentShots =
       $LoadDevelopmentShotsTable(this);
+  late final $ComponentInventoryTable componentInventory =
+      $ComponentInventoryTable(this);
+  late final $ComponentInventoryAdjustmentsTable componentInventoryAdjustments =
+      $ComponentInventoryAdjustmentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -34675,6 +35978,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userFavorites,
     userComponentFavorites,
     loadDevelopmentShots,
+    componentInventory,
+    componentInventoryAdjustments,
   ];
 }
 
@@ -57577,6 +58882,883 @@ typedef $$LoadDevelopmentShotsTableProcessedTableManager =
       LoadDevelopmentShotRow,
       PrefetchHooks Function({bool sessionId})
     >;
+typedef $$ComponentInventoryTableCreateCompanionBuilder =
+    ComponentInventoryCompanion Function({
+      Value<int> id,
+      required String kind,
+      required String componentName,
+      Value<int?> referenceId,
+      required double quantity,
+      required String unit,
+      Value<double?> unitCostUsd,
+      Value<double?> reorderThreshold,
+      Value<String?> lotNumber,
+      Value<DateTime?> openedAt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+typedef $$ComponentInventoryTableUpdateCompanionBuilder =
+    ComponentInventoryCompanion Function({
+      Value<int> id,
+      Value<String> kind,
+      Value<String> componentName,
+      Value<int?> referenceId,
+      Value<double> quantity,
+      Value<String> unit,
+      Value<double?> unitCostUsd,
+      Value<double?> reorderThreshold,
+      Value<String?> lotNumber,
+      Value<DateTime?> openedAt,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+    });
+
+final class $$ComponentInventoryTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ComponentInventoryTable,
+          ComponentInventoryRow
+        > {
+  $$ComponentInventoryTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<
+    $ComponentInventoryAdjustmentsTable,
+    List<ComponentInventoryAdjustmentRow>
+  >
+  _componentInventoryAdjustmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.componentInventoryAdjustments,
+        aliasName: $_aliasNameGenerator(
+          db.componentInventory.id,
+          db.componentInventoryAdjustments.inventoryId,
+        ),
+      );
+
+  $$ComponentInventoryAdjustmentsTableProcessedTableManager
+  get componentInventoryAdjustmentsRefs {
+    final manager = $$ComponentInventoryAdjustmentsTableTableManager(
+      $_db,
+      $_db.componentInventoryAdjustments,
+    ).filter((f) => f.inventoryId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _componentInventoryAdjustmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ComponentInventoryTableFilterComposer
+    extends Composer<_$AppDatabase, $ComponentInventoryTable> {
+  $$ComponentInventoryTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get componentName => $composableBuilder(
+    column: $table.componentName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get unitCostUsd => $composableBuilder(
+    column: $table.unitCostUsd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get reorderThreshold => $composableBuilder(
+    column: $table.reorderThreshold,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> componentInventoryAdjustmentsRefs(
+    Expression<bool> Function(
+      $$ComponentInventoryAdjustmentsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$ComponentInventoryAdjustmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.componentInventoryAdjustments,
+          getReferencedColumn: (t) => t.inventoryId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ComponentInventoryAdjustmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.componentInventoryAdjustments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ComponentInventoryTableOrderingComposer
+    extends Composer<_$AppDatabase, $ComponentInventoryTable> {
+  $$ComponentInventoryTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get componentName => $composableBuilder(
+    column: $table.componentName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get unitCostUsd => $composableBuilder(
+    column: $table.unitCostUsd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get reorderThreshold => $composableBuilder(
+    column: $table.reorderThreshold,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lotNumber => $composableBuilder(
+    column: $table.lotNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get openedAt => $composableBuilder(
+    column: $table.openedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ComponentInventoryTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ComponentInventoryTable> {
+  $$ComponentInventoryTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get componentName => $composableBuilder(
+    column: $table.componentName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get referenceId => $composableBuilder(
+    column: $table.referenceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
+
+  GeneratedColumn<double> get unitCostUsd => $composableBuilder(
+    column: $table.unitCostUsd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get reorderThreshold => $composableBuilder(
+    column: $table.reorderThreshold,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lotNumber =>
+      $composableBuilder(column: $table.lotNumber, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get openedAt =>
+      $composableBuilder(column: $table.openedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> componentInventoryAdjustmentsRefs<T extends Object>(
+    Expression<T> Function(
+      $$ComponentInventoryAdjustmentsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$ComponentInventoryAdjustmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.componentInventoryAdjustments,
+          getReferencedColumn: (t) => t.inventoryId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ComponentInventoryAdjustmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.componentInventoryAdjustments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ComponentInventoryTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ComponentInventoryTable,
+          ComponentInventoryRow,
+          $$ComponentInventoryTableFilterComposer,
+          $$ComponentInventoryTableOrderingComposer,
+          $$ComponentInventoryTableAnnotationComposer,
+          $$ComponentInventoryTableCreateCompanionBuilder,
+          $$ComponentInventoryTableUpdateCompanionBuilder,
+          (ComponentInventoryRow, $$ComponentInventoryTableReferences),
+          ComponentInventoryRow,
+          PrefetchHooks Function({bool componentInventoryAdjustmentsRefs})
+        > {
+  $$ComponentInventoryTableTableManager(
+    _$AppDatabase db,
+    $ComponentInventoryTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ComponentInventoryTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ComponentInventoryTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ComponentInventoryTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> componentName = const Value.absent(),
+                Value<int?> referenceId = const Value.absent(),
+                Value<double> quantity = const Value.absent(),
+                Value<String> unit = const Value.absent(),
+                Value<double?> unitCostUsd = const Value.absent(),
+                Value<double?> reorderThreshold = const Value.absent(),
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> openedAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => ComponentInventoryCompanion(
+                id: id,
+                kind: kind,
+                componentName: componentName,
+                referenceId: referenceId,
+                quantity: quantity,
+                unit: unit,
+                unitCostUsd: unitCostUsd,
+                reorderThreshold: reorderThreshold,
+                lotNumber: lotNumber,
+                openedAt: openedAt,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String kind,
+                required String componentName,
+                Value<int?> referenceId = const Value.absent(),
+                required double quantity,
+                required String unit,
+                Value<double?> unitCostUsd = const Value.absent(),
+                Value<double?> reorderThreshold = const Value.absent(),
+                Value<String?> lotNumber = const Value.absent(),
+                Value<DateTime?> openedAt = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => ComponentInventoryCompanion.insert(
+                id: id,
+                kind: kind,
+                componentName: componentName,
+                referenceId: referenceId,
+                quantity: quantity,
+                unit: unit,
+                unitCostUsd: unitCostUsd,
+                reorderThreshold: reorderThreshold,
+                lotNumber: lotNumber,
+                openedAt: openedAt,
+                notes: notes,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ComponentInventoryTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({componentInventoryAdjustmentsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (componentInventoryAdjustmentsRefs)
+                  db.componentInventoryAdjustments,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (componentInventoryAdjustmentsRefs)
+                    await $_getPrefetchedData<
+                      ComponentInventoryRow,
+                      $ComponentInventoryTable,
+                      ComponentInventoryAdjustmentRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ComponentInventoryTableReferences
+                          ._componentInventoryAdjustmentsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ComponentInventoryTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).componentInventoryAdjustmentsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.inventoryId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ComponentInventoryTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ComponentInventoryTable,
+      ComponentInventoryRow,
+      $$ComponentInventoryTableFilterComposer,
+      $$ComponentInventoryTableOrderingComposer,
+      $$ComponentInventoryTableAnnotationComposer,
+      $$ComponentInventoryTableCreateCompanionBuilder,
+      $$ComponentInventoryTableUpdateCompanionBuilder,
+      (ComponentInventoryRow, $$ComponentInventoryTableReferences),
+      ComponentInventoryRow,
+      PrefetchHooks Function({bool componentInventoryAdjustmentsRefs})
+    >;
+typedef $$ComponentInventoryAdjustmentsTableCreateCompanionBuilder =
+    ComponentInventoryAdjustmentsCompanion Function({
+      Value<int> id,
+      required int inventoryId,
+      required double delta,
+      required String reason,
+      Value<int?> batchLogId,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$ComponentInventoryAdjustmentsTableUpdateCompanionBuilder =
+    ComponentInventoryAdjustmentsCompanion Function({
+      Value<int> id,
+      Value<int> inventoryId,
+      Value<double> delta,
+      Value<String> reason,
+      Value<int?> batchLogId,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$ComponentInventoryAdjustmentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ComponentInventoryAdjustmentsTable,
+          ComponentInventoryAdjustmentRow
+        > {
+  $$ComponentInventoryAdjustmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ComponentInventoryTable _inventoryIdTable(_$AppDatabase db) =>
+      db.componentInventory.createAlias(
+        $_aliasNameGenerator(
+          db.componentInventoryAdjustments.inventoryId,
+          db.componentInventory.id,
+        ),
+      );
+
+  $$ComponentInventoryTableProcessedTableManager get inventoryId {
+    final $_column = $_itemColumn<int>('inventory_id')!;
+
+    final manager = $$ComponentInventoryTableTableManager(
+      $_db,
+      $_db.componentInventory,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_inventoryIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ComponentInventoryAdjustmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $ComponentInventoryAdjustmentsTable> {
+  $$ComponentInventoryAdjustmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get delta => $composableBuilder(
+    column: $table.delta,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get batchLogId => $composableBuilder(
+    column: $table.batchLogId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ComponentInventoryTableFilterComposer get inventoryId {
+    final $$ComponentInventoryTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.inventoryId,
+      referencedTable: $db.componentInventory,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ComponentInventoryTableFilterComposer(
+            $db: $db,
+            $table: $db.componentInventory,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ComponentInventoryAdjustmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ComponentInventoryAdjustmentsTable> {
+  $$ComponentInventoryAdjustmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get delta => $composableBuilder(
+    column: $table.delta,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get batchLogId => $composableBuilder(
+    column: $table.batchLogId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ComponentInventoryTableOrderingComposer get inventoryId {
+    final $$ComponentInventoryTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.inventoryId,
+      referencedTable: $db.componentInventory,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ComponentInventoryTableOrderingComposer(
+            $db: $db,
+            $table: $db.componentInventory,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ComponentInventoryAdjustmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ComponentInventoryAdjustmentsTable> {
+  $$ComponentInventoryAdjustmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get delta =>
+      $composableBuilder(column: $table.delta, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<int> get batchLogId => $composableBuilder(
+    column: $table.batchLogId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$ComponentInventoryTableAnnotationComposer get inventoryId {
+    final $$ComponentInventoryTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.inventoryId,
+          referencedTable: $db.componentInventory,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ComponentInventoryTableAnnotationComposer(
+                $db: $db,
+                $table: $db.componentInventory,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ComponentInventoryAdjustmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ComponentInventoryAdjustmentsTable,
+          ComponentInventoryAdjustmentRow,
+          $$ComponentInventoryAdjustmentsTableFilterComposer,
+          $$ComponentInventoryAdjustmentsTableOrderingComposer,
+          $$ComponentInventoryAdjustmentsTableAnnotationComposer,
+          $$ComponentInventoryAdjustmentsTableCreateCompanionBuilder,
+          $$ComponentInventoryAdjustmentsTableUpdateCompanionBuilder,
+          (
+            ComponentInventoryAdjustmentRow,
+            $$ComponentInventoryAdjustmentsTableReferences,
+          ),
+          ComponentInventoryAdjustmentRow,
+          PrefetchHooks Function({bool inventoryId})
+        > {
+  $$ComponentInventoryAdjustmentsTableTableManager(
+    _$AppDatabase db,
+    $ComponentInventoryAdjustmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ComponentInventoryAdjustmentsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ComponentInventoryAdjustmentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ComponentInventoryAdjustmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> inventoryId = const Value.absent(),
+                Value<double> delta = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<int?> batchLogId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ComponentInventoryAdjustmentsCompanion(
+                id: id,
+                inventoryId: inventoryId,
+                delta: delta,
+                reason: reason,
+                batchLogId: batchLogId,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int inventoryId,
+                required double delta,
+                required String reason,
+                Value<int?> batchLogId = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => ComponentInventoryAdjustmentsCompanion.insert(
+                id: id,
+                inventoryId: inventoryId,
+                delta: delta,
+                reason: reason,
+                batchLogId: batchLogId,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ComponentInventoryAdjustmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({inventoryId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (inventoryId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.inventoryId,
+                                referencedTable:
+                                    $$ComponentInventoryAdjustmentsTableReferences
+                                        ._inventoryIdTable(db),
+                                referencedColumn:
+                                    $$ComponentInventoryAdjustmentsTableReferences
+                                        ._inventoryIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ComponentInventoryAdjustmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ComponentInventoryAdjustmentsTable,
+      ComponentInventoryAdjustmentRow,
+      $$ComponentInventoryAdjustmentsTableFilterComposer,
+      $$ComponentInventoryAdjustmentsTableOrderingComposer,
+      $$ComponentInventoryAdjustmentsTableAnnotationComposer,
+      $$ComponentInventoryAdjustmentsTableCreateCompanionBuilder,
+      $$ComponentInventoryAdjustmentsTableUpdateCompanionBuilder,
+      (
+        ComponentInventoryAdjustmentRow,
+        $$ComponentInventoryAdjustmentsTableReferences,
+      ),
+      ComponentInventoryAdjustmentRow,
+      PrefetchHooks Function({bool inventoryId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -57671,4 +59853,12 @@ class $AppDatabaseManager {
       );
   $$LoadDevelopmentShotsTableTableManager get loadDevelopmentShots =>
       $$LoadDevelopmentShotsTableTableManager(_db, _db.loadDevelopmentShots);
+  $$ComponentInventoryTableTableManager get componentInventory =>
+      $$ComponentInventoryTableTableManager(_db, _db.componentInventory);
+  $$ComponentInventoryAdjustmentsTableTableManager
+  get componentInventoryAdjustments =>
+      $$ComponentInventoryAdjustmentsTableTableManager(
+        _db,
+        _db.componentInventoryAdjustments,
+      );
 }

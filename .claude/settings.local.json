@@ -293,7 +293,9 @@
       "WebFetch(domain:www.pewpewtactical.com)",
       "WebFetch(domain:vihtavuori.com)",
       "WebFetch(domain:www.bluestacks.com)",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "Bash(mkdir -p lib/screens/inventory && cp .claude/worktrees/agent-a8629d9cd0938abdd/lib/screens/inventory/*.dart lib/screens/inventory/ && cp .claude/worktrees/agent-a8629d9cd0938abdd/lib/repositories/component_inventory_repository.dart lib/repositories/ && cp .claude/worktrees/agent-a8629d9cd0938abdd/test/component_inventory_repository_test.dart test/ && ls lib/screens/inventory/ && echo \"---\" && wc -l lib/repositories/component_inventory_repository.dart test/component_inventory_repository_test.dart)",
+      "Bash(grep -n \"if \\(from < 31\\)\\\\|if \\(from < 30\\)\\\\|^        },$\" lib/database/database.dart)"
     ]
   }
 }

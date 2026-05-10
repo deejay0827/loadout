@@ -1,0 +1,62 @@
+{
+    "@@locale": "hu",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. Hungarian shooting magazines (Kaliber) and the Hungarian Shooting Federation's reloading community are good references. Verify lőpor / lövedék / hüvely / gyutacs and whether újratöltés is the standard noun for handloading.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Receptek",
+    "navFirearms": "Fegyverek",
+    "navBatches": "Tételek",
+    "navBallistics": "Ballisztika",
+    "navRangeDay": "Lőtér Nap",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Mentés",
+    "commonCancel": "Mégse",
+    "commonDelete": "Törlés",
+    "commonEdit": "Szerkesztés",
+    "commonNext": "Tovább",
+    "commonBack": "Vissza",
+    "commonSkip": "Kihagyás",
+
+    "sectionRecipe": "Recept",
+    "sectionFirearm": "Fegyver",
+    "sectionBallistics": "Ballisztika",
+    "sectionRangeDay": "Lőtér Nap",
+
+    "errorRequiredField": "Ez a mező kötelező.",
+    "errorInvalidNumber": "Kérjük, adjon meg érvényes számot.",
+    "errorSaveFailed": "A mentés nem sikerült. Próbálja újra.",
+
+    "settingsLanguage": "Nyelv",
+    "settingsLanguageSubtitle": "Válassza ki a LoadOut által használt nyelvet.",
+    "settingsLanguageSystem": "Rendszer Alapértelmezett",
+
+    "onboardingWelcomeTitle": "LoadOut · Precíziós Újratöltés",
+    "onboardingWelcomeBullet1": "A jegyzetfüzetből a telefonra 60 másodperc alatt.",
+    "onboardingWelcomeBullet2": "Az adatai az eszközén maradnak, hacsak nem dönt úgy, hogy biztonsági mentést készít — egy csak Ön által ismert jelszóval titkosítva.",
+
+    "onboardingQuickAddTitle": "Írjon be egy töltetet ahogy a jegyzetében tenné",
+    "onboardingQuickAddBullet1": "A Gyors Hozzáadás megadja az öt mezőt, amelyeket a jegyzetfüzetben tart — és semmi mást.",
+    "onboardingQuickAddBullet2": "Kaliber, lőpor és töltetmennyiség, lövedék és súly, valamint a teljes hossz (COAL). Ennyi.",
+    "onboardingQuickAddBullet3": "Mentse el a töltetet most. Adjon hozzá részleteket később, csak ha akar.",
+
+    "onboardingImportTitle": "Hozza át a meglévő adatait",
+    "onboardingImportBullet1": "Már használ Excelt vagy papírt?",
+    "onboardingImportBullet2": "Készítsen képet a jegyzetfüzetéről, vagy importálja a táblázatot — összepárosítjuk az oszlopokat.",
+    "onboardingImportSpreadsheetButton": "Importálás Táblázatból",
+    "onboardingImportPhotoButton": "Importálás Képből",
+
+    "onboardingDetailTitle": "Kövesse nyomon minden részletet, amikor csak akarja",
+    "onboardingDetailBullet1": "Több mint 60 választható mező, egyéni mezők, tételkövetés, ballisztikai kalkulátor.",
+    "onboardingDetailBullet2": "Rejtse el őket a Kezdő Módban, amíg készen nem áll.",
+    "onboardingDetailBullet3": "Kapcsolja át a kapcsolót a Beállításokban, amikor a teljes haladó nézetet szeretné.",
+
+    "onboardingPrivacyTitle": "Soha nem látjuk az újratöltési adatait",
+    "onboardingPrivacyBullet1": "Minden töltet, fegyver és hüvely a telefon adatbázisában él.",
+    "onboardingPrivacyBullet2": "A biztonsági mentések végpontok közötti titkosítással kerülnek a saját iCloud vagy Google Drive fiókjába.",
+    "onboardingPrivacyBullet3": "Nem üzemeltetünk olyan szervert, amely az újratöltési adatait tárolná — szándékosan.",
+
+    "onboardingGetStarted": "Kezdés",
+    "onboardingAppBarTitle": "Üdvözöljük a LoadOutban"
+}

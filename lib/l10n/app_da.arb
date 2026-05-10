@@ -1,0 +1,62 @@
+{
+    "@@locale": "da",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. Danish shooting magazines (Jæger, Våbenmagasinet) and the DJF / DSkyU reloading communities are good references. Verify krudt / projektil / hylster / fænghætte and whether genladning is the standard term.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Opskrifter",
+    "navFirearms": "Våben",
+    "navBatches": "Partier",
+    "navBallistics": "Ballistik",
+    "navRangeDay": "Skydedag",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Gem",
+    "commonCancel": "Annullér",
+    "commonDelete": "Slet",
+    "commonEdit": "Rediger",
+    "commonNext": "Næste",
+    "commonBack": "Tilbage",
+    "commonSkip": "Spring Over",
+
+    "sectionRecipe": "Opskrift",
+    "sectionFirearm": "Våben",
+    "sectionBallistics": "Ballistik",
+    "sectionRangeDay": "Skydedag",
+
+    "errorRequiredField": "Dette felt er påkrævet.",
+    "errorInvalidNumber": "Indtast venligst et gyldigt tal.",
+    "errorSaveFailed": "Gem mislykkedes. Prøv igen.",
+
+    "settingsLanguage": "Sprog",
+    "settingsLanguageSubtitle": "Vælg det sprog, LoadOut bruger.",
+    "settingsLanguageSystem": "Systemstandard",
+
+    "onboardingWelcomeTitle": "LoadOut · Præcisionsgenladning",
+    "onboardingWelcomeBullet1": "Fra din notesbog til din telefon på 60 sekunder.",
+    "onboardingWelcomeBullet2": "Dine data forbliver på din enhed, medmindre du vælger at tage en sikkerhedskopi — krypteret med en adgangskode, kun du kender.",
+
+    "onboardingQuickAddTitle": "Skriv en ladning som du ville skrive den",
+    "onboardingQuickAddBullet1": "Hurtig Tilføj giver dig de fem felter, du har i din notesbog — og intet andet.",
+    "onboardingQuickAddBullet2": "Kaliber, krudt og ladning, projektil og vægt, og din samlede længde (COAL). Det er det hele.",
+    "onboardingQuickAddBullet3": "Gem din ladning nu. Tilføj flere detaljer senere, kun hvis du vil.",
+
+    "onboardingImportTitle": "Tag dine eksisterende data med",
+    "onboardingImportBullet1": "Bruger du allerede Excel eller papir?",
+    "onboardingImportBullet2": "Tag et billede af din notesbog, eller importer dit regneark — vi matcher kolonnerne.",
+    "onboardingImportSpreadsheetButton": "Importer fra Regneark",
+    "onboardingImportPhotoButton": "Importer fra Billede",
+
+    "onboardingDetailTitle": "Spor hver detalje, når du vil",
+    "onboardingDetailBullet1": "Over 60 valgfri felter, brugerdefinerede felter, partisporing, ballistikberegner.",
+    "onboardingDetailBullet2": "Skjul dem i Begyndertilstand, indtil du er klar.",
+    "onboardingDetailBullet3": "Slå kontakten til i Indstillinger, når du vil have den fulde avancerede visning.",
+
+    "onboardingPrivacyTitle": "Vi ser aldrig dine genladningsdata",
+    "onboardingPrivacyBullet1": "Alle ladninger, våben og hylstre lever i din telefons database.",
+    "onboardingPrivacyBullet2": "Sikkerhedskopier er end-to-end-krypterede til din egen iCloud eller Google Drive.",
+    "onboardingPrivacyBullet3": "Vi kører ikke en backend, der gemmer dine genladningsdata — efter design.",
+
+    "onboardingGetStarted": "Kom I Gang",
+    "onboardingAppBarTitle": "Velkommen til LoadOut"
+}

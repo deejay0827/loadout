@@ -69,6 +69,7 @@ import 'package:flutter/material.dart';
 
 import '../../widgets/pro_gate.dart';
 import '../ballistics/internal_ballistics_screen.dart';
+import '../inventory/inventory_list_screen.dart';
 import '../load_development/load_development_list_screen.dart';
 import '../saami/saami_screen.dart';
 
@@ -116,6 +117,20 @@ class ResourcesScreen extends StatelessWidget {
               // users browse the feature description, which improves
               // upsell conversion (CLAUDE.md § Pro gating).
               destinationBuilder: (_) => const LoadDevelopmentListScreen(),
+            ),
+            _ResourceTile(
+              icon: Icons.inventory_2_outlined,
+              title: 'Component Inventory',
+              subtitle:
+                  'On-hand quantity tracking for powder, primers, '
+                  'bullets, brass, and factory ammo. Quick adjust + '
+                  'audit log per container.',
+              // Inventory is intentionally NOT marketed (CLAUDE.md
+              // § 26). Free for all users; lives here under
+              // Resources rather than the bottom nav so we close
+              // the "Reloader's Log has this and we don't" gap
+              // without making inventory a stated focus.
+              destinationBuilder: (_) => const InventoryListScreen(),
             ),
             // Future resources land here as they ship. Examples:
             //   * Reloading Guide (text reference)

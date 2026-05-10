@@ -127,6 +127,7 @@ import 'repositories/atmosphere_preset_repository.dart';
 import 'repositories/ballistic_profile_repository.dart';
 import 'repositories/batch_repository.dart';
 import 'repositories/brass_lot_repository.dart';
+import 'repositories/component_inventory_repository.dart';
 import 'repositories/component_repository.dart';
 import 'repositories/drag_curve_repository.dart';
 import 'repositories/favorites_repository.dart';
@@ -235,6 +236,13 @@ class LoadOutApp extends StatelessWidget {
         ),
         Provider<LoadDevelopmentRepository>(
           create: (_) => LoadDevelopmentRepository(database),
+        ),
+        // On-hand quantity tracking — schema v32 (Component Inventory).
+        // Reached from the Resources menu, intentionally not promoted
+        // to the bottom nav. See CLAUDE.md § 26 for the placement
+        // rationale.
+        Provider<ComponentInventoryRepository>(
+          create: (_) => ComponentInventoryRepository(database),
         ),
         Provider<BallisticProfileRepository>(
           create: (_) => BallisticProfileRepository(database),
@@ -461,14 +469,19 @@ class LoadOutApp extends StatelessWidget {
           // Flutter's built-in resolution picks the closest supported
           // language from `supportedLocales`, falling back to English
           // when nothing matches.
-          final code = localeService.languageCode;
+          // Use `resolvedLocale` (not `languageCode`) so country-variant
+          // tags like `pt_BR` are split into a proper `Locale('pt', 'BR')`
+          // pair that matches the entry `gen_l10n` puts in
+          // `supportedLocales`. A bare `Locale('pt_BR')` would create a
+          // Locale whose languageCode is the literal string `pt_BR` and
+          // silently fall back to English at runtime.
           return MaterialApp(
             title: 'LoadOut',
             navigatorKey: navigatorKey,
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: ThemeMode.dark, // Brand identity defaults to dark.
-            locale: code == null ? null : Locale(code),
+            locale: localeService.resolvedLocale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: const _DisclaimerGate(),

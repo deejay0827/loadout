@@ -979,7 +979,11 @@ Companion apps must obey the same rule the phone app does (§ 13):
 
 LoadOut uses Flutter's first-party `gen_l10n` pipeline (no `easy_localization`,
 no `intl_utils`). The app ships translations for **English, German, Spanish,
-French, Italian, and Russian**; English is the source of truth.
+French, Italian, Russian, Finnish, Swedish, Norwegian Bokmål, Polish, Czech,
+Brazilian Portuguese, Hungarian, Danish, and Dutch** (15 languages total);
+English is the source of truth. The original six (en/de/es/fr/it/ru) are the
+launch pack; the remaining nine are machine-drafted and flagged
+`TRANSLATOR-REVIEW` in their ARB headers — see "Known follow-ups" below.
 
 ### Layout
 
@@ -992,6 +996,16 @@ lib/l10n/
   app_fr.arb                       French
   app_it.arb                       Italian
   app_ru.arb                       Russian
+  app_fi.arb                       Finnish (machine-drafted)
+  app_sv.arb                       Swedish (machine-drafted)
+  app_nb.arb                       Norwegian Bokmål (machine-drafted)
+  app_pl.arb                       Polish (machine-drafted)
+  app_cs.arb                       Czech (machine-drafted)
+  app_pt.arb                       Portuguese base fallback (mirrors pt_BR; see note)
+  app_pt_BR.arb                    Brazilian Portuguese (machine-drafted)
+  app_hu.arb                       Hungarian (machine-drafted)
+  app_da.arb                       Danish (machine-drafted)
+  app_nl.arb                       Dutch (machine-drafted)
   app_localizations.dart           GENERATED facade — never edit
   app_localizations_*.dart         GENERATED per-locale subclass — never edit
 ```
@@ -1001,6 +1015,22 @@ on `flutter pub get` / `flutter run` because `flutter: generate: true` is set
 in `pubspec.yaml`. They are NOT git-ignored (yet) — if a build environment
 needs them they're already present, but they should be regenerated on every
 ARB edit.
+
+#### Country-variant ARBs (`pt_BR`)
+
+`gen_l10n` requires a base-language ARB whenever a country-variant ARB is
+present, so `app_pt_BR.arb` ships alongside an `app_pt.arb` whose contents
+currently mirror the Brazilian pack. European Portuguese reloading
+vocabulary differs from Brazilian (cartucho vs. estojo, projéctil vs.
+projétil), so the base file is also flagged TRANSLATOR-REVIEW until a
+native-speaker pt-PT reloader adapts it. At runtime, `pt_BR` users see
+the Brazilian content; only generic `pt` device locales fall back to
+`app_pt.arb`.
+
+The `LocaleService.resolvedLocale` getter (`lib/services/locale_service.dart`)
+splits the underscore form on its way into `MaterialApp.locale` so
+`pt_BR` becomes `Locale('pt', 'BR')` instead of an unmatched
+`Locale('pt_BR')` that silently falls back to English.
 
 ### Wiring
 
@@ -1082,7 +1112,32 @@ To localize one screen / widget:
 - Some technical reloading vocabulary in the German / Russian / Italian
   packs was drafted from a non-native-speaker base and is flagged
   `// TRANSLATOR-REVIEW` in each ARB header. A native-speaker review pass is
-  required before launch advertising "available in 6 languages".
+  required before launch advertising "available in 15 languages".
+- **The nine languages added in the 15-language expansion (Finnish,
+  Swedish, Norwegian Bokmål, Polish, Czech, Brazilian Portuguese,
+  Hungarian, Danish, Dutch) are entirely machine-drafted.** Every ARB
+  carries a `// TRANSLATOR-REVIEW` `@@x-comment` header naming the local
+  shooting magazine / community to consult, and every reloading-specific
+  term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) needs a
+  native-speaker reloader review before LoadOut can advertise "available
+  in 15 languages." Specifically tricky calls a reviewer should focus on:
+  - Polish: `elaboracja` for "handloading" — verify it's the natural noun
+    vs. the verb `elaborować`.
+  - Czech: `přebíjení` vs. alternative phrasings.
+  - Brazilian Portuguese: `recarga` (noun) vs. `recarregar` (verb), plus
+    `projétil` (BR) vs. `projéctil` (PT) — the latter affects whether
+    `app_pt.arb` can do double duty for European Portuguese users or
+    needs its own pt-PT pass.
+  - Hungarian: `újratöltés` for "reloading" — confirm against Kaliber
+    magazine usage.
+  - Norwegian Bokmål: `ladning` — Norwegian shooters often write the
+    English `reloading` interchangeably; the magazine convention is what
+    we should align with.
+  - All Nordic packs: case on multi-word labels like "Skip" / "Get
+    Started" / "Import From Spreadsheet" — Title Case in English maps
+    awkwardly to languages that capitalize fewer words natively. Treat
+    Title Case as a UI signal we want to keep on prominent buttons even
+    when not idiomatic.
 - Right-to-left languages (Arabic, Hebrew) are not yet wired. Adding them
   needs `MaterialApp.localizationsDelegates` already includes the RTL
   delegate, so it's "just" a translation effort — but the form layouts have
@@ -1786,3 +1841,109 @@ upsell pitch on the list screen) but tile tap routes to the list
 screen, where the gate fires. Recipe-form and Range-Day "Run Load
 Development" CTAs route through `ensurePro(context)` before pushing
 the wizard.
+
+## 26. Component inventory (intentionally not marketed)
+
+On-hand quantity tracking for the consumable components a reloader
+keeps in the cabinet — powder (in grains), primers (count),
+bullets (count), brass cases (count), and finished factory
+cartridges (rounds). Closes the "Reloader's Log has this and we
+don't" gap **without** making inventory-management a stated focus
+of LoadOut. The placement is the load-bearing decision: this
+sits under the **Resources menu**, NOT the bottom nav, NOT the
+home screen, NOT onboarding. Users who want it find it; users
+who don't never see a marketing nudge.
+
+| | |
+|---|---|
+| Tables | `ComponentInventory` (master rows), `ComponentInventoryAdjustments` (audit log) |
+| Schema added in | v32 |
+| Repository | `lib/repositories/component_inventory_repository.dart` (`ComponentInventoryRepository`) |
+| List screen | `lib/screens/inventory/inventory_list_screen.dart` (`InventoryListScreen`) |
+| Form screen | `lib/screens/inventory/inventory_form_screen.dart` (`InventoryFormScreen`) |
+| Quick-adjust dialog | `lib/screens/inventory/inventory_adjust_dialog.dart` (`InventoryAdjustDialog`) |
+| Wiring | `lib/app.dart` provides `ComponentInventoryRepository`; `lib/screens/resources/resources_screen.dart` adds a "Component Inventory" tile pointing at `InventoryListScreen` |
+| Export / Cloud Sync | `lib/services/export_service.dart` dumps both tables under `'component_inventory'` and `'component_inventory_adjustments'`, in that order so the FK on the adjustments ledger lands cleanly during import. Both tables are listed in `kUserDataTableOrder` and wiped by `AppDatabase.wipeUserData()`. |
+| Pro gate | none — inventory is free, mirroring the rest of the core tracking surfaces |
+| Tests | `test/component_inventory_repository_test.dart` — 20 tests covering insert / update / delete cascade / adjust transactional contract / setQuantity / watch streams / findByName fallback / deductForBatch best-effort behaviour / unit derivation / wipe |
+
+### Schema shape
+
+```dart
+ComponentInventory {
+  int id, String kind, String componentName, int? referenceId,
+  double quantity, String unit, double? unitCostUsd,
+  double? reorderThreshold, String? lotNumber, DateTime? openedAt,
+  String? notes, DateTime createdAt, DateTime updatedAt,
+}
+ComponentInventoryAdjustments {
+  int id, int inventoryId (FK), double delta, String reason,
+  int? batchLogId, String? notes, DateTime createdAt,
+}
+```
+
+`kind` discriminator: `'powder' | 'primer' | 'bullet' | 'brass' |
+'cartridge'`. `unit` is auto-derived from kind by the repository
+on insert (`'gr'` for powder, `'ct'` for primer / bullet / brass,
+`'rd'` for factory cartridges). `reason` discriminator: `'manual'
+| 'batch' | 'adjustment' | 'opened'`.
+
+### Repository contract
+
+Every quantity change goes through `adjust(id, delta, reason, ...)` or
+`setQuantity(id, newQuantity, reason)`. Both wrap the master-row
+update AND the adjustment-ledger insert in a single
+`db.transaction(...)` so the running quantity and the audit log
+can never drift apart. Negative deltas clamp the master row at
+zero but the ledger keeps the actual delta verbatim — the audit
+trail tells the truth even when the math underran.
+
+`delete(id)` cascades through the adjustments table inside one
+transaction. We don't enable SQLite FK enforcement; without the
+manual cascade the audit log would accumulate orphan rows.
+
+### Auto-deduct from batches — DEFERRED
+
+The repository exposes a `deductForBatch(batch, recipe: ...)`
+helper that walks a `BatchRow` and emits the right adjustments
+(powder grains × round count, one primer per round, one bullet
+per round, optionally one brass case per round when `freshBrass:
+true`). Best-effort: missing inventory rows are skipped silently
+so the batch flow can never fail because of an untracked
+container.
+
+It is NOT wired into the existing batch-completion flow as of
+schema v32. The batch form is an AutoSave-driven multi-field
+form; calling `deductForBatch` from AutoSave would deduct on
+every keystroke. The batch-detail screen's "Record Firing"
+dialog tracks rounds **fired**, not rounds **loaded** — wrong
+trigger point for inventory deduction. A clean integration needs
+either a new "Mark Loaded" one-shot button on the batch detail
+screen OR a transition guard ("first time `loadedAt` goes from
+null to non-null, deduct"); both are larger surface changes than
+v1 warranted. The repository helper is ready for whoever wires
+the trigger; the manual "Quick Adjust" affordance on the
+inventory list and form covers the gap in the meantime.
+
+### Privacy / Cloud Sync posture
+
+Same as every other user-data table (CLAUDE.md § 13). Stays on
+device. Gets dumped into the local export blob and the encrypted
+Cloud Sync payload. Never touches a LoadOut-operated backend.
+The audit log can grow unbounded — a serious reloader builds a
+multi-decade history of how much powder they burned through and
+prefers a slow-growing audit log over a truncated one. Per-row
+size is small (<200 bytes) so even ten years of data is a
+rounding error inside the encrypted blob.
+
+### Why it's not on the bottom nav
+
+Per the user's directive when this feature landed: "implement it
+well, but do not market it. It lives under the Resources menu,
+not as a top-level nav item. Goal is to remove the 'Reloader's
+Log has this and you don't' complaint without making
+inventory-management a stated focus of LoadOut." When updating
+the bottom nav, the home-screen tiles, onboarding, marketing
+copy, or any other discovery surface, **do not promote
+inventory**. The Resources tile is the only sanctioned entry
+point.

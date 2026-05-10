@@ -1,0 +1,62 @@
+{
+    "@@locale": "cs",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. Czech shooting magazines (Střelecká revue, Zbraně a náboje) and the LEX civilian shooting forum are useful references; verify střelný prach / střela / nábojnice / zápalka and whether přebíjení is the standard verb (vs. přebíjet munici).",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Recepty",
+    "navFirearms": "Zbraně",
+    "navBatches": "Várky",
+    "navBallistics": "Balistika",
+    "navRangeDay": "Den na Střelnici",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Uložit",
+    "commonCancel": "Zrušit",
+    "commonDelete": "Smazat",
+    "commonEdit": "Upravit",
+    "commonNext": "Další",
+    "commonBack": "Zpět",
+    "commonSkip": "Přeskočit",
+
+    "sectionRecipe": "Recept",
+    "sectionFirearm": "Zbraň",
+    "sectionBallistics": "Balistika",
+    "sectionRangeDay": "Den na Střelnici",
+
+    "errorRequiredField": "Toto pole je povinné.",
+    "errorInvalidNumber": "Zadejte prosím platné číslo.",
+    "errorSaveFailed": "Uložení selhalo. Zkuste to prosím znovu.",
+
+    "settingsLanguage": "Jazyk",
+    "settingsLanguageSubtitle": "Vyberte jazyk, který má LoadOut používat.",
+    "settingsLanguageSystem": "Výchozí systému",
+
+    "onboardingWelcomeTitle": "LoadOut · Přesné Přebíjení",
+    "onboardingWelcomeBullet1": "Z vašeho zápisníku do telefonu za 60 sekund.",
+    "onboardingWelcomeBullet2": "Vaše data zůstávají na vašem zařízení, pokud se nerozhodnete je zálohovat — šifrovaná heslem, které znáte jen vy.",
+
+    "onboardingQuickAddTitle": "Zapište náboj tak, jak byste ho napsali",
+    "onboardingQuickAddBullet1": "Rychlé přidání vám dá pět polí, která máte v zápisníku — a nic dalšího.",
+    "onboardingQuickAddBullet2": "Ráže, prach a navážka, střela a hmotnost, a vaše celková délka (COAL). To je vše.",
+    "onboardingQuickAddBullet3": "Uložte náboj teď. Přidejte více podrobností později, jen pokud chcete.",
+
+    "onboardingImportTitle": "Přeneste stávající data",
+    "onboardingImportBullet1": "Používáte už Excel nebo papír?",
+    "onboardingImportBullet2": "Vyfoťte zápisník nebo importujte tabulku — sloupce za vás spárujeme.",
+    "onboardingImportSpreadsheetButton": "Importovat z Tabulky",
+    "onboardingImportPhotoButton": "Importovat z Fotky",
+
+    "onboardingDetailTitle": "Sledujte každý detail, kdy chcete",
+    "onboardingDetailBullet1": "Více než 60 volitelných polí, vlastní pole, sledování várek, balistický kalkulátor.",
+    "onboardingDetailBullet2": "Skryjte je v Režimu Začátečníka, dokud nebudete připraveni.",
+    "onboardingDetailBullet3": "Přepněte přepínač v Nastavení, kdykoli chcete plné pokročilé zobrazení.",
+
+    "onboardingPrivacyTitle": "Vaše data o přebíjení nikdy nevidíme",
+    "onboardingPrivacyBullet1": "Všechny náboje, zbraně a nábojnice jsou v databázi vašeho telefonu.",
+    "onboardingPrivacyBullet2": "Zálohy jsou end-to-end šifrované do vašeho vlastního iCloud nebo Google Drive.",
+    "onboardingPrivacyBullet3": "Neprovozujeme backend, který by ukládal vaše data o přebíjení — z principu.",
+
+    "onboardingGetStarted": "Začít",
+    "onboardingAppBarTitle": "Vítejte v LoadOut"
+}

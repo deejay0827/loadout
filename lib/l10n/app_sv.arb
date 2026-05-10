@@ -1,0 +1,62 @@
+{
+    "@@locale": "sv",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. The Swedish hunting / precision community uses both Swedish (krut, hylsa, kula, tändhatt) and English loanwords interchangeably; SvJF and Svensk Jakt magazine are good references.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Recept",
+    "navFirearms": "Vapen",
+    "navBatches": "Satser",
+    "navBallistics": "Ballistik",
+    "navRangeDay": "Skjutdag",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Spara",
+    "commonCancel": "Avbryt",
+    "commonDelete": "Ta Bort",
+    "commonEdit": "Redigera",
+    "commonNext": "Nästa",
+    "commonBack": "Tillbaka",
+    "commonSkip": "Hoppa Över",
+
+    "sectionRecipe": "Recept",
+    "sectionFirearm": "Vapen",
+    "sectionBallistics": "Ballistik",
+    "sectionRangeDay": "Skjutdag",
+
+    "errorRequiredField": "Detta fält krävs.",
+    "errorInvalidNumber": "Ange ett giltigt nummer.",
+    "errorSaveFailed": "Det gick inte att spara. Försök igen.",
+
+    "settingsLanguage": "Språk",
+    "settingsLanguageSubtitle": "Välj språket som LoadOut använder.",
+    "settingsLanguageSystem": "Systemets standard",
+
+    "onboardingWelcomeTitle": "LoadOut · Precisionsladdning",
+    "onboardingWelcomeBullet1": "Från din anteckningsbok till din telefon på 60 sekunder.",
+    "onboardingWelcomeBullet2": "Dina data stannar på din enhet om du inte väljer att säkerhetskopiera dem — krypterade med ett lösenord som bara du känner till.",
+
+    "onboardingQuickAddTitle": "Skriv en laddning som du skulle skriva den",
+    "onboardingQuickAddBullet1": "Snabbtillägg ger dig de fem fält du har i din anteckningsbok — och inget annat.",
+    "onboardingQuickAddBullet2": "Kaliber, krut och laddning, kula och vikt, samt din totallängd (COAL). Det är allt.",
+    "onboardingQuickAddBullet3": "Spara din laddning nu. Lägg till fler detaljer senare, bara om du vill.",
+
+    "onboardingImportTitle": "Ta med dina befintliga data",
+    "onboardingImportBullet1": "Använder du redan Excel eller papper?",
+    "onboardingImportBullet2": "Ta en bild av din anteckningsbok eller importera ditt kalkylark — vi matchar kolumnerna.",
+    "onboardingImportSpreadsheetButton": "Importera Från Kalkylark",
+    "onboardingImportPhotoButton": "Importera Från Bild",
+
+    "onboardingDetailTitle": "Spåra varje detalj när du vill",
+    "onboardingDetailBullet1": "Över 60 valfria fält, anpassade fält, satsspårning, ballistikkalkylator.",
+    "onboardingDetailBullet2": "Dölj dem i Nybörjarläge tills du är redo.",
+    "onboardingDetailBullet3": "Slå om brytaren i Inställningar när du vill ha den fullständiga avancerade vyn.",
+
+    "onboardingPrivacyTitle": "Vi ser aldrig dina laddningsdata",
+    "onboardingPrivacyBullet1": "Alla laddningar, vapen och hylsor finns i telefonens databas.",
+    "onboardingPrivacyBullet2": "Säkerhetskopior är end-to-end-krypterade till din egen iCloud eller Google Drive.",
+    "onboardingPrivacyBullet3": "Vi driver ingen backend som lagrar dina laddningsdata — av princip.",
+
+    "onboardingGetStarted": "Kom Igång",
+    "onboardingAppBarTitle": "Välkommen till LoadOut"
+}

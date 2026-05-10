@@ -219,6 +219,18 @@ const List<String> kUserDataTableOrder = <String>[
   // path-mixing doesn't break across export/import). Listed last
   // because nothing else references it.
   'user_component_favorites',
+  // Schema v32 — Component Inventory (on-hand quantity tracking).
+  // The master row is independent (no FK out); the adjustments
+  // ledger holds an FK to the master row, so master must land
+  // first to keep the import-side FK clean.
+  'component_inventory',
+  // Schema v32 — Component Inventory adjustments ledger. Holds an
+  // FK to `component_inventory.id`, so it lands after the master
+  // table. The optional `batchLogId` FK to `batches` is
+  // best-effort: rows whose batch was deleted on the inbound side
+  // will import with a stale id, but the form-screen audit log
+  // handles missing batches gracefully (it just won't link).
+  'component_inventory_adjustments',
 ];
 
 /// Per-table summary returned from [ExportService.importFromJson]. Lets the
@@ -326,6 +338,11 @@ class ExportService {
     tables['load_development_sessions'] = await _dumpLoadDevelopmentSessions();
     tables['ballistic_profiles'] = await _dumpBallisticProfiles();
     tables['user_component_favorites'] = await _dumpComponentFavorites();
+    // Schema v32 — Component Inventory + audit log. Master table
+    // first, then the FK-bearing adjustments ledger.
+    tables['component_inventory'] = await _dumpComponentInventory();
+    tables['component_inventory_adjustments'] =
+        await _dumpComponentInventoryAdjustments();
 
     final wrapper = <String, dynamic>{
       'loadout_export_version': kLoadOutExportVersion,
@@ -514,6 +531,26 @@ class ExportService {
     return rows.map((r) => r.toJson()).toList(growable: false);
   }
 
+  /// Schema v32 — Component Inventory master rows. One row per
+  /// "container" the user has on hand (one jug of powder, one box
+  /// of primers, etc.). Persisted via [ComponentInventory].
+  Future<List<Map<String, dynamic>>> _dumpComponentInventory() async {
+    final rows = await db.select(db.componentInventory).get();
+    return rows.map((r) => r.toJson()).toList(growable: false);
+  }
+
+  /// Schema v32 — Component Inventory audit ledger. Append-only
+  /// history of every quantity change. FK to
+  /// `component_inventory.id` so the master table must be imported
+  /// first; the canonical order in [kUserDataTableOrder] enforces
+  /// that.
+  Future<List<Map<String, dynamic>>>
+      _dumpComponentInventoryAdjustments() async {
+    final rows =
+        await db.select(db.componentInventoryAdjustments).get();
+    return rows.map((r) => r.toJson()).toList(growable: false);
+  }
+
   // ─────────────── per-table import dispatch ───────────────
 
   Future<ImportTableSummary> _importTable({
@@ -640,6 +677,22 @@ class ExportService {
             .into(db.userComponentFavorites)
             .insert(
               UserComponentFavoriteRow.fromJson(json),
+              mode: insertMode,
+            );
+        return true;
+      case 'component_inventory':
+        await db
+            .into(db.componentInventory)
+            .insert(
+              ComponentInventoryRow.fromJson(json),
+              mode: insertMode,
+            );
+        return true;
+      case 'component_inventory_adjustments':
+        await db
+            .into(db.componentInventoryAdjustments)
+            .insert(
+              ComponentInventoryAdjustmentRow.fromJson(json),
               mode: insertMode,
             );
         return true;

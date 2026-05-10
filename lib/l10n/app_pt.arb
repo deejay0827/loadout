@@ -1,0 +1,62 @@
+{
+    "@@locale": "pt",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file is the base Portuguese fallback required by gen_l10n whenever a country-variant ARB (app_pt_BR.arb) ships. The content is currently identical to the Brazilian Portuguese pack — European Portuguese reloading vocabulary (e.g. cartucho vs. estojo, projéctil vs. projétil) differs in places, so a native-speaker pt-PT reloader review is needed before any 'available in Portuguese (Portugal)' marketing claim. Brazilian Portuguese users continue to see app_pt_BR.arb at runtime; this file only kicks in when the device locale is generic `pt` with no country.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Receitas",
+    "navFirearms": "Armas",
+    "navBatches": "Lotes",
+    "navBallistics": "Balística",
+    "navRangeDay": "Dia de Tiro",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Salvar",
+    "commonCancel": "Cancelar",
+    "commonDelete": "Excluir",
+    "commonEdit": "Editar",
+    "commonNext": "Próximo",
+    "commonBack": "Voltar",
+    "commonSkip": "Pular",
+
+    "sectionRecipe": "Receita",
+    "sectionFirearm": "Arma",
+    "sectionBallistics": "Balística",
+    "sectionRangeDay": "Dia de Tiro",
+
+    "errorRequiredField": "Este campo é obrigatório.",
+    "errorInvalidNumber": "Por favor, digite um número válido.",
+    "errorSaveFailed": "Falha ao salvar. Tente novamente.",
+
+    "settingsLanguage": "Idioma",
+    "settingsLanguageSubtitle": "Escolha o idioma que o LoadOut usa.",
+    "settingsLanguageSystem": "Padrão do Sistema",
+
+    "onboardingWelcomeTitle": "LoadOut · Recarga de Precisão",
+    "onboardingWelcomeBullet1": "Do seu caderno para o seu celular em 60 segundos.",
+    "onboardingWelcomeBullet2": "Seus dados ficam no seu dispositivo, a menos que você escolha fazer backup — criptografados com uma senha que só você conhece.",
+
+    "onboardingQuickAddTitle": "Digite uma carga como você a escreveria",
+    "onboardingQuickAddBullet1": "A Adição Rápida te dá os cinco campos que você guarda no seu caderno — e nada mais.",
+    "onboardingQuickAddBullet2": "Calibre, pólvora e carga, projétil e peso, e seu comprimento total (COAL). Só isso.",
+    "onboardingQuickAddBullet3": "Salve sua carga agora. Adicione mais detalhes depois, só se quiser.",
+
+    "onboardingImportTitle": "Traga seus dados existentes",
+    "onboardingImportBullet1": "Já usa Excel ou papel?",
+    "onboardingImportBullet2": "Tire uma foto do seu caderno ou importe sua planilha — nós casamos as colunas.",
+    "onboardingImportSpreadsheetButton": "Importar da Planilha",
+    "onboardingImportPhotoButton": "Importar da Foto",
+
+    "onboardingDetailTitle": "Acompanhe cada detalhe quando quiser",
+    "onboardingDetailBullet1": "Mais de 60 campos opcionais, campos personalizados, rastreio de lotes, calculadora balística.",
+    "onboardingDetailBullet2": "Esconda-os no Modo Iniciante até estar pronto.",
+    "onboardingDetailBullet3": "Acione o botão em Configurações sempre que quiser a visão avançada completa.",
+
+    "onboardingPrivacyTitle": "Nunca vemos seus dados de recarga",
+    "onboardingPrivacyBullet1": "Todas as cargas, armas e estojos vivem no banco de dados do seu celular.",
+    "onboardingPrivacyBullet2": "Os backups são criptografados de ponta a ponta para o seu próprio iCloud ou Google Drive.",
+    "onboardingPrivacyBullet3": "Não operamos um backend que armazene seus dados de recarga — por design.",
+
+    "onboardingGetStarted": "Começar",
+    "onboardingAppBarTitle": "Bem-vindo ao LoadOut"
+}

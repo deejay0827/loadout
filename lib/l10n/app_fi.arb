@@ -1,0 +1,62 @@
+{
+    "@@locale": "fi",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. Finnish reloaders are an unusually informed precision-rifle community (Vihtavuori is a Finnish brand); the magazine Erä and the SAL reloading section are good native-speaker references for terminology checks.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Reseptit",
+    "navFirearms": "Aseet",
+    "navBatches": "Erät",
+    "navBallistics": "Ballistiikka",
+    "navRangeDay": "Ampumapäivä",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Tallenna",
+    "commonCancel": "Peruuta",
+    "commonDelete": "Poista",
+    "commonEdit": "Muokkaa",
+    "commonNext": "Seuraava",
+    "commonBack": "Takaisin",
+    "commonSkip": "Ohita",
+
+    "sectionRecipe": "Resepti",
+    "sectionFirearm": "Ase",
+    "sectionBallistics": "Ballistiikka",
+    "sectionRangeDay": "Ampumapäivä",
+
+    "errorRequiredField": "Tämä kenttä on pakollinen.",
+    "errorInvalidNumber": "Anna kelvollinen numero.",
+    "errorSaveFailed": "Tallennus epäonnistui. Yritä uudelleen.",
+
+    "settingsLanguage": "Kieli",
+    "settingsLanguageSubtitle": "Valitse LoadOutin käyttämä kieli.",
+    "settingsLanguageSystem": "Järjestelmän oletus",
+
+    "onboardingWelcomeTitle": "LoadOut · Tarkkuusladonta",
+    "onboardingWelcomeBullet1": "Muistivihkostasi puhelimeesi 60 sekunnissa.",
+    "onboardingWelcomeBullet2": "Tietosi pysyvät laitteellasi, ellet päätä varmuuskopioida niitä — salattu salasanalla, jonka vain sinä tiedät.",
+
+    "onboardingQuickAddTitle": "Kirjoita lataus kuten muistivihkoosi",
+    "onboardingQuickAddBullet1": "Pikalisäys antaa sinulle viisi kenttää, jotka pidät muistivihkossasi — eikä mitään muuta.",
+    "onboardingQuickAddBullet2": "Kaliiberi, ruuti ja panos, luoti ja paino, sekä kokonaispituus (COAL). Siinä kaikki.",
+    "onboardingQuickAddBullet3": "Tallenna lataus nyt. Lisää tarkempia tietoja myöhemmin, vain jos haluat.",
+
+    "onboardingImportTitle": "Tuo aiemmat tietosi",
+    "onboardingImportBullet1": "Käytätkö jo Exceliä tai paperia?",
+    "onboardingImportBullet2": "Ota kuva muistivihkostasi tai tuo taulukkosi — me sovitamme sarakkeet.",
+    "onboardingImportSpreadsheetButton": "Tuo taulukosta",
+    "onboardingImportPhotoButton": "Tuo kuvasta",
+
+    "onboardingDetailTitle": "Seuraa jokaista yksityiskohtaa kun haluat",
+    "onboardingDetailBullet1": "Yli 60 valinnaista kenttää, mukautetut kentät, eräseuranta, ballistiikkalaskuri.",
+    "onboardingDetailBullet2": "Piilota ne aloittelijatilassa, kunnes olet valmis.",
+    "onboardingDetailBullet3": "Käännä kytkin asetuksissa milloin haluat täyden tehokäyttäjän näkymän.",
+
+    "onboardingPrivacyTitle": "Emme koskaan näe lataustietojasi",
+    "onboardingPrivacyBullet1": "Kaikki lataukset, aseet ja hylsyt ovat puhelimesi tietokannassa.",
+    "onboardingPrivacyBullet2": "Varmuuskopiot on salattu päästä päähän omaan iCloudiisi tai Google Driveen.",
+    "onboardingPrivacyBullet3": "Emme ylläpidä taustajärjestelmää, joka tallentaa lataustietojasi — periaatteen vuoksi.",
+
+    "onboardingGetStarted": "Aloita",
+    "onboardingAppBarTitle": "Tervetuloa LoadOutiin"
+}

@@ -1,0 +1,62 @@
+{
+    "@@locale": "nl",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. Targets both Netherlands and Belgian Flemish; the KNSA (NL) and KNSF (BE) reloading communities + the Dutch hunting magazine De Jager are good references. Verify kruit / projectiel / huls / slaghoedje and whether herladen is the standard verb (it usually is).",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Recepten",
+    "navFirearms": "Wapens",
+    "navBatches": "Partijen",
+    "navBallistics": "Ballistiek",
+    "navRangeDay": "Schietdag",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Opslaan",
+    "commonCancel": "Annuleren",
+    "commonDelete": "Verwijderen",
+    "commonEdit": "Bewerken",
+    "commonNext": "Volgende",
+    "commonBack": "Terug",
+    "commonSkip": "Overslaan",
+
+    "sectionRecipe": "Recept",
+    "sectionFirearm": "Wapen",
+    "sectionBallistics": "Ballistiek",
+    "sectionRangeDay": "Schietdag",
+
+    "errorRequiredField": "Dit veld is verplicht.",
+    "errorInvalidNumber": "Voer een geldig getal in.",
+    "errorSaveFailed": "Opslaan mislukt. Probeer het opnieuw.",
+
+    "settingsLanguage": "Taal",
+    "settingsLanguageSubtitle": "Kies de taal die LoadOut gebruikt.",
+    "settingsLanguageSystem": "Systeemstandaard",
+
+    "onboardingWelcomeTitle": "LoadOut · Precisieherladen",
+    "onboardingWelcomeBullet1": "Van je notitieboek naar je telefoon in 60 seconden.",
+    "onboardingWelcomeBullet2": "Je gegevens blijven op je apparaat tenzij je ze wilt back-uppen — versleuteld met een wachtwoord dat alleen jij kent.",
+
+    "onboardingQuickAddTitle": "Typ een lading zoals je hem zou opschrijven",
+    "onboardingQuickAddBullet1": "Snel Toevoegen geeft je de vijf velden die je in je notitieboek bijhoudt — en niets anders.",
+    "onboardingQuickAddBullet2": "Kaliber, kruit en lading, projectiel en gewicht, en je totale lengte (COAL). Dat is alles.",
+    "onboardingQuickAddBullet3": "Sla je lading nu op. Voeg later meer details toe, alleen als je wilt.",
+
+    "onboardingImportTitle": "Neem je bestaande gegevens mee",
+    "onboardingImportBullet1": "Gebruik je al Excel of papier?",
+    "onboardingImportBullet2": "Maak een foto van je notitieboek, of importeer je spreadsheet — wij koppelen de kolommen.",
+    "onboardingImportSpreadsheetButton": "Importeer uit Spreadsheet",
+    "onboardingImportPhotoButton": "Importeer uit Foto",
+
+    "onboardingDetailTitle": "Houd elk detail bij wanneer je dat wilt",
+    "onboardingDetailBullet1": "60+ optionele velden, aangepaste velden, partijregistratie, ballistische rekenmachine.",
+    "onboardingDetailBullet2": "Verberg ze in de Beginnermodus tot je er klaar voor bent.",
+    "onboardingDetailBullet3": "Zet de schakelaar om in Instellingen wanneer je de volledige geavanceerde weergave wilt.",
+
+    "onboardingPrivacyTitle": "Wij zien nooit je herlaadgegevens",
+    "onboardingPrivacyBullet1": "Alle ladingen, wapens en hulzen wonen in de database van je telefoon.",
+    "onboardingPrivacyBullet2": "Back-ups zijn end-to-end versleuteld naar je eigen iCloud of Google Drive.",
+    "onboardingPrivacyBullet3": "We runnen geen backend die je herlaadgegevens opslaat — bij ontwerp.",
+
+    "onboardingGetStarted": "Aan de Slag",
+    "onboardingAppBarTitle": "Welkom bij LoadOut"
+}

@@ -1,0 +1,62 @@
+{
+    "@@locale": "nb",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. This pack is Norwegian Bokmål (NOT Nynorsk). Norwegian shooting magazines (Jakt & Fiske, Norsk Skyttertidende) and Norges Skytterforbund's reloading committee are good references.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Oppskrifter",
+    "navFirearms": "Våpen",
+    "navBatches": "Partier",
+    "navBallistics": "Ballistikk",
+    "navRangeDay": "Skytedag",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Lagre",
+    "commonCancel": "Avbryt",
+    "commonDelete": "Slett",
+    "commonEdit": "Rediger",
+    "commonNext": "Neste",
+    "commonBack": "Tilbake",
+    "commonSkip": "Hopp Over",
+
+    "sectionRecipe": "Oppskrift",
+    "sectionFirearm": "Våpen",
+    "sectionBallistics": "Ballistikk",
+    "sectionRangeDay": "Skytedag",
+
+    "errorRequiredField": "Dette feltet er påkrevd.",
+    "errorInvalidNumber": "Skriv inn et gyldig tall.",
+    "errorSaveFailed": "Lagring mislyktes. Prøv igjen.",
+
+    "settingsLanguage": "Språk",
+    "settingsLanguageSubtitle": "Velg språket LoadOut bruker.",
+    "settingsLanguageSystem": "Systemstandard",
+
+    "onboardingWelcomeTitle": "LoadOut · Presisjonsladning",
+    "onboardingWelcomeBullet1": "Fra notatboken din til telefonen på 60 sekunder.",
+    "onboardingWelcomeBullet2": "Dataene dine blir på enheten din med mindre du velger å sikkerhetskopiere dem — kryptert med et passord bare du kjenner.",
+
+    "onboardingQuickAddTitle": "Skriv en ladning slik du ville skrevet den",
+    "onboardingQuickAddBullet1": "Hurtiglegg-til gir deg de fem feltene du har i notatboken — og ingenting annet.",
+    "onboardingQuickAddBullet2": "Kaliber, krutt og ladning, kule og vekt, og din totallengde (COAL). Det er alt.",
+    "onboardingQuickAddBullet3": "Lagre ladningen din nå. Legg til flere detaljer senere, bare hvis du vil.",
+
+    "onboardingImportTitle": "Ta med eksisterende data",
+    "onboardingImportBullet1": "Bruker du allerede Excel eller papir?",
+    "onboardingImportBullet2": "Ta et bilde av notatboken din, eller importer regnearket — vi matcher kolonnene.",
+    "onboardingImportSpreadsheetButton": "Importer Fra Regneark",
+    "onboardingImportPhotoButton": "Importer Fra Bilde",
+
+    "onboardingDetailTitle": "Spor hver detalj når du vil",
+    "onboardingDetailBullet1": "Over 60 valgfrie felt, tilpassede felt, partisporing, ballistikkalkulator.",
+    "onboardingDetailBullet2": "Skjul dem i Nybegynnermodus til du er klar.",
+    "onboardingDetailBullet3": "Slå på bryteren i Innstillinger når du vil ha den fulle avanserte visningen.",
+
+    "onboardingPrivacyTitle": "Vi ser aldri ladedataene dine",
+    "onboardingPrivacyBullet1": "Alle ladninger, våpen og hylser bor i telefonens database.",
+    "onboardingPrivacyBullet2": "Sikkerhetskopier er ende-til-ende-kryptert til din egen iCloud eller Google Drive.",
+    "onboardingPrivacyBullet3": "Vi kjører ingen backend som lagrer ladedataene dine — av prinsipp.",
+
+    "onboardingGetStarted": "Kom I Gang",
+    "onboardingAppBarTitle": "Velkommen til LoadOut"
+}

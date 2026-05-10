@@ -1,0 +1,62 @@
+{
+    "@@locale": "pl",
+    "@@x-comment": "// TRANSLATOR-REVIEW: This file was machine-drafted. A native-speaker reloader must review every reloading-specific term (powder, primer, brass, COAL, CBTO, BC, MOA, MIL, FPS) before this language is shipped to production. Polish shooting magazines (Strzał, Broń i Amunicja) and the Polish Shooting Federation's reloading community are good references; in particular, verify proch / pocisk / łuska / spłonka usage and whether elaborację is the natural verb for handloading.",
+
+    "appTitle": "LoadOut",
+
+    "navRecipes": "Receptury",
+    "navFirearms": "Broń",
+    "navBatches": "Partie",
+    "navBallistics": "Balistyka",
+    "navRangeDay": "Dzień Strzelecki",
+    "navSaami": "SAAMI",
+
+    "commonSave": "Zapisz",
+    "commonCancel": "Anuluj",
+    "commonDelete": "Usuń",
+    "commonEdit": "Edytuj",
+    "commonNext": "Dalej",
+    "commonBack": "Wstecz",
+    "commonSkip": "Pomiń",
+
+    "sectionRecipe": "Receptura",
+    "sectionFirearm": "Broń",
+    "sectionBallistics": "Balistyka",
+    "sectionRangeDay": "Dzień Strzelecki",
+
+    "errorRequiredField": "To pole jest wymagane.",
+    "errorInvalidNumber": "Wprowadź prawidłową liczbę.",
+    "errorSaveFailed": "Nie udało się zapisać. Spróbuj ponownie.",
+
+    "settingsLanguage": "Język",
+    "settingsLanguageSubtitle": "Wybierz język używany przez LoadOut.",
+    "settingsLanguageSystem": "Domyślny systemowy",
+
+    "onboardingWelcomeTitle": "LoadOut · Elaboracja Precyzyjna",
+    "onboardingWelcomeBullet1": "Z notatnika do telefonu w 60 sekund.",
+    "onboardingWelcomeBullet2": "Twoje dane pozostają na urządzeniu, chyba że zdecydujesz się je zarchiwizować — zaszyfrowane hasłem, które znasz tylko Ty.",
+
+    "onboardingQuickAddTitle": "Wpisz nabój tak, jak byś go zapisał",
+    "onboardingQuickAddBullet1": "Szybkie Dodawanie daje Ci pięć pól, które trzymasz w notatniku — i nic więcej.",
+    "onboardingQuickAddBullet2": "Kaliber, proch i naważka, pocisk i waga, oraz długość całkowita (COAL). To wszystko.",
+    "onboardingQuickAddBullet3": "Zapisz nabój teraz. Dodaj więcej szczegółów później, tylko jeśli chcesz.",
+
+    "onboardingImportTitle": "Przenieś istniejące dane",
+    "onboardingImportBullet1": "Używasz już Excela lub papieru?",
+    "onboardingImportBullet2": "Zrób zdjęcie notatnika lub zaimportuj arkusz — dopasujemy kolumny.",
+    "onboardingImportSpreadsheetButton": "Importuj z Arkusza",
+    "onboardingImportPhotoButton": "Importuj ze Zdjęcia",
+
+    "onboardingDetailTitle": "Śledź każdy szczegół, kiedy chcesz",
+    "onboardingDetailBullet1": "Ponad 60 opcjonalnych pól, pola niestandardowe, śledzenie partii, kalkulator balistyczny.",
+    "onboardingDetailBullet2": "Ukryj je w Trybie Początkującego, dopóki nie będziesz gotowy.",
+    "onboardingDetailBullet3": "Przełącz przełącznik w Ustawieniach, kiedy zechcesz pełny widok zaawansowany.",
+
+    "onboardingPrivacyTitle": "Nigdy nie widzimy Twoich danych elaboracyjnych",
+    "onboardingPrivacyBullet1": "Wszystkie naboje, broń i łuski są w bazie danych telefonu.",
+    "onboardingPrivacyBullet2": "Kopie zapasowe są szyfrowane end-to-end do Twojego własnego iCloud lub Google Drive.",
+    "onboardingPrivacyBullet3": "Nie prowadzimy serwera, który przechowuje Twoje dane elaboracyjne — z założenia.",
+
+    "onboardingGetStarted": "Zaczynamy",
+    "onboardingAppBarTitle": "Witamy w LoadOut"
+}
