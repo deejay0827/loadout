@@ -142,6 +142,7 @@ import '../../widgets/favorite_star_button.dart';
 import '../../widgets/glossary_label.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/unsaved_changes_dispatcher.dart';
+import 'internal_ballistics_screen.dart';
 import 'widgets/contribution_breakdown.dart';
 import 'widgets/trajectory_chart.dart';
 
@@ -1769,6 +1770,15 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     _advancedSection(),
                     const SizedBox(height: 8),
                     _outputSection(),
+                    const SizedBox(height: 16),
+                    // Sister calculator entry point — pivot from
+                    // EXTERNAL ballistics (this screen) to INTERNAL
+                    // ballistics (predict pressure / MV from a
+                    // recipe). Pro-gated; tapping routes through
+                    // `ensurePro` for non-Pro users. Mirrors the
+                    // "Predict" call out in the Resources directory
+                    // so the user can pivot without backing out.
+                    _internalBallisticsEntryButton(),
                     const SizedBox(height: 16),
                     _DisclaimerFooter(),
                   ],
@@ -3646,6 +3656,32 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Sister-calculator pivot button. The external-ballistics screen
+  /// (this one) answers "where will the bullet land?"; the internal
+  /// calculator answers "is this load over pressure?". A reloader who
+  /// just finished tuning a trajectory often wants to gut-check the
+  /// underlying recipe — this button pivots them in one tap.
+  ///
+  /// Pro-gated. `ensurePro(context)` routes free users to the paywall
+  /// before we push the route. The destination screen also wraps its
+  /// body in `ProGate` so a free user who somehow lands there sees
+  /// the lock card rather than the form.
+  Widget _internalBallisticsEntryButton() {
+    return OutlinedButton.icon(
+      onPressed: () async {
+        if (!await ensurePro(context)) return;
+        if (!mounted) return;
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const InternalBallisticsScreen(),
+          ),
+        );
+      },
+      icon: const Icon(Icons.calculate_outlined),
+      label: const Text('Predict Pressure & MV (Internal Ballistics)'),
     );
   }
 

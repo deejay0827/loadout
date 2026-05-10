@@ -136,6 +136,7 @@ import '../../repositories/component_repository.dart';
 import '../../repositories/favorites_repository.dart';
 import '../../widgets/cartridge_diagram.dart';
 import '../../widgets/favorite_star_button.dart';
+import '../../widgets/lookup_loads_sheet.dart';
 import '../../widgets/pro_gate.dart';
 
 // Public PDF URLs for the four ANSI/SAAMI standard documents. Anything
@@ -313,6 +314,15 @@ class _SaamiScreenState extends State<SaamiScreen> {
                                 const SizedBox(height: 12),
                               ],
                               _DiagramsSection(cartridge: selected),
+                              const SizedBox(height: 12),
+                              // Link-out to manufacturer published-load
+                              // pages. Sheet teaches the user that
+                              // LoadOut never republishes anyone's
+                              // recipes — Gap 2 mitigation per the
+                              // 2026-05-10 republication audit.
+                              _LookupLoadsCard(
+                                cartridgeName: selected.name,
+                              ),
                               const SizedBox(height: 16),
                               const _DisclaimerFooter(),
                             ],
@@ -1079,6 +1089,71 @@ class _KVList extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// "Look Up Published Loads" entry tile shown beneath the cartridge
+/// detail cards. Opens [showLookupLoadsSheet], which deep-links to
+/// the four major manufacturers' official load-data pages in the
+/// system browser. Mitigation pattern from the Gap 2 audit (we
+/// never republish manufacturer recipes).
+class _LookupLoadsCard extends StatelessWidget {
+  const _LookupLoadsCard({required this.cartridgeName});
+
+  final String cartridgeName;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showLookupLoadsSheet(
+          context,
+          cartridgeName: cartridgeName,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          child: Row(
+            children: [
+              Icon(
+                Icons.menu_book_outlined,
+                size: 22,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Look Up Published Loads',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Open a manufacturer\'s official load-data tool '
+                      "for $cartridgeName. We never republish "
+                      'their recipes — your data stays yours.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

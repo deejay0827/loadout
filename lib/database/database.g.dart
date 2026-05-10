@@ -17203,6 +17203,18 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _methodKindMeta = const VerificationMeta(
+    'methodKind',
+  );
+  @override
+  late final GeneratedColumn<String> methodKind = GeneratedColumn<String>(
+    'method_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('generic'),
+  );
   static const VerificationMeta _cartridgeMeta = const VerificationMeta(
     'cartridge',
   );
@@ -17327,6 +17339,28 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _distanceYdMeta = const VerificationMeta(
+    'distanceYd',
+  );
+  @override
+  late final GeneratedColumn<int> distanceYd = GeneratedColumn<int>(
+    'distance_yd',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _shotsPerChargeMeta = const VerificationMeta(
+    'shotsPerCharge',
+  );
+  @override
+  late final GeneratedColumn<int> shotsPerCharge = GeneratedColumn<int>(
+    'shots_per_charge',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _nodeValueMeta = const VerificationMeta(
     'nodeValue',
   );
@@ -17388,6 +17422,7 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
     id,
     name,
     sessionType,
+    methodKind,
     cartridge,
     firearmId,
     sourceRecipeId,
@@ -17399,6 +17434,8 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
     endValue,
     stepValue,
     rungCount,
+    distanceYd,
+    shotsPerCharge,
     nodeValue,
     rungsJson,
     notes,
@@ -17438,6 +17475,12 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
       );
     } else if (isInserting) {
       context.missing(_sessionTypeMeta);
+    }
+    if (data.containsKey('method_kind')) {
+      context.handle(
+        _methodKindMeta,
+        methodKind.isAcceptableOrUnknown(data['method_kind']!, _methodKindMeta),
+      );
     }
     if (data.containsKey('cartridge')) {
       context.handle(
@@ -17519,6 +17562,21 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
     } else if (isInserting) {
       context.missing(_rungCountMeta);
     }
+    if (data.containsKey('distance_yd')) {
+      context.handle(
+        _distanceYdMeta,
+        distanceYd.isAcceptableOrUnknown(data['distance_yd']!, _distanceYdMeta),
+      );
+    }
+    if (data.containsKey('shots_per_charge')) {
+      context.handle(
+        _shotsPerChargeMeta,
+        shotsPerCharge.isAcceptableOrUnknown(
+          data['shots_per_charge']!,
+          _shotsPerChargeMeta,
+        ),
+      );
+    }
     if (data.containsKey('node_value')) {
       context.handle(
         _nodeValueMeta,
@@ -17573,6 +17631,10 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
         DriftSqlType.string,
         data['${effectivePrefix}session_type'],
       )!,
+      methodKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}method_kind'],
+      )!,
       cartridge: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}cartridge'],
@@ -17617,6 +17679,14 @@ class $LoadDevelopmentSessionsTable extends LoadDevelopmentSessions
         DriftSqlType.int,
         data['${effectivePrefix}rung_count'],
       )!,
+      distanceYd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}distance_yd'],
+      ),
+      shotsPerCharge: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}shots_per_charge'],
+      ),
       nodeValue: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}node_value'],
@@ -17651,8 +17721,21 @@ class LoadDevelopmentSessionRow extends DataClass
   final int id;
   final String name;
 
-  /// 'charge_ladder' | 'seating_ladder'
+  /// Legacy two-bucket discriminator: `'charge_ladder' | 'seating_ladder'`.
+  ///
+  /// Predates the v31 method-aware overhaul. Existing rows keep their
+  /// original value so the schema stays additive; new rows continue to
+  /// fill it (`charge_ladder` for OCW / Audette / Satterlee / Generic
+  /// charge tests, `seating_ladder` for seating tests). New code reads
+  /// [methodKind] for fine-grained dispatch.
   final String sessionType;
+
+  /// v31 method discriminator. One of `'ocw' | 'ladder' | 'satterlee' |
+  /// 'generic' | 'seating'`. Always non-null on rows created at v31+;
+  /// the v31 migration backfills legacy rows from [sessionType] by
+  /// mapping `charge_ladder → 'generic'` and `seating_ladder →
+  /// 'seating'`. New screens dispatch on this field.
+  final String methodKind;
   final String? cartridge;
   final int? firearmId;
 
@@ -17667,10 +17750,24 @@ class LoadDevelopmentSessionRow extends DataClass
   final double stepValue;
   final int rungCount;
 
+  /// Distance from muzzle to target in YARDS for OCW / Ladder vertical
+  /// dispersion analysis. Nullable so seating-only sessions and
+  /// pre-v31 rows stay valid; OCW / Ladder / Satterlee detail screens
+  /// default to 100 yd in their setup placeholder.
+  final int? distanceYd;
+
+  /// Number of shots fired per charge weight. OCW = 3 (Newberry); Audette
+  /// Ladder = 1; Satterlee = 1 (10 charges × 1 shot, chrono-driven);
+  /// Generic = whatever the user logs. Nullable for legacy rows.
+  final int? shotsPerCharge;
+
   /// User-selected "node" once analysis completes
   final double? nodeValue;
 
-  /// JSON: per-rung data (chrono / accuracy / pressure notes)
+  /// JSON: per-rung aggregate data (chrono / accuracy / pressure notes).
+  /// New OCW / Ladder / Satterlee shots live in [LoadDevelopmentShots]
+  /// instead of this blob — the blob stays for legacy ladders and for
+  /// rolled-up summaries.
   final String rungsJson;
   final String? notes;
   final DateTime createdAt;
@@ -17679,6 +17776,7 @@ class LoadDevelopmentSessionRow extends DataClass
     required this.id,
     required this.name,
     required this.sessionType,
+    required this.methodKind,
     this.cartridge,
     this.firearmId,
     this.sourceRecipeId,
@@ -17690,6 +17788,8 @@ class LoadDevelopmentSessionRow extends DataClass
     required this.endValue,
     required this.stepValue,
     required this.rungCount,
+    this.distanceYd,
+    this.shotsPerCharge,
     this.nodeValue,
     required this.rungsJson,
     this.notes,
@@ -17702,6 +17802,7 @@ class LoadDevelopmentSessionRow extends DataClass
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
     map['session_type'] = Variable<String>(sessionType);
+    map['method_kind'] = Variable<String>(methodKind);
     if (!nullToAbsent || cartridge != null) {
       map['cartridge'] = Variable<String>(cartridge);
     }
@@ -17727,6 +17828,12 @@ class LoadDevelopmentSessionRow extends DataClass
     map['end_value'] = Variable<double>(endValue);
     map['step_value'] = Variable<double>(stepValue);
     map['rung_count'] = Variable<int>(rungCount);
+    if (!nullToAbsent || distanceYd != null) {
+      map['distance_yd'] = Variable<int>(distanceYd);
+    }
+    if (!nullToAbsent || shotsPerCharge != null) {
+      map['shots_per_charge'] = Variable<int>(shotsPerCharge);
+    }
     if (!nullToAbsent || nodeValue != null) {
       map['node_value'] = Variable<double>(nodeValue);
     }
@@ -17744,6 +17851,7 @@ class LoadDevelopmentSessionRow extends DataClass
       id: Value(id),
       name: Value(name),
       sessionType: Value(sessionType),
+      methodKind: Value(methodKind),
       cartridge: cartridge == null && nullToAbsent
           ? const Value.absent()
           : Value(cartridge),
@@ -17769,6 +17877,12 @@ class LoadDevelopmentSessionRow extends DataClass
       endValue: Value(endValue),
       stepValue: Value(stepValue),
       rungCount: Value(rungCount),
+      distanceYd: distanceYd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(distanceYd),
+      shotsPerCharge: shotsPerCharge == null && nullToAbsent
+          ? const Value.absent()
+          : Value(shotsPerCharge),
       nodeValue: nodeValue == null && nullToAbsent
           ? const Value.absent()
           : Value(nodeValue),
@@ -17790,6 +17904,7 @@ class LoadDevelopmentSessionRow extends DataClass
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
       sessionType: serializer.fromJson<String>(json['sessionType']),
+      methodKind: serializer.fromJson<String>(json['methodKind']),
       cartridge: serializer.fromJson<String?>(json['cartridge']),
       firearmId: serializer.fromJson<int?>(json['firearmId']),
       sourceRecipeId: serializer.fromJson<int?>(json['sourceRecipeId']),
@@ -17801,6 +17916,8 @@ class LoadDevelopmentSessionRow extends DataClass
       endValue: serializer.fromJson<double>(json['endValue']),
       stepValue: serializer.fromJson<double>(json['stepValue']),
       rungCount: serializer.fromJson<int>(json['rungCount']),
+      distanceYd: serializer.fromJson<int?>(json['distanceYd']),
+      shotsPerCharge: serializer.fromJson<int?>(json['shotsPerCharge']),
       nodeValue: serializer.fromJson<double?>(json['nodeValue']),
       rungsJson: serializer.fromJson<String>(json['rungsJson']),
       notes: serializer.fromJson<String?>(json['notes']),
@@ -17815,6 +17932,7 @@ class LoadDevelopmentSessionRow extends DataClass
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
       'sessionType': serializer.toJson<String>(sessionType),
+      'methodKind': serializer.toJson<String>(methodKind),
       'cartridge': serializer.toJson<String?>(cartridge),
       'firearmId': serializer.toJson<int?>(firearmId),
       'sourceRecipeId': serializer.toJson<int?>(sourceRecipeId),
@@ -17826,6 +17944,8 @@ class LoadDevelopmentSessionRow extends DataClass
       'endValue': serializer.toJson<double>(endValue),
       'stepValue': serializer.toJson<double>(stepValue),
       'rungCount': serializer.toJson<int>(rungCount),
+      'distanceYd': serializer.toJson<int?>(distanceYd),
+      'shotsPerCharge': serializer.toJson<int?>(shotsPerCharge),
       'nodeValue': serializer.toJson<double?>(nodeValue),
       'rungsJson': serializer.toJson<String>(rungsJson),
       'notes': serializer.toJson<String?>(notes),
@@ -17838,6 +17958,7 @@ class LoadDevelopmentSessionRow extends DataClass
     int? id,
     String? name,
     String? sessionType,
+    String? methodKind,
     Value<String?> cartridge = const Value.absent(),
     Value<int?> firearmId = const Value.absent(),
     Value<int?> sourceRecipeId = const Value.absent(),
@@ -17849,6 +17970,8 @@ class LoadDevelopmentSessionRow extends DataClass
     double? endValue,
     double? stepValue,
     int? rungCount,
+    Value<int?> distanceYd = const Value.absent(),
+    Value<int?> shotsPerCharge = const Value.absent(),
     Value<double?> nodeValue = const Value.absent(),
     String? rungsJson,
     Value<String?> notes = const Value.absent(),
@@ -17858,6 +17981,7 @@ class LoadDevelopmentSessionRow extends DataClass
     id: id ?? this.id,
     name: name ?? this.name,
     sessionType: sessionType ?? this.sessionType,
+    methodKind: methodKind ?? this.methodKind,
     cartridge: cartridge.present ? cartridge.value : this.cartridge,
     firearmId: firearmId.present ? firearmId.value : this.firearmId,
     sourceRecipeId: sourceRecipeId.present
@@ -17871,6 +17995,10 @@ class LoadDevelopmentSessionRow extends DataClass
     endValue: endValue ?? this.endValue,
     stepValue: stepValue ?? this.stepValue,
     rungCount: rungCount ?? this.rungCount,
+    distanceYd: distanceYd.present ? distanceYd.value : this.distanceYd,
+    shotsPerCharge: shotsPerCharge.present
+        ? shotsPerCharge.value
+        : this.shotsPerCharge,
     nodeValue: nodeValue.present ? nodeValue.value : this.nodeValue,
     rungsJson: rungsJson ?? this.rungsJson,
     notes: notes.present ? notes.value : this.notes,
@@ -17886,6 +18014,9 @@ class LoadDevelopmentSessionRow extends DataClass
       sessionType: data.sessionType.present
           ? data.sessionType.value
           : this.sessionType,
+      methodKind: data.methodKind.present
+          ? data.methodKind.value
+          : this.methodKind,
       cartridge: data.cartridge.present ? data.cartridge.value : this.cartridge,
       firearmId: data.firearmId.present ? data.firearmId.value : this.firearmId,
       sourceRecipeId: data.sourceRecipeId.present
@@ -17903,6 +18034,12 @@ class LoadDevelopmentSessionRow extends DataClass
       endValue: data.endValue.present ? data.endValue.value : this.endValue,
       stepValue: data.stepValue.present ? data.stepValue.value : this.stepValue,
       rungCount: data.rungCount.present ? data.rungCount.value : this.rungCount,
+      distanceYd: data.distanceYd.present
+          ? data.distanceYd.value
+          : this.distanceYd,
+      shotsPerCharge: data.shotsPerCharge.present
+          ? data.shotsPerCharge.value
+          : this.shotsPerCharge,
       nodeValue: data.nodeValue.present ? data.nodeValue.value : this.nodeValue,
       rungsJson: data.rungsJson.present ? data.rungsJson.value : this.rungsJson,
       notes: data.notes.present ? data.notes.value : this.notes,
@@ -17917,6 +18054,7 @@ class LoadDevelopmentSessionRow extends DataClass
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('sessionType: $sessionType, ')
+          ..write('methodKind: $methodKind, ')
           ..write('cartridge: $cartridge, ')
           ..write('firearmId: $firearmId, ')
           ..write('sourceRecipeId: $sourceRecipeId, ')
@@ -17928,6 +18066,8 @@ class LoadDevelopmentSessionRow extends DataClass
           ..write('endValue: $endValue, ')
           ..write('stepValue: $stepValue, ')
           ..write('rungCount: $rungCount, ')
+          ..write('distanceYd: $distanceYd, ')
+          ..write('shotsPerCharge: $shotsPerCharge, ')
           ..write('nodeValue: $nodeValue, ')
           ..write('rungsJson: $rungsJson, ')
           ..write('notes: $notes, ')
@@ -17938,10 +18078,11 @@ class LoadDevelopmentSessionRow extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     sessionType,
+    methodKind,
     cartridge,
     firearmId,
     sourceRecipeId,
@@ -17953,12 +18094,14 @@ class LoadDevelopmentSessionRow extends DataClass
     endValue,
     stepValue,
     rungCount,
+    distanceYd,
+    shotsPerCharge,
     nodeValue,
     rungsJson,
     notes,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -17966,6 +18109,7 @@ class LoadDevelopmentSessionRow extends DataClass
           other.id == this.id &&
           other.name == this.name &&
           other.sessionType == this.sessionType &&
+          other.methodKind == this.methodKind &&
           other.cartridge == this.cartridge &&
           other.firearmId == this.firearmId &&
           other.sourceRecipeId == this.sourceRecipeId &&
@@ -17977,6 +18121,8 @@ class LoadDevelopmentSessionRow extends DataClass
           other.endValue == this.endValue &&
           other.stepValue == this.stepValue &&
           other.rungCount == this.rungCount &&
+          other.distanceYd == this.distanceYd &&
+          other.shotsPerCharge == this.shotsPerCharge &&
           other.nodeValue == this.nodeValue &&
           other.rungsJson == this.rungsJson &&
           other.notes == this.notes &&
@@ -17989,6 +18135,7 @@ class LoadDevelopmentSessionsCompanion
   final Value<int> id;
   final Value<String> name;
   final Value<String> sessionType;
+  final Value<String> methodKind;
   final Value<String?> cartridge;
   final Value<int?> firearmId;
   final Value<int?> sourceRecipeId;
@@ -18000,6 +18147,8 @@ class LoadDevelopmentSessionsCompanion
   final Value<double> endValue;
   final Value<double> stepValue;
   final Value<int> rungCount;
+  final Value<int?> distanceYd;
+  final Value<int?> shotsPerCharge;
   final Value<double?> nodeValue;
   final Value<String> rungsJson;
   final Value<String?> notes;
@@ -18009,6 +18158,7 @@ class LoadDevelopmentSessionsCompanion
     this.id = const Value.absent(),
     this.name = const Value.absent(),
     this.sessionType = const Value.absent(),
+    this.methodKind = const Value.absent(),
     this.cartridge = const Value.absent(),
     this.firearmId = const Value.absent(),
     this.sourceRecipeId = const Value.absent(),
@@ -18020,6 +18170,8 @@ class LoadDevelopmentSessionsCompanion
     this.endValue = const Value.absent(),
     this.stepValue = const Value.absent(),
     this.rungCount = const Value.absent(),
+    this.distanceYd = const Value.absent(),
+    this.shotsPerCharge = const Value.absent(),
     this.nodeValue = const Value.absent(),
     this.rungsJson = const Value.absent(),
     this.notes = const Value.absent(),
@@ -18030,6 +18182,7 @@ class LoadDevelopmentSessionsCompanion
     this.id = const Value.absent(),
     required String name,
     required String sessionType,
+    this.methodKind = const Value.absent(),
     this.cartridge = const Value.absent(),
     this.firearmId = const Value.absent(),
     this.sourceRecipeId = const Value.absent(),
@@ -18041,6 +18194,8 @@ class LoadDevelopmentSessionsCompanion
     required double endValue,
     required double stepValue,
     required int rungCount,
+    this.distanceYd = const Value.absent(),
+    this.shotsPerCharge = const Value.absent(),
     this.nodeValue = const Value.absent(),
     this.rungsJson = const Value.absent(),
     this.notes = const Value.absent(),
@@ -18056,6 +18211,7 @@ class LoadDevelopmentSessionsCompanion
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? sessionType,
+    Expression<String>? methodKind,
     Expression<String>? cartridge,
     Expression<int>? firearmId,
     Expression<int>? sourceRecipeId,
@@ -18067,6 +18223,8 @@ class LoadDevelopmentSessionsCompanion
     Expression<double>? endValue,
     Expression<double>? stepValue,
     Expression<int>? rungCount,
+    Expression<int>? distanceYd,
+    Expression<int>? shotsPerCharge,
     Expression<double>? nodeValue,
     Expression<String>? rungsJson,
     Expression<String>? notes,
@@ -18077,6 +18235,7 @@ class LoadDevelopmentSessionsCompanion
       if (id != null) 'id': id,
       if (name != null) 'name': name,
       if (sessionType != null) 'session_type': sessionType,
+      if (methodKind != null) 'method_kind': methodKind,
       if (cartridge != null) 'cartridge': cartridge,
       if (firearmId != null) 'firearm_id': firearmId,
       if (sourceRecipeId != null) 'source_recipe_id': sourceRecipeId,
@@ -18088,6 +18247,8 @@ class LoadDevelopmentSessionsCompanion
       if (endValue != null) 'end_value': endValue,
       if (stepValue != null) 'step_value': stepValue,
       if (rungCount != null) 'rung_count': rungCount,
+      if (distanceYd != null) 'distance_yd': distanceYd,
+      if (shotsPerCharge != null) 'shots_per_charge': shotsPerCharge,
       if (nodeValue != null) 'node_value': nodeValue,
       if (rungsJson != null) 'rungs_json': rungsJson,
       if (notes != null) 'notes': notes,
@@ -18100,6 +18261,7 @@ class LoadDevelopmentSessionsCompanion
     Value<int>? id,
     Value<String>? name,
     Value<String>? sessionType,
+    Value<String>? methodKind,
     Value<String?>? cartridge,
     Value<int?>? firearmId,
     Value<int?>? sourceRecipeId,
@@ -18111,6 +18273,8 @@ class LoadDevelopmentSessionsCompanion
     Value<double>? endValue,
     Value<double>? stepValue,
     Value<int>? rungCount,
+    Value<int?>? distanceYd,
+    Value<int?>? shotsPerCharge,
     Value<double?>? nodeValue,
     Value<String>? rungsJson,
     Value<String?>? notes,
@@ -18121,6 +18285,7 @@ class LoadDevelopmentSessionsCompanion
       id: id ?? this.id,
       name: name ?? this.name,
       sessionType: sessionType ?? this.sessionType,
+      methodKind: methodKind ?? this.methodKind,
       cartridge: cartridge ?? this.cartridge,
       firearmId: firearmId ?? this.firearmId,
       sourceRecipeId: sourceRecipeId ?? this.sourceRecipeId,
@@ -18132,6 +18297,8 @@ class LoadDevelopmentSessionsCompanion
       endValue: endValue ?? this.endValue,
       stepValue: stepValue ?? this.stepValue,
       rungCount: rungCount ?? this.rungCount,
+      distanceYd: distanceYd ?? this.distanceYd,
+      shotsPerCharge: shotsPerCharge ?? this.shotsPerCharge,
       nodeValue: nodeValue ?? this.nodeValue,
       rungsJson: rungsJson ?? this.rungsJson,
       notes: notes ?? this.notes,
@@ -18151,6 +18318,9 @@ class LoadDevelopmentSessionsCompanion
     }
     if (sessionType.present) {
       map['session_type'] = Variable<String>(sessionType.value);
+    }
+    if (methodKind.present) {
+      map['method_kind'] = Variable<String>(methodKind.value);
     }
     if (cartridge.present) {
       map['cartridge'] = Variable<String>(cartridge.value);
@@ -18185,6 +18355,12 @@ class LoadDevelopmentSessionsCompanion
     if (rungCount.present) {
       map['rung_count'] = Variable<int>(rungCount.value);
     }
+    if (distanceYd.present) {
+      map['distance_yd'] = Variable<int>(distanceYd.value);
+    }
+    if (shotsPerCharge.present) {
+      map['shots_per_charge'] = Variable<int>(shotsPerCharge.value);
+    }
     if (nodeValue.present) {
       map['node_value'] = Variable<double>(nodeValue.value);
     }
@@ -18209,6 +18385,7 @@ class LoadDevelopmentSessionsCompanion
           ..write('id: $id, ')
           ..write('name: $name, ')
           ..write('sessionType: $sessionType, ')
+          ..write('methodKind: $methodKind, ')
           ..write('cartridge: $cartridge, ')
           ..write('firearmId: $firearmId, ')
           ..write('sourceRecipeId: $sourceRecipeId, ')
@@ -18220,6 +18397,8 @@ class LoadDevelopmentSessionsCompanion
           ..write('endValue: $endValue, ')
           ..write('stepValue: $stepValue, ')
           ..write('rungCount: $rungCount, ')
+          ..write('distanceYd: $distanceYd, ')
+          ..write('shotsPerCharge: $shotsPerCharge, ')
           ..write('nodeValue: $nodeValue, ')
           ..write('rungsJson: $rungsJson, ')
           ..write('notes: $notes, ')
@@ -33805,6 +33984,583 @@ class UserComponentFavoritesCompanion
   }
 }
 
+class $LoadDevelopmentShotsTable extends LoadDevelopmentShots
+    with TableInfo<$LoadDevelopmentShotsTable, LoadDevelopmentShotRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LoadDevelopmentShotsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<int> sessionId = GeneratedColumn<int>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES load_development_sessions (id)',
+    ),
+  );
+  static const VerificationMeta _chargeGrMeta = const VerificationMeta(
+    'chargeGr',
+  );
+  @override
+  late final GeneratedColumn<double> chargeGr = GeneratedColumn<double>(
+    'charge_gr',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _shotIndexMeta = const VerificationMeta(
+    'shotIndex',
+  );
+  @override
+  late final GeneratedColumn<int> shotIndex = GeneratedColumn<int>(
+    'shot_index',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _velocityFpsMeta = const VerificationMeta(
+    'velocityFps',
+  );
+  @override
+  late final GeneratedColumn<double> velocityFps = GeneratedColumn<double>(
+    'velocity_fps',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _impactXInMeta = const VerificationMeta(
+    'impactXIn',
+  );
+  @override
+  late final GeneratedColumn<double> impactXIn = GeneratedColumn<double>(
+    'impact_x_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _impactYInMeta = const VerificationMeta(
+    'impactYIn',
+  );
+  @override
+  late final GeneratedColumn<double> impactYIn = GeneratedColumn<double>(
+    'impact_y_in',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    sessionId,
+    chargeGr,
+    shotIndex,
+    velocityFps,
+    impactXIn,
+    impactYIn,
+    notes,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'load_development_shots';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LoadDevelopmentShotRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('charge_gr')) {
+      context.handle(
+        _chargeGrMeta,
+        chargeGr.isAcceptableOrUnknown(data['charge_gr']!, _chargeGrMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chargeGrMeta);
+    }
+    if (data.containsKey('shot_index')) {
+      context.handle(
+        _shotIndexMeta,
+        shotIndex.isAcceptableOrUnknown(data['shot_index']!, _shotIndexMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_shotIndexMeta);
+    }
+    if (data.containsKey('velocity_fps')) {
+      context.handle(
+        _velocityFpsMeta,
+        velocityFps.isAcceptableOrUnknown(
+          data['velocity_fps']!,
+          _velocityFpsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('impact_x_in')) {
+      context.handle(
+        _impactXInMeta,
+        impactXIn.isAcceptableOrUnknown(data['impact_x_in']!, _impactXInMeta),
+      );
+    }
+    if (data.containsKey('impact_y_in')) {
+      context.handle(
+        _impactYInMeta,
+        impactYIn.isAcceptableOrUnknown(data['impact_y_in']!, _impactYInMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LoadDevelopmentShotRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LoadDevelopmentShotRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_id'],
+      )!,
+      chargeGr: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}charge_gr'],
+      )!,
+      shotIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}shot_index'],
+      )!,
+      velocityFps: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}velocity_fps'],
+      ),
+      impactXIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}impact_x_in'],
+      ),
+      impactYIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}impact_y_in'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LoadDevelopmentShotsTable createAlias(String alias) {
+    return $LoadDevelopmentShotsTable(attachedDatabase, alias);
+  }
+}
+
+class LoadDevelopmentShotRow extends DataClass
+    implements Insertable<LoadDevelopmentShotRow> {
+  final int id;
+  final int sessionId;
+
+  /// Charge weight in grains. Required — every shot in a load-dev test
+  /// is "the shot at this charge weight."
+  final double chargeGr;
+
+  /// 1-based ordinal of the shot within its charge. For OCW (3 shots
+  /// per charge) this runs 1..3; for Ladder / Satterlee it's always 1.
+  final int shotIndex;
+
+  /// Muzzle velocity in fps (chrono reading). Nullable.
+  final double? velocityFps;
+
+  /// Impact X in inches relative to point of aim. Positive right,
+  /// negative left. Nullable until the user logs the impact.
+  final double? impactXIn;
+
+  /// Impact Y in inches relative to point of aim. Positive UP, negative
+  /// DOWN — matches how a shooter reads a target board, NOT how a
+  /// screen Y axis grows.
+  final double? impactYIn;
+
+  /// Free-text notes ("called pull", "wind picked up", etc).
+  final String? notes;
+  final DateTime createdAt;
+  const LoadDevelopmentShotRow({
+    required this.id,
+    required this.sessionId,
+    required this.chargeGr,
+    required this.shotIndex,
+    this.velocityFps,
+    this.impactXIn,
+    this.impactYIn,
+    this.notes,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['session_id'] = Variable<int>(sessionId);
+    map['charge_gr'] = Variable<double>(chargeGr);
+    map['shot_index'] = Variable<int>(shotIndex);
+    if (!nullToAbsent || velocityFps != null) {
+      map['velocity_fps'] = Variable<double>(velocityFps);
+    }
+    if (!nullToAbsent || impactXIn != null) {
+      map['impact_x_in'] = Variable<double>(impactXIn);
+    }
+    if (!nullToAbsent || impactYIn != null) {
+      map['impact_y_in'] = Variable<double>(impactYIn);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  LoadDevelopmentShotsCompanion toCompanion(bool nullToAbsent) {
+    return LoadDevelopmentShotsCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      chargeGr: Value(chargeGr),
+      shotIndex: Value(shotIndex),
+      velocityFps: velocityFps == null && nullToAbsent
+          ? const Value.absent()
+          : Value(velocityFps),
+      impactXIn: impactXIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(impactXIn),
+      impactYIn: impactYIn == null && nullToAbsent
+          ? const Value.absent()
+          : Value(impactYIn),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory LoadDevelopmentShotRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LoadDevelopmentShotRow(
+      id: serializer.fromJson<int>(json['id']),
+      sessionId: serializer.fromJson<int>(json['sessionId']),
+      chargeGr: serializer.fromJson<double>(json['chargeGr']),
+      shotIndex: serializer.fromJson<int>(json['shotIndex']),
+      velocityFps: serializer.fromJson<double?>(json['velocityFps']),
+      impactXIn: serializer.fromJson<double?>(json['impactXIn']),
+      impactYIn: serializer.fromJson<double?>(json['impactYIn']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'sessionId': serializer.toJson<int>(sessionId),
+      'chargeGr': serializer.toJson<double>(chargeGr),
+      'shotIndex': serializer.toJson<int>(shotIndex),
+      'velocityFps': serializer.toJson<double?>(velocityFps),
+      'impactXIn': serializer.toJson<double?>(impactXIn),
+      'impactYIn': serializer.toJson<double?>(impactYIn),
+      'notes': serializer.toJson<String?>(notes),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  LoadDevelopmentShotRow copyWith({
+    int? id,
+    int? sessionId,
+    double? chargeGr,
+    int? shotIndex,
+    Value<double?> velocityFps = const Value.absent(),
+    Value<double?> impactXIn = const Value.absent(),
+    Value<double?> impactYIn = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    DateTime? createdAt,
+  }) => LoadDevelopmentShotRow(
+    id: id ?? this.id,
+    sessionId: sessionId ?? this.sessionId,
+    chargeGr: chargeGr ?? this.chargeGr,
+    shotIndex: shotIndex ?? this.shotIndex,
+    velocityFps: velocityFps.present ? velocityFps.value : this.velocityFps,
+    impactXIn: impactXIn.present ? impactXIn.value : this.impactXIn,
+    impactYIn: impactYIn.present ? impactYIn.value : this.impactYIn,
+    notes: notes.present ? notes.value : this.notes,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  LoadDevelopmentShotRow copyWithCompanion(LoadDevelopmentShotsCompanion data) {
+    return LoadDevelopmentShotRow(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      chargeGr: data.chargeGr.present ? data.chargeGr.value : this.chargeGr,
+      shotIndex: data.shotIndex.present ? data.shotIndex.value : this.shotIndex,
+      velocityFps: data.velocityFps.present
+          ? data.velocityFps.value
+          : this.velocityFps,
+      impactXIn: data.impactXIn.present ? data.impactXIn.value : this.impactXIn,
+      impactYIn: data.impactYIn.present ? data.impactYIn.value : this.impactYIn,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LoadDevelopmentShotRow(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('chargeGr: $chargeGr, ')
+          ..write('shotIndex: $shotIndex, ')
+          ..write('velocityFps: $velocityFps, ')
+          ..write('impactXIn: $impactXIn, ')
+          ..write('impactYIn: $impactYIn, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    sessionId,
+    chargeGr,
+    shotIndex,
+    velocityFps,
+    impactXIn,
+    impactYIn,
+    notes,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LoadDevelopmentShotRow &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.chargeGr == this.chargeGr &&
+          other.shotIndex == this.shotIndex &&
+          other.velocityFps == this.velocityFps &&
+          other.impactXIn == this.impactXIn &&
+          other.impactYIn == this.impactYIn &&
+          other.notes == this.notes &&
+          other.createdAt == this.createdAt);
+}
+
+class LoadDevelopmentShotsCompanion
+    extends UpdateCompanion<LoadDevelopmentShotRow> {
+  final Value<int> id;
+  final Value<int> sessionId;
+  final Value<double> chargeGr;
+  final Value<int> shotIndex;
+  final Value<double?> velocityFps;
+  final Value<double?> impactXIn;
+  final Value<double?> impactYIn;
+  final Value<String?> notes;
+  final Value<DateTime> createdAt;
+  const LoadDevelopmentShotsCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.chargeGr = const Value.absent(),
+    this.shotIndex = const Value.absent(),
+    this.velocityFps = const Value.absent(),
+    this.impactXIn = const Value.absent(),
+    this.impactYIn = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  LoadDevelopmentShotsCompanion.insert({
+    this.id = const Value.absent(),
+    required int sessionId,
+    required double chargeGr,
+    required int shotIndex,
+    this.velocityFps = const Value.absent(),
+    this.impactXIn = const Value.absent(),
+    this.impactYIn = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : sessionId = Value(sessionId),
+       chargeGr = Value(chargeGr),
+       shotIndex = Value(shotIndex);
+  static Insertable<LoadDevelopmentShotRow> custom({
+    Expression<int>? id,
+    Expression<int>? sessionId,
+    Expression<double>? chargeGr,
+    Expression<int>? shotIndex,
+    Expression<double>? velocityFps,
+    Expression<double>? impactXIn,
+    Expression<double>? impactYIn,
+    Expression<String>? notes,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (chargeGr != null) 'charge_gr': chargeGr,
+      if (shotIndex != null) 'shot_index': shotIndex,
+      if (velocityFps != null) 'velocity_fps': velocityFps,
+      if (impactXIn != null) 'impact_x_in': impactXIn,
+      if (impactYIn != null) 'impact_y_in': impactYIn,
+      if (notes != null) 'notes': notes,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  LoadDevelopmentShotsCompanion copyWith({
+    Value<int>? id,
+    Value<int>? sessionId,
+    Value<double>? chargeGr,
+    Value<int>? shotIndex,
+    Value<double?>? velocityFps,
+    Value<double?>? impactXIn,
+    Value<double?>? impactYIn,
+    Value<String?>? notes,
+    Value<DateTime>? createdAt,
+  }) {
+    return LoadDevelopmentShotsCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      chargeGr: chargeGr ?? this.chargeGr,
+      shotIndex: shotIndex ?? this.shotIndex,
+      velocityFps: velocityFps ?? this.velocityFps,
+      impactXIn: impactXIn ?? this.impactXIn,
+      impactYIn: impactYIn ?? this.impactYIn,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<int>(sessionId.value);
+    }
+    if (chargeGr.present) {
+      map['charge_gr'] = Variable<double>(chargeGr.value);
+    }
+    if (shotIndex.present) {
+      map['shot_index'] = Variable<int>(shotIndex.value);
+    }
+    if (velocityFps.present) {
+      map['velocity_fps'] = Variable<double>(velocityFps.value);
+    }
+    if (impactXIn.present) {
+      map['impact_x_in'] = Variable<double>(impactXIn.value);
+    }
+    if (impactYIn.present) {
+      map['impact_y_in'] = Variable<double>(impactYIn.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LoadDevelopmentShotsCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('chargeGr: $chargeGr, ')
+          ..write('shotIndex: $shotIndex, ')
+          ..write('velocityFps: $velocityFps, ')
+          ..write('impactXIn: $impactXIn, ')
+          ..write('impactYIn: $impactYIn, ')
+          ..write('notes: $notes, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -33870,6 +34626,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $UserFavoritesTable userFavorites = $UserFavoritesTable(this);
   late final $UserComponentFavoritesTable userComponentFavorites =
       $UserComponentFavoritesTable(this);
+  late final $LoadDevelopmentShotsTable loadDevelopmentShots =
+      $LoadDevelopmentShotsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -33916,6 +34674,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     manufacturedAmmo,
     userFavorites,
     userComponentFavorites,
+    loadDevelopmentShots,
   ];
 }
 
@@ -46181,6 +46940,7 @@ typedef $$LoadDevelopmentSessionsTableCreateCompanionBuilder =
       Value<int> id,
       required String name,
       required String sessionType,
+      Value<String> methodKind,
       Value<String?> cartridge,
       Value<int?> firearmId,
       Value<int?> sourceRecipeId,
@@ -46192,6 +46952,8 @@ typedef $$LoadDevelopmentSessionsTableCreateCompanionBuilder =
       required double endValue,
       required double stepValue,
       required int rungCount,
+      Value<int?> distanceYd,
+      Value<int?> shotsPerCharge,
       Value<double?> nodeValue,
       Value<String> rungsJson,
       Value<String?> notes,
@@ -46203,6 +46965,7 @@ typedef $$LoadDevelopmentSessionsTableUpdateCompanionBuilder =
       Value<int> id,
       Value<String> name,
       Value<String> sessionType,
+      Value<String> methodKind,
       Value<String?> cartridge,
       Value<int?> firearmId,
       Value<int?> sourceRecipeId,
@@ -46214,6 +46977,8 @@ typedef $$LoadDevelopmentSessionsTableUpdateCompanionBuilder =
       Value<double> endValue,
       Value<double> stepValue,
       Value<int> rungCount,
+      Value<int?> distanceYd,
+      Value<int?> shotsPerCharge,
       Value<double?> nodeValue,
       Value<String> rungsJson,
       Value<String?> notes,
@@ -46299,6 +47064,34 @@ final class $$LoadDevelopmentSessionsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<
+    $LoadDevelopmentShotsTable,
+    List<LoadDevelopmentShotRow>
+  >
+  _loadDevelopmentShotsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.loadDevelopmentShots,
+        aliasName: $_aliasNameGenerator(
+          db.loadDevelopmentSessions.id,
+          db.loadDevelopmentShots.sessionId,
+        ),
+      );
+
+  $$LoadDevelopmentShotsTableProcessedTableManager
+  get loadDevelopmentShotsRefs {
+    final manager = $$LoadDevelopmentShotsTableTableManager(
+      $_db,
+      $_db.loadDevelopmentShots,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _loadDevelopmentShotsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LoadDevelopmentSessionsTableFilterComposer
@@ -46322,6 +47115,11 @@ class $$LoadDevelopmentSessionsTableFilterComposer
 
   ColumnFilters<String> get sessionType => $composableBuilder(
     column: $table.sessionType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get methodKind => $composableBuilder(
+    column: $table.methodKind,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -46362,6 +47160,16 @@ class $$LoadDevelopmentSessionsTableFilterComposer
 
   ColumnFilters<int> get rungCount => $composableBuilder(
     column: $table.rungCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get distanceYd => $composableBuilder(
+    column: $table.distanceYd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get shotsPerCharge => $composableBuilder(
+    column: $table.shotsPerCharge,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -46458,6 +47266,31 @@ class $$LoadDevelopmentSessionsTableFilterComposer
     );
     return composer;
   }
+
+  Expression<bool> loadDevelopmentShotsRefs(
+    Expression<bool> Function($$LoadDevelopmentShotsTableFilterComposer f) f,
+  ) {
+    final $$LoadDevelopmentShotsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.loadDevelopmentShots,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LoadDevelopmentShotsTableFilterComposer(
+            $db: $db,
+            $table: $db.loadDevelopmentShots,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LoadDevelopmentSessionsTableOrderingComposer
@@ -46481,6 +47314,11 @@ class $$LoadDevelopmentSessionsTableOrderingComposer
 
   ColumnOrderings<String> get sessionType => $composableBuilder(
     column: $table.sessionType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get methodKind => $composableBuilder(
+    column: $table.methodKind,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -46521,6 +47359,16 @@ class $$LoadDevelopmentSessionsTableOrderingComposer
 
   ColumnOrderings<int> get rungCount => $composableBuilder(
     column: $table.rungCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get distanceYd => $composableBuilder(
+    column: $table.distanceYd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get shotsPerCharge => $composableBuilder(
+    column: $table.shotsPerCharge,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -46639,6 +47487,11 @@ class $$LoadDevelopmentSessionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get methodKind => $composableBuilder(
+    column: $table.methodKind,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<String> get cartridge =>
       $composableBuilder(column: $table.cartridge, builder: (column) => column);
 
@@ -46664,6 +47517,16 @@ class $$LoadDevelopmentSessionsTableAnnotationComposer
 
   GeneratedColumn<int> get rungCount =>
       $composableBuilder(column: $table.rungCount, builder: (column) => column);
+
+  GeneratedColumn<int> get distanceYd => $composableBuilder(
+    column: $table.distanceYd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get shotsPerCharge => $composableBuilder(
+    column: $table.shotsPerCharge,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<double> get nodeValue =>
       $composableBuilder(column: $table.nodeValue, builder: (column) => column);
@@ -46748,6 +47611,32 @@ class $$LoadDevelopmentSessionsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> loadDevelopmentShotsRefs<T extends Object>(
+    Expression<T> Function($$LoadDevelopmentShotsTableAnnotationComposer a) f,
+  ) {
+    final $$LoadDevelopmentShotsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.loadDevelopmentShots,
+          getReferencedColumn: (t) => t.sessionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentShotsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentShots,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LoadDevelopmentSessionsTableTableManager
@@ -46767,6 +47656,7 @@ class $$LoadDevelopmentSessionsTableTableManager
             bool firearmId,
             bool sourceRecipeId,
             bool brassLotId,
+            bool loadDevelopmentShotsRefs,
           })
         > {
   $$LoadDevelopmentSessionsTableTableManager(
@@ -46796,6 +47686,7 @@ class $$LoadDevelopmentSessionsTableTableManager
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
                 Value<String> sessionType = const Value.absent(),
+                Value<String> methodKind = const Value.absent(),
                 Value<String?> cartridge = const Value.absent(),
                 Value<int?> firearmId = const Value.absent(),
                 Value<int?> sourceRecipeId = const Value.absent(),
@@ -46807,6 +47698,8 @@ class $$LoadDevelopmentSessionsTableTableManager
                 Value<double> endValue = const Value.absent(),
                 Value<double> stepValue = const Value.absent(),
                 Value<int> rungCount = const Value.absent(),
+                Value<int?> distanceYd = const Value.absent(),
+                Value<int?> shotsPerCharge = const Value.absent(),
                 Value<double?> nodeValue = const Value.absent(),
                 Value<String> rungsJson = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -46816,6 +47709,7 @@ class $$LoadDevelopmentSessionsTableTableManager
                 id: id,
                 name: name,
                 sessionType: sessionType,
+                methodKind: methodKind,
                 cartridge: cartridge,
                 firearmId: firearmId,
                 sourceRecipeId: sourceRecipeId,
@@ -46827,6 +47721,8 @@ class $$LoadDevelopmentSessionsTableTableManager
                 endValue: endValue,
                 stepValue: stepValue,
                 rungCount: rungCount,
+                distanceYd: distanceYd,
+                shotsPerCharge: shotsPerCharge,
                 nodeValue: nodeValue,
                 rungsJson: rungsJson,
                 notes: notes,
@@ -46838,6 +47734,7 @@ class $$LoadDevelopmentSessionsTableTableManager
                 Value<int> id = const Value.absent(),
                 required String name,
                 required String sessionType,
+                Value<String> methodKind = const Value.absent(),
                 Value<String?> cartridge = const Value.absent(),
                 Value<int?> firearmId = const Value.absent(),
                 Value<int?> sourceRecipeId = const Value.absent(),
@@ -46849,6 +47746,8 @@ class $$LoadDevelopmentSessionsTableTableManager
                 required double endValue,
                 required double stepValue,
                 required int rungCount,
+                Value<int?> distanceYd = const Value.absent(),
+                Value<int?> shotsPerCharge = const Value.absent(),
                 Value<double?> nodeValue = const Value.absent(),
                 Value<String> rungsJson = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
@@ -46858,6 +47757,7 @@ class $$LoadDevelopmentSessionsTableTableManager
                 id: id,
                 name: name,
                 sessionType: sessionType,
+                methodKind: methodKind,
                 cartridge: cartridge,
                 firearmId: firearmId,
                 sourceRecipeId: sourceRecipeId,
@@ -46869,6 +47769,8 @@ class $$LoadDevelopmentSessionsTableTableManager
                 endValue: endValue,
                 stepValue: stepValue,
                 rungCount: rungCount,
+                distanceYd: distanceYd,
+                shotsPerCharge: shotsPerCharge,
                 nodeValue: nodeValue,
                 rungsJson: rungsJson,
                 notes: notes,
@@ -46888,10 +47790,13 @@ class $$LoadDevelopmentSessionsTableTableManager
                 firearmId = false,
                 sourceRecipeId = false,
                 brassLotId = false,
+                loadDevelopmentShotsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
-                  explicitlyWatchedTables: [],
+                  explicitlyWatchedTables: [
+                    if (loadDevelopmentShotsRefs) db.loadDevelopmentShots,
+                  ],
                   addJoins:
                       <
                         T extends TableManagerState<
@@ -46957,7 +47862,30 @@ class $$LoadDevelopmentSessionsTableTableManager
                         return state;
                       },
                   getPrefetchedDataCallback: (items) async {
-                    return [];
+                    return [
+                      if (loadDevelopmentShotsRefs)
+                        await $_getPrefetchedData<
+                          LoadDevelopmentSessionRow,
+                          $LoadDevelopmentSessionsTable,
+                          LoadDevelopmentShotRow
+                        >(
+                          currentTable: table,
+                          referencedTable:
+                              $$LoadDevelopmentSessionsTableReferences
+                                  ._loadDevelopmentShotsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LoadDevelopmentSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).loadDevelopmentShotsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
                   },
                 );
               },
@@ -46981,6 +47909,7 @@ typedef $$LoadDevelopmentSessionsTableProcessedTableManager =
         bool firearmId,
         bool sourceRecipeId,
         bool brassLotId,
+        bool loadDevelopmentShotsRefs,
       })
     >;
 typedef $$OpticsTableCreateCompanionBuilder =
@@ -56232,6 +57161,422 @@ typedef $$UserComponentFavoritesTableProcessedTableManager =
       UserComponentFavoriteRow,
       PrefetchHooks Function()
     >;
+typedef $$LoadDevelopmentShotsTableCreateCompanionBuilder =
+    LoadDevelopmentShotsCompanion Function({
+      Value<int> id,
+      required int sessionId,
+      required double chargeGr,
+      required int shotIndex,
+      Value<double?> velocityFps,
+      Value<double?> impactXIn,
+      Value<double?> impactYIn,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+typedef $$LoadDevelopmentShotsTableUpdateCompanionBuilder =
+    LoadDevelopmentShotsCompanion Function({
+      Value<int> id,
+      Value<int> sessionId,
+      Value<double> chargeGr,
+      Value<int> shotIndex,
+      Value<double?> velocityFps,
+      Value<double?> impactXIn,
+      Value<double?> impactYIn,
+      Value<String?> notes,
+      Value<DateTime> createdAt,
+    });
+
+final class $$LoadDevelopmentShotsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LoadDevelopmentShotsTable,
+          LoadDevelopmentShotRow
+        > {
+  $$LoadDevelopmentShotsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LoadDevelopmentSessionsTable _sessionIdTable(_$AppDatabase db) =>
+      db.loadDevelopmentSessions.createAlias(
+        $_aliasNameGenerator(
+          db.loadDevelopmentShots.sessionId,
+          db.loadDevelopmentSessions.id,
+        ),
+      );
+
+  $$LoadDevelopmentSessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<int>('session_id')!;
+
+    final manager = $$LoadDevelopmentSessionsTableTableManager(
+      $_db,
+      $_db.loadDevelopmentSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LoadDevelopmentShotsTableFilterComposer
+    extends Composer<_$AppDatabase, $LoadDevelopmentShotsTable> {
+  $$LoadDevelopmentShotsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get chargeGr => $composableBuilder(
+    column: $table.chargeGr,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get shotIndex => $composableBuilder(
+    column: $table.shotIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get velocityFps => $composableBuilder(
+    column: $table.velocityFps,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get impactXIn => $composableBuilder(
+    column: $table.impactXIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get impactYIn => $composableBuilder(
+    column: $table.impactYIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LoadDevelopmentSessionsTableFilterComposer get sessionId {
+    final $$LoadDevelopmentSessionsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.sessionId,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableFilterComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$LoadDevelopmentShotsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LoadDevelopmentShotsTable> {
+  $$LoadDevelopmentShotsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get chargeGr => $composableBuilder(
+    column: $table.chargeGr,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get shotIndex => $composableBuilder(
+    column: $table.shotIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get velocityFps => $composableBuilder(
+    column: $table.velocityFps,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get impactXIn => $composableBuilder(
+    column: $table.impactXIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get impactYIn => $composableBuilder(
+    column: $table.impactYIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LoadDevelopmentSessionsTableOrderingComposer get sessionId {
+    final $$LoadDevelopmentSessionsTableOrderingComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.sessionId,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableOrderingComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$LoadDevelopmentShotsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LoadDevelopmentShotsTable> {
+  $$LoadDevelopmentShotsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<double> get chargeGr =>
+      $composableBuilder(column: $table.chargeGr, builder: (column) => column);
+
+  GeneratedColumn<int> get shotIndex =>
+      $composableBuilder(column: $table.shotIndex, builder: (column) => column);
+
+  GeneratedColumn<double> get velocityFps => $composableBuilder(
+    column: $table.velocityFps,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get impactXIn =>
+      $composableBuilder(column: $table.impactXIn, builder: (column) => column);
+
+  GeneratedColumn<double> get impactYIn =>
+      $composableBuilder(column: $table.impactYIn, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  $$LoadDevelopmentSessionsTableAnnotationComposer get sessionId {
+    final $$LoadDevelopmentSessionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.sessionId,
+          referencedTable: $db.loadDevelopmentSessions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LoadDevelopmentSessionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.loadDevelopmentSessions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$LoadDevelopmentShotsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LoadDevelopmentShotsTable,
+          LoadDevelopmentShotRow,
+          $$LoadDevelopmentShotsTableFilterComposer,
+          $$LoadDevelopmentShotsTableOrderingComposer,
+          $$LoadDevelopmentShotsTableAnnotationComposer,
+          $$LoadDevelopmentShotsTableCreateCompanionBuilder,
+          $$LoadDevelopmentShotsTableUpdateCompanionBuilder,
+          (LoadDevelopmentShotRow, $$LoadDevelopmentShotsTableReferences),
+          LoadDevelopmentShotRow,
+          PrefetchHooks Function({bool sessionId})
+        > {
+  $$LoadDevelopmentShotsTableTableManager(
+    _$AppDatabase db,
+    $LoadDevelopmentShotsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LoadDevelopmentShotsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LoadDevelopmentShotsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LoadDevelopmentShotsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int> sessionId = const Value.absent(),
+                Value<double> chargeGr = const Value.absent(),
+                Value<int> shotIndex = const Value.absent(),
+                Value<double?> velocityFps = const Value.absent(),
+                Value<double?> impactXIn = const Value.absent(),
+                Value<double?> impactYIn = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => LoadDevelopmentShotsCompanion(
+                id: id,
+                sessionId: sessionId,
+                chargeGr: chargeGr,
+                shotIndex: shotIndex,
+                velocityFps: velocityFps,
+                impactXIn: impactXIn,
+                impactYIn: impactYIn,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required int sessionId,
+                required double chargeGr,
+                required int shotIndex,
+                Value<double?> velocityFps = const Value.absent(),
+                Value<double?> impactXIn = const Value.absent(),
+                Value<double?> impactYIn = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => LoadDevelopmentShotsCompanion.insert(
+                id: id,
+                sessionId: sessionId,
+                chargeGr: chargeGr,
+                shotIndex: shotIndex,
+                velocityFps: velocityFps,
+                impactXIn: impactXIn,
+                impactYIn: impactYIn,
+                notes: notes,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LoadDevelopmentShotsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sessionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sessionId,
+                                referencedTable:
+                                    $$LoadDevelopmentShotsTableReferences
+                                        ._sessionIdTable(db),
+                                referencedColumn:
+                                    $$LoadDevelopmentShotsTableReferences
+                                        ._sessionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LoadDevelopmentShotsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LoadDevelopmentShotsTable,
+      LoadDevelopmentShotRow,
+      $$LoadDevelopmentShotsTableFilterComposer,
+      $$LoadDevelopmentShotsTableOrderingComposer,
+      $$LoadDevelopmentShotsTableAnnotationComposer,
+      $$LoadDevelopmentShotsTableCreateCompanionBuilder,
+      $$LoadDevelopmentShotsTableUpdateCompanionBuilder,
+      (LoadDevelopmentShotRow, $$LoadDevelopmentShotsTableReferences),
+      LoadDevelopmentShotRow,
+      PrefetchHooks Function({bool sessionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -56324,4 +57669,6 @@ class $AppDatabaseManager {
         _db,
         _db.userComponentFavorites,
       );
+  $$LoadDevelopmentShotsTableTableManager get loadDevelopmentShots =>
+      $$LoadDevelopmentShotsTableTableManager(_db, _db.loadDevelopmentShots);
 }

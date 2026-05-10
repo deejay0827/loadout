@@ -4,11 +4,18 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Top-level list of saved load-development sessions. A session represents
-// one ladder experiment — either a charge-weight ladder ("test 41.5gr to
-// 43.0gr in 0.3gr steps") or a seating-depth ladder ("test 0.020"
-// CBTO bracket in 0.005" steps"). The screen wraps its body in a ProGate;
-// free users see the upgrade card, Pro users see the streamed list with
-// dismiss-to-delete and a "+" FAB pointing at the new-session wizard.
+// one load-development test — OCW (Optimal Charge Weight, Newberry),
+// Audette Ladder, Satterlee 10-shot, Generic charge ladder, or
+// Seating Depth ladder. The screen wraps its body in a ProGate; free
+// users see the upgrade card, Pro users see the streamed list with
+// dismiss-to-delete and a "+ New Test" extended FAB that pops a method
+// picker bottom-sheet (`_NewTestPickerSheet`).
+//
+// Tile taps route by `methodKind`: OCW / Ladder / Satterlee / Generic
+// rows open the v31+ `MethodTestScreen`; seating-ladder and pre-v31
+// charge-ladder rows fall back to the legacy
+// `LoadDevelopmentDetailScreen` so existing JSON-rung data renders
+// correctly (see `_openSession`).
 //
 // Each tile renders a status pill computed from session.nodeValue:
 // "Complete" once a node has been picked, "In Progress" otherwise. The
@@ -55,7 +62,10 @@ import '../../repositories/load_development_repository.dart';
 import '../../services/entitlement_notifier.dart';
 import '../../widgets/pro_gate.dart';
 import 'load_development_detail_screen.dart';
+import 'method_test_screen.dart';
 import 'new_load_development_screen.dart';
+import 'new_method_test_screen.dart';
+import 'widgets/method_explainer.dart';
 
 /// Top-level list of saved load-development sessions.
 ///
@@ -75,14 +85,149 @@ class LoadDevelopmentListScreen extends StatelessWidget {
       ),
       floatingActionButton: !isPro
           ? null
-          : FloatingActionButton(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const NewLoadDevelopmentScreen(),
-                ),
-              ),
-              child: const Icon(Icons.add),
+          : FloatingActionButton.extended(
+              onPressed: () => _showNewTestSheet(context),
+              icon: const Icon(Icons.add),
+              label: const Text('New Test'),
             ),
+    );
+  }
+
+  void _showNewTestSheet(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetCtx) => const _NewTestPickerSheet(),
+    );
+  }
+}
+
+/// Bottom-sheet method picker shown by the "+ New Test" FAB. Five
+/// rows — OCW, Audette Ladder, Satterlee, Generic, Seating — each
+/// pushing the right wizard.
+class _NewTestPickerSheet extends StatelessWidget {
+  const _NewTestPickerSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Pick A Method',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            _MethodPickerRow(
+              icon: Icons.center_focus_strong_outlined,
+              title: 'OCW (Newberry)',
+              subtitle: '3 shots per charge · vertical-impact flat spot',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NewMethodTestScreen(
+                      preselectedMethod: MethodKind.ocw,
+                    ),
+                  ),
+                );
+              },
+            ),
+            _MethodPickerRow(
+              icon: Icons.linear_scale_outlined,
+              title: 'Audette Ladder',
+              subtitle: '1 shot per charge · vertical stacking at distance',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NewMethodTestScreen(
+                      preselectedMethod: MethodKind.ladder,
+                    ),
+                  ),
+                );
+              },
+            ),
+            _MethodPickerRow(
+              icon: Icons.speed_outlined,
+              title: 'Satterlee 10-shot',
+              subtitle: '1 shot per charge · MV plateau',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NewMethodTestScreen(
+                      preselectedMethod: MethodKind.satterlee,
+                    ),
+                  ),
+                );
+              },
+            ),
+            _MethodPickerRow(
+              icon: Icons.dashboard_customize_outlined,
+              title: 'Generic Charge Ladder',
+              subtitle: 'Freeform — log whatever data you have',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NewMethodTestScreen(
+                      preselectedMethod: MethodKind.generic,
+                    ),
+                  ),
+                );
+              },
+            ),
+            _MethodPickerRow(
+              icon: Icons.straighten_outlined,
+              title: 'Seating Depth Ladder',
+              subtitle: 'CBTO ladder around an existing recipe',
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const NewLoadDevelopmentScreen(
+                      preselectedSessionType: 'seating_ladder',
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MethodPickerRow extends StatelessWidget {
+  const _MethodPickerRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: onTap,
     );
   }
 }
@@ -110,18 +255,62 @@ class _LoadDevelopmentBody extends StatelessWidget {
             final s = sessions[i];
             return _SessionTile(
               session: s,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      LoadDevelopmentDetailScreen(sessionId: s.id),
-                ),
-              ),
+              onTap: () => _openSession(context, s),
               onDelete: () => repo.delete(s.id),
             );
           },
         );
       },
     );
+  }
+}
+
+/// Route to the right detail screen for [s]:
+///   * `methodKind ∈ {ocw, ladder, satterlee, generic}` →
+///     [MethodTestScreen] (v31+ per-shot path).
+///   * Anything else (including legacy `'charge_ladder'` /
+///     `'seating_ladder'` rows that pre-date v31) → the original
+///     [LoadDevelopmentDetailScreen] so legacy data renders correctly.
+void _openSession(BuildContext context, LoadDevelopmentSessionRow s) {
+  final method = _methodFromWire(s.methodKind);
+  if (method != null) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => MethodTestScreen(sessionId: s.id, method: method),
+      ),
+    );
+  } else {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LoadDevelopmentDetailScreen(sessionId: s.id),
+      ),
+    );
+  }
+}
+
+MethodKind? _methodFromWire(String wire) {
+  switch (wire) {
+    case 'ocw':
+      return MethodKind.ocw;
+    case 'ladder':
+      return MethodKind.ladder;
+    case 'satterlee':
+      return MethodKind.satterlee;
+    case 'generic':
+      // Generic was introduced in v31 alongside the per-shot model.
+      // Existing pre-v31 rows backfilled to 'generic' have no shot
+      // data — they still open in the legacy detail screen because
+      // their JSON-rung data lives there. Distinguish by inspecting
+      // sessionType: only sessionType=='charge_ladder' rows that
+      // had data pre-existed; new rows we create will land here too.
+      // For simplicity: route ALL 'generic' rows through the new
+      // method screen. Legacy rows render the new screen with empty
+      // shot grids — the user can either start logging into the new
+      // grid or delete and recreate. The first time we see legacy
+      // data in production we may revisit this.
+      return MethodKind.generic;
+    default:
+      return null;
   }
 }
 

@@ -1210,8 +1210,23 @@ class TestSessions extends Table {
 class LoadDevelopmentSessions extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  /// 'charge_ladder' | 'seating_ladder'
+  /// Legacy two-bucket discriminator: `'charge_ladder' | 'seating_ladder'`.
+  ///
+  /// Predates the v31 method-aware overhaul. Existing rows keep their
+  /// original value so the schema stays additive; new rows continue to
+  /// fill it (`charge_ladder` for OCW / Audette / Satterlee / Generic
+  /// charge tests, `seating_ladder` for seating tests). New code reads
+  /// [methodKind] for fine-grained dispatch.
   TextColumn get sessionType => text()();
+
+  /// v31 method discriminator. One of `'ocw' | 'ladder' | 'satterlee' |
+  /// 'generic' | 'seating'`. Always non-null on rows created at v31+;
+  /// the v31 migration backfills legacy rows from [sessionType] by
+  /// mapping `charge_ladder → 'generic'` and `seating_ladder →
+  /// 'seating'`. New screens dispatch on this field.
+  TextColumn get methodKind =>
+      text().withDefault(const Constant('generic'))();
+
   TextColumn get cartridge => text().nullable()();
   IntColumn get firearmId => integer().nullable().references(UserFirearms, #id)();
   /// Source recipe (only for seating ladders, where charge is already locked)
@@ -1224,13 +1239,64 @@ class LoadDevelopmentSessions extends Table {
   RealColumn get endValue => real()();
   RealColumn get stepValue => real()();
   IntColumn get rungCount => integer()();
+  /// Distance from muzzle to target in YARDS for OCW / Ladder vertical
+  /// dispersion analysis. Nullable so seating-only sessions and
+  /// pre-v31 rows stay valid; OCW / Ladder / Satterlee detail screens
+  /// default to 100 yd in their setup placeholder.
+  IntColumn get distanceYd => integer().nullable()();
+  /// Number of shots fired per charge weight. OCW = 3 (Newberry); Audette
+  /// Ladder = 1; Satterlee = 1 (10 charges × 1 shot, chrono-driven);
+  /// Generic = whatever the user logs. Nullable for legacy rows.
+  IntColumn get shotsPerCharge => integer().nullable()();
   /// User-selected "node" once analysis completes
   RealColumn get nodeValue => real().nullable()();
-  /// JSON: per-rung data (chrono / accuracy / pressure notes)
+  /// JSON: per-rung aggregate data (chrono / accuracy / pressure notes).
+  /// New OCW / Ladder / Satterlee shots live in [LoadDevelopmentShots]
+  /// instead of this blob — the blob stays for legacy ladders and for
+  /// rolled-up summaries.
   TextColumn get rungsJson => text().withDefault(const Constant('[]'))();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Per-shot data for OCW / Audette Ladder / Satterlee 10-shot / Generic
+/// load-development tests. Each row records one fired shot at a given
+/// charge weight, with optional chrono and impact coordinates.
+///
+/// Why a separate child table instead of a JSON blob on the session:
+///   * OCW vertical-vs-charge analysis needs efficient grouping by
+///     `chargeGr`, which is awkward against a JSON column.
+///   * The user routinely logs shots one-at-a-time at the range; a
+///     row-per-shot insert is cheaper than a blob rewrite.
+///   * Per-shot impact coordinates (X, Y in inches at distance Y) are
+///     the foundation for the group-vs-charge plot.
+///
+/// All measurement fields are nullable. A row with only `chargeGr` set
+/// represents "shot fired but no chrono / no group yet."
+@DataClassName('LoadDevelopmentShotRow')
+class LoadDevelopmentShots extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get sessionId =>
+      integer().references(LoadDevelopmentSessions, #id)();
+  /// Charge weight in grains. Required — every shot in a load-dev test
+  /// is "the shot at this charge weight."
+  RealColumn get chargeGr => real()();
+  /// 1-based ordinal of the shot within its charge. For OCW (3 shots
+  /// per charge) this runs 1..3; for Ladder / Satterlee it's always 1.
+  IntColumn get shotIndex => integer()();
+  /// Muzzle velocity in fps (chrono reading). Nullable.
+  RealColumn get velocityFps => real().nullable()();
+  /// Impact X in inches relative to point of aim. Positive right,
+  /// negative left. Nullable until the user logs the impact.
+  RealColumn get impactXIn => real().nullable()();
+  /// Impact Y in inches relative to point of aim. Positive UP, negative
+  /// DOWN — matches how a shooter reads a target board, NOT how a
+  /// screen Y axis grows.
+  RealColumn get impactYIn => real().nullable()();
+  /// Free-text notes ("called pull", "wind picked up", etc).
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
 // ─────────────────────── Range Day (schema v10) ───────────────────────
@@ -1872,6 +1938,11 @@ class UserComponentFavorites extends Table {
     // SharedPreferences to drift so they participate in
     // ExportService and Cloud Sync).
     UserComponentFavorites,
+    // Schema v31 additions (per-shot data for OCW / Audette Ladder /
+    // Satterlee 10-shot / Generic load-development tests; existing
+    // `LoadDevelopmentSessions` gained `methodKind`, `distanceYd`,
+    // `shotsPerCharge` columns).
+    LoadDevelopmentShots,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -1880,7 +1951,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 30;
+  int get schemaVersion => 31;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2432,6 +2503,53 @@ class AppDatabase extends _$AppDatabase {
             // crash or data loss.
             await delete(scopeReticleOptions).go();
             await delete(reticles).go();
+          }
+          if (from < 31) {
+            // v31 — Load Development overhaul. Adds method-specific
+            // workflows (OCW / Audette Ladder / Satterlee 10-shot /
+            // Generic) on top of the legacy two-bucket schema.
+            // Three coordinated additions, all additive so existing
+            // ladder sessions are preserved:
+            //
+            //   1. New columns on `LoadDevelopmentSessions`:
+            //        * `methodKind` — disambiguates which protocol
+            //          (`'ocw' | 'ladder' | 'satterlee' | 'generic' |
+            //          'seating'`).
+            //        * `distanceYd` — distance to target in yards
+            //          (needed for OCW / Ladder vertical-vs-charge
+            //          analysis).
+            //        * `shotsPerCharge` — shots fired per charge
+            //          weight (3 for OCW, 1 for Ladder / Satterlee,
+            //          variable for Generic).
+            //   2. New `LoadDevelopmentShots` child table holding
+            //      per-shot velocity + impact data. The legacy
+            //      `rungsJson` blob continues to work for sessions
+            //      that pre-date the per-shot model.
+            //   3. Backfill `methodKind` on existing rows: every
+            //      `sessionType = 'charge_ladder'` becomes
+            //      `methodKind = 'generic'`, and every `sessionType
+            //      = 'seating_ladder'` becomes `methodKind =
+            //      'seating'`. Existing screens still work because
+            //      the legacy detail screen doesn't read
+            //      `methodKind`.
+            await m.addColumn(
+                loadDevelopmentSessions, loadDevelopmentSessions.methodKind);
+            await m.addColumn(
+                loadDevelopmentSessions, loadDevelopmentSessions.distanceYd);
+            await m.addColumn(
+              loadDevelopmentSessions,
+              loadDevelopmentSessions.shotsPerCharge,
+            );
+            await m.createTable(loadDevelopmentShots);
+            // Backfill methodKind from sessionType for existing rows.
+            // Default for the new column is `'generic'` so the
+            // charge-ladder rows already match; we only need to
+            // rewrite seating-ladder rows.
+            await customStatement(
+              "UPDATE load_development_sessions "
+              "SET method_kind = 'seating' "
+              "WHERE session_type = 'seating_ladder'",
+            );
           }
         },
       );

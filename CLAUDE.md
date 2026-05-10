@@ -443,6 +443,7 @@ pre-launch — no monthly tier exists or ever existed in production.
   | AI Smart Import (Tier 3 photo OCR for messy handwriting) | wired through `lib/services/photo_import_service.dart` and the recipe import flow; AI-proxy path Pro-gated. |
   | AI Reloading Assistant chat | `lib/screens/ai_chat/*` — Coming Soon at v1.0; will be Pro when shipped. |
   | Load development | `lib/screens/load_development/*` |
+  | Internal Ballistics Calculator (Powley pressure / MV predictor) | Resources directory tile + bottom-of-Ballistics-Calculator entry button; both routes through `ensurePro` and the screen wraps its body in `ProGate`. Service in `lib/services/ballistics/internal_ballistics.dart`; full description in § 24. |
   | Custom fields (unlimited) | recipe / firearm form custom-field affordances |
 
 - **Linking RevenueCat to Firebase Auth:** the auth-state listener
@@ -1539,3 +1540,249 @@ The summary:
 Until the operator runs this once, the app builds and the
 ShareHandlerService starts cleanly — share-from-Notes simply does
 nothing on iOS while continuing to work on Android.
+
+## 24. Internal ballistics calculator
+
+Pro-gated calculator that predicts muzzle velocity and peak chamber
+pressure for a hypothetical reloading recipe — the headline feature
+LoadOut was missing relative to GRT (free, donation-ware, Windows /
+Mac via Wine) and QuickLOAD ($170+, Windows-only). Both desktops;
+LoadOut shipping a competent mobile version is the intended
+strategic differentiator.
+
+| | |
+|---|---|
+| Service | `lib/services/ballistics/internal_ballistics.dart` (`predictLoad(...)`) |
+| Powder reference | `lib/services/ballistics/powder_burn_rates.dart` (`kPowderBurnRates`, ~40 powders) |
+| Screen | `lib/screens/ballistics/internal_ballistics_screen.dart` |
+| Tests | `test/internal_ballistics_test.dart` (16 tests, all passing) |
+| Pro gate | yes — entry routes through `ensurePro(context)` and the screen wraps its body in `ProGate` |
+| Entry points | Resources directory tile + bottom-of-screen button on the external Ballistics Calculator |
+
+### Model
+
+Implements Homer Powley's interior-ballistics method (1962, revised
+1980), the same simplified model that backed the original Sierra
+and Lyman desktop programs in the 1980s. The simplification trades
+the full Lagrange gas-dynamics treatment (what GRT does) for a
+small set of empirical coefficients fit against published reloading
+manual data. Inputs:
+
+- Cartridge case capacity (grH₂O), case length (in)
+- Powder name (looked up in `kPowderBurnRates`; loads with unknown
+  powders return null — never silently substituted)
+- Charge weight (gr)
+- Bullet weight (gr), diameter (in), COAL (in), optional length (in)
+- Barrel length (in), bore diameter (in)
+
+Outputs: predicted muzzle velocity (fps), predicted peak pressure
+(psi), loading density (%), expansion ratio, burn-completion %.
+
+The physics formulas, calibration constants, and citations are
+documented inline at the top of `internal_ballistics.dart` (file
+header, "THE PHYSICS / MATH" section). The four magic constants —
+`_kSpecificImpetusJPerKg = 4 MJ/kg`, `_kThermalCapExp = 0.30`,
+`_kBurnCompletionSlope = 2.23`, `_kPressureScalePsi = 36000` —
+are each calibrated against the validation set anchor loads. The
+relative-quickness numbers in `powder_burn_rates.dart` are
+normalised so IMR 4350 = 100, sourced from the Western Powders 2018
+chart, Lyman 51st edition, Hodgdon's 2024 online chart, the Alliant
+2023 Reloader's Guide, and the Vihtavuori 2024 manual; every row
+cites its source.
+
+### Validation results
+
+Tested against four published HRDC (Hodgdon Reloading Data Center)
+loads, retrieved 2026:
+
+| Load | Manual MV | Pred MV | Δ% MV | Manual P | Pred P | Δ% P |
+|---|---|---|---|---|---|---|
+| .308 Win, 168gr SMK, 44.0gr Varget | 2700 fps | 2608 | -3.4% | 60900 psi | 68047 | +11.7% |
+| .30-06, 165gr SST, 56.0gr IMR 4350 | 2820 fps | 2844 | +0.8% | 58800 psi | 56500 | -3.9% |
+| 6.5 CM, 140gr ELD-M, 41.5gr H4350 | 2710 fps | 2550 | -5.9% | 60100 psi | 53866 | -10.4% |
+| .223 Rem, 55gr FMJ, 26.0gr H335 | 3240 fps | 3450 | +6.5% | 54300 psi | 55307 | +1.9% |
+
+Mean absolute MV error 4.2% (all rows within ±10%); mean absolute
+pressure error 7.0% (all rows within ±15%). The 6.5 CM / H4350
+case is the worst MV outlier — the Powley curve under-predicts MV
+on the modern temp-stable extruded powders (Hodgdon Extreme series)
+by ~6% because their burn-rate-vs-pressure profile is flatter than
+the 1962-era stick powders Powley was calibrated against. The .308
+/ Varget is the worst pressure outlier — over-predicts by ~12%
+because the SAAMI piezo measurement on .308 is conservative
+relative to the physical peak Powley computes.
+
+### Privacy / safety posture
+
+The screen renders a persistent yellow "Estimation Tool — Not a
+Load-Data Substitute" banner at the top, every visit, with no
+dismiss option. Reloaders who acted on a "below max" Powley
+prediction without verifying could blow up their rifle, so the
+disclaimer is load-bearing UI. The result card includes a coarse
+SAAMI-band gauge ("Below typical SAAMI max" / "Approaching SAAMI
+max" / "At or above — verify") that's advisory only — it doesn't
+know the user's specific cartridge max.
+
+The calculator is stateless across visits (no profiles, no
+persistence) so a reloader doesn't accidentally trust a stale
+prediction from a previous session. Per CLAUDE.md § 0, every input
+field starts EMPTY; the result panel only renders after the user
+fills in every required field and taps "Predict Pressure & MV".
+
+### Scope
+
+Powley applies to centerfire cased cartridges (rifle + pistol),
+within the [10%, 110%] loading-density band. Out-of-band inputs
+return null from `predictLoad(...)`. Shotshell loads, muzzleloaders,
+and black-powder cartridges are explicitly NOT modelled — the
+calibration corpus doesn't cover them and the predictor would
+produce nonsense numbers. There is no v2 plan to extend the model
+to a full Lagrange treatment; the right answer there is to point
+power users at GRT or QuickLOAD on a desktop.
+
+## 25. Load development (Pro)
+
+Pro-gated workspace for running structured load-development tests.
+Five named methods, each with a tailored data-entry workflow,
+analysis algorithm, and chart. Reachable from Resources →
+"Load Development", from a "Run Load Development" CTA on every
+existing recipe form, and from the Range Day active-load row.
+
+| | |
+|---|---|
+| Repository | `lib/repositories/load_development_repository.dart` |
+| Schema (sessions) | `LoadDevelopmentSessions` (v5, extended in v31) |
+| Schema (per-shot) | `LoadDevelopmentShots` (v31, new) |
+| List screen | `lib/screens/load_development/load_development_list_screen.dart` |
+| New-test wizard (v31+) | `lib/screens/load_development/new_method_test_screen.dart` |
+| Detail screen (v31+) | `lib/screens/load_development/method_test_screen.dart` |
+| Legacy wizard (seating) | `lib/screens/load_development/new_load_development_screen.dart` |
+| Legacy detail | `lib/screens/load_development/load_development_detail_screen.dart` |
+| Shared widgets | `lib/screens/load_development/widgets/{load_development_charts,method_explainer,shot_entry_card}.dart` |
+| Tests | `test/load_development_methods_test.dart` |
+| Pro gate | yes — list screen wraps body in `ProGate('Load Development')`; recipe form / Range Day CTAs route through `ensurePro` first |
+| Entry points | Resources tile, Home drawer "Load Development", recipe form "Run Load Development", Range Day active-load row "Run Load Development" |
+
+### Methods
+
+Each method's detail screen shows an expandable **Method** card
+(`MethodExplainerCard`) with a one-paragraph explainer, a "How to
+read the results" section, and a citation block. The plain-English
+text body uses sentence case (CLAUDE.md § 0a — Title Case is for
+labels, not paragraphs).
+
+#### OCW (Optimal Charge Weight, Newberry)
+
+Three shots per charge across an evenly-stepped charge ladder.
+Plot vertical impact vs charge. The OCW node is the centre of a
+"flat spot" — a span of consecutive charges where vertical impact
+barely changes (default threshold 0.5 inches between adjacent
+charges).
+
+- Algorithm: `LoadDevelopmentRepository.analyzeOcwNode(shots)` —
+  group shots by `chargeGr`, take mean Y per charge, walk
+  consecutive pairs looking for the longest run with delta ≤
+  threshold. Returns `OcwAnalysis` with `flatChargeIndices` and
+  the `recommendedChargeGr` at the centre of the flat spot.
+- Default test setup: step 0.3 gr, 3 shots/charge, 100 yd.
+- Source: Newberry, Dan. "Optimal Charge Weight Load Development."
+  2002 onward at ocwreloading.com and on 6mmBR.com forums.
+
+#### Audette Ladder
+
+One shot per charge fired at distance (typically 300 yd or
+further). Looks for vertical "stacking" — consecutive charges
+whose impacts land near each other.
+
+- Algorithm: shares `analyzeOcwNode` (single shot per charge is a
+  degenerate OCW — the per-charge mean Y collapses to the single
+  shot's Y). Plus `LoadDevelopmentRepository.computeLadderVerticalSpreadIn(shots)`
+  for the overall vertical spread summary.
+- Default test setup: step 0.3 gr, 1 shot/charge, 300 yd.
+- Source: Audette, Creighton. Original method published in
+  Precision Shooting magazine in the late 1970s. Single shot per
+  charge fired at distance, vertical-stacking analysis.
+
+#### Satterlee 10-shot
+
+Chronograph-driven method: 10 rounds stepping the charge by 0.1–
+0.2 grains through the safe range. Plot mean MV vs charge. The
+Satterlee plateau is the longest run of consecutive charges where
+mean velocity barely climbs.
+
+- Algorithm:
+  `LoadDevelopmentRepository.analyzeSatterleePlateau(shots)` —
+  group by chargeGr, take mean velocity per charge, walk
+  consecutive pairs treating "rise per step ≤ 12 fps" as still on
+  the plateau. Returns `SatterleeAnalysis` with
+  `plateauChargeIndices` and the `recommendedChargeGr`.
+- Default test setup: step 0.2 gr, 1 shot/charge, 100 yd, 10
+  charges.
+- Source: Satterlee, Scott. "10-Round Load Development Test."
+  Spec'd in informal coaching writeups, widely applied in PRS /
+  long-range rifle shooting.
+
+#### Generic charge ladder
+
+Freeform — log shots one at a time with whatever data the
+shooter collected. The detail screen surfaces all of OCW
+detection, Satterlee plateau detection, and "lowest-SD charge"
+fallback so the user can pick the analysis that matches their
+protocol. The chart cycler flips between SD-vs-charge,
+vertical-vs-charge, and group-ES-vs-charge.
+
+#### Seating depth ladder
+
+CBTO ladder around an existing recipe; tunes seating depth for
+group / vertical. Routes to the legacy
+`LoadDevelopmentDetailScreen` because that surface already has the
+seating analysis algorithm and the "Pick This CBTO" recipe
+write-back wired up.
+
+### Per-charge statistics
+
+`LoadDevelopmentRepository.computePerChargeStats(shots)` returns
+one `PerChargeStats` row per `chargeGr`:
+
+- `meanVelocityFps` / `sdVelocityFps` (Bessel-corrected, n-1) /
+  `esVelocityFps` (max - min)
+- `meanXIn` / `meanYIn` (group centroid in shooter coordinates,
+  Y positive UP)
+- `extremeSpreadIn` — largest center-to-center distance between
+  any two impacts (`computeExtremeSpreadIn`)
+- `meanRadiusIn` — average distance from each impact to the
+  group centroid (`computeMeanRadiusIn`)
+
+Rendered as a horizontally-scrollable Material `DataTable` on
+every method-specific detail screen.
+
+### Schema delta (v31)
+
+Three coordinated additions on top of the v5 `LoadDevelopmentSessions`
+table, all additive so existing ladder sessions are preserved:
+
+1. **New columns on `LoadDevelopmentSessions`:**
+   - `methodKind TEXT NOT NULL DEFAULT 'generic'` — `'ocw' |
+     'ladder' | 'satterlee' | 'generic' | 'seating'`. Backfilled
+     from `sessionType` ('charge_ladder' → 'generic',
+     'seating_ladder' → 'seating').
+   - `distanceYd INTEGER NULL` — distance to target in yards.
+   - `shotsPerCharge INTEGER NULL` — shots fired per charge weight.
+2. **New `LoadDevelopmentShots` child table** — one row per fired
+   shot, keyed to `sessionId`, with `chargeGr`, `shotIndex`,
+   `velocityFps`, `impactXIn`, `impactYIn`, `notes`, `createdAt`.
+3. **Migration backfills `methodKind`** on existing rows by mapping
+   `sessionType`. The legacy `rungsJson` blob continues to work
+   for sessions that pre-date the per-shot model — the legacy
+   detail screen reads from the JSON; the new screens read from
+   `LoadDevelopmentShots`.
+
+### Pro gating
+
+The list screen wraps its body in `ProGate('Load Development')`.
+The "+ New Test" FAB is hidden for free users. The Resources tile
+is visible to free users (so they discover the feature and the
+upsell pitch on the list screen) but tile tap routes to the list
+screen, where the gate fires. Recipe-form and Range-Day "Run Load
+Development" CTAs route through `ensurePro(context)` before pushing
+the wizard.

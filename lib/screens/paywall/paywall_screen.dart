@@ -397,6 +397,14 @@ class _FeaturesShowcase extends StatelessWidget {
           'and turns it into structured recipes. Reading-only — no '
           'chat, no training.',
     ),
+    _FeatureSpec(
+      icon: Icons.science_outlined,
+      title: 'Load development',
+      description:
+          'OCW (Newberry), Audette Ladder, Satterlee 10-shot, and '
+          'generic charge ladders with statistical analysis. Per-charge '
+          'SD, ES, mean MV, group size, and node detection.',
+    ),
   ];
 
   @override

@@ -277,7 +277,23 @@
       "WebFetch(domain:www.hodgdon.com)",
       "WebFetch(domain:www.hornady.com)",
       "WebFetch(domain:www.sierrabullets.com)",
-      "WebFetch(domain:www.speer.com)"
+      "WebFetch(domain:www.speer.com)",
+      "WebFetch(domain:hodgdonpowderco.com)",
+      "WebFetch(domain:sierrabullets.com)",
+      "WebFetch(domain:www.thekineticgroup.com)",
+      "WebFetch(domain:hodgdonreloading.com)",
+      "WebFetch(domain:loaddata.com)",
+      "WebFetch(domain:play.google.com)",
+      "WebFetch(domain:www.vihtavuori.com)",
+      "WebFetch(domain:apps.appfollow.io)",
+      "WebFetch(domain:apptopia.com)",
+      "WebFetch(domain:apkpure.com)",
+      "WebFetch(domain:vihtavuori-reload-rightspot-ltd.en.aptoide.com)",
+      "WebFetch(domain:rokslide.com)",
+      "WebFetch(domain:www.pewpewtactical.com)",
+      "WebFetch(domain:vihtavuori.com)",
+      "WebFetch(domain:www.bluestacks.com)",
+      "Bash(git status *)"
     ]
   }
 }

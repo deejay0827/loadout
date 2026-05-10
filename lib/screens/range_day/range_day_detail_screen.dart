@@ -102,6 +102,7 @@ import '../../widgets/reticle_picker.dart';
 import '../../widgets/reticle_renderer.dart';
 import '../../widgets/scope_daytime_backdrop.dart';
 import '../ballistics/ballistics_screen.dart';
+import '../load_development/new_method_test_screen.dart';
 import 'bc_truing_screen.dart';
 import 'range_day_mode.dart';
 import 'range_day_screen.dart';
@@ -6015,30 +6016,68 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 6),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.science_outlined,
-              size: 16, color: theme.colorScheme.onSurfaceVariant),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              l.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+          Row(
+            children: [
+              Icon(Icons.science_outlined,
+                  size: 16, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  l.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              FavoriteStarButton(
+                isFavorite: l.isFavorite,
+                compact: true,
+                onToggle: () async {
+                  final repo = context.read<RecipeRepository>();
+                  await repo.toggleFavorite(l.id);
+                },
+              ),
+            ],
+          ),
+          // Discoverability hook for Pro Load Development. Surfaces
+          // the workflow at the moment the shooter has the active
+          // load picked, which is exactly when "I want to test this
+          // load's charge / seating tomorrow" becomes the next
+          // intent. Routes through the standard `ensurePro` gate.
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              icon: const Icon(Icons.science_outlined, size: 16),
+              onPressed: () => _onRunLoadDevelopment(l.id),
+              label: const Text('Run Load Development'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                foregroundColor: theme.colorScheme.primary,
+                textStyle: theme.textTheme.bodySmall,
               ),
             ),
           ),
-          FavoriteStarButton(
-            isFavorite: l.isFavorite,
-            compact: true,
-            onToggle: () async {
-              final repo = context.read<RecipeRepository>();
-              await repo.toggleFavorite(l.id);
-            },
-          ),
         ],
+      ),
+    );
+  }
+
+  /// Pro entry point from Range Day. Routes to the new method-aware
+  /// test wizard pre-linked to the active load. Wrapper exists so
+  /// the gate is consistent with the same hook on the recipe form.
+  Future<void> _onRunLoadDevelopment(int recipeId) async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NewMethodTestScreen(
+          preselectedSourceRecipeId: recipeId,
+        ),
       ),
     );
   }

@@ -4,21 +4,40 @@
 // WHAT THIS FILE DOES
 // ============================================================================
 // Owns all database operations and analysis algorithms for **load
-// development sessions** — the schema-v5 feature that lets a reloader
-// run a structured "ladder test". A ladder test fires a series of
-// almost-identical loads where one variable changes in small steps
-// (powder charge or seating depth), records chronograph data and
-// group sizes per rung, and looks for the sweet spot where the load
-// is most accurate or most consistent.
+// development sessions** — the schema-v5 feature (extended in v31)
+// that lets a reloader run a structured load-development test. The
+// app supports five named methods today:
 //
-// This file has three responsibilities:
+//   * **OCW (Optimal Charge Weight, Newberry, ~2002)** — 3 shots per
+//     charge across a charge ladder, looking for a flat spot in the
+//     vertical-impact-vs-charge curve.
+//   * **Audette Ladder (Audette, late 1970s)** — single shot per
+//     charge fired at distance, looking for shots that "stack"
+//     vertically.
+//   * **Satterlee 10-shot (Satterlee)** — 10 chronograph rounds
+//     stepping the charge by 0.1–0.2 gr, looking for an MV plateau.
+//   * **Generic** — any user-defined data-collection workflow with
+//     freeform per-rung measurements.
+//   * **Seating depth** — CBTO ladder around an existing recipe.
+//
+// This file has six responsibilities:
 //   1. CRUD over `LoadDevelopmentSessions` rows (the table that holds
 //      the session metadata + a JSON blob of rung measurements).
-//   2. The `LadderRung` value class + JSON codec for parsing /
+//   2. CRUD over the `LoadDevelopmentShots` child table (per-shot
+//      rows used by the OCW / Ladder / Satterlee / Generic methods
+//      added in v31).
+//   3. The `LadderRung` value class + JSON codec for parsing /
 //      serializing the per-rung measurement bag.
-//   3. The two analysis algorithms — `analyzeChargeNode` and
-//      `analyzeSeatingNode` — that turn the rung data into a
-//      recommended node value.
+//   4. The legacy ladder analysis methods — `analyzeChargeNode` and
+//      `analyzeSeatingNode` — that turn the JSON-encoded rung data
+//      into a recommended node value.
+//   5. The new method-specific analysis methods — `analyzeOcwNode`,
+//      `analyzeSatterleePlateau`, `computeLadderVerticalSpreadIn`,
+//      and `computePerChargeStats` — that operate on the per-shot
+//      rows.
+//   6. Two recipe writebacks — `applySeatingNodeToRecipe` (CBTO) and
+//      `applyChargeNodeToRecipe` (powder charge) — that push a
+//      picked node back to the source `UserLoads` row.
 //
 // **Public types:**
 //   * `LadderRung` — immutable record for one row of the ladder. Has
@@ -388,6 +407,107 @@ class ChargeAnalysis {
   final double? recommendedValue;
 }
 
+/// Per-charge statistical roll-up (mean / SD / ES of velocity, mean POI,
+/// group size). Returned by
+/// [LoadDevelopmentRepository.computePerChargeStats] for every charge
+/// weight that has at least one shot logged.
+class PerChargeStats {
+  const PerChargeStats({
+    required this.chargeGr,
+    required this.shotCount,
+    required this.meanVelocityFps,
+    required this.sdVelocityFps,
+    required this.esVelocityFps,
+    required this.meanXIn,
+    required this.meanYIn,
+    required this.extremeSpreadIn,
+    required this.meanRadiusIn,
+  });
+
+  /// Charge weight in grains. The bucket key.
+  final double chargeGr;
+  /// Number of shots logged at this charge weight.
+  final int shotCount;
+  /// Sample mean of velocity readings (fps). Null when no chrono data
+  /// at this charge.
+  final double? meanVelocityFps;
+  /// Sample standard deviation of velocity (fps). Null when fewer than
+  /// 2 chrono readings at this charge.
+  final double? sdVelocityFps;
+  /// Extreme spread of velocity (max - min, in fps). Null when no
+  /// chrono data.
+  final double? esVelocityFps;
+  /// Mean X impact (inches, positive right). Null when no impact data.
+  final double? meanXIn;
+  /// Mean Y impact (inches, positive UP). Null when no impact data.
+  final double? meanYIn;
+  /// Group extreme spread — the largest center-to-center distance
+  /// between any two impacts in this charge bucket. Null when fewer
+  /// than 2 impact rows.
+  final double? extremeSpreadIn;
+  /// Mean radius — the average distance from each impact to the group
+  /// centroid. Null when no impact data.
+  final double? meanRadiusIn;
+}
+
+/// Outcome of [LoadDevelopmentRepository.analyzeOcwNode].
+///
+/// OCW (Optimal Charge Weight, Newberry) looks for a "flat spot" in
+/// the **vertical point-of-impact vs. charge weight** curve. A flat
+/// spot identifies a charge range where small powder variations don't
+/// change the bullet's vertical landing position — the load is at a
+/// barrel-time harmonic node.
+class OcwAnalysis {
+  const OcwAnalysis({
+    required this.chargesAnalyzed,
+    required this.flatChargeIndices,
+    required this.maxVerticalSpreadIn,
+    required this.recommendedChargeGr,
+  });
+
+  /// Number of distinct charges with at least one impact-Y row.
+  final int chargesAnalyzed;
+  /// Charge weights that are part of the recommended flat spot. Empty
+  /// when no flat spot was found.
+  final List<double> flatChargeIndices;
+  /// Vertical-impact spread allowed inside the flat-spot detector.
+  /// Default detector threshold is `maxVerticalSpreadIn` inches between
+  /// adjacent charges. Stored on the result so callers / tests can
+  /// inspect the threshold.
+  final double maxVerticalSpreadIn;
+  /// Recommended OCW charge — the centre of the longest run of
+  /// consecutive charge weights whose mean vertical impact is within
+  /// the threshold. Null when no flat spot exists.
+  final double? recommendedChargeGr;
+}
+
+/// Outcome of [LoadDevelopmentRepository.analyzeSatterleePlateau].
+///
+/// Satterlee 10-shot looks for a **velocity plateau** — a run of
+/// consecutive charge weights where the mean velocity barely changes
+/// even though the charge stepped up. The plateau is the load's
+/// pressure node; loads tuned to the centre of the plateau tolerate
+/// small powder-charge drift better than the surrounding ramp.
+class SatterleeAnalysis {
+  const SatterleeAnalysis({
+    required this.chargesAnalyzed,
+    required this.plateauChargeIndices,
+    required this.maxVelocityRiseFps,
+    required this.recommendedChargeGr,
+  });
+
+  /// Number of distinct charges with at least one velocity reading.
+  final int chargesAnalyzed;
+  /// Charge weights inside the recommended plateau. Empty when no
+  /// plateau was found.
+  final List<double> plateauChargeIndices;
+  /// Per-step velocity rise (fps) the detector treats as "still flat."
+  /// Stored on the result for inspection.
+  final double maxVelocityRiseFps;
+  /// Recommended charge — the centre of the longest plateau.
+  final double? recommendedChargeGr;
+}
+
 /// Outcome of [LoadDevelopmentRepository.analyzeSeatingNode].
 class SeatingAnalysis {
   const SeatingAnalysis({
@@ -439,9 +559,18 @@ class LoadDevelopmentRepository {
           .write(entry.copyWith(updatedAt: Value(DateTime.now())))
           .then((rows) => rows > 0);
 
-  Future<int> delete(int id) =>
-      (db.delete(db.loadDevelopmentSessions)..where((s) => s.id.equals(id)))
+  /// Delete one session **and** every per-shot row that belongs to it.
+  /// Done inside a transaction so the FK constraint can't fire mid-flight.
+  Future<int> delete(int id) async {
+    return await db.transaction(() async {
+      await (db.delete(db.loadDevelopmentShots)
+            ..where((s) => s.sessionId.equals(id)))
           .go();
+      return await (db.delete(db.loadDevelopmentSessions)
+            ..where((s) => s.id.equals(id)))
+          .go();
+    });
+  }
 
   /// Persist [rungs] back to the session JSON column. Bumps `updatedAt`
   /// implicitly via [update].
@@ -653,6 +782,396 @@ class LoadDevelopmentRepository {
     );
   }
 
+  // ─────────────────────── Per-shot CRUD (v31) ───────────────────────
+
+  /// Stream every shot belonging to [sessionId], ordered by charge
+  /// then by shotIndex.
+  Stream<List<LoadDevelopmentShotRow>> watchShots(int sessionId) =>
+      (db.select(db.loadDevelopmentShots)
+            ..where((s) => s.sessionId.equals(sessionId))
+            ..orderBy([
+              (s) => OrderingTerm.asc(s.chargeGr),
+              (s) => OrderingTerm.asc(s.shotIndex),
+            ]))
+          .watch();
+
+  /// One-shot variant of [watchShots] for places that don't want a stream.
+  Future<List<LoadDevelopmentShotRow>> getShots(int sessionId) =>
+      (db.select(db.loadDevelopmentShots)
+            ..where((s) => s.sessionId.equals(sessionId))
+            ..orderBy([
+              (s) => OrderingTerm.asc(s.chargeGr),
+              (s) => OrderingTerm.asc(s.shotIndex),
+            ]))
+          .get();
+
+  /// Insert one shot row, returning the new id.
+  Future<int> insertShot(LoadDevelopmentShotsCompanion entry) =>
+      db.into(db.loadDevelopmentShots).insert(entry);
+
+  /// Update an existing shot row by id. Returns true when at least one
+  /// row was rewritten.
+  Future<bool> updateShot(int id, LoadDevelopmentShotsCompanion entry) =>
+      (db.update(db.loadDevelopmentShots)..where((s) => s.id.equals(id)))
+          .write(entry)
+          .then((rows) => rows > 0);
+
+  /// Delete one shot row.
+  Future<int> deleteShot(int id) =>
+      (db.delete(db.loadDevelopmentShots)..where((s) => s.id.equals(id)))
+          .go();
+
+  /// Wipe every shot for [sessionId]. Used when the session is
+  /// deleted; called inside a transaction for atomicity.
+  Future<int> deleteShotsForSession(int sessionId) => (db
+          .delete(db.loadDevelopmentShots)
+        ..where((s) => s.sessionId.equals(sessionId)))
+      .go();
+
+  // ─────────────────────── OCW analysis (Newberry) ───────────────────────
+
+  /// Optimal Charge Weight detection on the **vertical-impact-vs-charge**
+  /// curve.
+  ///
+  /// Algorithm:
+  ///   1. Group [shots] by `chargeGr`. Compute mean Y impact per
+  ///      charge from rows where `impactYIn != null`.
+  ///   2. Sort the (charge, meanY) pairs by charge ascending.
+  ///   3. Walk the sorted pairs and find the longest consecutive run
+  ///      where `|meanY[i] - meanY[i-1]| <= verticalThresholdIn`.
+  ///   4. The recommended charge is the centre of the winning run
+  ///      (rounded down for even-length).
+  ///
+  /// Default `verticalThresholdIn` is 0.5 inches at the user's
+  /// distance — Newberry's heuristic that "the bullet didn't move
+  /// vertically with the charge change." Caller can override at any
+  /// distance.
+  ///
+  /// Reference: Newberry, Dan. "Optimal Charge Weight Load
+  /// Development." 2002 onward. Method published on 6mmBR.com and the
+  /// OCW website (`ocwreloading.com`).
+  static OcwAnalysis analyzeOcwNode(
+    List<LoadDevelopmentShotRow> shots, {
+    double verticalThresholdIn = 0.5,
+  }) {
+    final byCharge = <double, List<double>>{};
+    for (final s in shots) {
+      if (s.impactYIn == null) continue;
+      final key = _round4(s.chargeGr);
+      byCharge.putIfAbsent(key, () => <double>[]).add(s.impactYIn!);
+    }
+    if (byCharge.length < 3) {
+      return OcwAnalysis(
+        chargesAnalyzed: byCharge.length,
+        flatChargeIndices: const <double>[],
+        maxVerticalSpreadIn: verticalThresholdIn,
+        recommendedChargeGr: null,
+      );
+    }
+    final entries = byCharge.entries
+        .map((e) => (
+              charge: e.key,
+              meanY: e.value.reduce((a, b) => a + b) / e.value.length,
+            ))
+        .toList()
+      ..sort((a, b) => a.charge.compareTo(b.charge));
+
+    var bestStart = -1;
+    var bestLength = 1;
+    var curStart = 0;
+    var curLength = 1;
+    for (var i = 1; i < entries.length; i++) {
+      final delta = (entries[i].meanY - entries[i - 1].meanY).abs();
+      if (delta <= verticalThresholdIn) {
+        curLength++;
+        if (curLength > bestLength) {
+          bestLength = curLength;
+          bestStart = curStart;
+        }
+      } else {
+        curStart = i;
+        curLength = 1;
+      }
+    }
+    if (bestStart < 0 || bestLength < 2) {
+      return OcwAnalysis(
+        chargesAnalyzed: byCharge.length,
+        flatChargeIndices: const <double>[],
+        maxVerticalSpreadIn: verticalThresholdIn,
+        recommendedChargeGr: null,
+      );
+    }
+    final flat = <double>[
+      for (var i = bestStart; i < bestStart + bestLength; i++) entries[i].charge,
+    ];
+    final centre = entries[bestStart + (bestLength ~/ 2)].charge;
+    return OcwAnalysis(
+      chargesAnalyzed: byCharge.length,
+      flatChargeIndices: flat,
+      maxVerticalSpreadIn: verticalThresholdIn,
+      recommendedChargeGr: centre,
+    );
+  }
+
+  // ─────────────────────── Satterlee plateau ───────────────────────
+
+  /// Satterlee 10-shot plateau detector.
+  ///
+  /// Algorithm:
+  ///   1. Group [shots] by `chargeGr`. Compute mean velocity per
+  ///      charge from rows where `velocityFps != null`.
+  ///   2. Sort by charge ascending.
+  ///   3. Walk consecutive pairs; "still flat" means
+  ///      `meanV[i] - meanV[i-1] <= maxRiseFps` (we only count
+  ///      flat-or-down steps as plateau, since Satterlee is looking
+  ///      for the place where the velocity stops increasing despite
+  ///      more powder).
+  ///   4. Return the longest plateau and pick its centre as the
+  ///      recommended charge.
+  ///
+  /// Default `maxRiseFps` is 12 fps per step — typical "the velocity
+  /// barely moved" threshold for a rifle cartridge stepping by ≤0.2 gr.
+  /// Caller can override.
+  ///
+  /// Reference: Satterlee, Scott. "10-Round Load Development Test."
+  /// Spec'd in informal coaching writeups; applied widely in PRS /
+  /// long-range shooting. The protocol is "shoot 10 rounds stepping
+  /// the charge by 0.1–0.2 gr through the safe range, plot velocity,
+  /// pick the centre of the flattest stretch."
+  static SatterleeAnalysis analyzeSatterleePlateau(
+    List<LoadDevelopmentShotRow> shots, {
+    double maxRiseFps = 12.0,
+  }) {
+    final byCharge = <double, List<double>>{};
+    for (final s in shots) {
+      if (s.velocityFps == null) continue;
+      final key = _round4(s.chargeGr);
+      byCharge.putIfAbsent(key, () => <double>[]).add(s.velocityFps!);
+    }
+    if (byCharge.length < 3) {
+      return SatterleeAnalysis(
+        chargesAnalyzed: byCharge.length,
+        plateauChargeIndices: const <double>[],
+        maxVelocityRiseFps: maxRiseFps,
+        recommendedChargeGr: null,
+      );
+    }
+    final entries = byCharge.entries
+        .map((e) => (
+              charge: e.key,
+              meanV: e.value.reduce((a, b) => a + b) / e.value.length,
+            ))
+        .toList()
+      ..sort((a, b) => a.charge.compareTo(b.charge));
+
+    var bestStart = -1;
+    var bestLength = 1;
+    var curStart = 0;
+    var curLength = 1;
+    for (var i = 1; i < entries.length; i++) {
+      final rise = entries[i].meanV - entries[i - 1].meanV;
+      if (rise <= maxRiseFps) {
+        curLength++;
+        if (curLength > bestLength) {
+          bestLength = curLength;
+          bestStart = curStart;
+        }
+      } else {
+        curStart = i;
+        curLength = 1;
+      }
+    }
+    if (bestStart < 0 || bestLength < 2) {
+      return SatterleeAnalysis(
+        chargesAnalyzed: byCharge.length,
+        plateauChargeIndices: const <double>[],
+        maxVelocityRiseFps: maxRiseFps,
+        recommendedChargeGr: null,
+      );
+    }
+    final plateau = <double>[
+      for (var i = bestStart; i < bestStart + bestLength; i++) entries[i].charge,
+    ];
+    final centre = entries[bestStart + (bestLength ~/ 2)].charge;
+    return SatterleeAnalysis(
+      chargesAnalyzed: byCharge.length,
+      plateauChargeIndices: plateau,
+      maxVelocityRiseFps: maxRiseFps,
+      recommendedChargeGr: centre,
+    );
+  }
+
+  // ─────────────────────── Audette Ladder helper ───────────────────────
+
+  /// Audette Ladder vertical dispersion: returns the spread of mean Y
+  /// impacts (max - min) across all charges that have at least one
+  /// impact. Used by the Ladder detail screen to surface "your shots
+  /// stacked within X inches at the centre of the curve" — the
+  /// classic Audette read.
+  ///
+  /// When fewer than 2 charges have impact data, returns 0.
+  ///
+  /// Reference: Audette, Creighton. Original method published in
+  /// Precision Shooting magazine in the late 1970s. Single shot per
+  /// charge across a ladder, looking for vertical "stacking" at the
+  /// node.
+  static double computeLadderVerticalSpreadIn(
+    List<LoadDevelopmentShotRow> shots,
+  ) {
+    final byCharge = <double, List<double>>{};
+    for (final s in shots) {
+      if (s.impactYIn == null) continue;
+      byCharge
+          .putIfAbsent(_round4(s.chargeGr), () => <double>[])
+          .add(s.impactYIn!);
+    }
+    if (byCharge.length < 2) return 0.0;
+    final means = byCharge.values
+        .map((v) => v.reduce((a, b) => a + b) / v.length)
+        .toList()
+      ..sort();
+    return means.last - means.first;
+  }
+
+  // ─────────────────────── Cross-charge stats ───────────────────────
+
+  /// Compute SD / ES / mean velocity, group size, and POI per charge
+  /// weight. Returns one [PerChargeStats] per distinct `chargeGr`,
+  /// sorted by charge ascending.
+  ///
+  /// Stats:
+  ///   * meanVelocity = sample mean of `velocityFps` over the bucket.
+  ///   * sdVelocity   = sample standard deviation (Bessel-corrected,
+  ///                    n-1 denominator). Null when fewer than 2
+  ///                    chrono readings.
+  ///   * esVelocity   = max - min of `velocityFps` over the bucket.
+  ///   * meanX / meanY = mean impact coordinates over rows where
+  ///                    impact data exists.
+  ///   * extremeSpread = the largest center-to-center distance between
+  ///                    any two impacts in the bucket. Null when
+  ///                    fewer than 2 impact rows.
+  ///   * meanRadius    = average distance from each impact to the
+  ///                    bucket's centroid (mean X, mean Y).
+  static List<PerChargeStats> computePerChargeStats(
+    List<LoadDevelopmentShotRow> shots,
+  ) {
+    final byCharge = <double, List<LoadDevelopmentShotRow>>{};
+    for (final s in shots) {
+      byCharge.putIfAbsent(_round4(s.chargeGr), () => []).add(s);
+    }
+    final out = <PerChargeStats>[];
+    final keys = byCharge.keys.toList()..sort();
+    for (final c in keys) {
+      final bucket = byCharge[c]!;
+      final velocities = bucket
+          .where((s) => s.velocityFps != null)
+          .map((s) => s.velocityFps!)
+          .toList();
+      double? meanV;
+      double? sdV;
+      double? esV;
+      if (velocities.isNotEmpty) {
+        meanV = velocities.reduce((a, b) => a + b) / velocities.length;
+        esV = velocities.reduce(math.max) - velocities.reduce(math.min);
+        if (velocities.length >= 2) {
+          var sumSq = 0.0;
+          for (final v in velocities) {
+            final d = v - meanV;
+            sumSq += d * d;
+          }
+          sdV = math.sqrt(sumSq / (velocities.length - 1));
+        }
+      }
+
+      final impacts = bucket
+          .where((s) => s.impactXIn != null && s.impactYIn != null)
+          .toList();
+      double? meanX;
+      double? meanY;
+      double? es;
+      double? meanRadius;
+      if (impacts.isNotEmpty) {
+        meanX = impacts.map((s) => s.impactXIn!).reduce((a, b) => a + b) /
+            impacts.length;
+        meanY = impacts.map((s) => s.impactYIn!).reduce((a, b) => a + b) /
+            impacts.length;
+        if (impacts.length >= 2) {
+          es = computeExtremeSpreadIn(impacts);
+        }
+        meanRadius = _meanRadius(impacts, centerX: meanX, centerY: meanY);
+      }
+
+      out.add(PerChargeStats(
+        chargeGr: c,
+        shotCount: bucket.length,
+        meanVelocityFps: meanV,
+        sdVelocityFps: sdV,
+        esVelocityFps: esV,
+        meanXIn: meanX,
+        meanYIn: meanY,
+        extremeSpreadIn: es,
+        meanRadiusIn: meanRadius,
+      ));
+    }
+    return out;
+  }
+
+  /// Group extreme spread = the largest center-to-center distance
+  /// between any two impacts. Standard accuracy metric in precision
+  /// rifle: the diameter of the smallest circle that contains every
+  /// shot. Returns 0 for empty / single-shot groups.
+  static double computeExtremeSpreadIn(
+    List<LoadDevelopmentShotRow> shots,
+  ) {
+    final impacts = shots
+        .where((s) => s.impactXIn != null && s.impactYIn != null)
+        .toList();
+    if (impacts.length < 2) return 0.0;
+    var maxD = 0.0;
+    for (var i = 0; i < impacts.length; i++) {
+      for (var j = i + 1; j < impacts.length; j++) {
+        final dx = impacts[i].impactXIn! - impacts[j].impactXIn!;
+        final dy = impacts[i].impactYIn! - impacts[j].impactYIn!;
+        final d = math.sqrt(dx * dx + dy * dy);
+        if (d > maxD) maxD = d;
+      }
+    }
+    return maxD;
+  }
+
+  /// Group mean radius = average distance from each impact to the
+  /// group centroid. Less sensitive to outliers than extreme spread —
+  /// PRS shooters quote MR alongside ES because it summarises the
+  /// "average shot" cleanly.
+  static double computeMeanRadiusIn(
+    List<LoadDevelopmentShotRow> shots,
+  ) {
+    final impacts = shots
+        .where((s) => s.impactXIn != null && s.impactYIn != null)
+        .toList();
+    if (impacts.isEmpty) return 0.0;
+    final cx =
+        impacts.map((s) => s.impactXIn!).reduce((a, b) => a + b) / impacts.length;
+    final cy =
+        impacts.map((s) => s.impactYIn!).reduce((a, b) => a + b) / impacts.length;
+    return _meanRadius(impacts, centerX: cx, centerY: cy);
+  }
+
+  static double _meanRadius(
+    List<LoadDevelopmentShotRow> impacts, {
+    required double centerX,
+    required double centerY,
+  }) {
+    if (impacts.isEmpty) return 0.0;
+    var sum = 0.0;
+    for (final s in impacts) {
+      final dx = s.impactXIn! - centerX;
+      final dy = s.impactYIn! - centerY;
+      sum += math.sqrt(dx * dx + dy * dy);
+    }
+    return sum / impacts.length;
+  }
+
   // ─────────────────────── Recipe writeback ───────────────────────
 
   /// When a seating-ladder picks a winner, push the chosen CBTO back to
@@ -675,6 +1194,26 @@ class LoadDevelopmentRepository {
     return await (db.update(db.userLoads)..where((l) => l.id.equals(recipeId)))
         .write(UserLoadsCompanion(
           cbtoIn: Value(_round4(cbtoIn)),
+          updatedAt: Value(DateTime.now()),
+        ))
+        .then((rows) => rows > 0);
+  }
+
+  /// When an OCW / Satterlee / Generic charge analysis picks a winner,
+  /// push the chosen powder charge back to the source recipe. Only
+  /// touches `powderChargeGr`; everything else on the recipe is left
+  /// alone so the user can review the change in their loads list.
+  Future<bool> applyChargeNodeToRecipe({
+    required int recipeId,
+    required double chargeGr,
+  }) async {
+    final row = await (db.select(db.userLoads)
+          ..where((l) => l.id.equals(recipeId)))
+        .getSingleOrNull();
+    if (row == null) return false;
+    return await (db.update(db.userLoads)..where((l) => l.id.equals(recipeId)))
+        .write(UserLoadsCompanion(
+          powderChargeGr: Value(_round4(chargeGr)),
           updatedAt: Value(DateTime.now()),
         ))
         .then((rows) => rows > 0);

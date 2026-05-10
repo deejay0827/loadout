@@ -187,10 +187,12 @@ import '../../widgets/auto_save_first_time_hint.dart';
 import '../../widgets/component_field.dart';
 import '../../widgets/glossary_label.dart';
 import '../../widgets/import_options_section.dart';
+import '../../widgets/lookup_loads_sheet.dart';
 import '../../widgets/primer_cascade_field.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/recipe_qr_share_sheet.dart';
 import '../../widgets/unsaved_changes_dispatcher.dart';
+import '../load_development/new_method_test_screen.dart';
 
 /// Trailing-`<num>gr` matcher used to extract the bullet weight out of a
 /// catalog label like `"Berger Long Range Hybrid Target 109gr"`.
@@ -1274,6 +1276,23 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   }
 
   /// Pro: import shot velocities from a Garmin Xero `.fit` file.
+  /// Open the new method-aware Load Development test wizard
+  /// pre-linked to this recipe. The wizard pulls cartridge / powder /
+  /// bullet / primer from the recipe and seeds a sensible charge
+  /// range around the recipe's existing `powderChargeGr`. Routes
+  /// through the standard `ensurePro` gate before pushing.
+  Future<void> _onRunLoadDevelopment(int recipeId) async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NewMethodTestScreen(
+          preselectedSourceRecipeId: recipeId,
+        ),
+      ),
+    );
+  }
+
   /// Parses the file, computes avg / ES / SD, and rolls them into the
   /// existing Notes + Chronograph Used fields. We don't have a
   /// dedicated velocity-on-recipe schema today (per-recipe velocity
@@ -1439,10 +1458,49 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Caliber',
         level: DetailLevel.basic,
         aliases: const ['cartridge', 'chambering'],
-        builder: (ctx) => ComponentField(
-          kind: 'cartridge',
-          label: 'Caliber',
-          controller: _caliber,
+        // ComponentField + an optional inline link-out button below
+        // it. The "Look Up Published Loads" tile only renders once a
+        // caliber is set (we use it as the search hint passed to the
+        // sheet); when empty, the field stands alone. Per the Gap 2
+        // republication audit (2026-05-10) we never ship manufacturer
+        // recipes inside LoadOut — the button just deep-links to the
+        // manufacturer's official tool. AnimatedBuilder watches the
+        // caliber controller so the button appears the moment the
+        // user picks a cartridge from the autocomplete.
+        builder: (ctx) => AnimatedBuilder(
+          animation: _caliber,
+          builder: (_, _) {
+            final hasCaliber = _caliber.text.trim().isNotEmpty;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ComponentField(
+                  kind: 'cartridge',
+                  label: 'Caliber',
+                  controller: _caliber,
+                ),
+                if (hasCaliber)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => showLookupLoadsSheet(
+                          ctx,
+                          cartridgeName: _caliber.text.trim(),
+                        ),
+                        icon: const Icon(Icons.menu_book_outlined,
+                            size: 16),
+                        label: const Text('Look Up Published Loads'),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
       _FieldId.status: _FieldDef(
@@ -3042,7 +3100,25 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
                     onPressed: _busy ? null : _onImportGarminFit,
                     label: const Text('Import velocity from Garmin .fit'),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  // Discoverability hook for the Pro Load Development
+                  // workspace. Only renders on existing recipes (we
+                  // need a real recipe id to link as the source). On
+                  // tap we route to the new method-aware test wizard
+                  // pre-filled with this recipe; the wizard handles
+                  // the Pro gate itself via routing through the list
+                  // screen.
+                  if (widget.existing != null)
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.science_outlined),
+                      onPressed: _busy
+                          ? null
+                          : () => _onRunLoadDevelopment(
+                                widget.existing!.id,
+                              ),
+                      label: const Text('Run Load Development'),
+                    ),
+                  if (widget.existing != null) const SizedBox(height: 16),
                   // Per CLAUDE.md UX rule: every page affected by
                   // autosave shows a button at the bottom.
                   //   * Autosave ON  → "Done" (autosave already

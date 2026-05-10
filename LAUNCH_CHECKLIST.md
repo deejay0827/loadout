@@ -175,6 +175,26 @@ ship JSON corrections without a store release. See
 
 ## iOS submission
 
+- [ ] **Add the iOS Share Extension target in Xcode.** The Apple Notes /
+  generic share-sheet recipe-import flow is wired up in Dart
+  (`lib/services/share_handler_service.dart`), the Android intent
+  filter is live, and the `share_handler ^0.0.25` package is in
+  `pubspec.yaml`. iOS, however, requires a one-time Xcode Share
+  Extension target add — same operator-only pattern as the watch app
+  (CLAUDE.md § 15) and the OneDrive OAuth registration (§ 18).
+  **Until this lands, LoadOut will not appear in the iOS share sheet
+  from Apple Notes / OneNote-on-iOS / any text-share-capable app.**
+  Full step-by-step Xcode walkthrough lives at
+  `ios/ShareExtension/README.md`. Summary: File → New → Target → iOS
+  → Share Extension; bundle id
+  `com.johnsondigital.loadout.ShareExtension`; replace
+  `ShareViewController.swift` with the minimal `ShareHandlerIosViewController`
+  subclass; enable App Group `group.com.johnsondigital.loadout` on
+  BOTH Runner and ShareExtension; set
+  `IPHONEOS_DEPLOYMENT_TARGET = 15.0`; add a second target block to
+  `ios/Podfile` pulling in `share_handler_ios`; `pod install`. Test
+  on a real iOS device (the simulator does not enumerate third-party
+  share extensions). Plan ~10 minutes operator time.
 - [ ] Apple Developer Program enrollment ($99/yr) — currently personal,
   see "Business / legal setup" above.
 - [ ] App Store Connect listing — name: **LoadOut: Precision Reloading**.

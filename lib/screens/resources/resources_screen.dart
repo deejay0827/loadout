@@ -30,14 +30,26 @@
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
 // ============================================================================
-// Trivial today (one tile). The discipline is keeping it that way:
+// Trivial today (three tiles). The discipline is keeping it that way:
 // every new resource gets its own `_ResourceTile` row, with the
 // same shape as Settings tiles. Resist any temptation to add
 // *behaviour* to this screen — search, filtering, etc. — until at
-// least four resources live here. With one tile, anything beyond a
+// least four resources live here. With three tiles, anything beyond a
 // directory list is over-engineered. The point is that users find
-// SAAMI Specs in a sane place, not that they discover it through a
-// rich UI.
+// SAAMI Specs / the Internal Ballistics Calculator / Load Development
+// in a sane place, not that they discover it through a rich UI.
+//
+// Pro-gating discipline: free / Pro tiers are NOT visually distinct
+// in this directory — both groups see the same row. The gate is
+// applied at tap time via `proGated: true`, which routes through
+// `ensurePro(context)` before pushing the destination. The
+// destination screen also wraps its body in a `ProGate` widget for
+// defense in depth (in case the user somehow lands on the screen
+// without going through this directory). Listing Pro tiles
+// alongside free ones is deliberate: the user discovers the
+// calculator exists, taps it, sees the paywall — that's the
+// upgrade-discovery flow. A locked-icon prefix would discourage
+// that discovery.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
@@ -55,6 +67,9 @@
 
 import 'package:flutter/material.dart';
 
+import '../../widgets/pro_gate.dart';
+import '../ballistics/internal_ballistics_screen.dart';
+import '../load_development/load_development_list_screen.dart';
 import '../saami/saami_screen.dart';
 
 class ResourcesScreen extends StatelessWidget {
@@ -75,6 +90,33 @@ class ResourcesScreen extends StatelessWidget {
                   'cartridge in the SAAMI catalog.',
               destinationBuilder: (_) => const SaamiScreen(),
             ),
+            _ResourceTile(
+              icon: Icons.calculate_outlined,
+              title: 'Internal Ballistics Calculator',
+              subtitle:
+                  'Predict muzzle velocity and peak pressure for a '
+                  'hypothetical reloading recipe. Pro Feature.',
+              // Pro gate: route push only after `ensurePro` resolves
+              // true. Free users see the paywall instead of the
+              // calculator. Mirrors how every other Pro feature
+              // surfaces its gate from a list (CLAUDE.md § Pro gating).
+              proGated: true,
+              destinationBuilder: (_) => const InternalBallisticsScreen(),
+            ),
+            _ResourceTile(
+              icon: Icons.science_outlined,
+              title: 'Load Development',
+              subtitle:
+                  'OCW, Audette Ladder, Satterlee 10-shot, and Generic '
+                  'charge ladders with statistical analysis. Pro Feature.',
+              // The list screen wraps its body in a ProGate, so we
+              // don't need to gate the route push here — free users
+              // hitting the tile see the upgrade card on the list
+              // screen. Keeping the resource tile non-gated lets free
+              // users browse the feature description, which improves
+              // upsell conversion (CLAUDE.md § Pro gating).
+              destinationBuilder: (_) => const LoadDevelopmentListScreen(),
+            ),
             // Future resources land here as they ship. Examples:
             //   * Reloading Guide (text reference)
             //   * Powder Burn-Rate Chart
@@ -91,18 +133,28 @@ class ResourcesScreen extends StatelessWidget {
 /// Re-usable directory row for the Resources screen. Same shape as
 /// the Settings directory's `_CategoryTile` so users navigate
 /// between the two screens with no friction.
+///
+/// When [proGated] is true, the tap routes through `ensurePro(...)`
+/// before pushing the destination. Free users get the paywall; Pro
+/// users get the destination immediately. Visually identical for
+/// both — we deliberately don't show a lock icon on the row, because
+/// the destination's own `ProGate` wrapping renders the upgrade card
+/// inside the destination screen if a free user somehow arrives
+/// there (defense in depth).
 class _ResourceTile extends StatelessWidget {
   const _ResourceTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.destinationBuilder,
+    this.proGated = false,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final WidgetBuilder destinationBuilder;
+  final bool proGated;
 
   @override
   Widget build(BuildContext context) {
@@ -111,8 +163,12 @@ class _ResourceTile extends StatelessWidget {
       title: Text(title),
       subtitle: Text(subtitle),
       trailing: const Icon(Icons.chevron_right),
-      onTap: () {
-        Navigator.of(context).push(
+      onTap: () async {
+        if (proGated) {
+          if (!await ensurePro(context)) return;
+        }
+        if (!context.mounted) return;
+        await Navigator.of(context).push(
           MaterialPageRoute(builder: destinationBuilder),
         );
       },

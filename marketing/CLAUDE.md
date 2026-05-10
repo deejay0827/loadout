@@ -299,7 +299,8 @@ the pitch goes wrong; keep them aligned.
 | **GPS altitude (Range Day sensors)** | Altitude → station-pressure derivation |
 | **AI Smart Import** | OCR-improvement Anthropic call (opt-in per use) |
 | **AI Reloading Assistant chat** | Coming Soon at v1.0; Pro when shipped |
-| **Load Development** | Charge / seating ladders, OCW analysis |
+| **Load Development** | OCW (Newberry), Audette Ladder, Satterlee 10-shot, Generic charge ladders, and Seating Depth ladders. Per-charge SD / ES / mean MV / group size; OCW vertical-impact flat-spot detection; Satterlee MV plateau detection; group-vs-charge plotting. Cited published sources for each method. |
+| **Internal Ballistics Calculator** | Powley method predictor for muzzle velocity and peak chamber pressure from a hypothetical recipe. Closes the GRT / QuickLOAD gap on mobile. Validation: ±10% MV / ±15% pressure across the test corpus. |
 | **Custom fields (unlimited)** | Per-recipe / per-firearm / per-batch user-defined fields |
 
 The free tier ships **everything else** — recipes, firearms, batches,
@@ -323,6 +324,9 @@ order in landing-page hero copy:
 4. **Scope View Pro + training mode.**
 5. **Live weather + GPS altitude.**
 6. **AI Smart Import** — translation tool. Reading-only. Off by default.
+7. **Load development** — OCW (Newberry), Audette Ladder, Satterlee
+   10-shot, and Generic charge ladders with statistical analysis,
+   per-charge SD / ES / mean MV / group size, and node detection.
 
 The **AI Reloading Assistant** stays out of this pitch on purpose. It's
 Coming Soon at v1.0 and the chat framing trips reloaders' "AI-powered"
