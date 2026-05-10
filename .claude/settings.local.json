@@ -321,7 +321,15 @@
       "Bash(gcloud auth *)",
       "Bash(./scripts/upload_seed_data.sh --dry-run)",
       "Bash(grep -n \"^done$\\\\|^for line in\" /Users/general/Development/Applications/LoadOut/scripts/upload_seed_data.sh)",
-      "Bash(./scripts/upload_seed_data.sh)"
+      "Bash(./scripts/upload_seed_data.sh)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" \"https://firebasestorage.googleapis.com/v0/b/loadout-precision-reloading.firebasestorage.app/o/seed_data%2Fmanifest.json?alt=media\")",
+      "Bash(gcloud beta *)",
+      "Bash(gcloud config *)",
+      "Bash(curl -s -H 'Authorization: Bearer __TRACKED_VAR__' https://cloudbilling.googleapis.com/v1/projects/loadout-precision-reloading/billingInfo)",
+      "Bash(python3 -c \"import json; print\\(json.load\\(open\\('/Users/general/.config/gcloud/application_default_credentials.json'\\)\\).get\\('quota_project_id', '<not set>'\\)\\)\")",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/general/.config/configstore/firebase-tools.json'\\)\\); u=d.get\\('user',{}\\); print\\(f'cached firebase user: {u.get\\(\\\\\"email\\\\\",\\\\\"<none>\\\\\"\\)}'\\)\")",
+      "Bash(curl -s 'https://oauth2.googleapis.com/tokeninfo?access_token=__TRACKED_VAR__')",
+      "Bash(firebase deploy *)"
     ]
   }
 }

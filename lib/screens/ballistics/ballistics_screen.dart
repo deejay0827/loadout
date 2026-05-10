@@ -1565,18 +1565,30 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     return '${f.name} — $cal';
   }
 
-  /// Parse a twist-rate string like `"1:8"`, `"8"`, or `"1 in 8"` into an
-  /// integer (e.g. `8`). Returns null if no integer can be recovered.
-  int? _parseTwistRate(String? raw) {
+  /// Parse a twist-rate string like `"1:8"`, `"1:7.50"`, `"8"`, or
+  /// `"1 in 8"` into a decimal inches-per-turn value. Returns null
+  /// if no number can be recovered.
+  ///
+  /// Historically returned `int?` and rounded — that silently
+  /// mangled `1:7.50` to `8`, both in the displayed twist field and
+  /// in the solver's spin-drift computation. Fixed 2026-05-10 to
+  /// preserve the decimal.
+  double? _parseTwistRate(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
-    // Pull out the last integer in the string — handles "1:8", "1 in 8",
-    // "8", "8.5" (rounded to 8) consistently.
+    // Pull out the last number in the string — handles "1:8", "1 in 8",
+    // "1:7.50", "7.7" consistently.
     final matches = RegExp(r'(\d+(?:\.\d+)?)').allMatches(raw);
     if (matches.isEmpty) return null;
     final last = matches.last.group(1)!;
-    final asDouble = double.tryParse(last);
-    if (asDouble == null) return null;
-    return asDouble.round();
+    return double.tryParse(last);
+  }
+
+  /// Drop a trailing `.0` so an integer twist rate displays as `"8"`
+  /// rather than `"8.0"`, while keeping decimals like `"7.5"` intact.
+  String _formatTwist(double v) {
+    if (v == v.truncateToDouble()) return v.toStringAsFixed(0);
+    final s = v.toString();
+    return s.endsWith('.0') ? s.substring(0, s.length - 2) : s;
   }
 
   void _applyFirearmSelection(UserFirearmRow f) {
@@ -1586,7 +1598,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       // Twist rate.
       final twist = _parseTwistRate(f.twistRate);
       if (twist != null) {
-        _twistCtrl.text = twist.toString();
+        _twistCtrl.text = _formatTwist(twist);
         _twistMissingFromFirearm = false;
       } else {
         _twistMissingFromFirearm = true;

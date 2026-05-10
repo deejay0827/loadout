@@ -1207,7 +1207,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         _sightHeightCtrl.text = _trimZeros(f.sightHeightIn!);
       }
       final twist = _parseTwist(f.twistRate);
-      if (twist != null) _twistCtrl.text = twist.toString();
+      if (twist != null) _twistCtrl.text = _trimZeros(twist);
     });
     _pushFirearmGlanceToWatch(f);
     // Sight scale (DPC calibration) is consumed by the solver via
@@ -1376,13 +1376,25 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     }
   }
 
-  int? _parseTwist(String? raw) {
+  /// Extracts the inches-per-turn number from a stored twist-rate
+  /// string. Preserves the decimal: `"1:7.50"` → `7.5`,
+  /// `"1:8"` → `8.0`, `"7.7"` → `7.7`. Used to seed the Range Day
+  /// twist field from the picked firearm row.
+  ///
+  /// Historically returned `int?` and rounded — that silently
+  /// mangled `1:7.50` to `8`, both in the display and in the solver
+  /// (which reads `_twistCtrl.text` for spin-drift). A wrong twist
+  /// rate doesn't catastrophically affect drop but does shift spin
+  /// drift by ~0.05 mil per inch-of-twist difference at 800 yd, and
+  /// the displayed value is what the user reads back when verifying
+  /// inputs against another solver. Fixed 2026-05-10 to keep the
+  /// decimal.
+  double? _parseTwist(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
     final matches = RegExp(r'(\d+(?:\.\d+)?)').allMatches(raw);
     if (matches.isEmpty) return null;
     final last = matches.last.group(1)!;
-    final asD = double.tryParse(last);
-    return asD?.round();
+    return double.tryParse(last);
   }
 
   // ─────────────────────── Solve ───────────────────────

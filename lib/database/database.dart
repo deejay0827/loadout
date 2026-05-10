@@ -2841,18 +2841,74 @@ class AppDatabase extends _$AppDatabase {
             // `UserFirearms` default to `false` / `null`, so existing
             // firearm rows continue to render as factory rifles
             // without any data churn.
-            await m.createTable(firearmComponents);
-            await m.addColumn(userFirearms, userFirearms.isCustomBuild);
-            await m.addColumn(userFirearms, userFirearms.chassisName);
-            await m.addColumn(userFirearms, userFirearms.barrelName);
-            await m.addColumn(userFirearms, userFirearms.triggerName);
-            await m.addColumn(userFirearms, userFirearms.buttstockName);
-            await m.addColumn(userFirearms, userFirearms.muzzleBrakeName);
-            await m.addColumn(userFirearms, userFirearms.suppressorName);
-            await m.addColumn(userFirearms, userFirearms.bipodName);
+            //
+            // The migration is IDEMPOTENT: each `addColumn` is gated
+            // on a live `PRAGMA table_info` check, and the
+            // `createTable` is gated on `sqlite_master`. This protects
+            // dev installs that hit a partial-migration state (column
+            // added, schema_version pragma not yet bumped, app
+            // crashes) from looping forever on
+            // "duplicate column name". A user who hits the issue once
+            // before this guard landed needs to uninstall + reinstall
+            // the app to clear the orphaned state — see
+            // `ROLLBACK / RECOVERY` notes at the top of the migration
+            // strategy.
+            if (!await _tableExists('firearm_components')) {
+              await m.createTable(firearmComponents);
+            }
+            final firearmCols = await _columnsOf('user_firearms');
+            if (!firearmCols.contains('is_custom_build')) {
+              await m.addColumn(userFirearms, userFirearms.isCustomBuild);
+            }
+            if (!firearmCols.contains('chassis_name')) {
+              await m.addColumn(userFirearms, userFirearms.chassisName);
+            }
+            if (!firearmCols.contains('barrel_name')) {
+              await m.addColumn(userFirearms, userFirearms.barrelName);
+            }
+            if (!firearmCols.contains('trigger_name')) {
+              await m.addColumn(userFirearms, userFirearms.triggerName);
+            }
+            if (!firearmCols.contains('buttstock_name')) {
+              await m.addColumn(userFirearms, userFirearms.buttstockName);
+            }
+            if (!firearmCols.contains('muzzle_brake_name')) {
+              await m.addColumn(userFirearms, userFirearms.muzzleBrakeName);
+            }
+            if (!firearmCols.contains('suppressor_name')) {
+              await m.addColumn(userFirearms, userFirearms.suppressorName);
+            }
+            if (!firearmCols.contains('bipod_name')) {
+              await m.addColumn(userFirearms, userFirearms.bipodName);
+            }
           }
         },
       );
+
+  /// Live `PRAGMA table_info` lookup of the named table's columns.
+  /// Returns the lowercase column names. Used by the v33 migration to
+  /// gate `addColumn` calls so a partial-migration state on disk
+  /// (column added, schema_version pragma not yet bumped) doesn't
+  /// loop forever on "duplicate column name". Cheap — `PRAGMA
+  /// table_info` is a single round-trip against the in-memory
+  /// schema, not a disk scan.
+  Future<Set<String>> _columnsOf(String tableName) async {
+    final rows =
+        await customSelect("PRAGMA table_info('$tableName')").get();
+    return rows.map((r) => r.read<String>('name')).toSet();
+  }
+
+  /// True iff a table with this name exists in `sqlite_master`. Used
+  /// by the v33 migration as the idempotent guard around
+  /// `createTable` (drift's `createTable` issues bare `CREATE TABLE`,
+  /// not `IF NOT EXISTS`, so we have to check first).
+  Future<bool> _tableExists(String tableName) async {
+    final rows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      variables: [Variable<String>(tableName)],
+    ).get();
+    return rows.isNotEmpty;
+  }
 
   /// Inserts the 8 standard reloading stages into [userProcessSteps]. Used
   /// from both `onCreate` (fresh install) and the v4 `onUpgrade` path so
