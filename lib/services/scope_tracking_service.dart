@@ -1,11 +1,12 @@
-// FILE: lib/services/sight_calibration_service.dart
+// FILE: lib/services/scope_tracking_service.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Drop-Per-Click (DPC) sight calibration. Derives the firearm's true sight
-// scale factor (vertical or horizontal) from observed shot impacts on a
-// known-distance, known-dial test target.
+// Scope Tracking Test — Drop-Per-Click (DPC) sight calibration (formerly
+// known internally as "Sight Calibration"). Derives the firearm's true
+// sight scale factor (vertical or horizontal) from observed shot impacts
+// on a known-distance, known-dial test target.
 //
 // Many scopes don't track exactly to their advertised increments. A turret
 // labeled "0.1 mil per click" might actually move 0.097 mil per click.
@@ -30,14 +31,14 @@
 //
 // Public API:
 //
-//   * `class SightCalibrationObservation` — one impact entry. Same shape
+//   * `class ScopeTrackingObservation` — one impact entry. Same shape
 //     as `ShotImpactRow.impactX/impactY` (normalized to [-1, 1] across
 //     the target). Calibration uses these directly.
 //
-//   * `class SightCalibrationResult` — derived ratio plus diagnostics
+//   * `class ScopeTrackingResult` — derived ratio plus diagnostics
 //     (centroid offset in mil, residuals from each impact, group RMS).
 //
-//   * `class SightCalibrationService` — stateless. One method,
+//   * `class ScopeTrackingService` — stateless. One method,
 //     `calibrate(...)`.
 //
 // ============================================================================
@@ -109,8 +110,8 @@ import 'ballistics/units.dart' as bu;
 /// One impact observation in normalized target coords. Same coordinate
 /// system as `ShotImpactRow.impactX/impactY`: [-1, 1] across each axis,
 /// (0, 0) = dead center, (1, 1) = top-right.
-class SightCalibrationObservation {
-  const SightCalibrationObservation({
+class ScopeTrackingObservation {
+  const ScopeTrackingObservation({
     required this.impactX,
     required this.impactY,
     this.notes,
@@ -126,8 +127,8 @@ class SightCalibrationObservation {
         if (notes != null) 'notes': notes,
       };
 
-  static SightCalibrationObservation fromJson(Map<String, dynamic> j) =>
-      SightCalibrationObservation(
+  static ScopeTrackingObservation fromJson(Map<String, dynamic> j) =>
+      ScopeTrackingObservation(
         impactX: (j['impactX'] as num).toDouble(),
         impactY: (j['impactY'] as num).toDouble(),
         notes: j['notes'] as String?,
@@ -138,33 +139,33 @@ class SightCalibrationObservation {
 /// turret, horizontal = windage turret. Each can have a different
 /// scale factor (scopes occasionally track different on the two
 /// axes after a hard knock).
-enum SightCalibrationAxis {
+enum ScopeTrackingAxis {
   vertical,
   horizontal;
 
   String get dbValue {
     switch (this) {
-      case SightCalibrationAxis.vertical:
+      case ScopeTrackingAxis.vertical:
         return 'vertical';
-      case SightCalibrationAxis.horizontal:
+      case ScopeTrackingAxis.horizontal:
         return 'horizontal';
     }
   }
 
-  static SightCalibrationAxis fromDbValue(String s) {
+  static ScopeTrackingAxis fromDbValue(String s) {
     switch (s) {
       case 'horizontal':
-        return SightCalibrationAxis.horizontal;
+        return ScopeTrackingAxis.horizontal;
       case 'vertical':
       default:
-        return SightCalibrationAxis.vertical;
+        return ScopeTrackingAxis.vertical;
     }
   }
 }
 
-/// Output of [SightCalibrationService.calibrate].
-class SightCalibrationResult {
-  const SightCalibrationResult({
+/// Output of [ScopeTrackingService.calibrate].
+class ScopeTrackingResult {
+  const ScopeTrackingResult({
     required this.axis,
     required this.advertisedMil,
     required this.measuredMil,
@@ -174,7 +175,7 @@ class SightCalibrationResult {
     required this.groupRmsIn,
   });
 
-  final SightCalibrationAxis axis;
+  final ScopeTrackingAxis axis;
 
   /// What the user said they dialed, in mil. Treated as the truth — if
   /// they dialed 10 clicks of "0.1 mil per click" they tell the wizard
@@ -192,7 +193,7 @@ class SightCalibrationResult {
   final double derivedScale;
 
   /// The observations the calibration was performed against.
-  final List<SightCalibrationObservation> observations;
+  final List<ScopeTrackingObservation> observations;
 
   /// Centroid offset from the aim point on the chosen axis, in inches at
   /// the target. For UI display ("your impacts averaged 9.7" above the
@@ -208,22 +209,22 @@ class SightCalibrationResult {
   String observationJsonString() =>
       jsonEncode(observations.map((o) => o.toJson()).toList());
 
-  static List<SightCalibrationObservation> observationsFromJson(String s) {
+  static List<ScopeTrackingObservation> observationsFromJson(String s) {
     final list = jsonDecode(s) as List;
     return list
         .map((e) =>
-            SightCalibrationObservation.fromJson(e as Map<String, dynamic>))
+            ScopeTrackingObservation.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 }
 
-class SightCalibrationService {
-  const SightCalibrationService();
+class ScopeTrackingService {
+  const ScopeTrackingService();
 
   /// Compute the scale factor.
   ///
   /// `aimPointX` / `aimPointY` are in normalized target coords (same
-  /// scale as [SightCalibrationObservation.impactX/impactY]). For a
+  /// scale as [ScopeTrackingObservation.impactX/impactY]). For a
   /// classic vertical tall-target test the user holds at the bottom
   /// edge of the reference line, so `aimPointX = 0`, `aimPointY = -1`
   /// (-1 = bottom edge). The wizard captures the aim point from the
@@ -233,18 +234,18 @@ class SightCalibrationService {
   /// `advertisedDialMil` is what the user tells the wizard they dialed.
   /// Most users dial "10 mil up" or "5 MOA right" — translate MOA to
   /// mil before calling (the existing units helpers do this).
-  SightCalibrationResult calibrate({
-    required SightCalibrationAxis axis,
+  ScopeTrackingResult calibrate({
+    required ScopeTrackingAxis axis,
     required double aimPointX, // [-1..1]
     required double aimPointY, // [-1..1]
     required double advertisedDialMil,
     required double targetWidthIn,
     required double targetHeightIn,
     required double targetDistanceYd,
-    required List<SightCalibrationObservation> observations,
+    required List<ScopeTrackingObservation> observations,
   }) {
     if (observations.isEmpty || advertisedDialMil == 0) {
-      return SightCalibrationResult(
+      return ScopeTrackingResult(
         axis: axis,
         advertisedMil: advertisedDialMil,
         measuredMil: 0,
@@ -256,16 +257,16 @@ class SightCalibrationService {
     }
 
     // Convert each impact to inches at the target on the chosen axis.
-    final inchesPerNorm = axis == SightCalibrationAxis.vertical
+    final inchesPerNorm = axis == ScopeTrackingAxis.vertical
         ? targetHeightIn / 2.0
         : targetWidthIn / 2.0;
     final aimNormOnAxis =
-        axis == SightCalibrationAxis.vertical ? aimPointY : aimPointX;
+        axis == ScopeTrackingAxis.vertical ? aimPointY : aimPointX;
     final aimInchesOnAxis = aimNormOnAxis * inchesPerNorm;
 
     // Centroid of the impacts on the chosen axis, in inches at the target.
     final impactsInchesOnAxis = observations.map((o) {
-      final norm = axis == SightCalibrationAxis.vertical ? o.impactY : o.impactX;
+      final norm = axis == ScopeTrackingAxis.vertical ? o.impactY : o.impactX;
       return norm * inchesPerNorm;
     }).toList();
     final mean = impactsInchesOnAxis.reduce((a, b) => a + b) /
@@ -305,7 +306,7 @@ class SightCalibrationService {
     final groupRmsIn =
         math.sqrt(sumSq / impactsInchesOnAxis.length);
 
-    return SightCalibrationResult(
+    return ScopeTrackingResult(
       axis: axis,
       advertisedMil: advertisedDialMil,
       measuredMil: measuredMil,

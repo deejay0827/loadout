@@ -457,6 +457,46 @@ class ComponentRepository {
     return list;
   }
 
+  /// Look up a bullet from the catalog by the user-visible
+  /// dropdown label (the same `_bulletLabel` format used in the
+  /// Ballistics + Recipe pickers: `"<Mfg> <Line> <weight>gr"`,
+  /// e.g. `"Berger Hybrid Target 109gr"`). Returns the bullet +
+  /// manufacturer record or `null` if no exact match.
+  ///
+  /// Used by recipe / ballistics forms to back-fill diameter / BC /
+  /// length / caliber after the user picks a bullet — without this
+  /// lookup the picker only knows the LABEL string the user
+  /// confirmed, not the underlying catalog row's numeric fields.
+  ///
+  /// Matching is permissive about whitespace and case. The lookup
+  /// works against the same composed label the
+  /// [allBulletsWithManufacturer] sort key generates, so any bullet
+  /// the picker offers is also resolvable here.
+  Future<({BulletRow bullet, ManufacturerRow mfg})?> bulletByLabel(
+      String label) async {
+    final query = label.trim().toLowerCase();
+    if (query.isEmpty) return null;
+    final all = await allBulletsWithManufacturer();
+    String key(({BulletRow bullet, ManufacturerRow mfg}) r) {
+      final wt = r.bullet.weightGr.toStringAsFixed(
+          r.bullet.weightGr.truncateToDouble() == r.bullet.weightGr ? 0 : 1);
+      return '${r.mfg.name} ${r.bullet.line} ${wt}gr'.toLowerCase();
+    }
+    // Try exact match first.
+    for (final entry in all) {
+      if (key(entry) == query) return entry;
+    }
+    // Fall back to a substring match — handles labels with extra
+    // tokens like the diameter (the picker's display string sometimes
+    // includes "6mm" / ".308" between line and weight).
+    for (final entry in all) {
+      if (query.contains(key(entry)) || key(entry).contains(query)) {
+        return entry;
+      }
+    }
+    return null;
+  }
+
   // ───── Reference firearms ─────
 
   Future<List<({FirearmRefRow firearm, ManufacturerRow manufacturer, List<String> calibers})>>

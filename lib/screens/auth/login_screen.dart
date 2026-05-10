@@ -406,7 +406,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton.icon(
                     onPressed: _busy ? null : _openSupportMail,
                     icon: const Icon(Icons.help_outline),
-                    label: const Text('Get help signing in'),
+                    label: const Text('Get Help Signing In'),
                   ),
                 ],
               ),

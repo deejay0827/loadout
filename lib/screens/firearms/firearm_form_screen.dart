@@ -102,9 +102,14 @@
 // - Shows a confirmation `SnackBar` on save.
 // - Pops the navigator on success.
 
+import 'dart:io' show Platform;
+
 import 'package:drift/drift.dart' as drift;
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
@@ -113,8 +118,11 @@ import '../../repositories/firearm_repository.dart';
 import '../../repositories/optics_repository.dart';
 import '../../repositories/reticle_repository.dart';
 import '../../services/auto_save_service.dart';
+import '../../services/ble/ble_service.dart';
+import '../../services/ble/garmin_xero_service.dart';
 import '../../services/cloud_sync_service.dart';
 import '../../services/entitlement_notifier.dart';
+import '../../services/photo_import_service.dart';
 import '../../services/unit_service.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
@@ -239,7 +247,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       text: (e?.defaultZeroRangeYd ?? 100).toString(),
     );
     _sightHeightIn = TextEditingController(
-      text: e?.sightHeightIn?.toString() ?? '',
+      text: e?.sightHeightIn?.toString() ?? (e == null ? '2.0' : ''),
     );
     // ── v15 ballistic precision inputs ──
     // `twistDirection`, `sightScaleVertical`, `sightScaleHorizontal`
@@ -247,19 +255,17 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     // fields are nullable — the form shows blank when null so the
     // user knows they haven't been recorded yet.
     _twistDirection = e?.twistDirection ?? 'right';
+    // Scope tracking calibration pre-fills to 1.000 — the
+    // mathematically neutral value meaning "no correction." Per
+    // CLAUDE.md § 0 this is a named carve-out from the rifle
+    // no-placeholder rule because the value is universal: every
+    // scope IS 1.0 until the user runs the Scope Tracking Test
+    // and finds otherwise. Edits mirror the saved value verbatim.
     _sightScaleVertical = TextEditingController(
-      // Hide the literal "1.0" baseline so the empty field reads as
-      // "no correction" — the user only types here when they have
-      // a measured tracking error.
-      text: (e?.sightScaleVertical == null || e!.sightScaleVertical == 1.0)
-          ? ''
-          : e.sightScaleVertical.toStringAsFixed(3),
+      text: e?.sightScaleVertical.toStringAsFixed(3) ?? '1.000',
     );
     _sightScaleHorizontal = TextEditingController(
-      text:
-          (e?.sightScaleHorizontal == null || e!.sightScaleHorizontal == 1.0)
-              ? ''
-              : e.sightScaleHorizontal.toStringAsFixed(3),
+      text: e?.sightScaleHorizontal.toStringAsFixed(3) ?? '1.000',
     );
     _zeroPressureInHg = TextEditingController(
       text: e?.zeroPressureInHg?.toStringAsFixed(2) ?? '',
@@ -459,18 +465,24 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       _referenceFirearmId = ref.firearm.id;
       _manufacturer.text = ref.manufacturer.name;
       _model.text = ref.firearm.model;
-      _type.text = ref.firearm.type;
-      _action.text = ref.firearm.action ?? '';
-      // Auto-fill the main Caliber field if the user hasn't typed one
-      // that's already in this firearm's caliber list. Use the first
-      // catalog caliber as the sensible default — the user can edit
-      // the main Caliber field freely. (Multi-caliber rifles like
-      // a Tikka T3x with several factory chamberings still resolve
-      // cleanly: first caliber wins, user re-types if they own a
-      // different one.)
-      if (_caliber.text.trim().isEmpty ||
-          !ref.calibers.contains(_caliber.text.trim())) {
-        if (ref.calibers.isNotEmpty) {
+      // Catalog stores type/action lowercase ("rifle", "semi-auto"); we
+      // present them Title Case everywhere in the UI (CLAUDE.md § 0a).
+      // Title-case at the seed boundary so the saved row also persists
+      // the friendlier form, and the Custom-mode TextFormField (when
+      // the user toggles modes) reads in matching case.
+      _type.text = _titleCaseEnum(ref.firearm.type);
+      _action.text = _titleCaseEnum(ref.firearm.action ?? '');
+      // Catalog caliber: always default to the first chambering the
+      // catalog row declares. When the catalog row lists more than
+      // one (e.g. a Tikka T3x in 6.5 CM / .308 / .300 WSM) the
+      // dropdown built inside `_catalogFields` lets the user switch;
+      // when there's only one, we just write it through. The shared
+      // `ComponentField` no longer renders in catalog mode, so this
+      // controller value drives the saved row directly.
+      if (ref.calibers.isNotEmpty) {
+        final preferUserTyped = _caliber.text.trim().isNotEmpty &&
+            ref.calibers.contains(_caliber.text.trim());
+        if (!preferUserTyped) {
           _caliber.text = ref.calibers.first;
         }
       }
@@ -491,6 +503,226 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       }
     });
     _autoSave.notifyDirty();
+  }
+
+  /// Pull a Garmin Xero `.fit` export off disk and write the session's
+  /// average velocity into the Muzzle Velocity field. Mirrors the
+  /// existing recipe-form import path (see
+  /// `lib/screens/recipes/recipe_form_screen.dart::_onImportGarminFit`)
+  /// so the two surfaces behave identically — same Pro gate, same
+  /// FilePicker constraints, same exception messaging.
+  Future<void> _onImportMvFromGarminXero() async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final ble = context.read<BleService>();
+    setState(() => _busy = true);
+    try {
+      final picked = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['fit'],
+        withData: false,
+      );
+      if (picked == null || picked.files.isEmpty) return;
+      final path = picked.files.single.path;
+      if (path == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text("Couldn't read the selected file.")),
+        );
+        return;
+      }
+      final session = await GarminXeroService(ble).importFitFile(path);
+      if (!mounted) return;
+      // The firearm record stores ONE muzzle velocity (the
+      // representative MV for this rifle's preferred load). Write the
+      // session average — that's the standard summary number Xero
+      // reports back at the end of a string. The user can still edit
+      // by hand if they prefer a different statistic (extreme high,
+      // best 10-shot subset, etc.).
+      _defaultMuzzleVelocityFps.text =
+          session.averageFps.toStringAsFixed(0);
+      _autoSave.notifyDirty();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Imported ${session.shots.length} shots. '
+            'Avg ${session.averageFps.toStringAsFixed(0)} fps · '
+            'SD ${session.standardDeviationFps.toStringAsFixed(1)}',
+          ),
+        ),
+      );
+    } on GarminXeroParseException catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.userMessage)));
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text("Couldn't import that file: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Snap (or pick) a photo of a chronograph readout, OCR the image,
+  /// and harvest plausible muzzle-velocity numbers (500–5000 fps) so
+  /// the user can confirm one with a tap. The same OCR engine the
+  /// recipe photo-import flow uses ([PhotoImportService]) — fast,
+  /// on-device, no network round-trip.
+  ///
+  /// Behaviour:
+  ///   * 1 candidate → write it directly into the MV field, snackbar
+  ///     confirmation.
+  ///   * 2+ candidates → modal bottom-sheet picker so the user
+  ///     resolves the ambiguity.
+  ///   * 0 candidates → snackbar telling the user nothing in MV range
+  ///     was found (most common cause: blurry photo or chrono OFF
+  ///     screen). They can retry or type by hand.
+  Future<void> _onCaptureMvFromPhoto() async {
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    // ML Kit text recognition + image_picker only ship full
+    // implementations on iOS and Android. The recipe-side photo
+    // import gates the same way (see `PhotoImportScreen.isSupportedPlatform`).
+    final supported = !kIsWeb && (Platform.isIOS || Platform.isAndroid);
+    if (!supported) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Photo capture isn't available on this platform.",
+          ),
+        ),
+      );
+      return;
+    }
+    final source = await _pickPhotoSource();
+    if (source == null || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    final svc = PhotoImportService();
+    try {
+      final result = await svc.captureAndRecognize(source: source);
+      if (!mounted) return;
+      if (result == null || result.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text("No text found in that photo. Try again?"),
+          ),
+        );
+        return;
+      }
+      final candidates = _extractMvCandidatesFps(result.fullText);
+      if (candidates.isEmpty) {
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No muzzle-velocity-shaped numbers found '
+              '(looking for 500-5000 fps).',
+            ),
+          ),
+        );
+        return;
+      }
+      double? chosen;
+      if (candidates.length == 1) {
+        chosen = candidates.first;
+      } else {
+        chosen = await _pickMvCandidate(candidates);
+        if (!mounted || chosen == null) return;
+      }
+      _defaultMuzzleVelocityFps.text = chosen.toStringAsFixed(0);
+      _autoSave.notifyDirty();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Captured ${chosen.toStringAsFixed(0)} fps from photo.',
+          ),
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text("Couldn't read that photo: $e")),
+      );
+    } finally {
+      await svc.dispose();
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Modal sheet that asks "camera or photo library?" before opening
+  /// the picker. Returns null when the user dismisses without choosing.
+  Future<ImageSource?> _pickPhotoSource() async {
+    return showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take a Photo'),
+              onTap: () => Navigator.of(sheetCtx).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Pick from Library'),
+              onTap: () => Navigator.of(sheetCtx).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Scan OCR'd text for numbers that look like a muzzle velocity in
+  /// fps. The cutoffs (500–5000) span every common chambering: a
+  /// subsonic .22 LR target round at the low end, a hot .220 Swift
+  /// or wildcat 6mm at the top end, and everything in between
+  /// (pistol, rifle, magnum). Outside that range we filter to keep
+  /// stray noise (clock readouts, shot counters, chronograph battery
+  /// percentages, temperature) from polluting the picker.
+  ///
+  /// Numbers are returned in "first occurrence" order so the picker
+  /// reflects what the user sees in the photo top-to-bottom rather
+  /// than reshuffling them by value.
+  List<double> _extractMvCandidatesFps(String text) {
+    final out = <double>[];
+    final seen = <int>{};
+    final re = RegExp(r'\d{3,5}(?:\.\d+)?');
+    for (final m in re.allMatches(text)) {
+      final v = double.tryParse(m.group(0)!);
+      if (v == null) continue;
+      if (v < 500 || v > 5000) continue;
+      final key = v.round();
+      if (seen.add(key)) out.add(v);
+    }
+    return out;
+  }
+
+  /// Bottom-sheet picker for when OCR finds two or more numbers in
+  /// MV range. Each row shows the candidate as fps; tap to write it
+  /// into the MV field.
+  Future<double?> _pickMvCandidate(List<double> candidates) {
+    return showModalBottomSheet<double>(
+      context: context,
+      builder: (sheetCtx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Text(
+                'Pick the Muzzle Velocity',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            for (final v in candidates)
+              ListTile(
+                leading: const Icon(Icons.speed),
+                title: Text('${v.toStringAsFixed(0)} fps'),
+                onTap: () => Navigator.of(sheetCtx).pop(v),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _save() async {
@@ -581,12 +813,6 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                       else
                         ..._customFields(),
                       const SizedBox(height: 12),
-                      ComponentField(
-                        kind: 'cartridge',
-                        label: 'Caliber',
-                        controller: _caliber,
-                      ),
-                      const SizedBox(height: 12),
                       // On wide layouts pair barrel length + twist rate
                       // (both short numeric fields) into a single row so
                       // the form doesn't waste horizontal real estate.
@@ -650,9 +876,12 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     );
   }
 
-  /// When autosave is on, the trailing button is just a "Done" — the
-  /// data has already saved as the user typed. Off, it stays the
-  /// traditional "Save Changes" / "Create Firearm" CTA.
+  /// Per CLAUDE.md UX rule: autosave on → "Done"; off → "Save".
+  /// We surface the more specific label "Save Changes" / "Create
+  /// Firearm" instead of plain "Save" because the firearm form is
+  /// non-trivial — the longer label tells the user what action
+  /// they're committing to. Both labels fit the bottom-button width
+  /// on every supported device.
   String _finalButtonLabel(bool autoSaveOn, bool isEdit) {
     if (autoSaveOn) return 'Done';
     return isEdit ? 'Save Changes' : 'Create Firearm';
@@ -684,41 +913,157 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
               }
             }
           }
+          // Label used in the field, suggestion list, and as the
+          // initial text when opening an edit. Centralised so the
+          // search-token matcher and the displayed value never drift
+          // apart.
+          String labelOf(_RefEntry r) =>
+              '${r.manufacturer.name} ${r.firearm.model}';
+          final initialText =
+              _selectedRef != null ? labelOf(_selectedRef!) : '';
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DropdownButtonFormField<_RefEntry>(
-                initialValue: _selectedRef,
-                isExpanded: true,
-                decoration:
-                    const InputDecoration(labelText: 'Model from Catalog'),
-                items: [
-                  for (final r in refs)
-                    DropdownMenuItem(
-                      value: r,
-                      child: Text(
-                        '${r.manufacturer.name} ${r.firearm.model}',
-                        overflow: TextOverflow.ellipsis,
+              // Field label sits above the Autocomplete so the
+              // suggestion panel doesn't have to fight with a
+              // floating label, and so the field still reads as
+              // "Model from Catalog" when empty.
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'Model from Catalog',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+              // Autocomplete<_RefEntry>: type to filter inline. Replaces
+              // the old DropdownButtonFormField that opened a full-screen
+              // menu with no search. Token-based matcher splits the query
+              // on whitespace and requires every token to appear somewhere
+              // in "<manufacturer> <model>" so a search like
+              // "tikka 6.5" narrows correctly even when the user hasn't
+              // typed the words in catalog order.
+              Autocomplete<_RefEntry>(
+                initialValue: TextEditingValue(text: initialText),
+                displayStringForOption: labelOf,
+                optionsBuilder: (te) {
+                  final qq = te.text.trim().toLowerCase();
+                  if (qq.isEmpty) return refs;
+                  final tokens = qq
+                      .split(RegExp(r'\s+'))
+                      .where((t) => t.isNotEmpty)
+                      .toList(growable: false);
+                  return refs.where((r) {
+                    final hay = labelOf(r).toLowerCase();
+                    for (final tk in tokens) {
+                      if (!hay.contains(tk)) return false;
+                    }
+                    return true;
+                  });
+                },
+                fieldViewBuilder:
+                    (context, textCtrl, focusNode, onSubmit) {
+                  return TextFormField(
+                    controller: textCtrl,
+                    focusNode: focusNode,
+                    autocorrect: false,
+                    enableSuggestions: false,
+                    decoration: InputDecoration(
+                      isDense: true,
+                      border: const OutlineInputBorder(),
+                      hintText: 'Search manufacturer or model',
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      suffixIcon: textCtrl.text.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.close, size: 18),
+                              tooltip: 'Clear',
+                              onPressed: () {
+                                textCtrl.clear();
+                                setState(() {
+                                  _selectedRef = null;
+                                  _referenceFirearmId = null;
+                                });
+                                _autoSave.notifyDirty();
+                              },
+                            ),
+                    ),
+                    onFieldSubmitted: (_) => onSubmit(),
+                    onTap: () {
+                      // Force the options panel open on focus even when
+                      // the field already has text (Flutter's default is
+                      // to only open after a text change).
+                      if (textCtrl.text.isEmpty) {
+                        textCtrl.text = ' ';
+                        textCtrl.text = '';
+                      }
+                    },
+                    validator: (_) =>
+                        _selectedRef == null ? 'Pick a model' : null,
+                  );
+                },
+                onSelected: (r) => _applyReferenceSelection(r),
+                optionsViewBuilder: (context, onSelected, options) {
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxHeight: 360),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          itemCount: options.length,
+                          itemBuilder: (context, i) {
+                            final r = options.elementAt(i);
+                            return ListTile(
+                              dense: true,
+                              title: Text(labelOf(r)),
+                              subtitle: Text(
+                                [
+                                  _titleCaseEnum(r.firearm.type),
+                                  if ((r.firearm.action ?? '').isNotEmpty)
+                                    _titleCaseEnum(r.firearm.action!),
+                                ].join(' · '),
+                                style:
+                                    Theme.of(context).textTheme.bodySmall,
+                              ),
+                              onTap: () => onSelected(r),
+                            );
+                          },
+                        ),
                       ),
                     ),
-                ],
-                onChanged: (r) {
-                  if (r != null) _applyReferenceSelection(r);
+                  );
                 },
-                validator: (v) => v == null ? 'Pick a model' : null,
               ),
               const SizedBox(height: 12),
               if (_selectedRef != null) ...[
                 _readOnlyTile('Manufacturer', _selectedRef!.manufacturer.name),
                 _readOnlyTile('Model', _selectedRef!.firearm.model),
-                _readOnlyTile('Type', _selectedRef!.firearm.type),
+                _readOnlyTile(
+                    'Type', _titleCaseEnum(_selectedRef!.firearm.type)),
                 if ((_selectedRef!.firearm.action ?? '').isNotEmpty)
-                  _readOnlyTile('Action', _selectedRef!.firearm.action!),
-                // No inline "Caliber for This Firearm" dropdown — the
-                // catalog selection auto-fills the main Caliber field
-                // below (`_applyReferenceSelection`), and that field is
-                // freely editable so multi-chambering owners can swap
-                // to whatever they actually shoot.
+                  _readOnlyTile('Action',
+                      _titleCaseEnum(_selectedRef!.firearm.action!)),
+                const SizedBox(height: 12),
+                // Catalog-driven caliber UI. Behavior depends on how
+                // many chamberings the catalog row declares:
+                //   * 0 → fall back to the freeform ComponentField so
+                //         the user can still type one (rare; only
+                //         hits very old / incomplete seed rows).
+                //   * 1 → read-only tile showing the chambering. We
+                //         already wrote it into `_caliber` from
+                //         `_applyReferenceSelection`, so save just
+                //         works.
+                //   * 2+ → DropdownButton<String> with every catalog
+                //         chambering. Defaults to the first option
+                //         (set by `_applyReferenceSelection`); user
+                //         can switch to whichever they actually
+                //         shoot. Selection writes through to
+                //         `_caliber` so save persists exactly what
+                //         the user picked.
+                _catalogCaliberSection(_selectedRef!),
               ],
             ],
           );
@@ -754,7 +1099,113 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           hintText: 'e.g. bolt-action, semi-auto',
         ),
       ),
+      const SizedBox(height: 12),
+      // In Custom mode the user types their own caliber — keep the
+      // shared autocomplete picker so they get the catalog suggestions
+      // and the SAAMI-favorite cartridges promoted to the top.
+      ComponentField(
+        kind: 'cartridge',
+        label: 'Caliber',
+        controller: _caliber,
+      ),
     ];
+  }
+
+  /// Catalog-mode caliber selector. Renders one of three layouts based
+  /// on the number of chamberings the catalog row declares for the
+  /// picked firearm. See the call-site comment in `_catalogFields` for
+  /// the full state table.
+  Widget _catalogCaliberSection(_RefEntry ref) {
+    if (ref.calibers.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                'Caliber',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+            ),
+            ComponentField(
+              kind: 'cartridge',
+              label: 'Caliber',
+              controller: _caliber,
+            ),
+          ],
+        ),
+      );
+    }
+    if (ref.calibers.length == 1) {
+      return _readOnlyTile('Caliber', ref.calibers.first);
+    }
+    // Multi-chambering rifles: a clean dropdown so the user can
+    // declare which factory chambering they actually own. The
+    // current `_caliber.text` (set by `_applyReferenceSelection` or
+    // by an existing-row load) is the seed value.
+    //
+    // Edge case: a saved firearm carries a caliber that no longer
+    // appears in the catalog row (catalog churn between releases,
+    // or the user typed it by hand in an earlier version of the app).
+    // We refuse to silently overwrite their choice — the saved value
+    // is appended to the dropdown items as a "(user-entered)" option
+    // so the displayed value always matches what would persist on
+    // save, and the user can either keep it or switch to a catalog
+    // chambering.
+    final current = _caliber.text.trim();
+    final inCatalog = current.isNotEmpty && ref.calibers.contains(current);
+    final initial = inCatalog
+        ? current
+        : (current.isNotEmpty ? current : ref.calibers.first);
+    final items = <DropdownMenuItem<String>>[
+      for (final c in ref.calibers)
+        DropdownMenuItem(value: c, child: Text(c)),
+      if (current.isNotEmpty && !inCatalog)
+        DropdownMenuItem(value: current, child: Text('$current (custom)')),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: DropdownButtonFormField<String>(
+        initialValue: initial,
+        isExpanded: true,
+        decoration: const InputDecoration(
+          labelText: 'Caliber',
+          helperText: 'Pick which chambering this firearm is.',
+        ),
+        items: items,
+        onChanged: (v) {
+          if (v == null) return;
+          setState(() => _caliber.text = v);
+          _autoSave.notifyDirty();
+        },
+      ),
+    );
+  }
+
+  /// Title-case a catalog enum like "rifle" / "semi-auto" /
+  /// "bolt-action" for display. Splits on spaces AND hyphens so
+  /// "semi-auto" becomes "Semi-Auto" rather than "Semi-auto", which
+  /// matches the rest of the UI's Title Case convention (CLAUDE.md
+  /// § 0a). Empty input returns empty.
+  String _titleCaseEnum(String raw) {
+    if (raw.isEmpty) return raw;
+    final buf = StringBuffer();
+    var capitaliseNext = true;
+    for (final ch in raw.runes) {
+      final s = String.fromCharCode(ch);
+      if (s == '-' || s == ' ' || s == '_' || s == '/') {
+        buf.write(s);
+        capitaliseNext = true;
+      } else if (capitaliseNext) {
+        buf.write(s.toUpperCase());
+        capitaliseNext = false;
+      } else {
+        buf.write(s.toLowerCase());
+      }
+    }
+    return buf.toString();
   }
 
   Widget _readOnlyTile(String label, String value) {
@@ -923,42 +1374,135 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                     }
                   }
                 }
-                return DropdownButtonFormField<OpticEntry?>(
-                  initialValue: _selectedOptic,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Mounted Optic',
-                    helperText:
-                        'Select "None" if no optic, or pick your scope.',
-                  ),
-                  items: <DropdownMenuItem<OpticEntry?>>[
-                    const DropdownMenuItem<OpticEntry?>(
-                      value: null,
-                      child: Text('None / iron sights'),
-                    ),
-                    for (final o in optics)
-                      DropdownMenuItem<OpticEntry?>(
-                        value: o,
-                        child: Text(
-                          '${o.manufacturer.name} ${o.optic.model}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                String labelOf(OpticEntry o) =>
+                    '${o.manufacturer.name} ${o.optic.model}';
+                final initialText =
+                    _selectedOptic != null ? labelOf(_selectedOptic!) : '';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        'Mounted Optic',
+                        style: Theme.of(context).textTheme.labelLarge,
                       ),
+                    ),
+                    // Autocomplete<OpticEntry>: type to filter inline.
+                    // Same pattern used for the firearm-catalog picker
+                    // above so the two pickers behave identically. The
+                    // suggestion panel pops below the field instead of
+                    // taking over the whole screen, and a search bar
+                    // sits at the top so users with crowded optics
+                    // catalogs can find a scope by typing instead of
+                    // scrolling. "None / iron sights" lives as the
+                    // first row of the suggestion panel; clearing the
+                    // field also resets to None.
+                    Autocomplete<OpticEntry>(
+                      initialValue: TextEditingValue(text: initialText),
+                      displayStringForOption: labelOf,
+                      optionsBuilder: (te) {
+                        final qq = te.text.trim().toLowerCase();
+                        if (qq.isEmpty) return optics;
+                        final tokens = qq
+                            .split(RegExp(r'\s+'))
+                            .where((t) => t.isNotEmpty)
+                            .toList(growable: false);
+                        return optics.where((o) {
+                          final hay = labelOf(o).toLowerCase();
+                          for (final tk in tokens) {
+                            if (!hay.contains(tk)) return false;
+                          }
+                          return true;
+                        });
+                      },
+                      fieldViewBuilder:
+                          (context, textCtrl, focusNode, onSubmit) {
+                        return TextFormField(
+                          controller: textCtrl,
+                          focusNode: focusNode,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            border: const OutlineInputBorder(),
+                            hintText: 'Search manufacturer or model',
+                            helperText:
+                                'Clear the field for "None / iron sights".',
+                            prefixIcon:
+                                const Icon(Icons.search, size: 18),
+                            suffixIcon: textCtrl.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    icon: const Icon(Icons.close, size: 18),
+                                    tooltip: 'Clear',
+                                    onPressed: () {
+                                      textCtrl.clear();
+                                      setState(() {
+                                        _selectedOptic = null;
+                                        _opticsId = null;
+                                      });
+                                      _autoSave.notifyDirty();
+                                    },
+                                  ),
+                          ),
+                          onFieldSubmitted: (_) => onSubmit(),
+                          onTap: () {
+                            // Force the panel open on focus even when
+                            // the field already has text.
+                            if (textCtrl.text.isEmpty) {
+                              textCtrl.text = ' ';
+                              textCtrl.text = '';
+                            }
+                          },
+                        );
+                      },
+                      onSelected: (o) {
+                        setState(() {
+                          _selectedOptic = o;
+                          _opticsId = o.optic.id;
+                        });
+                        _autoSave.notifyDirty();
+                        _maybeAutoFillReticleFromOptic(o.optic.id);
+                      },
+                      optionsViewBuilder:
+                          (context, onSelected, options) {
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 4,
+                            child: ConstrainedBox(
+                              constraints:
+                                  const BoxConstraints(maxHeight: 360),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                padding: EdgeInsets.zero,
+                                itemCount: options.length,
+                                itemBuilder: (context, i) {
+                                  final o = options.elementAt(i);
+                                  return ListTile(
+                                    dense: true,
+                                    title: Text(labelOf(o)),
+                                    subtitle: Text(
+                                      [
+                                        o.optic.category,
+                                        if (o.optic.magnification.isNotEmpty)
+                                          o.optic.magnification,
+                                      ].join(' · '),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall,
+                                    ),
+                                    onTap: () => onSelected(o),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
-                  onChanged: (o) {
-                    setState(() {
-                      _selectedOptic = o;
-                      _opticsId = o?.optic.id;
-                    });
-                    _autoSave.notifyDirty();
-                    // When the user picks a new optic, try to pre-fill
-                    // the reticle from the catalog default — but only
-                    // if the user hasn't already explicitly chosen a
-                    // reticle (so we don't clobber a deliberate pick).
-                    if (o != null) {
-                      _maybeAutoFillReticleFromOptic(o.optic.id);
-                    }
-                  },
                 );
               },
             ),
@@ -1013,22 +1557,37 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           color: theme.colorScheme.primary,
         ),
         title: Text(
-          'Optic accuracy (advanced)',
+          'Scope Tracking Calibration (Advanced)',
           style: theme.textTheme.labelLarge?.copyWith(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: Text(
-          'Most scopes don\'t track exactly to their advertised increments. '
-          'Test by dialing 10 mil up at distance and measuring actual '
-          'point-of-impact shift; ratio is your scale factor. Default 1.0 '
-          '= no correction.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+        // Subtitle intentionally omitted — when collapsed the user
+        // should see only the section title and chevron. The full
+        // explanation lives inside the expanded body below so the
+        // form scrolls cleanly past this section until someone opts
+        // in to read it.
         children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              'Tells the firing solution exactly how much your scope '
+              'dials when you turn the turret. The solver assumes 1 '
+              'mil (or MOA) dialed equals 1 mil downrange — when your '
+              'scope is off, every drop and wind correction inherits '
+              'that same error proportionally, so a long-range shot '
+              'drifts.\n\n'
+              'Vertical scale corrects elevation, horizontal scale '
+              'corrects windage. Enter the ratio of actual to '
+              'commanded movement (1.000 = perfect tracking). Run the '
+              'Scope Tracking Test from Range Day → Advanced Analysis '
+              "if you don't already have a measured value.",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           _ResponsiveRowPair(
             first: TextFormField(
               controller: _sightScaleVertical,
@@ -1126,7 +1685,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
               first: TextFormField(
                 controller: _defaultMuzzleVelocityFps,
                 decoration: InputDecoration(
-                  labelText: 'Default Muzzle Velocity ($velUnit)',
+                  labelText: 'Muzzle Velocity ($velUnit)',
                   helperText: 'Last measured / preferred MV',
                   suffixText: velUnit,
                 ),
@@ -1165,6 +1724,40 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                   return null;
                 },
               ),
+            ),
+            const SizedBox(height: 8),
+            // Quick-capture row for Muzzle Velocity. Two affordances:
+            //   - "From Garmin Xero" — opens the FilePicker for a .fit
+            //     file the user exported from a Xero C1 Pro, parses it
+            //     via [GarminXeroService], and writes the session's
+            //     average fps into the MV field.
+            //   - "From Photo" — opens the camera/gallery, runs ML Kit
+            //     OCR over the image, finds plausible MV numbers
+            //     (500–5000 fps range, covers .22 LR through hot
+            //     wildcat rifle), and either auto-fills (one
+            //     candidate) or shows a picker (multiple). For shooters
+            //     who are looking at a chronograph display.
+            // Both are Pro-gated to match the existing MV import path
+            // on the recipe form. Free users can still type the MV by
+            // hand into the field above.
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _busy ? null : _onImportMvFromGarminXero,
+                    icon: const Icon(Icons.bluetooth_searching, size: 16),
+                    label: const Text('From Garmin Xero'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _busy ? null : _onCaptureMvFromPhoto,
+                    icon: const Icon(Icons.camera_alt_outlined, size: 16),
+                    label: const Text('From Photo'),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -1301,10 +1894,22 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           // open-meteo handshake and writes them into the three
           // fields above. Pro-gated; tapping a free user routes
           // through `ensurePro` (paywall) before the network call.
+          //
+          // Layout: `Align(centerLeft) + Wrap` instead of
+          // `Align + Row(MainAxisSize.min)`. The ExpansionTile body
+          // hands its children unbounded-width constraints; the Row
+          // variant let `w=Infinity` reach `OutlinedButton`'s 48 dp
+          // tap-target enforcer, which then asserted in
+          // `RenderPhysicalShape`. `Wrap` sizes children to their
+          // intrinsic widths and falls a child to a new line on a
+          // narrow device. Same canonical fix used by
+          // `_inclineAngleRow` in `range_day_detail_screen.dart`.
           Align(
             alignment: Alignment.centerLeft,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 OutlinedButton.icon(
                   onPressed:
@@ -1318,10 +1923,8 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                       : const Icon(Icons.cloud_outlined, size: 18),
                   label: const Text('Capture from current weather'),
                 ),
-                if (!context.watch<EntitlementNotifier>().isPro) ...[
-                  const SizedBox(width: 8),
+                if (!context.watch<EntitlementNotifier>().isPro)
                   _zeroWeatherProBadge(),
-                ],
               ],
             ),
           ),

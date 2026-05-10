@@ -96,7 +96,7 @@ class _BcTruingScreenState extends State<BcTruingScreen> {
     _loadsFuture = context.read<RecipeRepository>().watchAll().first;
     _firearmsFuture = context.read<FirearmRepository>().allFirearms();
     // Outer mounted guard — see the matching comment in
-    // `wez_analysis_screen.dart`. Protects against fast pop (user
+    // `hit_probability_map_screen.dart`. Protects against fast pop (user
     // opens the screen, immediately backs out before the first frame).
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;

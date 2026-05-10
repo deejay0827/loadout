@@ -1,607 +1,394 @@
 [
   {
+    "name": "Circle 1 in",
+    "shape": "circle",
+    "widthIn": 1.0,
+    "heightIn": 1.0,
+    "colorHex": "#ffffff",
+    "notes": "1-inch aiming dot. 1 MOA at 100 yards."
+  },
+  {
+    "name": "Circle 2 in",
+    "shape": "circle",
+    "widthIn": 2.0,
+    "heightIn": 2.0,
+    "colorHex": "#ffffff",
+    "notes": "2-inch aiming dot. Common load-development reference."
+  },
+  {
+    "name": "Circle 3 in",
+    "shape": "circle",
+    "widthIn": 3.0,
+    "heightIn": 3.0,
+    "colorHex": "#ffffff",
+    "notes": "3-inch aiming dot. Standard 100-yard sight-in bull."
+  },
+  {
+    "name": "Circle 4 in",
+    "shape": "circle",
+    "widthIn": 4.0,
+    "heightIn": 4.0,
+    "colorHex": "#ffffff",
+    "notes": "4-inch aiming circle. Common pistol bullseye at 25 yards."
+  },
+  {
+    "name": "Circle 5 in",
+    "shape": "circle",
+    "widthIn": 5.0,
+    "heightIn": 5.0,
+    "colorHex": "#ffffff",
+    "notes": "5-inch aiming circle."
+  },
+  {
+    "name": "Circle 6 in",
+    "shape": "circle",
+    "widthIn": 6.0,
+    "heightIn": 6.0,
+    "colorHex": "#ffffff",
+    "notes": "6-inch round plate. Common 100-300 yard rifle gong."
+  },
+  {
+    "name": "Circle 8 in",
+    "shape": "circle",
+    "widthIn": 8.0,
+    "heightIn": 8.0,
+    "colorHex": "#ffffff",
+    "notes": "8-inch round plate. Standard mid-range rifle gong."
+  },
+  {
+    "name": "Circle 10 in",
+    "shape": "circle",
+    "widthIn": 10.0,
+    "heightIn": 10.0,
+    "colorHex": "#ffffff",
+    "notes": "10-inch round plate. Common action-pistol / mid-range size."
+  },
+  {
+    "name": "Circle 12 in",
+    "shape": "circle",
+    "widthIn": 12.0,
+    "heightIn": 12.0,
+    "colorHex": "#ffffff",
+    "notes": "12-inch round plate. Common 500-yard rifle gong."
+  },
+  {
+    "name": "Circle 15 in",
+    "shape": "circle",
+    "widthIn": 15.0,
+    "heightIn": 15.0,
+    "colorHex": "#ffffff",
+    "notes": "15-inch round plate."
+  },
+  {
+    "name": "Circle 18 in",
+    "shape": "circle",
+    "widthIn": 18.0,
+    "heightIn": 18.0,
+    "colorHex": "#ffffff",
+    "notes": "18-inch round plate. Long-range gong (1000-yard typical)."
+  },
+  {
+    "name": "Circle 20 in",
+    "shape": "circle",
+    "widthIn": 20.0,
+    "heightIn": 20.0,
+    "colorHex": "#ffffff",
+    "notes": "20-inch round plate."
+  },
+  {
+    "name": "Circle 24 in",
+    "shape": "circle",
+    "widthIn": 24.0,
+    "heightIn": 24.0,
+    "colorHex": "#ffffff",
+    "notes": "24-inch round plate. ELR / 1500+ yard gong."
+  },
+  {
+    "name": "Square 4 in",
+    "shape": "square",
+    "widthIn": 4.0,
+    "heightIn": 4.0,
+    "colorHex": "#ffffff",
+    "notes": "4-inch square aiming patch."
+  },
+  {
+    "name": "Square 6 in",
+    "shape": "square",
+    "widthIn": 6.0,
+    "heightIn": 6.0,
+    "colorHex": "#ffffff",
+    "notes": "6-inch square plate."
+  },
+  {
+    "name": "Square 8 in",
+    "shape": "square",
+    "widthIn": 8.0,
+    "heightIn": 8.0,
+    "colorHex": "#ffffff",
+    "notes": "8-inch square plate."
+  },
+  {
+    "name": "Square 10 in",
+    "shape": "square",
+    "widthIn": 10.0,
+    "heightIn": 10.0,
+    "colorHex": "#ffffff",
+    "notes": "10-inch square plate."
+  },
+  {
+    "name": "Square 12 in",
+    "shape": "square",
+    "widthIn": 12.0,
+    "heightIn": 12.0,
+    "colorHex": "#ffffff",
+    "notes": "12-inch square plate."
+  },
+  {
+    "name": "Rectangle 12x18 in",
+    "shape": "rectangle",
+    "widthIn": 12.0,
+    "heightIn": 18.0,
+    "colorHex": "#ffffff",
+    "notes": "12x18 rectangular plate. Common PRS practice size."
+  },
+  {
+    "name": "Rectangle 18x24 in",
+    "shape": "rectangle",
+    "widthIn": 18.0,
+    "heightIn": 24.0,
+    "colorHex": "#ffffff",
+    "notes": "18x24 rectangular plate. Half-IPSC PRS practice size."
+  },
+  {
+    "name": "Rectangle 24x30 in",
+    "shape": "rectangle",
+    "widthIn": 24.0,
+    "heightIn": 30.0,
+    "colorHex": "#ffffff",
+    "notes": "24x30 rectangular plate. Full IPSC-shape PRS rifle target."
+  },
+  {
+    "name": "Rectangle 24x36 in",
+    "shape": "rectangle",
+    "widthIn": 24.0,
+    "heightIn": 36.0,
+    "colorHex": "#ffffff",
+    "notes": "24x36 rectangular plate. Long-range PRS / NRL plate."
+  },
+  {
+    "name": "Rectangle 36x48 in",
+    "shape": "rectangle",
+    "widthIn": 36.0,
+    "heightIn": 48.0,
+    "colorHex": "#ffffff",
+    "notes": "36x48 rectangular plate. ELR backer / spotting target."
+  },
+  {
     "name": "NRA SR-1 Reduced (100 yd)",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 12.71,
     "heightIn": 12.71,
-    "materialKind": "paper",
-    "colorHex": "#fff8c4",
-    "notes": "100-yard reduced version of the SR target — used in NRA High Power Match Course."
+    "colorHex": "#ffffff",
+    "notes": "100-yard reduced version of the SR target - used in NRA High Power Match Course."
   },
   {
     "name": "NRA SR-21 (200 yd)",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 19.0,
     "heightIn": 19.0,
-    "materialKind": "paper",
-    "colorHex": "#fff8c4",
+    "colorHex": "#ffffff",
     "notes": "200-yard NRA Service Rifle target. 7-inch X-ring within 12-inch 10-ring."
   },
   {
     "name": "NRA MR-1 (300 yd)",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 21.0,
     "heightIn": 21.0,
-    "materialKind": "paper",
-    "colorHex": "#fff8c4",
+    "colorHex": "#ffffff",
     "notes": "300-yard NRA Mid-Range target. 6-inch X-ring within 12-inch 10-ring."
   },
   {
     "name": "NRA LR (600 yd)",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 36.0,
-    "materialKind": "paper",
-    "colorHex": "#fff8c4",
+    "colorHex": "#ffffff",
     "notes": "600-yard NRA Long Range target. 12-inch X-ring within 24-inch 10-ring."
   },
   {
     "name": "F-Class F-Open (1000 yd)",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 72.0,
     "heightIn": 72.0,
-    "materialKind": "paper",
-    "colorHex": "#fff8c4",
+    "colorHex": "#ffffff",
     "notes": "1000-yard F-Class target. 5-inch X-ring within 10-inch 10-ring."
   },
   {
     "name": "F-Class F-T/R (600 yd)",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 36.0,
-    "materialKind": "paper",
-    "colorHex": "#fff8c4",
+    "colorHex": "#ffffff",
     "notes": "600-yard F-Class Target Rifle target. 3-inch X-ring within 6-inch 10-ring."
   },
   {
     "name": "Bullseye 25 yd Slow-Fire Pistol",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 10.5,
     "heightIn": 10.5,
-    "materialKind": "paper",
-    "colorHex": "#000000",
-    "notes": "B-16 NRA pistol slow-fire target. Black bullseye on white background."
+    "colorHex": "#ffffff",
+    "notes": "B-16 NRA pistol slow-fire target. Black bullseye on a light field."
   },
   {
     "name": "Bullseye 50 yd Slow-Fire Pistol",
-    "manufacturer": "NRA",
-    "category": "paper",
     "shape": "rectangle",
     "widthIn": 10.5,
     "heightIn": 10.5,
-    "materialKind": "paper",
-    "colorHex": "#000000",
+    "colorHex": "#ffffff",
     "notes": "B-6 NRA pistol slow-fire target."
   },
   {
-    "name": "B-27 Silhouette",
-    "manufacturer": "NRA",
-    "category": "paper",
-    "shape": "silhouette",
-    "widthIn": 23.0,
-    "heightIn": 35.0,
-    "materialKind": "paper",
-    "colorHex": "#7a7a7a",
-    "notes": "Standard police-qualification man-shaped silhouette. Scoring rings centered on chest."
-  },
-  {
-    "name": "IPSC USPSA Classic Target",
-    "manufacturer": "USPSA",
-    "category": "cardboard",
-    "shape": "silhouette",
-    "widthIn": 18.0,
-    "heightIn": 30.0,
-    "materialKind": "cardboard",
-    "colorHex": "#a08550",
-    "notes": "USPSA / IPSC competition cardboard target — full-size 'A-zone' scoring."
-  },
-  {
-    "name": "IPSC Mini (66% Reduced)",
-    "manufacturer": "USPSA",
-    "category": "cardboard",
-    "shape": "silhouette",
-    "widthIn": 11.7,
-    "heightIn": 19.5,
-    "materialKind": "cardboard",
-    "colorHex": "#a08550",
-    "notes": "IPSC Mini target — 66% scaled USPSA Classic for distance training and indoor ranges. ~12 x 20 inches."
-  },
-  {
-    "name": "IPSC A4 (75% Reduced)",
-    "manufacturer": "USPSA",
-    "category": "cardboard",
-    "shape": "silhouette",
-    "widthIn": 13.5,
-    "heightIn": 22.5,
-    "materialKind": "cardboard",
-    "colorHex": "#a08550",
-    "notes": "IPSC 75%-scale target sized for A4 / Letter paper printing — ~13.5 x 22.5 inches."
-  },
-  {
-    "name": "IDPA Cardboard Target",
-    "manufacturer": "IDPA",
-    "category": "cardboard",
-    "shape": "silhouette",
-    "widthIn": 18.0,
-    "heightIn": 30.0,
-    "materialKind": "cardboard",
-    "colorHex": "#a08550",
-    "notes": "IDPA standard cardboard target with 8-inch -0 scoring zone — full size."
-  },
-  {
-    "name": "IDPA Reduced (75%)",
-    "manufacturer": "IDPA",
-    "category": "cardboard",
-    "shape": "silhouette",
-    "widthIn": 13.5,
-    "heightIn": 22.5,
-    "materialKind": "cardboard",
-    "colorHex": "#a08550",
-    "notes": "75%-scale IDPA cardboard target — used for indoor ranges and skill drills at reduced distance."
-  },
-  {
-    "name": "ICORE Pepper Popper",
-    "manufacturer": "ICORE",
-    "category": "steel",
-    "shape": "silhouette",
-    "widthIn": 12.0,
-    "heightIn": 24.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "ICORE pepper-popper steel silhouette."
-  },
-  {
-    "name": "Steel Challenge Plate 10 in",
-    "manufacturer": "Steel Challenge",
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 10.0,
-    "heightIn": 10.0,
-    "materialKind": "steel",
-    "colorHex": "#fff5cf",
-    "notes": "10-inch white-painted Steel Challenge round plate."
-  },
-  {
-    "name": "Steel Challenge Stop Plate 12 in",
-    "manufacturer": "Steel Challenge",
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 12.0,
-    "heightIn": 12.0,
-    "materialKind": "steel",
-    "colorHex": "#ffd966",
-    "notes": "12-inch yellow-painted Steel Challenge stop plate."
-  },
-  {
-    "name": "PRS Practical 24x30",
-    "manufacturer": "Action Target",
-    "category": "steel",
-    "shape": "rectangle",
-    "widthIn": 24.0,
-    "heightIn": 30.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "PRS-style 24x30 IPSC-shape rifle target."
-  },
-  {
-    "name": "PRS Practical 18x24",
-    "manufacturer": "Action Target",
-    "category": "steel",
-    "shape": "rectangle",
-    "widthIn": 18.0,
-    "heightIn": 24.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "PRS practice silhouette, half-sized."
-  },
-  {
-    "name": "Steel Plate 6 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 6.0,
-    "heightIn": 6.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Round 6-inch steel plate. Common 100-300 yard rifle gong."
-  },
-  {
-    "name": "Steel Plate 8 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 8.0,
-    "heightIn": 8.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Round 8-inch steel plate. Standard mid-range gong."
-  },
-  {
-    "name": "Steel Plate 10 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 10.0,
-    "heightIn": 10.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Round 10-inch steel plate."
-  },
-  {
-    "name": "Steel Plate 12 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 12.0,
-    "heightIn": 12.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Round 12-inch steel plate. Common 500-yard rifle gong."
-  },
-  {
-    "name": "Steel Plate 18 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 18.0,
-    "heightIn": 18.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Round 18-inch steel plate. Long-range gong (1000-yard typical)."
-  },
-  {
-    "name": "Steel Plate 24 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "circle",
-    "widthIn": 24.0,
-    "heightIn": 24.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Round 24-inch steel plate. ELR / 1500+ yard gong."
-  },
-  {
-    "name": "Steel Square 6 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "square",
-    "widthIn": 6.0,
-    "heightIn": 6.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "6-inch square steel plate."
-  },
-  {
-    "name": "Steel Square 8 in",
-    "manufacturer": null,
-    "category": "steel",
-    "shape": "square",
-    "widthIn": 8.0,
-    "heightIn": 8.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "8-inch square steel plate."
-  },
-  {
-    "name": "50 BMG ARC Plate",
-    "manufacturer": "Larue Tactical",
-    "category": "steel",
-    "shape": "rectangle",
-    "widthIn": 24.0,
-    "heightIn": 36.0,
-    "materialKind": "steel",
-    "colorHex": "#404040",
-    "notes": "Heavy ARC plate rated for .50 BMG and other ELR magnum calibers."
-  },
-  {
-    "name": "Hunters HD Gold 100 yd Sight-In",
-    "manufacturer": "Hunters HD Gold",
-    "category": "paper",
-    "shape": "rectangle",
-    "widthIn": 11.0,
-    "heightIn": 11.0,
-    "materialKind": "paper",
-    "colorHex": "#ffffe0",
-    "notes": "Diamond grid pattern with 1-inch reference squares for precise zeroing."
-  },
-  {
-    "name": "Caldwell Orange Peel 8 in",
-    "manufacturer": "Caldwell",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 8.0,
-    "heightIn": 8.0,
-    "materialKind": "paper",
-    "colorHex": "#ff7800",
-    "notes": "Self-adhesive splatter target — bullet impacts reveal a chartreuse halo."
-  },
-  {
-    "name": "Caldwell Orange Peel 12 in",
-    "manufacturer": "Caldwell",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 12.0,
-    "heightIn": 12.0,
-    "materialKind": "paper",
-    "colorHex": "#ff7800",
-    "notes": "Larger Caldwell Orange Peel splatter target."
-  },
-  {
-    "name": "Birchwood Casey Shoot-N-C 8 in",
-    "manufacturer": "Birchwood Casey",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 8.0,
-    "heightIn": 8.0,
-    "materialKind": "paper",
-    "colorHex": "#000000",
-    "notes": "Black self-adhesive splatter target with chartreuse impact rings."
-  },
-  {
-    "name": "Birchwood Casey Shoot-N-C 12 in",
-    "manufacturer": "Birchwood Casey",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 12.0,
-    "heightIn": 12.0,
-    "materialKind": "paper",
-    "colorHex": "#000000",
-    "notes": "12-inch Shoot-N-C splatter target."
-  },
-  {
-    "name": "Birchwood Casey Dirty Bird 8 in",
-    "manufacturer": "Birchwood Casey",
-    "category": "paper",
-    "shape": "circle",
-    "widthIn": 8.0,
-    "heightIn": 8.0,
-    "materialKind": "paper",
-    "colorHex": "#ffffff",
-    "notes": "White paper bullseye with black 1-inch grid for sighting in."
-  },
-  {
-    "name": "Champion Score-Keeper 100 yd",
-    "manufacturer": "Champion",
-    "category": "paper",
-    "shape": "rectangle",
-    "widthIn": 14.0,
-    "heightIn": 14.0,
-    "materialKind": "paper",
-    "colorHex": "#ffffff",
-    "notes": "100-yard sight-in target. Numbered scoring rings with 1-inch grid."
-  },
-  {
-    "name": "EZ-Aim Splatterburst 8 in",
-    "manufacturer": "EZ-Aim",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 8.0,
-    "heightIn": 8.0,
-    "materialKind": "paper",
-    "colorHex": "#ffd966",
-    "notes": "Yellow splatterburst self-adhesive target."
-  },
-  {
-    "name": "Sniper's Hide Cup Target",
-    "manufacturer": "Sniper's Hide",
-    "category": "paper",
-    "shape": "rectangle",
-    "widthIn": 17.0,
-    "heightIn": 22.0,
-    "materialKind": "paper",
-    "colorHex": "#ffffff",
-    "notes": "Practical-precision match scoring target. Multiple small aiming squares."
-  },
-  {
-    "name": "Texas Star (Steel)",
-    "manufacturer": "Action Target",
-    "category": "reactive",
+    "name": "Texas Star",
     "shape": "star",
     "widthIn": 36.0,
     "heightIn": 36.0,
-    "materialKind": "steel",
-    "colorHex": "#ff7700",
-    "notes": "Spinning reactive star — central hub with five 8-inch satellite plates on radial arms. When a plate is hit it falls, shifting the balance and rotating the rig so the next plate accelerates into the user's sight picture."
+    "colorHex": "#ffffff",
+    "notes": "Texas Star - central hub with five 8-inch satellite plates on radial arms. Hitting a plate shifts the balance and rotates the rig so the next plate moves into the sight picture."
   },
   {
-    "name": "Dueling Tree (Steel)",
-    "manufacturer": "Action Target",
-    "category": "reactive",
+    "name": "Dueling Tree",
     "shape": "rectangle",
     "widthIn": 36.0,
     "heightIn": 60.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Pivoting plate rack — six 6-inch round plates."
+    "colorHex": "#ffffff",
+    "notes": "Pivoting plate rack - typically six 6-inch round plates that swing to the opposite side when hit."
   },
   {
-    "name": "Pepper Popper (Full)",
-    "manufacturer": "Action Target",
-    "category": "steel",
-    "shape": "silhouette",
-    "widthIn": 16.0,
-    "heightIn": 30.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Full-sized USPSA-spec pepper popper steel target."
-  },
-  {
-    "name": "Mini Pepper Popper",
-    "manufacturer": "Action Target",
-    "category": "steel",
-    "shape": "silhouette",
-    "widthIn": 12.0,
-    "heightIn": 22.0,
-    "materialKind": "steel",
-    "colorHex": "#3b3b3b",
-    "notes": "Compact pepper popper steel target."
-  },
-  {
-    "name": "Game: Whitetail Deer Vital",
-    "manufacturer": "Champion",
-    "category": "game-silhouette",
-    "shape": "silhouette",
-    "widthIn": 26.0,
-    "heightIn": 14.0,
-    "materialKind": "paper",
-    "colorHex": "#a08550",
-    "notes": "Whitetail deer profile with vital-zone overlay (~8-inch heart/lung circle)."
-  },
-  {
-    "name": "Game: Mule Deer Vital",
-    "manufacturer": "Champion",
-    "category": "game-silhouette",
-    "shape": "silhouette",
-    "widthIn": 28.0,
-    "heightIn": 16.0,
-    "materialKind": "paper",
-    "colorHex": "#a08550",
-    "notes": "Mule deer profile with vital-zone overlay."
-  },
-  {
-    "name": "Game: Elk Vital",
-    "manufacturer": "Champion",
-    "category": "game-silhouette",
-    "shape": "silhouette",
+    "name": "Bear",
+    "shape": "bear",
     "widthIn": 36.0,
+    "heightIn": 40.0,
+    "colorHex": "#ffffff",
+    "notes": "Black-bear vital-zone profile. Heart/lung zone roughly behind the front shoulder."
+  },
+  {
+    "name": "Wild Boar",
+    "shape": "boar",
+    "widthIn": 32.0,
     "heightIn": 22.0,
-    "materialKind": "paper",
-    "colorHex": "#a08550",
-    "notes": "Elk profile with ~12-inch vital-zone overlay."
+    "colorHex": "#ffffff",
+    "notes": "European wild boar profile with vital-zone overlay."
   },
   {
-    "name": "Game: Pronghorn Antelope",
-    "manufacturer": "Champion",
-    "category": "game-silhouette",
-    "shape": "silhouette",
-    "widthIn": 22.0,
-    "heightIn": 14.0,
-    "materialKind": "paper",
-    "colorHex": "#a08550",
-    "notes": "Pronghorn antelope profile with vital-zone overlay (~6-inch)."
+    "name": "Whitetail Deer",
+    "shape": "deer",
+    "widthIn": 30.0,
+    "heightIn": 24.0,
+    "colorHex": "#ffffff",
+    "notes": "Whitetail deer broadside profile with ~8-inch heart/lung vital zone."
   },
   {
-    "name": "Game: Coyote",
-    "manufacturer": "Champion",
-    "category": "game-silhouette",
-    "shape": "silhouette",
+    "name": "Mule Deer",
+    "shape": "deer",
+    "widthIn": 32.0,
+    "heightIn": 26.0,
+    "colorHex": "#ffffff",
+    "notes": "Mule deer broadside profile with vital-zone overlay."
+  },
+  {
+    "name": "Elk",
+    "shape": "elk",
+    "widthIn": 48.0,
+    "heightIn": 36.0,
+    "colorHex": "#ffffff",
+    "notes": "Elk broadside profile with ~12-inch heart/lung vital zone."
+  },
+  {
+    "name": "Coyote",
+    "shape": "coyote",
     "widthIn": 24.0,
     "heightIn": 14.0,
-    "materialKind": "paper",
-    "colorHex": "#806040",
-    "notes": "Coyote profile silhouette with vital-zone overlay (~6-inch)."
+    "colorHex": "#ffffff",
+    "notes": "Coyote broadside profile with ~6-inch vital zone for varmint practice."
   },
   {
-    "name": "Game: Prairie Dog",
-    "manufacturer": "Champion",
-    "category": "game-silhouette",
-    "shape": "silhouette",
-    "widthIn": 8.0,
-    "heightIn": 12.0,
-    "materialKind": "paper",
-    "colorHex": "#a08560",
-    "notes": "Small prairie-dog silhouette for varmint practice."
+    "name": "Pronghorn Antelope",
+    "shape": "deer",
+    "widthIn": 22.0,
+    "heightIn": 14.0,
+    "colorHex": "#ffffff",
+    "notes": "Pronghorn antelope broadside profile with ~6-inch vital zone."
   },
   {
-    "name": "Game: Wild Hog",
-    "manufacturer": "Champion",
-    "category": "game-silhouette",
-    "shape": "silhouette",
+    "name": "Wild Hog",
+    "shape": "boar",
     "widthIn": 28.0,
     "heightIn": 18.0,
-    "materialKind": "paper",
-    "colorHex": "#3b2a20",
-    "notes": "Wild hog profile silhouette with vital-zone overlay."
-  },
-  {
-    "name": "3D Whitetail Deer",
-    "manufacturer": "Rinehart",
-    "category": "game-silhouette",
-    "shape": "silhouette",
-    "widthIn": 30.0,
-    "heightIn": 36.0,
-    "materialKind": "game-3d",
-    "colorHex": "#a08550",
-    "notes": "Foam 3D archery / muzzleloader practice target."
-  },
-  {
-    "name": "Polymer Knock-Down (6 in)",
-    "manufacturer": "Champion",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 6.0,
-    "heightIn": 6.0,
-    "materialKind": "polymer",
-    "colorHex": "#ff5f0f",
-    "notes": "Self-resetting polymer knock-down target for handgun practice."
-  },
-  {
-    "name": "Polymer Spinner (3 in)",
-    "manufacturer": "Champion",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 3.0,
-    "heightIn": 3.0,
-    "materialKind": "polymer",
-    "colorHex": "#ff5f0f",
-    "notes": "Small polymer spinner — flips on hit."
-  },
-  {
-    "name": "Polymer Pendulum 4 in",
-    "manufacturer": "Champion",
-    "category": "reactive",
-    "shape": "circle",
-    "widthIn": 4.0,
-    "heightIn": 4.0,
-    "materialKind": "polymer",
-    "colorHex": "#ff5f0f",
-    "notes": "Self-resetting pendulum-style target."
-  },
-  {
-    "name": "Caldwell Orange Peel Sight-In 8 in",
-    "manufacturer": "Caldwell",
-    "category": "paper",
-    "shape": "rectangle",
-    "widthIn": 12.0,
-    "heightIn": 18.0,
-    "materialKind": "paper",
-    "colorHex": "#ff7800",
-    "notes": "Sight-in grid with multiple aiming bullseyes for load development."
-  },
-  {
-    "name": "Generic Paper Plate (9 in)",
-    "manufacturer": null,
-    "category": "paper",
-    "shape": "circle",
-    "widthIn": 9.0,
-    "heightIn": 9.0,
-    "materialKind": "paper",
     "colorHex": "#ffffff",
-    "notes": "Standard paper dinner plate — informal MOA tracking standard."
+    "notes": "North American wild hog profile with vital-zone overlay."
   },
   {
-    "name": "Generic Cardboard Box (12 x 12)",
-    "manufacturer": null,
-    "category": "cardboard",
-    "shape": "square",
+    "name": "IPSC USPSA Classic 18 x 30",
+    "shape": "silhouette",
+    "widthIn": 18.0,
+    "heightIn": 30.0,
+    "colorHex": "#ffffff",
+    "notes": "Full-size USPSA / IPSC competition silhouette (45.7 x 76.2 cm). The reference target for action-pistol matches; A-zone scoring centered on the chest box, head box on top."
+  },
+  {
+    "name": "IPSC Classic Official 18.12 x 29.93",
+    "shape": "silhouette",
+    "widthIn": 18.12,
+    "heightIn": 29.93,
+    "colorHex": "#ffffff",
+    "notes": "Official IPSC Classic Target — 460 x 760 mm. Slightly different proportions than the USPSA Metric; used by IPSC Region matches outside the USA."
+  },
+  {
+    "name": "IPSC Classic Mini 18.12 x 22.84",
+    "shape": "silhouette",
+    "widthIn": 18.12,
+    "heightIn": 22.84,
+    "colorHex": "#ffffff",
+    "notes": "Reduced-height IPSC Classic — 460 x 580 mm. Same width as the full Classic, shorter overall for indoor / restricted-bay use."
+  },
+  {
+    "name": "IPSC Mini 12 x 20",
+    "shape": "silhouette",
     "widthIn": 12.0,
-    "heightIn": 12.0,
-    "materialKind": "cardboard",
-    "colorHex": "#a08550",
-    "notes": "Improvised cardboard target — handy 12-inch square reference."
+    "heightIn": 20.0,
+    "colorHex": "#ffffff",
+    "notes": "Mini USPSA / IPSC silhouette (~66% of full Classic). Used for distance training and indoor ranges."
+  },
+  {
+    "name": "IPSC A4 11.81 x 23.62",
+    "shape": "silhouette",
+    "widthIn": 11.81,
+    "heightIn": 23.62,
+    "colorHex": "#ffffff",
+    "notes": "IPSC A4-size target — 300 x 600 mm. Sized to print on a single A4 sheet for at-home practice."
+  },
+  {
+    "name": "IPSC Head Box 5.91 x 11.02",
+    "shape": "silhouette",
+    "widthIn": 5.91,
+    "heightIn": 11.02,
+    "colorHex": "#ffffff",
+    "notes": "USPSA / IPSC head box only — 150 x 280 mm. The high-value shoot-or-no-shoot zone, often used as a small standalone reduced-target drill."
+  },
+  {
+    "name": "Pepper Popper Full 7.87 x 33.46",
+    "shape": "popper",
+    "widthIn": 7.87,
+    "heightIn": 33.46,
+    "colorHex": "#ffffff",
+    "notes": "Full-size pepper popper — 85 cm tall, 20 cm wide at the head. Reactive falling silhouette used in action-pistol matches."
+  },
+  {
+    "name": "Pepper Popper Mini 7.87 x 22.05",
+    "shape": "popper",
+    "widthIn": 7.87,
+    "heightIn": 22.05,
+    "colorHex": "#ffffff",
+    "notes": "Mini pepper popper — 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height."
   }
 ]

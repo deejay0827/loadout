@@ -12,7 +12,7 @@
 //
 // The harness also exports its stub classes so an individual test that
 // wants to override a single override (e.g. flip `EntitlementNotifier` to
-// Pro, or hand the screen a `WezResult` without running the math) can
+// Pro, or hand the screen a `HitProbabilityMapResult` without running the math) can
 // reach in without rebuilding the tree from scratch.
 //
 // Filename starts with `_` so the test runner's default glob
@@ -62,9 +62,9 @@
 // ============================================================================
 //   * test/range_day_screen_widget_test.dart
 //   * test/range_day_detail_screen_widget_test.dart
-//   * test/wez_analysis_screen_widget_test.dart
+//   * test/hit_probability_map_screen_widget_test.dart
 //   * test/bc_truing_screen_widget_test.dart
-//   * test/sight_calibration_screen_widget_test.dart
+//   * test/scope_tracking_screen_widget_test.dart
 //
 // ============================================================================
 // SIDE EFFECTS
@@ -111,9 +111,9 @@ import 'package:loadout/services/purchases_service.dart';
 import 'package:loadout/services/sensors/cant_service.dart';
 import 'package:loadout/services/sensors/inclinometer_service.dart';
 import 'package:loadout/services/sensors/magnetometer_service.dart';
-import 'package:loadout/services/sight_calibration_service.dart';
+import 'package:loadout/services/scope_tracking_service.dart';
 import 'package:loadout/services/unit_service.dart';
-import 'package:loadout/services/wez_analysis_service.dart';
+import 'package:loadout/services/hit_probability_map_service.dart';
 
 /// `EntitlementNotifier` subclass with deterministic `isPro`. The
 /// production class respects `debugForceProActive` (always-true in debug
@@ -343,14 +343,14 @@ Future<RangeDayHarness> pumpRangeDayScreen(
         Provider<HitProbabilityService>(
           create: (_) => const HitProbabilityService(),
         ),
-        Provider<WezAnalysisService>(
-          create: (_) => const WezAnalysisService(),
+        Provider<HitProbabilityMapService>(
+          create: (_) => const HitProbabilityMapService(),
         ),
         Provider<BcTruingService>(
           create: (_) => const BcTruingService(),
         ),
-        Provider<SightCalibrationService>(
-          create: (_) => const SightCalibrationService(),
+        Provider<ScopeTrackingService>(
+          create: (_) => const ScopeTrackingService(),
         ),
         ChangeNotifierProvider<UnitService>.value(value: units),
         ChangeNotifierProvider<AutoSaveService>.value(value: autoSave),

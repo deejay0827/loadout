@@ -101,7 +101,7 @@ void main() {
     // label inside `_setupBody()` is therefore visible without any
     // user action — which is the whole point: the user lands on
     // the Setup section first, no extra tap required.
-    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('Loadout & Conditions'), findsOneWidget);
     expect(find.text('Distance (yd)'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
@@ -132,7 +132,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
     // Section headers all render.
-    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('Loadout & Conditions'), findsOneWidget);
     // Pro-gated UI is either absent or shown with a lock affordance —
     // the screen does NOT crash on render.
     expect(tester.takeException(), isNull);
@@ -147,7 +147,7 @@ void main() {
     );
     await tester.pumpAndSettle(const Duration(seconds: 2));
 
-    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('Loadout & Conditions'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -254,7 +254,7 @@ void main() {
     // Setup is EXPANDED by default in production
     // (`_setupExpanded = true`), so the distance TextField is
     // already mounted — no tap-to-expand needed.
-    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('Loadout & Conditions'), findsOneWidget);
 
     // Find the distance text field by its production-code Key.
     // After the CLAUDE.md § 0 anti-fake-data sweep all input
@@ -341,7 +341,7 @@ void main() {
     // Setup heading text is present AND the inside-body
     // "Distance (yd)" label is also present because the body is
     // expanded by default.
-    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('Loadout & Conditions'), findsOneWidget);
     expect(find.text('Distance (yd)'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
@@ -359,7 +359,7 @@ void main() {
     // for a freshly-pumped screen. If it's there, the rest of the
     // initState chain (post-frame solve, sensor starts, etc.) ran
     // without throwing.
-    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('Loadout & Conditions'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tearDownRangeDayWidgetTree(tester);
   });
@@ -405,7 +405,7 @@ void main() {
     await tester.pumpAndSettle(const Duration(seconds: 2));
     // Default mode is Quick. Setup is visible; advanced cards
     // (Group Stats, DOPE, Moving Target) are NOT.
-    expect(find.text('Setup'), findsOneWidget);
+    expect(find.text('Loadout & Conditions'), findsOneWidget);
     expect(find.text('DOPE'), findsNothing,
         reason: 'DOPE card belongs to Full mode only');
     expect(find.text('Moving Target'), findsNothing,

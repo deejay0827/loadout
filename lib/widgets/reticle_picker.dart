@@ -97,13 +97,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../data/reticle_library.dart';
 import '../data/reticle_tags.dart';
 import '../database/database.dart';
 import '../repositories/reticle_repository.dart';
 import 'find_by_scope_sheet.dart';
 import 'reticle_full_screen_view.dart';
-import 'reticle_renderer.dart';
 import 'reticle_thumbnail.dart';
 
 /// Reusable form field that lets the user pick a reticle. Renders a
@@ -142,8 +140,6 @@ class ReticlePickerField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final repo = context.read<ReticleRepository>();
-    final selectedDef = selected != null ? repo.definitionFromRow(selected!) : null;
     return InkWell(
       onTap: () => _open(context),
       borderRadius: BorderRadius.circular(8),
@@ -155,24 +151,23 @@ class ReticlePickerField extends StatelessWidget {
         child: Row(
           children: [
             // Preview thumbnail (or a placeholder when nothing's
-            // picked). This is the FIELD-level preview (visible while
-            // the picker is closed) — we keep the high-fidelity
-            // ReticleRenderer here because there's only one of these
-            // mounted at a time (vs. the dropdown list, where every
-            // row would mount one).
+            // picked). Intentionally a SIMPLE glyph (filled dot for
+            // red-dot patterns, plain crosshair for every other
+            // scope reticle) instead of a miniature of the actual
+            // reticle. Rendering the full geometry at 56 px stacked
+            // hash marks and numerals on top of each other and
+            // produced a smear that looked clumped together — the
+            // user can tap the picker to open the full-screen
+            // preview when they want to see the actual pattern.
             SizedBox(
               width: 56,
               height: 56,
-              child: selectedDef != null
-                  ? ReticleRenderer(
-                      reticle: selectedDef,
-                      displayUnit:
-                          selectedDef.nativeUnit == ReticleNativeUnit.moa
-                              ? 'moa'
-                              : 'mil',
-                      size: const Size(56, 56),
-                      showUnitOverlay: false,
-                      color: theme.colorScheme.primary,
+              child: selected != null
+                  ? CustomPaint(
+                      painter: _SimpleReticleGlyphPainter(
+                        kind: _glyphKindFor(selected!),
+                        color: theme.colorScheme.primary,
+                      ),
                     )
                   : Container(
                       decoration: BoxDecoration(
@@ -902,5 +897,112 @@ class _ReticleListRow extends StatelessWidget {
       default:
         return type.toUpperCase();
     }
+  }
+}
+
+/// Three simple glyph kinds for the field-level thumbnail.
+///   * [dot]       — a centred filled circle, for red-dot / holographic
+///                   patterns where the actual reticle IS just a dot.
+///   * [circle]    — a bold black circle outline, for combat / BDC
+///                   reticles (DMR horseshoes, BDC drop reticles,
+///                   the LoadOut BDC Chevron family). Reads as
+///                   "fast-acquisition combat optic" without
+///                   pretending to mirror the actual reticle geometry.
+///   * [crosshair] — a plain '+' with no hash marks and no numerals,
+///                   for every other reticle (mil, MOA, classic).
+///                   Conveys "scope reticle."
+enum _SimpleReticleGlyphKind { dot, circle, crosshair }
+
+/// Pick the glyph for a row using the same tag derivation
+/// `_categorizeReticle` uses, kept in lockstep so the field thumbnail
+/// and the picker's section grouping never disagree.
+///
+/// Order mirrors `_categorizeReticle`'s priority — red-dot first
+/// (these patterns are visually a dot), then combat / BDC (dominant
+/// circle / horseshoe element), and everything else falls through
+/// to the plain crosshair.
+_SimpleReticleGlyphKind _glyphKindFor(ReticleRow row) {
+  final tags = deriveReticleTags(
+    manufacturer: row.manufacturerId,
+    model: row.model,
+    family: row.family,
+  );
+  if (tags.contains('red-dot') ||
+      tags.contains('reddot') ||
+      tags.contains('holographic')) {
+    return _SimpleReticleGlyphKind.dot;
+  }
+  if (tags.contains('combat') ||
+      tags.contains('dmr') ||
+      tags.contains('bdc')) {
+    return _SimpleReticleGlyphKind.circle;
+  }
+  return _SimpleReticleGlyphKind.crosshair;
+}
+
+/// Tiny painter for the field-level thumbnail. Centres a single
+/// graphic in the available 56×56 box; lines are 1.4 px so the
+/// crosshair reads cleanly at this size without competing with the
+/// surrounding text.
+class _SimpleReticleGlyphPainter extends CustomPainter {
+  _SimpleReticleGlyphPainter({required this.kind, required this.color});
+
+  final _SimpleReticleGlyphKind kind;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centre = Offset(size.width / 2, size.height / 2);
+    switch (kind) {
+      case _SimpleReticleGlyphKind.dot:
+        // Filled dot — sized so it reads as a "red-dot sight" cue
+        // rather than a tiny ink blob.
+        canvas.drawCircle(
+          centre,
+          size.shortestSide * 0.16,
+          Paint()
+            ..color = color
+            ..style = PaintingStyle.fill,
+        );
+      case _SimpleReticleGlyphKind.circle:
+        // Bold black circle outline — combat / BDC cue. Stroke
+        // width is intentionally thicker than the crosshair so the
+        // glyph reads as "donut / horseshoe" at thumbnail size
+        // rather than as a thin ring. Always rendered black per
+        // the user's spec; the surrounding card chrome supplies
+        // its own colour cues so the glyph doesn't need to pick
+        // up the theme primary.
+        canvas.drawCircle(
+          centre,
+          size.shortestSide * 0.32,
+          Paint()
+            ..color = Colors.black
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.6,
+        );
+      case _SimpleReticleGlyphKind.crosshair:
+        // Plain '+' — vertical and horizontal stroke spanning ~70%
+        // of the box. No hash marks, no numerals, no center dot.
+        final stroke = Paint()
+          ..color = color
+          ..strokeWidth = 1.4
+          ..strokeCap = StrokeCap.square;
+        final half = size.shortestSide * 0.35;
+        canvas.drawLine(
+          Offset(centre.dx - half, centre.dy),
+          Offset(centre.dx + half, centre.dy),
+          stroke,
+        );
+        canvas.drawLine(
+          Offset(centre.dx, centre.dy - half),
+          Offset(centre.dx, centre.dy + half),
+          stroke,
+        );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _SimpleReticleGlyphPainter old) {
+    return old.kind != kind || old.color != color;
   }
 }

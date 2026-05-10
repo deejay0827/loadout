@@ -92,11 +92,15 @@ class TargetRepository {
       (db.select(db.targets)..where((t) => t.id.equals(id)))
           .getSingleOrNull();
 
-  /// Filters by `category` (`paper | steel | reactive | game-silhouette`),
-  /// naturally sorted by name. Used by the Range Day filter chips.
-  Future<List<TargetRow>> getByCategory(String category) async {
+  /// Filters by SHAPE (`circle | square | rectangle | silhouette |
+  /// star | bear | boar | deer | elk | coyote`), naturally sorted by
+  /// name. Used by the Range Day filter chips. Replaces the legacy
+  /// `getByCategory` which keyed off the `category` column dropped in
+  /// schema v28 (per user feedback: reloaders pick by geometry, not
+  /// material).
+  Future<List<TargetRow>> getByShape(String shape) async {
     final rows = await (db.select(db.targets)
-          ..where((t) => t.category.equals(category)))
+          ..where((t) => t.shape.equals(shape)))
         .get();
     final list = [...rows];
     list.sort((a, b) => naturalCompare(a.name, b.name));

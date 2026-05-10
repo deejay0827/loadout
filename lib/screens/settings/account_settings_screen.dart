@@ -256,7 +256,7 @@ class _BiometricTile extends StatelessWidget {
     }
     return SwitchListTile(
       secondary: const Icon(Icons.fingerprint),
-      title: const Text('Unlock with biometrics'),
+      title: const Text('Unlock With Biometrics'),
       subtitle: const Text(
         "Use Face ID, Touch ID, or your device's fingerprint to "
         'unlock LoadOut. Connected to your current sign-in — no '

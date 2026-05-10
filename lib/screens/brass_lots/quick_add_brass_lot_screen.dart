@@ -194,7 +194,7 @@ class _QuickAddBrassLotScreenState extends State<QuickAddBrassLotScreen> {
                 child: TextButton.icon(
                   onPressed: _busy ? null : _switchToDetailed,
                   icon: const Icon(Icons.tune),
-                  label: const Text('Switch to detailed'),
+                  label: const Text('Switch to Detailed'),
                 ),
               ),
               const SizedBox(height: 4),

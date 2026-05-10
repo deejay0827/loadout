@@ -9,9 +9,9 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loadout/services/ballistics/units.dart' as bu;
-import 'package:loadout/services/sight_calibration_service.dart';
+import 'package:loadout/services/scope_tracking_service.dart';
 
-const _service = SightCalibrationService();
+const _service = ScopeTrackingService();
 
 void main() {
   group('Sight calibration — vertical', () {
@@ -35,21 +35,21 @@ void main() {
       const expectedCentroidNorm = expectedCentroidIn / 12.0;
       // Build 5 impacts clustered tightly around that centroid (small
       // group ~0.1" 1-σ).
-      final impacts = <SightCalibrationObservation>[
-        SightCalibrationObservation(
+      final impacts = <ScopeTrackingObservation>[
+        ScopeTrackingObservation(
             impactX: 0, impactY: expectedCentroidNorm + 0.005),
-        SightCalibrationObservation(
+        ScopeTrackingObservation(
             impactX: 0, impactY: expectedCentroidNorm - 0.005),
-        SightCalibrationObservation(
+        ScopeTrackingObservation(
             impactX: 0, impactY: expectedCentroidNorm + 0.0025),
-        SightCalibrationObservation(
+        ScopeTrackingObservation(
             impactX: 0, impactY: expectedCentroidNorm - 0.0025),
-        SightCalibrationObservation(
+        ScopeTrackingObservation(
             impactX: 0, impactY: expectedCentroidNorm),
       ];
 
       final result = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: -1.0, // bottom of the target
         advertisedDialMil: advertisedDialMil,
@@ -74,12 +74,12 @@ void main() {
       // Aim at center (0, 0). Expected impact center = +18" from center
       // → norm = 18/12 = 1.5.
       const expectedNorm = 1.5;
-      final impacts = <SightCalibrationObservation>[
+      final impacts = <ScopeTrackingObservation>[
         for (final dy in [-0.005, 0.0, 0.005])
-          SightCalibrationObservation(impactX: 0, impactY: expectedNorm + dy),
+          ScopeTrackingObservation(impactX: 0, impactY: expectedNorm + dy),
       ];
       final result = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: 0,
         advertisedDialMil: dialMil,
@@ -102,12 +102,12 @@ void main() {
       // Aim at left edge (-1, 0). Center commanded = -12 + 4 × 3.6 ×
       // trueScale = -12 + 13.968 = +1.968" → norm X = 0.164.
       const expectedNorm = (-12.0 + 4.0 * 3.6 * trueScale) / 12.0;
-      final impacts = <SightCalibrationObservation>[
+      final impacts = <ScopeTrackingObservation>[
         for (final dx in [-0.005, 0.0, 0.005])
-          SightCalibrationObservation(impactX: expectedNorm + dx, impactY: 0),
+          ScopeTrackingObservation(impactX: expectedNorm + dx, impactY: 0),
       ];
       final result = _service.calibrate(
-        axis: SightCalibrationAxis.horizontal,
+        axis: ScopeTrackingAxis.horizontal,
         aimPointX: -1.0,
         aimPointY: 0,
         advertisedDialMil: dialMil,
@@ -128,14 +128,14 @@ void main() {
       const expectedNorm = 1.5;
       final tight = [
         for (final dy in [-0.005, 0.0, 0.005])
-          SightCalibrationObservation(impactX: 0, impactY: expectedNorm + dy),
+          ScopeTrackingObservation(impactX: 0, impactY: expectedNorm + dy),
       ];
       final loose = [
         for (final dy in [-0.05, 0.0, 0.05])
-          SightCalibrationObservation(impactX: 0, impactY: expectedNorm + dy),
+          ScopeTrackingObservation(impactX: 0, impactY: expectedNorm + dy),
       ];
       final tightR = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: 0,
         advertisedDialMil: 5,
@@ -145,7 +145,7 @@ void main() {
         observations: tight,
       );
       final looseR = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: 0,
         advertisedDialMil: 5,
@@ -161,7 +161,7 @@ void main() {
   group('Sight calibration — degenerate inputs', () {
     test('empty observations returns scale 1.0', () {
       final result = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: 0,
         advertisedDialMil: 5,
@@ -176,7 +176,7 @@ void main() {
 
     test('zero advertised dial returns scale 1.0', () {
       final result = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: 0,
         advertisedDialMil: 0,
@@ -184,7 +184,7 @@ void main() {
         targetHeightIn: 24,
         targetDistanceYd: 100,
         observations: const [
-          SightCalibrationObservation(impactX: 0, impactY: 0.5),
+          ScopeTrackingObservation(impactX: 0, impactY: 0.5),
         ],
       );
       expect(result.derivedScale, 1.0);
@@ -194,12 +194,12 @@ void main() {
   group('Sight calibration — JSON round trip', () {
     test('observations serialize and deserialize losslessly', () {
       const obs = [
-        SightCalibrationObservation(
+        ScopeTrackingObservation(
             impactX: 0.05, impactY: 0.95, notes: 'shot 1'),
-        SightCalibrationObservation(impactX: -0.02, impactY: 0.92),
+        ScopeTrackingObservation(impactX: -0.02, impactY: 0.92),
       ];
       final result = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: 0,
         advertisedDialMil: 5,
@@ -209,7 +209,7 @@ void main() {
         observations: obs,
       );
       final json = result.observationJsonString();
-      final restored = SightCalibrationResult.observationsFromJson(json);
+      final restored = ScopeTrackingResult.observationsFromJson(json);
       expect(restored.length, 2);
       expect(restored[0].impactY, closeTo(0.95, 1e-9));
       expect(restored[0].notes, 'shot 1');
@@ -225,13 +225,13 @@ void main() {
       const centroidNorm = 0.5; // 25% up from center
       final observations = [
         for (final dy in [-0.01, 0, 0.01])
-          SightCalibrationObservation(impactX: 0, impactY: centroidNorm + dy),
+          ScopeTrackingObservation(impactX: 0, impactY: centroidNorm + dy),
       ];
       const expectedCentroidIn = (centroidNorm - aimNorm) * targetHeightIn / 2;
       final expectedMil =
           bu.inchesToMilAtYards(expectedCentroidIn, distYd);
       final result = _service.calibrate(
-        axis: SightCalibrationAxis.vertical,
+        axis: ScopeTrackingAxis.vertical,
         aimPointX: 0,
         aimPointY: aimNorm,
         advertisedDialMil: 5,

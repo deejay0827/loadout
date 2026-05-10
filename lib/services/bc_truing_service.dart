@@ -339,7 +339,7 @@ class BcTruingService {
         shot: shot,
         sampleRangesYards: rangesYd,
         // Same simplification HitProbabilityService and
-        // WezAnalysisService use for their inner loops: the truing math
+        // HitProbabilityMapService use for their inner loops: the truing math
         // is dominated by drop, not by spin / Coriolis / aerojump.
         includeSpinDrift: false,
         includeCoriolis: false,

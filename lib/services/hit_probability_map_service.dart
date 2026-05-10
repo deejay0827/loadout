@@ -1,12 +1,12 @@
-// FILE: lib/services/wez_analysis_service.dart
+// FILE: lib/services/hit_probability_map_service.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Computes the Weapon Employment Zone (WEZ) curve: hit probability
-// vs range, given a target geometry and the shooter's intrinsic
-// uncertainty envelope (group capability, wind call, range estimate,
-// MV SD).
+// Computes the Hit Probability Map curve (formerly known internally as
+// "WEZ" — Weapon Employment Zone): hit probability vs range, given a
+// target geometry and the shooter's intrinsic uncertainty envelope
+// (group capability, wind call, range estimate, MV SD).
 //
 // The output is the standard "WEZ chart" published in *Modern
 // Advancements in Long Range Shooting Vol 1*: a curve that starts
@@ -19,20 +19,22 @@
 //
 // Public API:
 //
-//   * `class WezPoint` — one (rangeYd, hitProbability0to1) pair. The curve
-//     is a `List<WezPoint>` returned in ascending range order.
+//   * `class HitProbabilityMapPoint` — one (rangeYd, hitProbability0to1)
+//     pair. The curve is a `List<HitProbabilityMapPoint>` returned in
+//     ascending range order.
 //
-//   * `class WezResult` — the computed curve plus the variance contribution
-//     breakdown at one user-chosen reference range. The breakdown tells the
-//     shooter what to fix to improve the curve (the coaching framing): at
-//     short range group dominates, at long range wind dominates.
+//   * `class HitProbabilityMapResult` — the computed curve plus the
+//     variance contribution breakdown at one user-chosen reference range.
+//     The breakdown tells the shooter what to fix to improve the curve
+//     (the coaching framing): at short range group dominates, at long
+//     range wind dominates.
 //
-//   * `class WezVarianceFactor` — one entry in the breakdown (label +
-//     fraction-of-variance 0..1 + 1-sigma contribution in inches at the
-//     reference range).
+//   * `class HitProbabilityMapVarianceFactor` — one entry in the breakdown
+//     (label + fraction-of-variance 0..1 + 1-sigma contribution in inches
+//     at the reference range).
 //
-//   * `class WezAnalysisService` — stateless. The single `compute(...)` method
-//     is pure functional; no I/O, no side effects.
+//   * `class HitProbabilityMapService` — stateless. The single
+//     `compute(...)` method is pure functional; no I/O, no side effects.
 //
 // ============================================================================
 // THE MATH
@@ -136,25 +138,29 @@ import 'ballistics/projectile.dart';
 import 'ballistics/solver.dart';
 import 'hit_probability_service.dart';
 
-/// One point on the WEZ curve. Range in yards (ascending order across the
-/// list), hit probability as a 0..1 fraction.
-class WezPoint {
-  const WezPoint({required this.rangeYd, required this.hitProbability});
+/// One point on the Hit Probability Map curve. Range in yards (ascending
+/// order across the list), hit probability as a 0..1 fraction.
+class HitProbabilityMapPoint {
+  const HitProbabilityMapPoint({
+    required this.rangeYd,
+    required this.hitProbability,
+  });
 
   final double rangeYd;
   final double hitProbability;
 
   Map<String, double> toJson() => {'r': rangeYd, 'p': hitProbability};
 
-  static WezPoint fromJson(Map<String, dynamic> j) => WezPoint(
+  static HitProbabilityMapPoint fromJson(Map<String, dynamic> j) =>
+      HitProbabilityMapPoint(
         rangeYd: (j['r'] as num).toDouble(),
         hitProbability: (j['p'] as num).toDouble(),
       );
 }
 
 /// One contributor to the dispersion breakdown at a single reference range.
-class WezVarianceFactor {
-  const WezVarianceFactor({
+class HitProbabilityMapVarianceFactor {
+  const HitProbabilityMapVarianceFactor({
     required this.label,
     required this.contribIn,
     required this.fractionOfVariance,
@@ -172,9 +178,9 @@ class WezVarianceFactor {
   final double fractionOfVariance;
 }
 
-/// Output of [WezAnalysisService.compute].
-class WezResult {
-  const WezResult({
+/// Output of [HitProbabilityMapService.compute].
+class HitProbabilityMapResult {
+  const HitProbabilityMapResult({
     required this.curve,
     required this.referenceRangeYd,
     required this.factorsAtReferenceRange,
@@ -182,17 +188,20 @@ class WezResult {
   });
 
   /// The hit-probability-vs-range curve, sorted ascending by range.
-  final List<WezPoint> curve;
+  final List<HitProbabilityMapPoint> curve;
 
   /// Range in yards the [factorsAtReferenceRange] breakdown was computed
   /// at. Caller-chosen.
   final double referenceRangeYd;
 
   /// Per-source variance contributions at [referenceRangeYd].
-  final List<WezVarianceFactor> factorsAtReferenceRange;
+  final List<HitProbabilityMapVarianceFactor> factorsAtReferenceRange;
 
   /// Wall-clock when the result was computed. Persisted onto
-  /// `WezProfiles.computedAt` when the user saves the result.
+  /// `WezProfiles.computedAt` when the user saves the result. NOTE: the
+  /// underlying drift table is still named `WezProfiles` for storage
+  /// compatibility — renaming it requires a schema migration. The Dart
+  /// surface uses the new "Hit Probability Map" naming.
   final DateTime computedAt;
 
   /// Smallest range at which `hitProbability` drops below [threshold01].
@@ -226,15 +235,16 @@ class WezResult {
   }
 
   /// Serializes [curve] to a JSON string compatible with
-  /// `WezProfiles.curveJson`.
+  /// `WezProfiles.curveJson` (the legacy drift column name is preserved
+  /// to avoid a schema migration; see the class doc above).
   String curveJsonString() =>
       jsonEncode(curve.map((p) => p.toJson()).toList());
 
   /// Inverse of [curveJsonString]; returns the points in ascending
   /// range order regardless of source ordering.
-  static List<WezPoint> curveFromJson(String s) {
+  static List<HitProbabilityMapPoint> curveFromJson(String s) {
     final list = (jsonDecode(s) as List)
-        .map((e) => WezPoint.fromJson(e as Map<String, dynamic>))
+        .map((e) => HitProbabilityMapPoint.fromJson(e as Map<String, dynamic>))
         .toList()
       ..sort((a, b) => a.rangeYd.compareTo(b.rangeYd));
     return list;
@@ -242,8 +252,8 @@ class WezResult {
 }
 
 /// Stateless service. Construct once per provider scope.
-class WezAnalysisService {
-  const WezAnalysisService();
+class HitProbabilityMapService {
+  const HitProbabilityMapService();
 
   /// Number of Monte Carlo samples per range point. 2000 keeps the curve
   /// stable to ~1 percentage point and a 60-point curve runs in ~150ms
@@ -251,18 +261,19 @@ class WezAnalysisService {
   /// well below the noise floor of the variance perturbations themselves.
   static const int _samplesPerPoint = 2000;
 
-  /// Compute the WEZ curve and the variance-contribution breakdown at the
-  /// chosen reference range.
+  /// Compute the Hit Probability Map curve and the variance-contribution
+  /// breakdown at the chosen reference range.
   ///
   /// `rangesYd` is the list of distances to evaluate, ascending order.
   /// Typical: `[100, 125, ..., 1500]` (60 points at 25-yd steps).
   ///
-  /// `referenceRangeYd` is where the [WezResult.factorsAtReferenceRange]
-  /// breakdown is computed. Doesn't have to be in `rangesYd` — the
-  /// breakdown re-runs the same per-range math at that single distance.
-  /// A typical default is the median of `rangesYd` or one of the
-  /// "≥ 50 % hit" boundary ranges.
-  WezResult compute({
+  /// `referenceRangeYd` is where the
+  /// [HitProbabilityMapResult.factorsAtReferenceRange] breakdown is
+  /// computed. Doesn't have to be in `rangesYd` — the breakdown re-runs
+  /// the same per-range math at that single distance. A typical default
+  /// is the median of `rangesYd` or one of the "≥ 50 % hit" boundary
+  /// ranges.
+  HitProbabilityMapResult compute({
     required List<double> rangesYd,
     required double referenceRangeYd,
     // Target geometry.
@@ -294,7 +305,7 @@ class WezAnalysisService {
     double aimOffsetYIn = 0,
   }) {
     if (rangesYd.isEmpty) {
-      return WezResult(
+      return HitProbabilityMapResult(
         curve: const [],
         referenceRangeYd: referenceRangeYd,
         factorsAtReferenceRange: const [],
@@ -392,7 +403,7 @@ class WezAnalysisService {
           )
         : <TrajectorySample>[];
 
-    final curve = <WezPoint>[];
+    final curve = <HitProbabilityMapPoint>[];
     for (var i = 0; i < ranges.length; i++) {
       final R = ranges[i];
 
@@ -426,7 +437,7 @@ class WezAnalysisService {
         sigmaX: sigmas.x,
         sigmaY: sigmas.y,
       );
-      curve.add(WezPoint(rangeYd: R, hitProbability: p));
+      curve.add(HitProbabilityMapPoint(rangeYd: R, hitProbability: p));
     }
 
     // Variance contribution at the reference range (re-run the σ
@@ -445,7 +456,7 @@ class WezAnalysisService {
     );
     final factors = _breakdownFactors(refSigmasRaw);
 
-    return WezResult(
+    return HitProbabilityMapResult(
       curve: curve,
       referenceRangeYd: referenceRangeYd,
       factorsAtReferenceRange: factors,
@@ -635,7 +646,7 @@ class WezAnalysisService {
   }
 
   /// Composes the four sigmas into a labeled, fraction-of-variance list.
-  List<WezVarianceFactor> _breakdownFactors(
+  List<HitProbabilityMapVarianceFactor> _breakdownFactors(
     ({double group, double wind, double range, double mv}) s,
   ) {
     final vGroup = s.group * s.group;
@@ -645,22 +656,22 @@ class WezAnalysisService {
     final total = vGroup + vWind + vRange + vMv;
     double frac(double v) => total > 0 ? v / total : 0.0;
     return [
-      WezVarianceFactor(
+      HitProbabilityMapVarianceFactor(
         label: 'Group',
         contribIn: s.group,
         fractionOfVariance: frac(vGroup),
       ),
-      WezVarianceFactor(
+      HitProbabilityMapVarianceFactor(
         label: 'Wind',
         contribIn: s.wind,
         fractionOfVariance: frac(vWind),
       ),
-      WezVarianceFactor(
+      HitProbabilityMapVarianceFactor(
         label: 'Range',
         contribIn: s.range,
         fractionOfVariance: frac(vRange),
       ),
-      WezVarianceFactor(
+      HitProbabilityMapVarianceFactor(
         label: 'MV',
         contribIn: s.mv,
         fractionOfVariance: frac(vMv),

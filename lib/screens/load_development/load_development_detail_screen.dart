@@ -78,6 +78,8 @@ import '../../database/database.dart';
 import '../../repositories/brass_lot_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/load_development_repository.dart';
+import '../../services/auto_save_service.dart';
+import '../../widgets/unsaved_changes_dispatcher.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../widgets/glossary_label.dart';
 import 'new_load_development_screen.dart';
@@ -115,38 +117,122 @@ class _LoadDevelopmentDetailScreenState
   /// blur/focus changes also persist).
   List<LadderRung>? _rungsOverride;
 
+  /// AutoSaveController wires this screen into the global AutoSave
+  /// service. Every rung edit and notes change funnels through
+  /// `notifyDirty()`; the controller debounces / batches and calls
+  /// `_runAutoSave` per the user's selected frequency. The bottom-of-
+  /// page button uses the controller's status to swap between
+  /// "Done" (autosave on) and "Save" (autosave off) per CLAUDE.md
+  /// § 0a UX rule.
+  late final AutoSaveController _autoSave;
+
+  @override
+  void initState() {
+    super.initState();
+    _autoSave = AutoSaveController(
+      service: context.read<AutoSaveService>(),
+      onSave: _runAutoSave,
+    );
+  }
+
+  @override
+  void dispose() {
+    _autoSave.dispose();
+    super.dispose();
+  }
+
+  /// AutoSave entry point. The detail screen's edits already persist
+  /// in real time via `_persistRungs` / notes onChanged inline. This
+  /// callback is the no-op contract that lets the AutoSaveController
+  /// report a clean save status and surface the "Saved a moment ago"
+  /// indicator. Returning `widget.sessionId` keeps the controller's
+  /// status notifier happy.
+  Future<int?> _runAutoSave() async {
+    return widget.sessionId;
+  }
+
   Future<void> _persistRungs(List<LadderRung> rungs) async {
     final repo = context.read<LoadDevelopmentRepository>();
     await repo.setRungs(widget.sessionId, rungs);
+    // Mark clean on successful write — autosave's listener pattern
+    // expects this so the status banner doesn't sit on "Saving…"
+    // indefinitely.
+    _autoSave.markClean();
   }
 
   @override
   Widget build(BuildContext context) {
     final repo = context.read<LoadDevelopmentRepository>();
-    return Scaffold(
-      appBar: AppBar(title: const Text('Development Session')),
-      body: StreamBuilder<LoadDevelopmentSessionRow?>(
-        stream: repo.watchById(widget.sessionId),
-        builder: (context, snap) {
-          if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final session = snap.data;
-          if (session == null) {
-            return const Center(child: Text('Session not found.'));
-          }
-          final stored =
-              LoadDevelopmentRepository.decodeRungs(session.rungsJson);
-          final rungs = _rungsOverride ?? stored;
-          return _DetailBody(
-            session: session,
-            rungs: rungs,
-            onRungsChanged: (next) {
-              setState(() => _rungsOverride = next);
-              _persistRungs(next);
-            },
-          );
-        },
+    return UnsavedChangesScope(
+      controller: _autoSave,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Development Session')),
+        body: StreamBuilder<LoadDevelopmentSessionRow?>(
+          stream: repo.watchById(widget.sessionId),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final session = snap.data;
+            if (session == null) {
+              return const Center(child: Text('Session not found.'));
+            }
+            final stored =
+                LoadDevelopmentRepository.decodeRungs(session.rungsJson);
+            final rungs = _rungsOverride ?? stored;
+            return Column(
+              children: [
+                Expanded(
+                  child: _DetailBody(
+                    session: session,
+                    rungs: rungs,
+                    onRungsChanged: (next) {
+                      setState(() => _rungsOverride = next);
+                      _autoSave.notifyDirty();
+                      _persistRungs(next);
+                    },
+                    onNotesDirty: _autoSave.notifyDirty,
+                  ),
+                ),
+                _bottomDoneButton(),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Sticky bottom button. Per CLAUDE.md § 0a UX rule:
+  /// autosave on → "Done" (just pop, the screen has been saving
+  /// rungs/notes inline); autosave off → "Save" (flush any pending
+  /// changes via `_autoSave.flush` then pop).
+  Widget _bottomDoneButton() {
+    final theme = Theme.of(context);
+    final autoSaveOn =
+        context.watch<AutoSaveService>().frequency.savesAutomatically;
+    return Material(
+      color: theme.colorScheme.surface,
+      elevation: 4,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () async {
+                if (!autoSaveOn) {
+                  await _autoSave.flush();
+                }
+                if (mounted) Navigator.of(context).maybePop();
+              },
+              icon:
+                  Icon(autoSaveOn ? Icons.check : Icons.save_outlined),
+              label: Text(autoSaveOn ? 'Done' : 'Save'),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -157,11 +243,16 @@ class _DetailBody extends StatelessWidget {
     required this.session,
     required this.rungs,
     required this.onRungsChanged,
+    this.onNotesDirty,
   });
 
   final LoadDevelopmentSessionRow session;
   final List<LadderRung> rungs;
   final ValueChanged<List<LadderRung>> onRungsChanged;
+  /// Hook called when the user types into the session notes field.
+  /// Used by the parent to mark the AutoSaveController dirty so the
+  /// save status banner updates while the user is mid-edit.
+  final VoidCallback? onNotesDirty;
 
   bool get _isCharge => session.sessionType == 'charge_ladder';
   String get _unit => _isCharge ? 'gr' : 'in';

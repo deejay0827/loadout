@@ -52,7 +52,7 @@ class WatchSettingsScreen extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.timer_outlined),
-            title: const Text('Stage timer defaults'),
+            title: const Text('Stage Timer Defaults'),
             subtitle: const Text(
               'Default par time and warning beeps for the watch '
               'competition stage timer. Configured on the watch today; '
@@ -62,7 +62,7 @@ class WatchSettingsScreen extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.grid_on_outlined),
-            title: const Text('Glanceable DOPE preferences'),
+            title: const Text('Glanceable DOPE Preferences'),
             subtitle: const Text(
               "Customize the watch's DOPE card layout — coming soon.",
             ),

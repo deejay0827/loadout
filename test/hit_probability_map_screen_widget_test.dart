@@ -1,9 +1,9 @@
-// FILE: test/wez_analysis_screen_widget_test.dart
+// FILE: test/hit_probability_map_screen_widget_test.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// Widget smoke tests for `lib/screens/range_day/wez_analysis_screen.dart`
+// Widget smoke tests for `lib/screens/range_day/hit_probability_map_screen.dart`
 // — the WEZ (Weapon Employment Zone) hit-probability analysis surface.
 // Covers the user-state matrix the production app surfaces:
 //
@@ -21,7 +21,7 @@
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// The WEZ math (`WezAnalysisService.compute`) is unit-tested in
+// The WEZ math (`HitProbabilityMapService.compute`) is unit-tested in
 // `test/wez_analysis_test.dart`. These tests confirm that the SCREEN
 // builds without crashing, that the four `FutureBuilder`s feeding the
 // load / firearm / target dropdowns can render in their empty-snapshot
@@ -56,11 +56,10 @@
 // ============================================================================
 // In-memory drift DB per test. Closed by the harness via `addTearDown`.
 
-import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:loadout/database/database.dart';
-import 'package:loadout/screens/range_day/wez_analysis_screen.dart';
+import 'package:loadout/screens/range_day/hit_probability_map_screen.dart';
 
 import '_range_day_test_harness.dart';
 
@@ -71,7 +70,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -88,7 +87,7 @@ void main() {
     // Auth, which is the anonymous-user posture by construction.
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -104,7 +103,7 @@ void main() {
     // somehow land here should see the same UI as Pro users.
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
       isPro: false,
     );
     await tester.pumpAndSettle();
@@ -117,7 +116,7 @@ void main() {
   testWidgets('renders without crashing for a Pro user', (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
       isPro: true,
     );
     await tester.pumpAndSettle();
@@ -135,7 +134,7 @@ void main() {
     // refactor.
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -148,7 +147,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(initialDistanceYd: 600),
+      screen: const HitProbabilityMapScreen(initialDistanceYd: 600),
     );
     await tester.pumpAndSettle();
 
@@ -166,19 +165,19 @@ void main() {
       (tester) async {
     final harness = await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
     );
     // Insert a target so the FutureBuilder has something to render.
+    // Schema v28 dropped manufacturer / materialKind / category — the
+    // Targets table now carries only name + shape + dimensions +
+    // colorHex + notes.
     await harness.db.into(harness.db.targets).insert(
           TargetsCompanion.insert(
-            name: 'Steel 12in plate',
-            category: 'steel',
+            name: 'Circle 12 in',
             shape: 'circle',
             widthIn: 12,
             heightIn: 12,
-            materialKind: 'steel-ar500',
-            colorHex: '#888888',
-            manufacturer: const Value('Generic'),
+            colorHex: '#ffffff',
           ),
         );
     // The targets future was created in initState before the insert,
@@ -194,7 +193,7 @@ void main() {
   testWidgets('AppBar refresh action is present and tappable', (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -212,7 +211,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const WezAnalysisScreen(),
+      screen: const HitProbabilityMapScreen(),
     );
     await tester.pumpAndSettle();
 

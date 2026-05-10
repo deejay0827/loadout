@@ -758,13 +758,15 @@ class SeedLoader {
       final m = entry as Map<String, dynamic>;
       batch.add(TargetsCompanion.insert(
         name: m['name'] as String,
-        manufacturer: Value(m['manufacturer'] as String?),
-        category: m['category'] as String,
         shape: m['shape'] as String,
         widthIn: (m['widthIn'] as num).toDouble(),
         heightIn: (m['heightIn'] as num).toDouble(),
-        materialKind: m['materialKind'] as String,
-        colorHex: m['colorHex'] as String,
+        // Default to white when missing from the JSON. The slimmed
+        // v28 catalog ships every entry as `#ffffff` per user
+        // feedback ("all targets should have white as the default
+        // color"); the `??` fallback keeps the loader resilient if
+        // a future entry omits the field.
+        colorHex: (m['colorHex'] as String?) ?? '#ffffff',
         notes: Value(m['notes'] as String?),
       ));
     }

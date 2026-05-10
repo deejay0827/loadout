@@ -101,6 +101,36 @@ enum BackdropTargetSilhouette {
   /// rectangular plate.
   rectangle,
 
+  /// Texas Star — a reactive 5-plate steel target. Central hub +
+  /// five satellite plates joined by armature lines so the shape
+  /// reads as a star, not a circle.
+  star,
+
+  /// Bear silhouette — bulky body, small head with rounded ears.
+  bear,
+
+  /// Boar / wild hog silhouette — stocky body, long snout, two
+  /// upright triangular ears.
+  boar,
+
+  /// Deer silhouette — slim body, small antlers (one short tine
+  /// per side).
+  deer,
+
+  /// Elk silhouette — larger version of deer with multi-tine
+  /// antlers.
+  elk,
+
+  /// Coyote silhouette — dog-like body, pointed ears, downturned
+  /// tail.
+  coyote,
+
+  /// Pepper popper — bowling-pin reactive steel silhouette.
+  /// Round head on top, narrow neck, wider rounded body that
+  /// chamfers slightly toward the bottom. Used for both the
+  /// full-size (85 cm tall) and mini (56 cm tall) popper variants.
+  popper,
+
   /// No target — pure scenery (sky / grass / mound). The caller
   /// renders its own target on top via a separate painter.
   none,
@@ -311,12 +341,22 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
     if (target == BackdropTargetSilhouette.none) return;
     if (targetWidthFraction <= 0) return;
     final widthPx = w * targetWidthFraction;
-    // Make the silhouette taller-than-wide for IPSC; equal axes for
-    // circle and rectangle.
+    // Per-shape height ratio. IPSC is taller than wide (1.6×); circle
+    // / rectangle / star are square; animals are wider than tall
+    // (~1.5:1 in real life) so the body reads as a side profile.
     final heightPx = switch (target) {
       BackdropTargetSilhouette.ipsc => widthPx * 1.6,
       BackdropTargetSilhouette.circle => widthPx,
       BackdropTargetSilhouette.rectangle => widthPx,
+      BackdropTargetSilhouette.star => widthPx,
+      // Popper is very tall + narrow (~4.25:1 height:width). The
+      // catalog's full popper is 33.46 x 7.87 in.
+      BackdropTargetSilhouette.popper => widthPx * 4.25,
+      BackdropTargetSilhouette.bear => widthPx / 1.3,
+      BackdropTargetSilhouette.boar => widthPx / 1.6,
+      BackdropTargetSilhouette.deer => widthPx / 1.4,
+      BackdropTargetSilhouette.elk => widthPx / 1.3,
+      BackdropTargetSilhouette.coyote => widthPx / 1.5,
       BackdropTargetSilhouette.none => 0.0,
     };
     final centerX = w * 0.5;
@@ -376,8 +416,338 @@ class ScopeDaytimeBackdropPainter extends CustomPainter {
         );
         canvas.drawRect(rect, fill);
         canvas.drawRect(rect, outline);
+      case BackdropTargetSilhouette.star:
+        _paintTexasStar(
+          canvas,
+          centerX,
+          centerY,
+          widthPx / 2,
+          fill,
+          outline,
+          w,
+        );
+      case BackdropTargetSilhouette.bear:
+      case BackdropTargetSilhouette.boar:
+      case BackdropTargetSilhouette.deer:
+      case BackdropTargetSilhouette.elk:
+      case BackdropTargetSilhouette.coyote:
+        _paintAnimal(
+          canvas,
+          centerX,
+          centerY,
+          widthPx,
+          heightPx,
+          fill,
+          outline,
+          target,
+        );
+      case BackdropTargetSilhouette.popper:
+        _paintPopper(canvas, centerX, centerY, widthPx, heightPx,
+            fill, outline);
       case BackdropTargetSilhouette.none:
         break;
+    }
+  }
+
+  /// Pepper-popper silhouette: round head on top, narrow neck,
+  /// rounded body that chamfers slightly toward the bottom. Mirrors
+  /// the thumbnail painter so the inline preview and the daytime
+  /// backdrop stay consistent.
+  void _paintPopper(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double targetW,
+    double targetH,
+    Paint fill,
+    Paint outline,
+  ) {
+    final left = cx - targetW / 2;
+    final right = cx + targetW / 2;
+    final top = cy - targetH / 2;
+    final bottom = cy + targetH / 2;
+    // Geometry breakdown matches `_paintPopper` in
+    // `range_day_detail_screen.dart` so the inline thumbnail and the
+    // scope backdrop render identical bowling-pin shapes.
+    final headBottom = top + targetH * 0.18;
+    final neckBottom = headBottom + targetH * 0.06;
+    final shoulderBottom = neckBottom + targetH * 0.04;
+    final chamferStart = bottom - targetH * 0.07;
+    final neckHalfW = targetW * 0.275;
+    final bodyHalfW = targetW * 0.475;
+    final bottomHalfW = targetW * 0.40;
+    final path = Path()
+      ..moveTo(cx, top)
+      ..arcToPoint(
+        Offset(right, (top + headBottom) / 2),
+        radius: Radius.circular(targetW / 2),
+        clockwise: true,
+      )
+      ..arcToPoint(
+        Offset(cx, headBottom),
+        radius: Radius.circular(targetW / 2),
+        clockwise: true,
+      )
+      ..quadraticBezierTo(
+        right * 0.55 + cx * 0.45,
+        headBottom,
+        cx + neckHalfW,
+        neckBottom,
+      )
+      ..quadraticBezierTo(
+        cx + neckHalfW,
+        shoulderBottom,
+        cx + bodyHalfW,
+        shoulderBottom + targetH * 0.02,
+      )
+      ..lineTo(cx + bodyHalfW, chamferStart)
+      ..lineTo(cx + bottomHalfW, bottom)
+      ..lineTo(cx - bottomHalfW, bottom)
+      ..lineTo(cx - bodyHalfW, chamferStart)
+      ..lineTo(cx - bodyHalfW, shoulderBottom + targetH * 0.02)
+      ..quadraticBezierTo(
+        cx - neckHalfW,
+        shoulderBottom,
+        cx - neckHalfW,
+        neckBottom,
+      )
+      ..quadraticBezierTo(
+        left * 0.55 + cx * 0.45,
+        headBottom,
+        cx,
+        headBottom,
+      )
+      ..arcToPoint(
+        Offset(left, (top + headBottom) / 2),
+        radius: Radius.circular(targetW / 2),
+        clockwise: true,
+      )
+      ..arcToPoint(
+        Offset(cx, top),
+        radius: Radius.circular(targetW / 2),
+        clockwise: true,
+      )
+      ..close();
+    canvas.drawPath(path, fill);
+    canvas.drawPath(path, outline);
+  }
+
+  /// Paint an animal silhouette as a recognizable side-profile of the
+  /// body type. Ported from `_TargetThumbnailPainter._paintAnimal` in
+  /// `lib/screens/range_day/range_day_detail_screen.dart`. Adapted to
+  /// the backdrop's coordinate system: the thumbnail painter accepts a
+  /// single `maxBox` square and computes an inner aspect-correct body
+  /// rect; here the caller has already resolved a `bodyW` / `bodyH`
+  /// pair from `widthPx` / `heightPx` against a per-species default
+  /// aspect (the backdrop has no `TargetSpec` to read width/height
+  /// inches from). The geometry is otherwise identical: rounded body
+  /// rect + head + snout + four legs, with antlers / ears / tail
+  /// added per species. NOT photorealistic — the goal is a glance-
+  /// level read against the daytime backdrop.
+  void _paintAnimal(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double bodyW,
+    double bodyH,
+    Paint fill,
+    Paint outline,
+    BackdropTargetSilhouette kind,
+  ) {
+    // Body rectangle (rounded) — left half is haunches, right half
+    // is shoulder/chest. We anchor to the lower portion of the box
+    // so head/antlers can extend above without overflowing.
+    final bodyRect = Rect.fromCenter(
+      center: Offset(cx - bodyW * 0.05, cy + bodyH * 0.08),
+      width: bodyW * 0.78,
+      height: bodyH * 0.50,
+    );
+    final body = RRect.fromRectAndRadius(
+      bodyRect, Radius.circular(bodyH * 0.10));
+    canvas.drawRRect(body, fill);
+    canvas.drawRRect(body, outline);
+    // Head — sits forward (right side) at the front of the body.
+    final headW = bodyW * 0.28;
+    final headH = bodyH * 0.30;
+    final headCx = cx + bodyW * 0.32;
+    final headCy = cy - bodyH * 0.10;
+    final headRect = Rect.fromCenter(
+      center: Offset(headCx, headCy),
+      width: headW,
+      height: headH,
+    );
+    final head = RRect.fromRectAndRadius(
+      headRect, Radius.circular(headH * 0.35));
+    canvas.drawRRect(head, fill);
+    canvas.drawRRect(head, outline);
+    // Snout — short for deer/elk/bear/coyote, longer + thicker for
+    // boar so the muzzle reads as the defining feature.
+    final isHog = kind == BackdropTargetSilhouette.boar;
+    final snoutW = isHog ? headW * 0.55 : headW * 0.40;
+    final snoutH = isHog ? headH * 0.50 : headH * 0.30;
+    final snoutRect = Rect.fromCenter(
+      center: Offset(headCx + headW * 0.45, headCy + headH * 0.10),
+      width: snoutW,
+      height: snoutH,
+    );
+    final snout = RRect.fromRectAndRadius(
+      snoutRect, Radius.circular(snoutH * 0.4));
+    canvas.drawRRect(snout, fill);
+    canvas.drawRRect(snout, outline);
+    // Legs — four short rectangles under the body.
+    final legW = bodyW * 0.06;
+    final legH = bodyH * 0.32;
+    for (final dx in [-0.30, -0.10, 0.12, 0.28]) {
+      final legRect = Rect.fromCenter(
+        center: Offset(cx + bodyW * dx, cy + bodyH * 0.40),
+        width: legW,
+        height: legH,
+      );
+      canvas.drawRect(legRect, fill);
+      canvas.drawRect(legRect, outline);
+    }
+    // Tail / appendages by species.
+    if (kind == BackdropTargetSilhouette.deer ||
+        kind == BackdropTargetSilhouette.elk) {
+      final isElk = kind == BackdropTargetSilhouette.elk;
+      // Antlers — two angled lines branching upward from the head.
+      final antlerPaint = Paint()
+        ..color = outline.color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = math.max(2.0, bodyH * 0.04)
+        ..strokeCap = StrokeCap.round;
+      final base = Offset(headCx - headW * 0.20, headCy - headH * 0.40);
+      final antlerSpan = (isElk ? 0.55 : 0.40) * bodyH;
+      final antlerWidth = (isElk ? 0.55 : 0.35) * bodyW;
+      // Main antler beams.
+      canvas.drawLine(
+        base,
+        Offset(base.dx - antlerWidth * 0.30, base.dy - antlerSpan),
+        antlerPaint,
+      );
+      canvas.drawLine(
+        Offset(base.dx + headW * 0.15, base.dy),
+        Offset(base.dx + headW * 0.15 + antlerWidth * 0.25,
+            base.dy - antlerSpan),
+        antlerPaint,
+      );
+      // Tine for elk only — extra branch off each main beam.
+      if (isElk) {
+        canvas.drawLine(
+          Offset(base.dx - antlerWidth * 0.15, base.dy - antlerSpan * 0.55),
+          Offset(base.dx - antlerWidth * 0.40,
+              base.dy - antlerSpan * 0.85),
+          antlerPaint,
+        );
+        canvas.drawLine(
+          Offset(base.dx + headW * 0.15 + antlerWidth * 0.12,
+              base.dy - antlerSpan * 0.55),
+          Offset(base.dx + headW * 0.15 + antlerWidth * 0.35,
+              base.dy - antlerSpan * 0.85),
+          antlerPaint,
+        );
+      }
+      // Short tail.
+      final tail = Rect.fromCenter(
+        center: Offset(cx - bodyW * 0.42, cy - bodyH * 0.05),
+        width: bodyW * 0.05,
+        height: bodyH * 0.12,
+      );
+      canvas.drawRect(tail, fill);
+      canvas.drawRect(tail, outline);
+    } else if (kind == BackdropTargetSilhouette.bear) {
+      // Two small rounded ears on top of the head.
+      for (final dx in [-0.18, 0.18]) {
+        final ear = Rect.fromCenter(
+          center: Offset(headCx + headW * dx, headCy - headH * 0.55),
+          width: headW * 0.30,
+          height: headH * 0.32,
+        );
+        final earR = RRect.fromRectAndRadius(ear, Radius.circular(headH * 0.25));
+        canvas.drawRRect(earR, fill);
+        canvas.drawRRect(earR, outline);
+      }
+    } else if (isHog) {
+      // Two upright triangular ears.
+      for (final dx in [-0.15, 0.15]) {
+        final earPath = Path()
+          ..moveTo(headCx + headW * dx - headW * 0.10,
+              headCy - headH * 0.30)
+          ..lineTo(headCx + headW * dx + headW * 0.10,
+              headCy - headH * 0.30)
+          ..lineTo(headCx + headW * dx, headCy - headH * 0.75)
+          ..close();
+        canvas.drawPath(earPath, fill);
+        canvas.drawPath(earPath, outline);
+      }
+    } else if (kind == BackdropTargetSilhouette.coyote) {
+      // Two pointed ears + a thin downturned tail.
+      for (final dx in [-0.18, 0.18]) {
+        final earPath = Path()
+          ..moveTo(headCx + headW * dx - headW * 0.10,
+              headCy - headH * 0.30)
+          ..lineTo(headCx + headW * dx + headW * 0.10,
+              headCy - headH * 0.30)
+          ..lineTo(headCx + headW * dx, headCy - headH * 0.75)
+          ..close();
+        canvas.drawPath(earPath, fill);
+        canvas.drawPath(earPath, outline);
+      }
+      final tail = Rect.fromCenter(
+        center: Offset(cx - bodyW * 0.45, cy + bodyH * 0.18),
+        width: bodyW * 0.20,
+        height: bodyH * 0.05,
+      );
+      canvas.drawRect(tail, fill);
+      canvas.drawRect(tail, outline);
+    }
+  }
+
+  /// Paints a Texas Star: central hub with five satellite plates
+  /// arranged radially. Ported from
+  /// `_TargetThumbnailPainter._paintTexasStar` in
+  /// `lib/screens/range_day/range_day_detail_screen.dart`. Adapted
+  /// to the backdrop by taking the canvas width `w` so the armature
+  /// stroke width can scale against the same `w * 0.002` baseline
+  /// used for the rest of the backdrop's outlines (the thumbnail
+  /// version scaled against `radius` directly because every
+  /// thumbnail spans roughly the same canvas size).
+  void _paintTexasStar(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double radius,
+    Paint fill,
+    Paint outline,
+    double w,
+  ) {
+    // Plate sizing — central hub is small; satellite plates are
+    // larger and sit at the radius. Five satellites at 72 degrees
+    // apart, starting from the top.
+    final hubR = radius * 0.18;
+    final plateR = radius * 0.22;
+    final orbitR = radius * 0.78;
+    final armPaint = Paint()
+      ..color = outline.color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.5, w * 0.0025);
+    // Arms first so the plates draw on top.
+    for (var i = 0; i < 5; i++) {
+      final angle = -math.pi / 2 + i * (2 * math.pi / 5);
+      final px = cx + orbitR * math.cos(angle);
+      final py = cy + orbitR * math.sin(angle);
+      canvas.drawLine(Offset(cx, cy), Offset(px, py), armPaint);
+    }
+    // Central hub.
+    canvas.drawCircle(Offset(cx, cy), hubR, fill);
+    canvas.drawCircle(Offset(cx, cy), hubR, outline);
+    // Five satellite plates.
+    for (var i = 0; i < 5; i++) {
+      final angle = -math.pi / 2 + i * (2 * math.pi / 5);
+      final px = cx + orbitR * math.cos(angle);
+      final py = cy + orbitR * math.sin(angle);
+      canvas.drawCircle(Offset(px, py), plateR, fill);
+      canvas.drawCircle(Offset(px, py), plateR, outline);
     }
   }
 

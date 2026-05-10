@@ -163,8 +163,8 @@ import 'services/entitlement_notifier.dart';
 import 'services/bc_truing_service.dart';
 import 'services/glossary_first_seen_tracker.dart';
 import 'services/hit_probability_service.dart';
-import 'services/sight_calibration_service.dart';
-import 'services/wez_analysis_service.dart';
+import 'services/scope_tracking_service.dart';
+import 'services/hit_probability_map_service.dart';
 import 'services/icloud_backup_service.dart';
 import 'services/locale_service.dart';
 import 'services/onedrive_backup_service.dart';
@@ -261,14 +261,14 @@ class LoadOutApp extends StatelessWidget {
         // Applied Ballistics parity services (schema v16).
         // All three are stateless and pure-functional, same as
         // HitProbabilityService — one instance per tree is fine.
-        Provider<WezAnalysisService>(
-          create: (_) => const WezAnalysisService(),
+        Provider<HitProbabilityMapService>(
+          create: (_) => const HitProbabilityMapService(),
         ),
         Provider<BcTruingService>(
           create: (_) => const BcTruingService(),
         ),
-        Provider<SightCalibrationService>(
-          create: (_) => const SightCalibrationService(),
+        Provider<ScopeTrackingService>(
+          create: (_) => const ScopeTrackingService(),
         ),
         ChangeNotifierProvider<AutoSaveService>(
           create: (_) => AutoSaveService(),

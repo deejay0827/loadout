@@ -50,7 +50,7 @@ class AppPreferencesScreen extends StatelessWidget {
     final localeService = context.watch<LocaleService>();
     final l = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: AppBar(title: const Text('App preferences')),
+      appBar: AppBar(title: const Text('App Preferences')),
       body: ListView(
         children: [
           SwitchListTile(
@@ -82,7 +82,7 @@ class AppPreferencesScreen extends StatelessWidget {
           // still find the library.
           ListTile(
             leading: const Icon(Icons.cloud_outlined),
-            title: const Text('Atmosphere presets'),
+            title: const Text('Atmosphere Presets'),
             subtitle: const Text(
               'Save and reuse named atmosphere conditions (e.g. "Camp '
               'Atterbury summer", "Big Sandy") on Ballistics and Range Day.',

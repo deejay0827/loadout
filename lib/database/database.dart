@@ -1258,31 +1258,22 @@ class LoadDevelopmentSessions extends Table {
 class Targets extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  /// Manufacturer / brand. Nullable for generic targets ("8 in AR500
-  /// plate") that are not specific to one maker.
-  TextColumn get manufacturer => text().nullable()();
-  /// 'paper' | 'steel' | 'reactive' | 'game-silhouette'
-  TextColumn get category => text()();
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular'
+  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'star' |
+  /// 'bear' | 'boar' | 'deer' | 'elk' | 'coyote'. The picker
+  /// filters by SHAPE; older `category` / `materialKind` /
+  /// `manufacturer` columns were dropped in v28 because reloaders
+  /// pick by geometry, not by what the target's made of or who
+  /// printed the label.
   TextColumn get shape => text()();
-  /// Outer-bound width of the target in inches (the visible / scoreable
-  /// area). For circles this equals heightIn.
+  /// Outer-bound width of the target in inches (the visible /
+  /// scoreable area). For circles this equals heightIn.
   RealColumn get widthIn => real()();
   /// Outer-bound height of the target in inches.
   RealColumn get heightIn => real()();
-  /// 'paper' | 'cardboard' | 'steel' | 'polymer' | 'game-3d'.
-  ///
-  /// Note: pre-v18 installs used `'steel-ar500'` / `'steel-ar550'` to
-  /// distinguish AR-grade hardness, but only size and shape affect the
-  /// hit-probability solver — material grade affects target durability,
-  /// not where bullets go. The v18 migration wipes the [Targets] table
-  /// so the seed loader re-inserts the deduped catalog (one "Steel
-  /// Plate N in" per size, no per-grade duplicates). Existing
-  /// `RangeDaySessions.targetId` rows pointing at the old IDs are
-  /// caught by the picker's stale-id guard.
-  TextColumn get materialKind => text()();
-  /// CSS-style hex color (e.g. "#fff8c4"). Used by the visual target
-  /// renderer so the on-screen plot resembles the real target.
+  /// CSS-style hex color used by the on-screen target renderer.
+  /// The catalog default is `#ffffff` (white); the user picks a
+  /// per-session tint from the swatch row in Range Day if they
+  /// want a different color.
   TextColumn get colorHex => text()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
@@ -1889,7 +1880,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 26;
+  int get schemaVersion => 30;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2370,6 +2361,77 @@ class AppDatabase extends _$AppDatabase {
             // operation here because the picker resolves a missing
             // id to "— None —" without crashing.
             await delete(targets).go();
+          }
+          if (from < 27) {
+            // v27 — full catalog overhaul:
+            //   * Targets re-curated to a geometry-first list (50
+            //     entries: 13 circles, 5 squares, 5 PRS rectangles,
+            //     IPSC/IDPA/competition silhouettes, Texas Star,
+            //     plus 8 animal silhouettes — bear / boar / deer /
+            //     elk / coyote / hog). Made-up entries removed
+            //     (Polymer*, Caldwell*, Birchwood*, etc.).
+            //   * Target racks renamed with shape-aware suffixes
+            //     ("· Circles", "· Squares") so users can tell a
+            //     5-Plate KYL of round plates from a square one.
+            //     Added square variants of KYL + 3-Plate Decreasing,
+            //     plus a Texas Star rack.
+            // Wipe both tables; the seed loader re-populates from the
+            // updated JSON on next launch. Deleting rack-children
+            // first to honour the FK from `target_rack_children` →
+            // `target_racks`.
+            await delete(targetRackChildren).go();
+            await delete(targetRacks).go();
+            await delete(targets).go();
+          }
+          if (from < 28) {
+            // v28 — drop materials from the targets catalog. Per
+            // user feedback "I do not want anything whatsoever
+            // pertaining to materials for targets," the
+            // `manufacturer`, `materialKind`, and `category` columns
+            // are removed from the `Targets` table. Reloaders pick
+            // by geometry alone now.
+            //
+            // SQLite's ALTER TABLE doesn't support DROP COLUMN
+            // cleanly across all our targets, so we recreate the
+            // table with the slimmed schema and let the seed loader
+            // re-populate from the (also slimmed) JSON on next
+            // launch.
+            await customStatement('DROP TABLE IF EXISTS targets');
+            await m.createTable(targets);
+          }
+          if (from < 29) {
+            // v29 — IPSC silhouette + popper recurate. The
+            // `silhouette` shape was used as a generic catch-all
+            // (IPSC, IDPA, B-27, popper variants all collapsed to
+            // one painter); per user request we now ship only the
+            // 6 official IPSC sizes plus 2 dedicated `popper`-shape
+            // entries (Pepper Popper Full + Mini). The `_paintIpsc`
+            // and `_paintPopper` painters render each correctly.
+            // Wipe targets so the seed loader picks up the new list
+            // on next launch.
+            await delete(targets).go();
+          }
+          if (from < 30) {
+            // v30 — Adds three LoadOut-original BDC chevron reticles
+            // to the catalog (5.56 NATO / 7.62 NATO / .300 BLK
+            // supersonic). To pick the new rows up on existing
+            // installs we wipe the reticle catalog so the seed
+            // loader's `reticlesAreEmpty` check fires on next
+            // launch. `ScopeReticleOptions` carries an FK on
+            // `Reticles.id`, so it has to be wiped first to satisfy
+            // the constraint. Both tables re-seed automatically on
+            // the next `seedIfNeeded()` pass.
+            //
+            // User-facing impact: any saved
+            // `UserFirearms.reticleId` / `Optics.reticleId` /
+            // `RangeDaySessions.reticleId` integer that pointed at
+            // a now-wiped row will dangle until the user picks the
+            // reticle again. The columns are nullable and the
+            // picker resolves a missing id to "no reticle picked",
+            // so this is a one-time minor re-pick rather than a
+            // crash or data loss.
+            await delete(scopeReticleOptions).go();
+            await delete(reticles).go();
           }
         },
       );

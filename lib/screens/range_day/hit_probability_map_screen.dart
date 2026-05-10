@@ -1,28 +1,32 @@
-// FILE: lib/screens/range_day/wez_analysis_screen.dart
+// FILE: lib/screens/range_day/hit_probability_map_screen.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// User-facing screen for the WEZ (Weapon Employment Zone) analysis feature.
-// The user picks a load + firearm + target, tunes their uncertainty inputs,
-// and sees a hit-probability-vs-range curve plus the variance contribution
+// User-facing screen for the Hit Probability Map feature (formerly known
+// internally as "WEZ" — Weapon Employment Zone). The user picks a load +
+// firearm + target, tunes their uncertainty inputs, and sees a
+// hit-probability-vs-range curve plus the variance contribution
 // breakdown. Pro-gated.
 //
 // Layout (single scrollable column):
 //   1. Setup card        — load, firearm, target, projectile inputs.
 //   2. Inputs card       — group MOA, wind ±, range ±, MV SD sliders.
-//   3. Curve card        — `WezCurvePainter` plot of hit % vs range.
+//   3. Curve card        — `HitProbabilityMapCurvePainter` plot of hit %
+//                          vs range.
 //   4. Bands card        — "≥ 90% hit out to X yd" thresholds.
 //   5. Breakdown card    — variance contribution at the reference range.
-//   6. Save button       — persist the result to `WezProfiles`.
+//   6. Save button       — persist the result to `WezProfiles` (the drift
+//                          table name is preserved for storage compat;
+//                          renaming requires a schema migration).
 //
 // The curve recomputes lazily after a 400ms debounce. The Pro gate is
 // applied once at the route entry point (see `range_day_detail_screen`'s
-// "WEZ analysis" button); we don't double-gate the screen body — the
-// user can't get here without already being Pro or having dismissed the
-// paywall.
+// "Hit Probability Map" button); we don't double-gate the screen body —
+// the user can't get here without already being Pro or having dismissed
+// the paywall.
 //
-// All math comes from `WezAnalysisService`; this file only owns
+// All math comes from `HitProbabilityMapService`; this file only owns
 // presentation, debounced state management, and persistence.
 
 import 'dart:async';
@@ -35,12 +39,12 @@ import '../../database/database.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../repositories/target_repository.dart';
+import '../../services/hit_probability_map_service.dart';
 import '../../services/hit_probability_service.dart';
-import '../../services/wez_analysis_service.dart';
 import '../../widgets/range_day_safety.dart';
 
-class WezAnalysisScreen extends StatefulWidget {
-  const WezAnalysisScreen({
+class HitProbabilityMapScreen extends StatefulWidget {
+  const HitProbabilityMapScreen({
     super.key,
     this.initialLoadId,
     this.initialFirearmId,
@@ -62,10 +66,11 @@ class WezAnalysisScreen extends StatefulWidget {
   final double? initialDistanceYd;
 
   @override
-  State<WezAnalysisScreen> createState() => _WezAnalysisScreenState();
+  State<HitProbabilityMapScreen> createState() =>
+      _HitProbabilityMapScreenState();
 }
 
-class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
+class _HitProbabilityMapScreenState extends State<HitProbabilityMapScreen> {
   // ─────────────────────── Setup pickers ───────────────────────
   UserLoadRow? _selectedLoad;
   UserFirearmRow? _selectedFirearm;
@@ -96,7 +101,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
   double _referenceRangeYd = 600;
 
   // ─────────────────────── Computed result ───────────────────────
-  WezResult? _result;
+  HitProbabilityMapResult? _result;
   Timer? _debounce;
   bool _computing = false;
   String? _profileName;
@@ -201,7 +206,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
       return;
     }
     setState(() => _computing = true);
-    final svc = context.read<WezAnalysisService>();
+    final svc = context.read<HitProbabilityMapService>();
     final ranges = <double>[];
     for (var r = _rangeMinYd; r <= _rangeMaxYd + 0.5; r += _rangeStepYd) {
       ranges.add(r);
@@ -273,7 +278,8 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
     final ok = await safeAsync<bool>(
       context,
       mounted: () => mounted,
-      userMessage: 'Could not save the WEZ profile. Please try again.',
+      userMessage:
+          'Could not save the Hit Probability Map profile. Please try again.',
       body: () async {
         await db.into(db.wezProfiles).insert(WezProfilesCompanion.insert(
               name: name,
@@ -295,7 +301,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
     if (ok != true) return;
     if (!mounted) return;
     messenger.showSnackBar(
-      SnackBar(content: Text('Saved WEZ profile "$name"')),
+      SnackBar(content: Text('Saved Hit Probability Map profile "$name"')),
     );
   }
 
@@ -303,7 +309,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
     final parts = <String>[];
     if (_selectedLoad?.name != null) parts.add(_selectedLoad!.name);
     if (_selectedTarget?.name != null) parts.add(_selectedTarget!.name);
-    if (parts.isEmpty) parts.add('WEZ profile');
+    if (parts.isEmpty) parts.add('Hit Probability Map profile');
     return parts.join(' · ');
   }
 
@@ -674,7 +680,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
               SizedBox(
                 height: 220,
                 child: CustomPaint(
-                  painter: WezCurvePainter(
+                  painter: HitProbabilityMapCurvePainter(
                     curve: result.curve,
                     referenceRangeYd: _referenceRangeYd,
                     rangeMinYd: _rangeMinYd,
@@ -726,7 +732,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
     );
   }
 
-  Widget _bandRow(double threshold, WezResult? r) {
+  Widget _bandRow(double threshold, HitProbabilityMapResult? r) {
     final theme = Theme.of(context);
     final maxYd = r?.maxRangeAtHitProbabilityAtLeast(threshold);
     final pct = (threshold * 100).round();
@@ -788,7 +794,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
     );
   }
 
-  Widget _breakdownRow(WezVarianceFactor f) {
+  Widget _breakdownRow(HitProbabilityMapVarianceFactor f) {
     final theme = Theme.of(context);
     final pct = (f.fractionOfVariance * 100).round();
     return Padding(
@@ -845,7 +851,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
             const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.save),
-              label: const Text('Save WEZ profile'),
+              label: const Text('Save Hit Probability Map profile'),
               onPressed: _result == null ? null : _saveProfile,
             ),
           ],
@@ -911,7 +917,7 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
 }
 
 // ============================================================================
-// WEZ curve painter
+// Hit Probability Map curve painter
 // ============================================================================
 //
 // Draws the hit-probability-vs-range curve. The chart is a simple
@@ -929,8 +935,8 @@ class _WezAnalysisScreenState extends State<WezAnalysisScreen> {
 // The painter is stateless. The screen widget calls `setState` to
 // trigger repaints when the curve / inputs change.
 
-class WezCurvePainter extends CustomPainter {
-  WezCurvePainter({
+class HitProbabilityMapCurvePainter extends CustomPainter {
+  HitProbabilityMapCurvePainter({
     required this.curve,
     required this.referenceRangeYd,
     required this.rangeMinYd,
@@ -940,7 +946,7 @@ class WezCurvePainter extends CustomPainter {
     required this.textStyle,
   });
 
-  final List<WezPoint> curve;
+  final List<HitProbabilityMapPoint> curve;
   final double referenceRangeYd;
   final double rangeMinYd;
   final double rangeMaxYd;
@@ -1095,7 +1101,7 @@ class WezCurvePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant WezCurvePainter old) {
+  bool shouldRepaint(covariant HitProbabilityMapCurvePainter old) {
     return old.curve != curve ||
         old.referenceRangeYd != referenceRangeYd ||
         old.rangeMinYd != rangeMinYd ||

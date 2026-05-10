@@ -1,9 +1,11 @@
-// FILE: lib/screens/range_day/sight_calibration_screen.dart
+// FILE: lib/screens/range_day/scope_tracking_screen.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
-// User-facing UI for Drop-Per-Click (DPC) sight calibration. Pro-gated.
+// User-facing UI for the Scope Tracking Test (formerly known internally
+// as "Sight Calibration") — Drop-Per-Click (DPC) tracking validation.
+// Pro-gated.
 //
 // This is a wizard-style screen that walks the user through a tall-target
 // test:
@@ -25,22 +27,22 @@ import 'package:provider/provider.dart';
 
 import '../../database/database.dart';
 import '../../repositories/firearm_repository.dart';
-import '../../services/sight_calibration_service.dart';
+import '../../services/scope_tracking_service.dart';
 import '../../widgets/range_day_safety.dart';
 
-class SightCalibrationScreen extends StatefulWidget {
-  const SightCalibrationScreen({super.key, this.initialFirearmId});
+class ScopeTrackingScreen extends StatefulWidget {
+  const ScopeTrackingScreen({super.key, this.initialFirearmId});
 
   final int? initialFirearmId;
 
   @override
-  State<SightCalibrationScreen> createState() => _SightCalibrationScreenState();
+  State<ScopeTrackingScreen> createState() => _ScopeTrackingScreenState();
 }
 
-class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
+class _ScopeTrackingScreenState extends State<ScopeTrackingScreen> {
   UserFirearmRow? _selectedFirearm;
   Future<List<UserFirearmRow>>? _firearmsFuture;
-  SightCalibrationAxis _axis = SightCalibrationAxis.vertical;
+  ScopeTrackingAxis _axis = ScopeTrackingAxis.vertical;
   // Target dimensions and distance.
   double _targetWidthIn = 24;
   double _targetHeightIn = 24;
@@ -52,9 +54,9 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
   double _dialMil = 10.0;
   bool _dialInMoa = false;
   // The user's recorded impacts.
-  final List<SightCalibrationObservation> _observations = [];
+  final List<ScopeTrackingObservation> _observations = [];
 
-  SightCalibrationResult? _result;
+  ScopeTrackingResult? _result;
 
   @override
   void initState() {
@@ -62,9 +64,9 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
     _firearmsFuture = context.read<FirearmRepository>().allFirearms();
     if (widget.initialFirearmId != null) {
       // Outer mounted guard — see the matching comment in
-      // `wez_analysis_screen.dart`. Protects against the user popping
-      // this screen before the first frame's post-frame callback
-      // fires.
+      // `hit_probability_map_screen.dart`. Protects against the user
+      // popping this screen before the first frame's post-frame
+      // callback fires.
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         final firearms = await _firearmsFuture;
@@ -87,7 +89,7 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
 
   void _addImpact(double x, double y) {
     setState(() {
-      _observations.add(SightCalibrationObservation(impactX: x, impactY: y));
+      _observations.add(ScopeTrackingObservation(impactX: x, impactY: y));
     });
     _compute();
   }
@@ -102,7 +104,7 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
       setState(() => _result = null);
       return;
     }
-    final svc = context.read<SightCalibrationService>();
+    final svc = context.read<ScopeTrackingService>();
     final dialMil = _dialInMoa ? _dialMil * 0.291 : _dialMil; // 1 MOA ≈ 0.291 mil
     final r = svc.calibrate(
       axis: _axis,
@@ -130,7 +132,8 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
     final ok = await safeAsync<bool>(
       context,
       mounted: () => mounted,
-      userMessage: 'Could not save the sight calibration. Please try again.',
+      userMessage:
+          'Could not save the scope tracking test. Please try again.',
       body: () async {
         await db.transaction(() async {
           // Log the calibration history.
@@ -146,7 +149,7 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
                 ),
               );
           // Apply to the firearm row.
-          if (result.axis == SightCalibrationAxis.vertical) {
+          if (result.axis == ScopeTrackingAxis.vertical) {
             await (db.update(db.userFirearms)
                   ..where((f) => f.id.equals(firearm.id)))
                 .write(UserFirearmsCompanion(
@@ -289,15 +292,15 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
               },
             ),
             const SizedBox(height: 12),
-            SegmentedButton<SightCalibrationAxis>(
+            SegmentedButton<ScopeTrackingAxis>(
               segments: const [
                 ButtonSegment(
-                  value: SightCalibrationAxis.vertical,
+                  value: ScopeTrackingAxis.vertical,
                   label: Text('Elevation'),
                   icon: Icon(Icons.swap_vert),
                 ),
                 ButtonSegment(
-                  value: SightCalibrationAxis.horizontal,
+                  value: ScopeTrackingAxis.horizontal,
                   label: Text('Windage'),
                   icon: Icon(Icons.swap_horiz),
                 ),
@@ -307,7 +310,7 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
                 setState(() {
                   _axis = s.first;
                   // Default aim point for the chosen axis.
-                  if (_axis == SightCalibrationAxis.vertical) {
+                  if (_axis == ScopeTrackingAxis.vertical) {
                     _aimPointX = 0;
                     _aimPointY = -1;
                   } else {
@@ -445,7 +448,7 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
               final v = double.tryParse(s);
               if (v != null) {
                 setState(() {
-                  _observations[i] = SightCalibrationObservation(
+                  _observations[i] = ScopeTrackingObservation(
                     impactX: v,
                     impactY: obs.impactY,
                     notes: obs.notes,
@@ -472,7 +475,7 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
               final v = double.tryParse(s);
               if (v != null) {
                 setState(() {
-                  _observations[i] = SightCalibrationObservation(
+                  _observations[i] = ScopeTrackingObservation(
                     impactX: obs.impactX,
                     impactY: v,
                     notes: obs.notes,
@@ -577,14 +580,14 @@ class _SightCalibrationScreenState extends State<SightCalibrationScreen> {
             const SizedBox(height: 4),
             Text(
               'Writes the derived factor to '
-              'UserFirearms.sightScale${_axis == SightCalibrationAxis.vertical ? 'Vertical' : 'Horizontal'} '
+              'UserFirearms.sightScale${_axis == ScopeTrackingAxis.vertical ? 'Vertical' : 'Horizontal'} '
               'and logs the calibration so you can review it later.',
               style: theme.textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               icon: const Icon(Icons.save),
-              label: const Text('Apply and save'),
+              label: const Text('Apply and Save'),
               onPressed: canSave ? _applyAndSave : null,
             ),
           ],

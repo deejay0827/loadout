@@ -63,7 +63,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
         children: [
           ListTile(
             leading: const Icon(Icons.mail_outline),
-            title: const Text('Email support'),
+            title: const Text('Email Support'),
             subtitle: const Text(
               'Open your mail app with a draft to LoadOut support.',
             ),
@@ -71,7 +71,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.print_outlined),
-            title: const Text('Print a sample notebook page'),
+            title: const Text('Print a Sample Notebook Page'),
             subtitle: const Text(
               'A blank reloading log page you can print at home, fill in '
               'by hand, then photo-import back into LoadOut.',
@@ -80,7 +80,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.restore_outlined),
-            title: const Text('Restore from backup'),
+            title: const Text('Restore from Backup'),
             subtitle: const Text(
               'Open Backup & Export to restore an encrypted backup.',
             ),

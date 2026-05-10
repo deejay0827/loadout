@@ -16,7 +16,7 @@ can use helpful defaults.
 | Category | Examples | Placeholder rule |
 |---|---|---|
 | **Bullet** | Diameter, weight, length, BC, drag model, twist | **NO placeholder.** Empty until the user picks a load / profile / common factory load. |
-| **Rifle** | Muzzle velocity, sight height, twist rate, sight-scale, twist direction, MV temp sensitivity | **NO placeholder.** Empty until the user picks a load / profile / firearm. |
+| **Rifle** | Muzzle velocity, twist rate, twist direction, MV temp sensitivity | **NO placeholder.** Empty until the user picks a load / profile / firearm. *Named exceptions:* **default zero range** pre-fills to `'100'` yd, **sight height** pre-fills to `'2.0'` in, and **scope tracking calibration** (sight-scale vertical / horizontal) pre-fills to `'1.000'` for new firearms. All three are universal de-facto conventions the user reads as "sensible starting point I can change" — sight scale 1.0 specifically means "no correction" (perfect turret tracking), which is the correct neutral assumption when the user hasn't measured their scope. Edits never overwrite saved values. |
 | **Environment** | Temperature, station pressure, humidity, altitude, wind speed, wind direction, latitude (Coriolis) | **NO placeholder.** When all empty, the solver uses ICAO standard internally and the env summary surfaces "Using ICAO standard atmosphere" so the user knows the source. |
 | **Yardage / distance** | Range Day target distance, firearm default zero range, ballistics calculator output range | **Placeholder OK** when it materially helps the user (100 yd zero, 500 yd target distance, 1000 yd ladder max). The user reads the placeholder as "sensible default I can change" rather than as their own input. |
 | **Non-ballistics** | Brass lot count, batch round count, shots-fired counter, "Record Firing" / "Fire Rounds" dialog steppers, recipe / firearm names | **Placeholder OK.** These don't drive a computed firing solution; defaults are pure ergonomics. |
@@ -152,6 +152,69 @@ Use AP-style Title Case:
 If in doubt: is this a NAME of something (button, card, section,
 screen, picker option)? → Title Case. Is it a SENTENCE describing
 something? → sentence case.
+
+## 0b. WORK STYLE (firm rules)
+
+These rules govern how Claude approaches tasks in this repo. The user
+has been explicit that they prefer thoroughness over speed and parallel
+agent dispatch over sequential single-thread work.
+
+### 1. No time / scope ceilings
+
+**There is no implicit time limit on any task.** Don't say "this is
+bigger than time allows" or "I'll defer this to a follow-up because
+it's large." Take however much time the right fix needs. The user is
+explicit: "I did not give you a time limit." If a task requires
+rewriting a 500-line file, refactoring a service, or touching 30
+files, do all of it. Half-shipping a feature and leaving the rest
+as a TODO is a failure mode here, not a virtue.
+
+The single exception: when an action is genuinely irreversible
+(force-push, drop database table on prod, etc.) and the user hasn't
+authorised it, ask first. Otherwise, do the whole job.
+
+### 2. Always dispatch unlimited agents in parallel when work can be split
+
+When a task can be decomposed into independent sub-tasks that don't
+contend for the same files, **dispatch background agents in parallel
+and let them work concurrently with your main-thread work.**
+Examples:
+
+- Designing a new seed catalog file (`assets/seed_data/*.json`) →
+  dispatch a `general-purpose` agent to write it while you wire the
+  consumers in code.
+- Finding all code dependencies on a soon-to-be-renamed symbol →
+  dispatch an `Explore` agent to grep, while you start the rename.
+- Auditing an entire screen surface for label / Title Case
+  violations → dispatch in the background, process the punch list
+  when it returns.
+- Anything that requires READING many files and producing a report
+  → almost always faster as a parallel agent than serial reads
+  from your own tool budget.
+
+There is no upper bound on how many agents you may dispatch. If
+five sub-tasks are independent, launch five agents in one message.
+Send them in a SINGLE assistant turn (`run_in_background: true`)
+so they execute concurrently rather than serially.
+
+### 3. Default to the parallel path, not the serial one
+
+When you catch yourself thinking "I'll do A first, then B, then C
+sequentially because they all touch the codebase" — stop and ask
+whether A / B / C touch DIFFERENT files. If yes, parallelise. If
+they all conflict on the same file, serial is fine. The cost of
+spinning up an extra agent is trivial; the cost of doing serial
+work that could have been parallel is real wall-clock time the
+user is waiting on.
+
+### 4. When in doubt, do it the right way, not the quick way
+
+If two paths exist — "patch the symptom" vs. "fix the underlying
+cause" — pick the underlying-cause path even when it's bigger.
+"Quick" patches that leave the same class of bug latent in the
+codebase have already burned the user's trust twice (Litz removal
+took multiple passes; placeholder data took three rounds). Pay the
+upfront cost to make the class of bug impossible.
 
 ## 1. What it is
 

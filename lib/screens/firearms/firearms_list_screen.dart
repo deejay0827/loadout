@@ -184,7 +184,7 @@ class _FirearmsList extends StatelessWidget {
                     ),
                   ),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add firearm'),
+                  label: const Text('Add Firearm'),
                 ),
               ],
             ),

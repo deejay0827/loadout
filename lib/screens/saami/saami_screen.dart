@@ -533,7 +533,7 @@ class _CartridgePickerState extends State<_CartridgePicker> {
             child: Row(
               children: [
                 FilterChip(
-                  label: const Text('Favorites only'),
+                  label: const Text('Favorites Only'),
                   avatar: Icon(
                     widget.favoritesOnly
                         ? Icons.star

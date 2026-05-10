@@ -47,7 +47,7 @@ class AtmospherePresetsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final repo = context.read<AtmospherePresetRepository>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Atmosphere presets')),
+      appBar: AppBar(title: const Text('Atmosphere Presets')),
       body: StreamBuilder<List<AtmospherePresetRow>>(
         stream: repo.watchAll(),
         builder: (context, snap) {

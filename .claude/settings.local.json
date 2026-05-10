@@ -270,7 +270,9 @@
       "Bash(awk '/^  void dispose/,/^  }/' /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)",
       "Bash(git log *)",
       "Bash(sed -i '' \"s/'WEZ Analysis'/'Hit Probability Map'/g\" test/wez_analysis_screen_widget_test.dart)",
-      "Bash(sed -i '' \"s/'Sight Calibration'/'Scope Tracking Test'/g\" test/sight_calibration_screen_widget_test.dart)"
+      "Bash(sed -i '' \"s/'Sight Calibration'/'Scope Tracking Test'/g\" test/sight_calibration_screen_widget_test.dart)",
+      "Bash(grep -n 'class OpticRow\\\\|class $OpticsTable\\\\|TextColumn.*type\\\\|class Optics extends' /Users/general/Development/Applications/LoadOut/lib/database/database.dart /Users/general/Development/Applications/LoadOut/lib/database/database.g.dart)",
+      "Bash(python3 -c \"import json; json.load\\(open\\('assets/seed_data/reticles.json'\\)\\)\")"
     ]
   }
 }

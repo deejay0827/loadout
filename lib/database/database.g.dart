@@ -20680,28 +20680,6 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
-    'manufacturer',
-  );
-  @override
-  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
-    'manufacturer',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _categoryMeta = const VerificationMeta(
-    'category',
-  );
-  @override
-  late final GeneratedColumn<String> category = GeneratedColumn<String>(
-    'category',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
   static const VerificationMeta _shapeMeta = const VerificationMeta('shape');
   @override
   late final GeneratedColumn<String> shape = GeneratedColumn<String>(
@@ -20731,17 +20709,6 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     aliasedName,
     false,
     type: DriftSqlType.double,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _materialKindMeta = const VerificationMeta(
-    'materialKind',
-  );
-  @override
-  late final GeneratedColumn<String> materialKind = GeneratedColumn<String>(
-    'material_kind',
-    aliasedName,
-    false,
-    type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
   static const VerificationMeta _colorHexMeta = const VerificationMeta(
@@ -20780,12 +20747,9 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
   List<GeneratedColumn> get $columns => [
     id,
     name,
-    manufacturer,
-    category,
     shape,
     widthIn,
     heightIn,
-    materialKind,
     colorHex,
     notes,
     createdAt,
@@ -20813,23 +20777,6 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('manufacturer')) {
-      context.handle(
-        _manufacturerMeta,
-        manufacturer.isAcceptableOrUnknown(
-          data['manufacturer']!,
-          _manufacturerMeta,
-        ),
-      );
-    }
-    if (data.containsKey('category')) {
-      context.handle(
-        _categoryMeta,
-        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_categoryMeta);
-    }
     if (data.containsKey('shape')) {
       context.handle(
         _shapeMeta,
@@ -20853,17 +20800,6 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
       );
     } else if (isInserting) {
       context.missing(_heightInMeta);
-    }
-    if (data.containsKey('material_kind')) {
-      context.handle(
-        _materialKindMeta,
-        materialKind.isAcceptableOrUnknown(
-          data['material_kind']!,
-          _materialKindMeta,
-        ),
-      );
-    } else if (isInserting) {
-      context.missing(_materialKindMeta);
     }
     if (data.containsKey('color_hex')) {
       context.handle(
@@ -20902,14 +20838,6 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
-      manufacturer: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}manufacturer'],
-      ),
-      category: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}category'],
-      )!,
       shape: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}shape'],
@@ -20921,10 +20849,6 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
       heightIn: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}height_in'],
-      )!,
-      materialKind: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}material_kind'],
       )!,
       colorHex: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -20951,49 +20875,34 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   final int id;
   final String name;
 
-  /// Manufacturer / brand. Nullable for generic targets ("8 in AR500
-  /// plate") that are not specific to one maker.
-  final String? manufacturer;
-
-  /// 'paper' | 'steel' | 'reactive' | 'game-silhouette'
-  final String category;
-
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular'
+  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'star' |
+  /// 'bear' | 'boar' | 'deer' | 'elk' | 'coyote'. The picker
+  /// filters by SHAPE; older `category` / `materialKind` /
+  /// `manufacturer` columns were dropped in v28 because reloaders
+  /// pick by geometry, not by what the target's made of or who
+  /// printed the label.
   final String shape;
 
-  /// Outer-bound width of the target in inches (the visible / scoreable
-  /// area). For circles this equals heightIn.
+  /// Outer-bound width of the target in inches (the visible /
+  /// scoreable area). For circles this equals heightIn.
   final double widthIn;
 
   /// Outer-bound height of the target in inches.
   final double heightIn;
 
-  /// 'paper' | 'cardboard' | 'steel' | 'polymer' | 'game-3d'.
-  ///
-  /// Note: pre-v18 installs used `'steel-ar500'` / `'steel-ar550'` to
-  /// distinguish AR-grade hardness, but only size and shape affect the
-  /// hit-probability solver — material grade affects target durability,
-  /// not where bullets go. The v18 migration wipes the [Targets] table
-  /// so the seed loader re-inserts the deduped catalog (one "Steel
-  /// Plate N in" per size, no per-grade duplicates). Existing
-  /// `RangeDaySessions.targetId` rows pointing at the old IDs are
-  /// caught by the picker's stale-id guard.
-  final String materialKind;
-
-  /// CSS-style hex color (e.g. "#fff8c4"). Used by the visual target
-  /// renderer so the on-screen plot resembles the real target.
+  /// CSS-style hex color used by the on-screen target renderer.
+  /// The catalog default is `#ffffff` (white); the user picks a
+  /// per-session tint from the swatch row in Range Day if they
+  /// want a different color.
   final String colorHex;
   final String? notes;
   final DateTime createdAt;
   const TargetRow({
     required this.id,
     required this.name,
-    this.manufacturer,
-    required this.category,
     required this.shape,
     required this.widthIn,
     required this.heightIn,
-    required this.materialKind,
     required this.colorHex,
     this.notes,
     required this.createdAt,
@@ -21003,14 +20912,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
-    if (!nullToAbsent || manufacturer != null) {
-      map['manufacturer'] = Variable<String>(manufacturer);
-    }
-    map['category'] = Variable<String>(category);
     map['shape'] = Variable<String>(shape);
     map['width_in'] = Variable<double>(widthIn);
     map['height_in'] = Variable<double>(heightIn);
-    map['material_kind'] = Variable<String>(materialKind);
     map['color_hex'] = Variable<String>(colorHex);
     if (!nullToAbsent || notes != null) {
       map['notes'] = Variable<String>(notes);
@@ -21023,14 +20927,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return TargetsCompanion(
       id: Value(id),
       name: Value(name),
-      manufacturer: manufacturer == null && nullToAbsent
-          ? const Value.absent()
-          : Value(manufacturer),
-      category: Value(category),
       shape: Value(shape),
       widthIn: Value(widthIn),
       heightIn: Value(heightIn),
-      materialKind: Value(materialKind),
       colorHex: Value(colorHex),
       notes: notes == null && nullToAbsent
           ? const Value.absent()
@@ -21047,12 +20946,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return TargetRow(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
-      manufacturer: serializer.fromJson<String?>(json['manufacturer']),
-      category: serializer.fromJson<String>(json['category']),
       shape: serializer.fromJson<String>(json['shape']),
       widthIn: serializer.fromJson<double>(json['widthIn']),
       heightIn: serializer.fromJson<double>(json['heightIn']),
-      materialKind: serializer.fromJson<String>(json['materialKind']),
       colorHex: serializer.fromJson<String>(json['colorHex']),
       notes: serializer.fromJson<String?>(json['notes']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -21064,12 +20960,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
-      'manufacturer': serializer.toJson<String?>(manufacturer),
-      'category': serializer.toJson<String>(category),
       'shape': serializer.toJson<String>(shape),
       'widthIn': serializer.toJson<double>(widthIn),
       'heightIn': serializer.toJson<double>(heightIn),
-      'materialKind': serializer.toJson<String>(materialKind),
       'colorHex': serializer.toJson<String>(colorHex),
       'notes': serializer.toJson<String?>(notes),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -21079,24 +20972,18 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   TargetRow copyWith({
     int? id,
     String? name,
-    Value<String?> manufacturer = const Value.absent(),
-    String? category,
     String? shape,
     double? widthIn,
     double? heightIn,
-    String? materialKind,
     String? colorHex,
     Value<String?> notes = const Value.absent(),
     DateTime? createdAt,
   }) => TargetRow(
     id: id ?? this.id,
     name: name ?? this.name,
-    manufacturer: manufacturer.present ? manufacturer.value : this.manufacturer,
-    category: category ?? this.category,
     shape: shape ?? this.shape,
     widthIn: widthIn ?? this.widthIn,
     heightIn: heightIn ?? this.heightIn,
-    materialKind: materialKind ?? this.materialKind,
     colorHex: colorHex ?? this.colorHex,
     notes: notes.present ? notes.value : this.notes,
     createdAt: createdAt ?? this.createdAt,
@@ -21105,16 +20992,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return TargetRow(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
-      manufacturer: data.manufacturer.present
-          ? data.manufacturer.value
-          : this.manufacturer,
-      category: data.category.present ? data.category.value : this.category,
       shape: data.shape.present ? data.shape.value : this.shape,
       widthIn: data.widthIn.present ? data.widthIn.value : this.widthIn,
       heightIn: data.heightIn.present ? data.heightIn.value : this.heightIn,
-      materialKind: data.materialKind.present
-          ? data.materialKind.value
-          : this.materialKind,
       colorHex: data.colorHex.present ? data.colorHex.value : this.colorHex,
       notes: data.notes.present ? data.notes.value : this.notes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -21126,12 +21006,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return (StringBuffer('TargetRow(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('manufacturer: $manufacturer, ')
-          ..write('category: $category, ')
           ..write('shape: $shape, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
-          ..write('materialKind: $materialKind, ')
           ..write('colorHex: $colorHex, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt')
@@ -21143,12 +21020,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   int get hashCode => Object.hash(
     id,
     name,
-    manufacturer,
-    category,
     shape,
     widthIn,
     heightIn,
-    materialKind,
     colorHex,
     notes,
     createdAt,
@@ -21159,12 +21033,9 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       (other is TargetRow &&
           other.id == this.id &&
           other.name == this.name &&
-          other.manufacturer == this.manufacturer &&
-          other.category == this.category &&
           other.shape == this.shape &&
           other.widthIn == this.widthIn &&
           other.heightIn == this.heightIn &&
-          other.materialKind == this.materialKind &&
           other.colorHex == this.colorHex &&
           other.notes == this.notes &&
           other.createdAt == this.createdAt);
@@ -21173,24 +21044,18 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
 class TargetsCompanion extends UpdateCompanion<TargetRow> {
   final Value<int> id;
   final Value<String> name;
-  final Value<String?> manufacturer;
-  final Value<String> category;
   final Value<String> shape;
   final Value<double> widthIn;
   final Value<double> heightIn;
-  final Value<String> materialKind;
   final Value<String> colorHex;
   final Value<String?> notes;
   final Value<DateTime> createdAt;
   const TargetsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
-    this.manufacturer = const Value.absent(),
-    this.category = const Value.absent(),
     this.shape = const Value.absent(),
     this.widthIn = const Value.absent(),
     this.heightIn = const Value.absent(),
-    this.materialKind = const Value.absent(),
     this.colorHex = const Value.absent(),
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -21198,31 +21063,23 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   TargetsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
-    this.manufacturer = const Value.absent(),
-    required String category,
     required String shape,
     required double widthIn,
     required double heightIn,
-    required String materialKind,
     required String colorHex,
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name),
-       category = Value(category),
        shape = Value(shape),
        widthIn = Value(widthIn),
        heightIn = Value(heightIn),
-       materialKind = Value(materialKind),
        colorHex = Value(colorHex);
   static Insertable<TargetRow> custom({
     Expression<int>? id,
     Expression<String>? name,
-    Expression<String>? manufacturer,
-    Expression<String>? category,
     Expression<String>? shape,
     Expression<double>? widthIn,
     Expression<double>? heightIn,
-    Expression<String>? materialKind,
     Expression<String>? colorHex,
     Expression<String>? notes,
     Expression<DateTime>? createdAt,
@@ -21230,12 +21087,9 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
-      if (manufacturer != null) 'manufacturer': manufacturer,
-      if (category != null) 'category': category,
       if (shape != null) 'shape': shape,
       if (widthIn != null) 'width_in': widthIn,
       if (heightIn != null) 'height_in': heightIn,
-      if (materialKind != null) 'material_kind': materialKind,
       if (colorHex != null) 'color_hex': colorHex,
       if (notes != null) 'notes': notes,
       if (createdAt != null) 'created_at': createdAt,
@@ -21245,12 +21099,9 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   TargetsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
-    Value<String?>? manufacturer,
-    Value<String>? category,
     Value<String>? shape,
     Value<double>? widthIn,
     Value<double>? heightIn,
-    Value<String>? materialKind,
     Value<String>? colorHex,
     Value<String?>? notes,
     Value<DateTime>? createdAt,
@@ -21258,12 +21109,9 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     return TargetsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
-      manufacturer: manufacturer ?? this.manufacturer,
-      category: category ?? this.category,
       shape: shape ?? this.shape,
       widthIn: widthIn ?? this.widthIn,
       heightIn: heightIn ?? this.heightIn,
-      materialKind: materialKind ?? this.materialKind,
       colorHex: colorHex ?? this.colorHex,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
@@ -21279,12 +21127,6 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
-    if (manufacturer.present) {
-      map['manufacturer'] = Variable<String>(manufacturer.value);
-    }
-    if (category.present) {
-      map['category'] = Variable<String>(category.value);
-    }
     if (shape.present) {
       map['shape'] = Variable<String>(shape.value);
     }
@@ -21293,9 +21135,6 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     }
     if (heightIn.present) {
       map['height_in'] = Variable<double>(heightIn.value);
-    }
-    if (materialKind.present) {
-      map['material_kind'] = Variable<String>(materialKind.value);
     }
     if (colorHex.present) {
       map['color_hex'] = Variable<String>(colorHex.value);
@@ -21314,12 +21153,9 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     return (StringBuffer('TargetsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('manufacturer: $manufacturer, ')
-          ..write('category: $category, ')
           ..write('shape: $shape, ')
           ..write('widthIn: $widthIn, ')
           ..write('heightIn: $heightIn, ')
-          ..write('materialKind: $materialKind, ')
           ..write('colorHex: $colorHex, ')
           ..write('notes: $notes, ')
           ..write('createdAt: $createdAt')
@@ -48325,12 +48161,9 @@ typedef $$TargetsTableCreateCompanionBuilder =
     TargetsCompanion Function({
       Value<int> id,
       required String name,
-      Value<String?> manufacturer,
-      required String category,
       required String shape,
       required double widthIn,
       required double heightIn,
-      required String materialKind,
       required String colorHex,
       Value<String?> notes,
       Value<DateTime> createdAt,
@@ -48339,12 +48172,9 @@ typedef $$TargetsTableUpdateCompanionBuilder =
     TargetsCompanion Function({
       Value<int> id,
       Value<String> name,
-      Value<String?> manufacturer,
-      Value<String> category,
       Value<String> shape,
       Value<double> widthIn,
       Value<double> heightIn,
-      Value<String> materialKind,
       Value<String> colorHex,
       Value<String?> notes,
       Value<DateTime> createdAt,
@@ -48369,16 +48199,6 @@ class $$TargetsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get manufacturer => $composableBuilder(
-    column: $table.manufacturer,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get category => $composableBuilder(
-    column: $table.category,
-    builder: (column) => ColumnFilters(column),
-  );
-
   ColumnFilters<String> get shape => $composableBuilder(
     column: $table.shape,
     builder: (column) => ColumnFilters(column),
@@ -48391,11 +48211,6 @@ class $$TargetsTableFilterComposer
 
   ColumnFilters<double> get heightIn => $composableBuilder(
     column: $table.heightIn,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get materialKind => $composableBuilder(
-    column: $table.materialKind,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -48434,16 +48249,6 @@ class $$TargetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get manufacturer => $composableBuilder(
-    column: $table.manufacturer,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get category => $composableBuilder(
-    column: $table.category,
-    builder: (column) => ColumnOrderings(column),
-  );
-
   ColumnOrderings<String> get shape => $composableBuilder(
     column: $table.shape,
     builder: (column) => ColumnOrderings(column),
@@ -48456,11 +48261,6 @@ class $$TargetsTableOrderingComposer
 
   ColumnOrderings<double> get heightIn => $composableBuilder(
     column: $table.heightIn,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get materialKind => $composableBuilder(
-    column: $table.materialKind,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -48495,14 +48295,6 @@ class $$TargetsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get manufacturer => $composableBuilder(
-    column: $table.manufacturer,
-    builder: (column) => column,
-  );
-
-  GeneratedColumn<String> get category =>
-      $composableBuilder(column: $table.category, builder: (column) => column);
-
   GeneratedColumn<String> get shape =>
       $composableBuilder(column: $table.shape, builder: (column) => column);
 
@@ -48511,11 +48303,6 @@ class $$TargetsTableAnnotationComposer
 
   GeneratedColumn<double> get heightIn =>
       $composableBuilder(column: $table.heightIn, builder: (column) => column);
-
-  GeneratedColumn<String> get materialKind => $composableBuilder(
-    column: $table.materialKind,
-    builder: (column) => column,
-  );
 
   GeneratedColumn<String> get colorHex =>
       $composableBuilder(column: $table.colorHex, builder: (column) => column);
@@ -48557,24 +48344,18 @@ class $$TargetsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<String?> manufacturer = const Value.absent(),
-                Value<String> category = const Value.absent(),
                 Value<String> shape = const Value.absent(),
                 Value<double> widthIn = const Value.absent(),
                 Value<double> heightIn = const Value.absent(),
-                Value<String> materialKind = const Value.absent(),
                 Value<String> colorHex = const Value.absent(),
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TargetsCompanion(
                 id: id,
                 name: name,
-                manufacturer: manufacturer,
-                category: category,
                 shape: shape,
                 widthIn: widthIn,
                 heightIn: heightIn,
-                materialKind: materialKind,
                 colorHex: colorHex,
                 notes: notes,
                 createdAt: createdAt,
@@ -48583,24 +48364,18 @@ class $$TargetsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
-                Value<String?> manufacturer = const Value.absent(),
-                required String category,
                 required String shape,
                 required double widthIn,
                 required double heightIn,
-                required String materialKind,
                 required String colorHex,
                 Value<String?> notes = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => TargetsCompanion.insert(
                 id: id,
                 name: name,
-                manufacturer: manufacturer,
-                category: category,
                 shape: shape,
                 widthIn: widthIn,
                 heightIn: heightIn,
-                materialKind: materialKind,
                 colorHex: colorHex,
                 notes: notes,
                 createdAt: createdAt,

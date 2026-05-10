@@ -119,6 +119,7 @@ import '../../repositories/ballistic_profile_repository.dart';
 import '../../repositories/component_repository.dart';
 import '../../repositories/drag_curve_repository.dart';
 import '../../repositories/firearm_repository.dart';
+import '../../repositories/manufactured_ammo_repository.dart';
 import '../../repositories/recipe_repository.dart';
 import '../../services/ballistics/atmosphere.dart';
 import '../../services/ballistics/custom_drag.dart';
@@ -233,6 +234,14 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// raw bullet catalog.
   Stream<List<UserLoadRow>>? _recipesStream;
   UserLoadRow? _selectedRecipe;
+
+  /// One-shot list of curated manufactured-ammo (factory load)
+  /// rows. The catalog is small (~20 entries) and read-only, so we
+  /// fetch once. Adds a third source alongside recipes + bullets in
+  /// the projectile picker per user request: "this section should
+  /// allow me to pick my recipes [and] manufactured ammo."
+  Future<List<ManufacturedAmmoRow>>? _ammoFuture;
+  ManufacturedAmmoRow? _selectedAmmo;
 
   /// Indicates whether the currently-selected bullet has a matching
   /// curve in the custom-drag catalog. Drives the "Custom drag
@@ -401,6 +410,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     _dragCurvesFuture = context.read<DragCurveRepository>().allCurves();
     _profilesStream = context.read<BallisticProfileRepository>().watchAll();
     _recipesStream = context.read<RecipeRepository>().watchAll();
+    _ammoFuture = context.read<ManufacturedAmmoRepository>().allRows();
     _restoreRangePreferences();
     _loadWeatherHintFlag();
     _autoSave = AutoSaveController(
@@ -1172,10 +1182,24 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
         latitudeDegrees: latitude,
         targetElevationFt: tgtElev,
       );
+      // Scope tracking calibration. The dedicated input fields
+      // ("Sight scale vertical / horizontal") feed directly into
+      // ShotInputs; values default to 1.0 when the field is blank
+      // or unparseable so the math stays sane. The solver multiplies
+      // drop, wind, spin drift, aero jump, and incline delta by
+      // these scale factors (see solver.dart:1008). When either
+      // value differs from 1.0 the result card surfaces a chip so
+      // the user notices a non-default calibration is in effect.
+      final scaleV =
+          double.tryParse(_sightScaleVerticalCtrl.text.trim()) ?? 1.0;
+      final scaleH =
+          double.tryParse(_sightScaleHorizontalCtrl.text.trim()) ?? 1.0;
       final shot = ShotInputs(
         muzzleVelocityFps: mv,
         sightHeightIn: sightHeight,
         zeroRangeYards: zeroRange,
+        sightScaleVertical: scaleV,
+        sightScaleHorizontal: scaleH,
       );
 
       final samples = solveTrajectory(
@@ -1280,6 +1304,47 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// to translate.
   String _recipeLabel(UserLoadRow r) => r.name;
 
+  /// Display label for a manufactured ammo entry. Mirrors the
+  /// `_AmmoProjectileEntry.label` formula — keep them in sync so
+  /// the Autocomplete's `initialValue` matches the option text.
+  String _ammoLabel(ManufacturedAmmoRow a) =>
+      '${a.manufacturer} ${a.cartridge} ${a.name}';
+
+  /// Apply a manufactured-ammo selection to the projectile fields.
+  /// The catalog entry carries diameter / weight / MV / BC — the
+  /// full set of inputs needed for a firing solution — so picking
+  /// an ammo row is the closest equivalent to picking a load:
+  /// every ballistics field gets populated from the published
+  /// data. The user still owns the right to override anything
+  /// they typed (we don't clobber a non-empty field unless the
+  /// catalog row carries a value for it).
+  void _applyAmmoSelection(ManufacturedAmmoRow ammo) {
+    final units = context.read<UnitService>();
+    setState(() {
+      _selectedAmmo = ammo;
+      // Other selection sources lose precedence when ammo is picked.
+      _selectedRecipe = null;
+      _selectedBullet = null;
+      _bulletHasCustomCurve = false;
+      _diameterCtrl.text = ammo.bulletDiameterIn.toStringAsFixed(3);
+      _weightCtrl.text = _formatNumber(_bulletWeightFromCanonical(
+          ammo.bulletWeightGr, units.unitFor(UnitCategory.bulletWeight)));
+      _muzzleVelCtrl.text = _formatNumber(_velocityFromCanonical(
+          ammo.muzzleVelocityFps, units.unitFor(UnitCategory.velocity)));
+      // Prefer G7 for rifle loads, G1 for pistol / rimfire.
+      final g7 = ammo.bcG7;
+      final g1 = ammo.bcG1;
+      if (g7 != null) {
+        _bcCtrl.text = g7.toStringAsFixed(3);
+        _dragModel = DragModel.g7;
+      } else if (g1 != null) {
+        _bcCtrl.text = g1.toStringAsFixed(3);
+        _dragModel = DragModel.g1;
+      }
+    });
+    _autoSave.notifyDirty();
+  }
+
   /// Apply a user recipe selection to the projectile fields.
   /// Recipes don't carry diameter / BC directly (the recipe row
   /// only has bullet name + weight), so the user still has to
@@ -1302,13 +1367,64 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           units.unitFor(UnitCategory.bulletWeight),
         ));
       }
-      // Diameter / BC don't live on UserLoadRow — leave the
-      // controllers empty (or whatever the user already typed) so
-      // they can fill them in. A future enhancement could fuzzy-
-      // match the recipe's `bullet` name against the catalog and
-      // pre-fill BC / diameter when a unique hit is found.
+      // Diameter / BC don't live on UserLoadRow directly — the
+      // recipe row only knows the bullet's NAME. Resolve the actual
+      // bullet record below (async) so we can back-fill diameter +
+      // BC + caliber-implied drag model. The fuzzy match looks the
+      // bullet up by `recipe.bullet` against the catalog and
+      // populates whatever fields are still empty.
     });
     _autoSave.notifyDirty();
+    _backfillFromRecipeBullet(recipe);
+  }
+
+  /// Back-fill diameter / BC / drag model from the catalog bullet
+  /// matching `recipe.bullet`. Best-effort: a recipe storing
+  /// "Berger 109gr Hybrid" tries to find that bullet in the catalog;
+  /// when found, populates the projectile fields the recipe row
+  /// itself doesn't carry. Skipped for any field the user has
+  /// already typed into — never clobber explicit input.
+  Future<void> _backfillFromRecipeBullet(UserLoadRow recipe) async {
+    final bulletName = recipe.bullet?.trim();
+    if (bulletName == null || bulletName.isEmpty) return;
+    try {
+      final units = context.read<UnitService>();
+      final repo = context.read<ComponentRepository>();
+      // Compose a label the catalog lookup will recognise. The
+      // recipe's `bullet` often already includes the manufacturer
+      // (e.g. "Berger 109gr Hybrid Target") but may not include the
+      // weight suffix the picker uses — append it from the row when
+      // we have it so `bulletByLabel` can match cleanly.
+      final wt = recipe.bulletWeightGr;
+      final wtSuffix = (wt != null && bulletName.toLowerCase().contains('gr'))
+          ? ''
+          : (wt != null ? ' ${_formatNumber(wt)}gr' : '');
+      final hit = await repo.bulletByLabel('$bulletName$wtSuffix');
+      if (!mounted || hit == null) return;
+      setState(() {
+        if (_diameterCtrl.text.trim().isEmpty) {
+          _diameterCtrl.text = hit.bullet.diameterIn.toStringAsFixed(3);
+        }
+        if (_weightCtrl.text.trim().isEmpty) {
+          _weightCtrl.text = _formatNumber(_bulletWeightFromCanonical(
+              hit.bullet.weightGr, units.unitFor(UnitCategory.bulletWeight)));
+        }
+        if (_bcCtrl.text.trim().isEmpty) {
+          final g7 = hit.bullet.bcG7;
+          final g1 = hit.bullet.bcG1;
+          if (g7 != null) {
+            _bcCtrl.text = g7.toStringAsFixed(3);
+            _dragModel = DragModel.g7;
+          } else if (g1 != null) {
+            _bcCtrl.text = g1.toStringAsFixed(3);
+            _dragModel = DragModel.g1;
+          }
+        }
+      });
+      _autoSave.notifyDirty();
+    } catch (e) {
+      debugPrint('[ballistics] _backfillFromRecipeBullet failed: $e');
+    }
   }
 
   /// Convert a bullet diameter in inches to a colloquial caliber label
@@ -1380,6 +1496,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     setState(() {
       _selectedBullet = null;
       _selectedRecipe = null;
+      _selectedAmmo = null;
       _bulletHasCustomCurve = false;
       _diameterCtrl.clear();
       _weightCtrl.clear();
@@ -2304,6 +2421,59 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     );
   }
 
+  /// Inline chip surfaced above the DOPE table when the most-recent
+  /// solve used a non-default scope tracking calibration. We read
+  /// the values from `_lastSolvedShot` rather than the live
+  /// controllers so the chip always reflects the actual numbers
+  /// that produced the displayed table — even if the user has
+  /// since edited the input fields and not re-solved yet. Hidden
+  /// when both scales are 1.000 so the common case stays clean.
+  Widget _scopeTrackingActiveChip() {
+    final shot = _lastSolvedShot;
+    if (shot == null) return const SizedBox.shrink();
+    final v = shot.sightScaleVertical;
+    final h = shot.sightScaleHorizontal;
+    if ((v - 1.0).abs() < 1e-6 && (h - 1.0).abs() < 1e-6) {
+      return const SizedBox.shrink();
+    }
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.tertiaryContainer.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(
+            color: theme.colorScheme.tertiary.withValues(alpha: 0.5),
+            width: 0.8,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.tune,
+              size: 14,
+              color: theme.colorScheme.onTertiaryContainer,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Scope tracking calibration active · '
+                'V ${v.toStringAsFixed(3)} · H ${h.toStringAsFixed(3)}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onTertiaryContainer,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Curve-selection dropdown shown only when the user has picked
   /// "Custom" on the drag-function selector. Sources its list from
   /// [_dragCurvesFuture]; an empty catalog renders an explanatory
@@ -2381,33 +2551,44 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     return StreamBuilder<List<UserLoadRow>>(
       stream: _recipesStream,
       builder: (context, recipesSnap) {
-        return FutureBuilder<List<({BulletRow bullet, ManufacturerRow mfg})>>(
-          future: _bulletsFuture,
-          builder: (context, snap) {
-            if (snap.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: LinearProgressIndicator(),
-              );
-            }
-            final bullets = snap.data ?? const [];
-            final recipes = recipesSnap.data ?? const <UserLoadRow>[];
-            // Build the unified entry list. Recipes come first.
-            final entries = <_ProjectileEntry>[
-              for (final r in recipes) _RecipeProjectileEntry(r),
-              for (final b in bullets) _BulletProjectileEntry(b.bullet, b.mfg),
-            ];
+        return FutureBuilder<List<ManufacturedAmmoRow>>(
+          future: _ammoFuture,
+          builder: (context, ammoSnap) {
+            return FutureBuilder<List<({BulletRow bullet, ManufacturerRow mfg})>>(
+              future: _bulletsFuture,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: LinearProgressIndicator(),
+                  );
+                }
+                final bullets = snap.data ?? const [];
+                final recipes = recipesSnap.data ?? const <UserLoadRow>[];
+                final ammo = ammoSnap.data ?? const <ManufacturedAmmoRow>[];
+                // Build the unified entry list — three sources stacked
+                // by relevance: the user's saved recipes first (their
+                // own materials), then curated manufactured ammo (the
+                // factory loads they're most likely to actually shoot),
+                // then the broad bullet catalog.
+                final entries = <_ProjectileEntry>[
+                  for (final r in recipes) _RecipeProjectileEntry(r),
+                  for (final a in ammo) _AmmoProjectileEntry(a),
+                  for (final b in bullets) _BulletProjectileEntry(b.bullet, b.mfg),
+                ];
             // Resolve the current display string for the
-            // Autocomplete's initial value: a recipe pick wins over
-            // a bullet pick if both happen to be set (defensive —
-            // `_clearBulletSelection` clears both, but a stale
-            // race could leave both populated for one frame).
+            // Autocomplete's initial value. Precedence (most recent
+            // user action wins): recipe → manufactured-ammo → bullet.
+            // `_clearBulletSelection` clears all three, but a stale
+            // race could leave more than one populated for one frame.
             final initialText = _selectedRecipe != null
                 ? _recipeLabel(_selectedRecipe!)
-                : (_selectedBullet == null
-                    ? ''
-                    : _bulletLabel(
-                        _selectedBullet!.bullet, _selectedBullet!.mfg));
+                : _selectedAmmo != null
+                    ? _ammoLabel(_selectedAmmo!)
+                    : (_selectedBullet == null
+                        ? ''
+                        : _bulletLabel(
+                            _selectedBullet!.bullet, _selectedBullet!.mfg));
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -2466,6 +2647,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                           switch (entry) {
                             case _RecipeProjectileEntry(:final recipe):
                               _applyRecipeSelection(recipe);
+                            case _AmmoProjectileEntry(:final ammo):
+                              _applyAmmoSelection(ammo);
                             case _BulletProjectileEntry(
                                 :final bullet,
                                 :final mfg
@@ -2489,19 +2672,28 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                                   itemCount: options.length,
                                   itemBuilder: (context, i) {
                                     final e = options.elementAt(i);
+                                    final IconData icon;
+                                    final String subtitle;
+                                    switch (e) {
+                                      case _RecipeProjectileEntry _:
+                                        icon = Icons.science_outlined;
+                                        subtitle = 'My Recipe';
+                                      case _AmmoProjectileEntry _:
+                                        icon = Icons.inventory_2_outlined;
+                                        subtitle = 'Manufactured Ammo';
+                                      case _BulletProjectileEntry _:
+                                        icon = Icons.album_outlined;
+                                        subtitle = 'Bullet Catalog';
+                                    }
                                     return ListTile(
                                       dense: true,
                                       leading: Icon(
-                                        e is _RecipeProjectileEntry
-                                            ? Icons.science_outlined
-                                            : Icons.album_outlined,
+                                        icon,
                                         size: 18,
                                         color: theme.colorScheme.primary,
                                       ),
                                       title: Text(e.label),
-                                      subtitle: e is _RecipeProjectileEntry
-                                          ? const Text('My Recipe')
-                                          : const Text('Bullet Catalog'),
+                                      subtitle: Text(subtitle),
                                       onTap: () => onSelected(e),
                                     );
                                   },
@@ -2514,7 +2706,9 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     ),
                     const SizedBox(width: 8),
                 TextButton.icon(
-                  onPressed: _selectedBullet == null
+                  onPressed: (_selectedBullet == null &&
+                          _selectedRecipe == null &&
+                          _selectedAmmo == null)
                       ? null
                       : _clearBulletSelection,
                   icon: const Icon(Icons.refresh, size: 18),
@@ -2535,6 +2729,8 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
           ],
         );
       },
+            );
+          },
         );
       },
     );
@@ -2912,7 +3108,7 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
       return TextButton.icon(
         onPressed: _onStopUsingKestrel,
         icon: const Icon(Icons.bluetooth_connected, size: 16),
-        label: const Text('Stop using Kestrel'),
+        label: const Text('Stop Using Kestrel'),
         style: TextButton.styleFrom(
           padding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -3566,6 +3762,12 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
               ),
             )
           else ...[
+            // Tracking-calibration tell-tale. Renders only when the
+            // last solve used a non-default scope tracking scale so
+            // the user sees that their drop / wind numbers are being
+            // multiplied by a non-1.0 calibration. Hidden in the
+            // common 1.000 / 1.000 case.
+            _scopeTrackingActiveChip(),
             // DOPE table first — most reloaders treat this as their
             // "ballistic chart" (it's what they print on a card and
             // tape to the rifle). On desktop widths we lift the chart
@@ -4313,6 +4515,14 @@ class _BulletProjectileEntry extends _ProjectileEntry {
         bullet.weightGr.truncateToDouble() == bullet.weightGr ? 0 : 1);
     return '${mfg.name} ${bullet.line} ${wt}gr';
   }
+}
+
+class _AmmoProjectileEntry extends _ProjectileEntry {
+  _AmmoProjectileEntry(this.ammo);
+  final ManufacturedAmmoRow ammo;
+  @override
+  String get label =>
+      '${ammo.manufacturer} ${ammo.cartridge} ${ammo.name}';
 }
 
 // ─────────────────────── Disclaimer ───────────────────────

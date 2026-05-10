@@ -117,51 +117,75 @@ class AtmospherePresetPicker extends StatelessWidget {
             break;
           }
         }
-        final selectorLabel = matched?.name ?? 'Custom';
-        return Row(
+        // "None" when no saved preset matches the current readings —
+        // chosen over "Custom" because the dropdown's purpose is
+        // picking a saved range, and "Custom" implied the user had
+        // entered a one-off configuration on purpose. "None" reads
+        // honestly: nothing is selected.
+        final selectorLabel = matched?.name ?? 'None';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // Subtitle above the row spells out what the picker is.
+            // The label says "Range" because each saved preset is
+            // tied to a place the user shoots — "Camp Atterbury
+            // summer", "Big Sandy". The subtitle makes it clear we
+            // mean saved environmental conditions, not a distance.
             Text(
-              'Atmosphere',
-              style: theme.textTheme.bodyMedium?.copyWith(
+              'Saved environmental conditions for a range or trip.',
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _onTap(context, presets, matched),
-                style: OutlinedButton.styleFrom(
-                  alignment: Alignment.centerLeft,
-                  padding: dense
-                      ? const EdgeInsets.symmetric(horizontal: 10, vertical: 6)
-                      : const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Text(
+                  'Range',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                icon: Icon(
-                  matched == null
-                      ? Icons.tune_outlined
-                      : Icons.check_circle_outline,
-                  size: 16,
-                ),
-                label: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        selectorLabel,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _onTap(context, presets, matched),
+                    style: OutlinedButton.styleFrom(
+                      alignment: Alignment.centerLeft,
+                      padding: dense
+                          ? const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6)
+                          : const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 10),
                     ),
-                    const Icon(Icons.arrow_drop_down, size: 18),
-                  ],
+                    icon: Icon(
+                      matched == null
+                          ? Icons.place_outlined
+                          : Icons.check_circle_outline,
+                      size: 16,
+                    ),
+                    label: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            selectorLabel,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down, size: 18),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: 'Save as preset',
-              icon: const Icon(Icons.bookmark_add_outlined),
-              onPressed: onSaveAsPreset,
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: 'Save Current Conditions for a Place You Shoot',
+                  icon: const Icon(Icons.bookmark_add_outlined),
+                  onPressed: onSaveAsPreset,
+                ),
+              ],
             ),
           ],
         );
@@ -225,7 +249,7 @@ class _AtmospherePickerSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
             child: Text(
-              'Pick an atmosphere preset',
+              'Pick a Saved Range',
               style: theme.textTheme.titleSmall,
             ),
           ),
@@ -233,8 +257,8 @@ class _AtmospherePickerSheet extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
               child: Text(
-                'No saved presets yet. Save the conditions you shoot in '
-                'most often, then switch between them in one tap.',
+                'No saved ranges yet. Save the conditions at a place you '
+                'shoot, then switch between them in one tap.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -258,7 +282,7 @@ class _AtmospherePickerSheet extends StatelessWidget {
           const Divider(height: 1),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
-            title: const Text('Manage presets'),
+            title: const Text('Manage Saved Ranges'),
             onTap: () => Navigator.of(context)
                 .pop(const _AtmospherePickResult(openManage: true)),
           ),

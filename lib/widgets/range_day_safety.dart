@@ -5,8 +5,8 @@
 // ============================================================================
 // Shared "soft-failure" helpers used by every Range Day screen
 // (`range_day_screen.dart`, `range_day_detail_screen.dart`,
-// `scope_view_screen.dart`, `wez_analysis_screen.dart`,
-// `bc_truing_screen.dart`, `sight_calibration_screen.dart`). Three exports:
+// `scope_view_screen.dart`, `hit_probability_map_screen.dart`,
+// `bc_truing_screen.dart`, `scope_tracking_screen.dart`). Three exports:
 //
 //   * [RangeDayErrorBoundary] — a `StatefulWidget` that hooks
 //     `FlutterError.onError` for the duration of its subtree's lifetime.
@@ -63,9 +63,9 @@
 // - lib/screens/range_day/range_day_screen.dart
 // - lib/screens/range_day/range_day_detail_screen.dart
 // - lib/screens/range_day/scope_view_screen.dart
-// - lib/screens/range_day/wez_analysis_screen.dart
+// - lib/screens/range_day/hit_probability_map_screen.dart
 // - lib/screens/range_day/bc_truing_screen.dart
-// - lib/screens/range_day/sight_calibration_screen.dart
+// - lib/screens/range_day/scope_tracking_screen.dart
 //
 // ============================================================================
 // SIDE EFFECTS

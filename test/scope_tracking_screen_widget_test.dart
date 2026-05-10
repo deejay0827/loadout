@@ -1,10 +1,10 @@
-// FILE: test/sight_calibration_screen_widget_test.dart
+// FILE: test/scope_tracking_screen_widget_test.dart
 //
 // ============================================================================
 // WHAT THIS FILE DOES
 // ============================================================================
 // Widget smoke tests for
-// `lib/screens/range_day/sight_calibration_screen.dart` — the
+// `lib/screens/range_day/scope_tracking_screen.dart` — the
 // drop-per-click (DPC) sight-calibration wizard. Confirms the screen
 // renders across the matrix of states the production app surfaces:
 //
@@ -24,7 +24,7 @@
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// The DPC math (`SightCalibrationService.calibrate`) is unit-tested in
+// The DPC math (`ScopeTrackingService.calibrate`) is unit-tested in
 // `test/sight_calibration_test.dart`. These tests confirm the SCREEN
 // builds with no firearm selected and that the impact-table growth
 // handler updates the visible row count correctly.
@@ -55,7 +55,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:loadout/screens/range_day/sight_calibration_screen.dart';
+import 'package:loadout/screens/range_day/scope_tracking_screen.dart';
 
 import '_range_day_test_harness.dart';
 
@@ -66,7 +66,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -79,7 +79,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -92,7 +92,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
       isPro: false,
     );
     await tester.pumpAndSettle();
@@ -105,7 +105,7 @@ void main() {
   testWidgets('renders without crashing for a Pro user', (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
       isPro: true,
     );
     await tester.pumpAndSettle();
@@ -119,7 +119,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -136,7 +136,7 @@ void main() {
     // visible at the top of the wizard.
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -155,7 +155,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -169,7 +169,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -193,7 +193,7 @@ void main() {
     // AND a selected firearm. Two impacts alone are not enough.
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 
@@ -203,7 +203,7 @@ void main() {
     await tester.tap(addImpact);
     await tester.pumpAndSettle();
 
-    final saveButton = find.widgetWithText(FilledButton, 'Apply and save');
+    final saveButton = find.widgetWithText(FilledButton, 'Apply and Save');
     expect(saveButton, findsOneWidget);
     final widget = tester.widget<FilledButton>(saveButton);
     // onPressed null => disabled.
@@ -216,7 +216,7 @@ void main() {
       (tester) async {
     await pumpRangeDayScreen(
       tester,
-      screen: const SightCalibrationScreen(),
+      screen: const ScopeTrackingScreen(),
     );
     await tester.pumpAndSettle();
 

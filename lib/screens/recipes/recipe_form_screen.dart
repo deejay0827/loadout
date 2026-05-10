@@ -1140,12 +1140,68 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   /// When the user picks a bullet from the catalog, parse the trailing
   /// `<num>gr` and shove it into the Bullet Weight field. Catalog labels
   /// always end with `<num>gr`; typed-in custom values are left alone.
+  /// Populate the recipe form when the user picks a bullet from the
+  /// catalog dropdown. We do TWO lookups:
+  ///   1. Fast regex match on the label suffix to pull the weight
+  ///      (works even before the async catalog lookup resolves).
+  ///   2. Async lookup against [ComponentRepository.bulletByLabel]
+  ///      that returns the underlying [BulletRow] + manufacturer so
+  ///      we can back-fill caliber from `bullet.diameterIn`.
+  /// Per the user's spec: picking a bullet must fill every form
+  /// field we already have data for — weight + caliber today; length
+  /// / BC join when those columns ship on `Bullets`.
   void _onBulletSelected(String label) {
     final match = _bulletWeightSuffix.firstMatch(label);
-    if (match == null) return;
-    final weight = match.group(1);
-    if (weight == null) return;
-    setState(() => _bulletWeight.text = weight);
+    final weight = match?.group(1);
+    if (weight != null) {
+      setState(() => _bulletWeight.text = weight);
+    }
+    // Caliber back-fill (CLAUDE.md / user feedback: "this is an
+    // error if it is not already happening"). Async — the user
+    // sees weight populate immediately, caliber a moment later.
+    _backfillFromBullet(label);
+  }
+
+  Future<void> _backfillFromBullet(String label) async {
+    try {
+      final repo = context.read<ComponentRepository>();
+      final hit = await repo.bulletByLabel(label);
+      if (!mounted || hit == null) return;
+      final caliber = _caliberLabelFromDiameter(hit.bullet.diameterIn);
+      if (caliber == null) return;
+      // Only overwrite caliber when it's empty — never clobber a
+      // value the user explicitly typed. Same defensive pattern
+      // used by the Ballistics firearm-pre-fill path.
+      if (_caliber.text.trim().isEmpty) {
+        setState(() => _caliber.text = caliber);
+      }
+    } catch (e) {
+      debugPrint('[recipe_form] _backfillFromBullet failed: $e');
+    }
+  }
+
+  /// Map a bullet diameter (inches) to a colloquial caliber label
+  /// the user would type ("0.264" → "6.5mm", "0.308" → ".308").
+  /// Returns null when the diameter doesn't match a common cartridge
+  /// family — the picker leaves the caliber field alone in that
+  /// case rather than guessing.
+  String? _caliberLabelFromDiameter(double diameterIn) {
+    bool nearly(double a, double b) => (a - b).abs() < 0.0015;
+    if (nearly(diameterIn, 0.172)) return '.17';
+    if (nearly(diameterIn, 0.204)) return '.204';
+    if (nearly(diameterIn, 0.224)) return '.224';
+    if (nearly(diameterIn, 0.243)) return '6mm';
+    if (nearly(diameterIn, 0.257)) return '.257';
+    if (nearly(diameterIn, 0.264)) return '6.5mm';
+    if (nearly(diameterIn, 0.277)) return '.277';
+    if (nearly(diameterIn, 0.284)) return '7mm';
+    if (nearly(diameterIn, 0.308)) return '.308';
+    if (nearly(diameterIn, 0.338)) return '.338';
+    if (nearly(diameterIn, 0.355) || nearly(diameterIn, 0.356)) return '9mm';
+    if (nearly(diameterIn, 0.358)) return '.358';
+    if (nearly(diameterIn, 0.400)) return '.40';
+    if (nearly(diameterIn, 0.451) || nearly(diameterIn, 0.452)) return '.45';
+    return null;
   }
 
   /// When the user picks a primer like `"Federal #210M"`, look it up in

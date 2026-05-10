@@ -102,7 +102,7 @@ class _BrassLotsListScreenState extends State<BrassLotsListScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add brass lot'),
+                  label: const Text('Add Brass Lot'),
                 ),
               ],
             ),

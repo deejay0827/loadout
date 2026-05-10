@@ -1,39 +1,57 @@
 {
   "racks": [
     {
-      "name": "5-Plate KYL",
-      "description": "Know-Your-Limits — circles decrease in size from left to right (5 / 4 / 3 / 2 / 1 in). Shooter engages each plate in order; failure to hit any plate ends the run.",
+      "name": "5-Plate KYL · Circles",
+      "description": "Know-Your-Limits — five round steel plates decreasing in size from left to right (5 / 4 / 3 / 2 / 1 in diameter). Shooter engages each plate in order; failure to hit any plate ends the run.",
       "rack_kind": "kyl",
       "total_width_in": 60,
       "total_height_in": 5,
+      "notes": "Five round steel plates, decreasing diameters 5 / 4 / 3 / 2 / 1 in, arranged left-to-right at equal heights.",
       "children": [
-        { "position": 0, "name": "Plate 1 (5 in)", "shape": "circle", "width_in": 5, "height_in": 5, "offset_x_in": -28, "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 1, "name": "Plate 2 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -16, "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 2, "name": "Plate 3 (3 in)", "shape": "circle", "width_in": 3, "height_in": 3, "offset_x_in": -4,  "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 3, "name": "Plate 4 (2 in)", "shape": "circle", "width_in": 2, "height_in": 2, "offset_x_in": 8,   "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 4, "name": "Plate 5 (1 in)", "shape": "circle", "width_in": 1, "height_in": 1, "offset_x_in": 20,  "offset_y_in": 0, "color_hex": "#ffffff" }
+        { "position": 0, "name": "Plate 1 (5 in dia)", "shape": "circle", "width_in": 5, "height_in": 5, "offset_x_in": -28, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in dia)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -16, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (3 in dia)", "shape": "circle", "width_in": 3, "height_in": 3, "offset_x_in": -4,  "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 3, "name": "Plate 4 (2 in dia)", "shape": "circle", "width_in": 2, "height_in": 2, "offset_x_in": 8,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 4, "name": "Plate 5 (1 in dia)", "shape": "circle", "width_in": 1, "height_in": 1, "offset_x_in": 20,  "offset_y_in": 0, "color_hex": "#ffffff" }
       ]
     },
     {
-      "name": "5-Plate Equal Rack",
-      "description": "Five identical 4-inch round plates spaced 6 inches apart, center-to-center.",
-      "rack_kind": "plate-rack",
-      "total_width_in": 36,
-      "total_height_in": 4,
+      "name": "5-Plate KYL · Squares",
+      "description": "Know-Your-Limits — five square steel plates decreasing in size from left to right (5 / 4 / 3 / 2 / 1 in per side). Shooter engages each plate in order; failure to hit any plate ends the run.",
+      "rack_kind": "kyl",
+      "total_width_in": 60,
+      "total_height_in": 5,
+      "notes": "Five square steel plates, decreasing sides 5 / 4 / 3 / 2 / 1 in, arranged left-to-right at equal heights.",
       "children": [
-        { "position": 0, "name": "Plate 1 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -12, "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 1, "name": "Plate 2 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -6,  "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 2, "name": "Plate 3 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 3, "name": "Plate 4 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 6,   "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 4, "name": "Plate 5 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 12,  "offset_y_in": 0, "color_hex": "#ffffff" }
+        { "position": 0, "name": "Plate 1 (5 in sq)", "shape": "square", "width_in": 5, "height_in": 5, "offset_x_in": -28, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": -16, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (3 in sq)", "shape": "square", "width_in": 3, "height_in": 3, "offset_x_in": -4,  "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 3, "name": "Plate 4 (2 in sq)", "shape": "square", "width_in": 2, "height_in": 2, "offset_x_in": 8,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 4, "name": "Plate 5 (1 in sq)", "shape": "square", "width_in": 1, "height_in": 1, "offset_x_in": 20,  "offset_y_in": 0, "color_hex": "#ffffff" }
       ]
     },
     {
-      "name": "5-Plate Square Rack",
-      "description": "Five 4-inch square steel plates spaced 6 inches apart, center-to-center.",
+      "name": "5-Plate Equal Rack · Circles",
+      "description": "Five identical 4-inch round steel plates spaced 6 inches apart, center-to-center.",
       "rack_kind": "plate-rack",
       "total_width_in": 36,
       "total_height_in": 4,
+      "notes": "Five round steel plates, all 4 in diameter, evenly spaced left-to-right at equal heights — classic 'plate rack' for speed drills.",
+      "children": [
+        { "position": 0, "name": "Plate 1 (4 in dia)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -12, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in dia)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": -6,  "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (4 in dia)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 3, "name": "Plate 4 (4 in dia)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 6,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 4, "name": "Plate 5 (4 in dia)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 12,  "offset_y_in": 0, "color_hex": "#ffffff" }
+      ]
+    },
+    {
+      "name": "5-Plate Equal Rack · Squares",
+      "description": "Five identical 4-inch square steel plates spaced 6 inches apart, center-to-center.",
+      "rack_kind": "plate-rack",
+      "total_width_in": 36,
+      "total_height_in": 4,
+      "notes": "Five square steel plates, all 4 in per side, evenly spaced left-to-right at equal heights.",
       "children": [
         { "position": 0, "name": "Plate 1 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": -12, "offset_y_in": 0, "color_hex": "#ffffff" },
         { "position": 1, "name": "Plate 2 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": -6,  "offset_y_in": 0, "color_hex": "#ffffff" },
@@ -48,6 +66,7 @@
       "rack_kind": "pepper-popper",
       "total_width_in": 56,
       "total_height_in": 18,
+      "notes": "Five pepper-popper silhouettes (8 x 18 in each) lined up at the same base height — classic action-pistol reactive rack. Shape is unambiguous; no circle/square variant exists.",
       "children": [
         { "position": 0, "name": "Popper 1", "shape": "silhouette", "width_in": 8, "height_in": 18, "offset_x_in": -24, "offset_y_in": 0, "color_hex": "#3b3b3b" },
         { "position": 1, "name": "Popper 2", "shape": "silhouette", "width_in": 8, "height_in": 18, "offset_x_in": -12, "offset_y_in": 0, "color_hex": "#3b3b3b" },
@@ -57,26 +76,56 @@
       ]
     },
     {
-      "name": "3-Plate Decreasing",
-      "description": "Three round plates stepping down in size (6 / 4 / 2 in), spaced 10 inches apart, center-to-center.",
+      "name": "3-Plate Decreasing · Circles",
+      "description": "Three round steel plates stepping down in size (6 / 4 / 2 in diameter), spaced 10 inches apart, center-to-center.",
       "rack_kind": "plate-rack",
       "total_width_in": 26,
       "total_height_in": 6,
+      "notes": "Three round steel plates, decreasing diameters 6 / 4 / 2 in, arranged left-to-right at equal heights — fast warm-up rack.",
       "children": [
-        { "position": 0, "name": "Plate 1 (6 in)", "shape": "circle", "width_in": 6, "height_in": 6, "offset_x_in": -10, "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 1, "name": "Plate 2 (4 in)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
-        { "position": 2, "name": "Plate 3 (2 in)", "shape": "circle", "width_in": 2, "height_in": 2, "offset_x_in": 10,  "offset_y_in": 0, "color_hex": "#ffffff" }
+        { "position": 0, "name": "Plate 1 (6 in dia)", "shape": "circle", "width_in": 6, "height_in": 6, "offset_x_in": -10, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in dia)", "shape": "circle", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (2 in dia)", "shape": "circle", "width_in": 2, "height_in": 2, "offset_x_in": 10,  "offset_y_in": 0, "color_hex": "#ffffff" }
       ]
     },
     {
-      "name": "IDPA Open Stage",
-      "description": "Single IDPA cardboard silhouette (12 x 24) with a 6-inch round 'head' plate stacked above. Body and head are scored as separate hits.",
+      "name": "3-Plate Decreasing · Squares",
+      "description": "Three square steel plates stepping down in size (6 / 4 / 2 in per side), spaced 10 inches apart, center-to-center.",
+      "rack_kind": "plate-rack",
+      "total_width_in": 26,
+      "total_height_in": 6,
+      "notes": "Three square steel plates, decreasing sides 6 / 4 / 2 in, arranged left-to-right at equal heights.",
+      "children": [
+        { "position": 0, "name": "Plate 1 (6 in sq)", "shape": "square", "width_in": 6, "height_in": 6, "offset_x_in": -10, "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (4 in sq)", "shape": "square", "width_in": 4, "height_in": 4, "offset_x_in": 0,   "offset_y_in": 0, "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (2 in sq)", "shape": "square", "width_in": 2, "height_in": 2, "offset_x_in": 10,  "offset_y_in": 0, "color_hex": "#ffffff" }
+      ]
+    },
+    {
+      "name": "Texas Star · 5 Plates",
+      "description": "Reactive five-arm star rig — central hub with five 8-inch round steel plates on radial arms 120 degrees apart in azimuth (5-pointed star geometry). Knocking a plate off shifts the star's balance and the remaining plates accelerate; classic action-pistol challenge.",
+      "rack_kind": "plate-rack",
+      "total_width_in": 36,
+      "total_height_in": 36,
+      "notes": "Five round 8-inch steel plates mounted on the tips of a rotating five-arm star (arms at the top, upper-right, lower-right, lower-left, upper-left). Plates fall as they're hit; the star spins faster with each missing plate. Geometry uses pure five-pointed-star vertex angles (90, 18, -54, -126, 162 degrees in standard math convention).",
+      "children": [
+        { "position": 0, "name": "Plate 1 (top, 8 in dia)",         "shape": "circle", "width_in": 8, "height_in": 8, "offset_x_in": 0,    "offset_y_in": 14,    "color_hex": "#ffffff" },
+        { "position": 1, "name": "Plate 2 (upper-right, 8 in dia)", "shape": "circle", "width_in": 8, "height_in": 8, "offset_x_in": 13.3, "offset_y_in": 4.3,   "color_hex": "#ffffff" },
+        { "position": 2, "name": "Plate 3 (lower-right, 8 in dia)", "shape": "circle", "width_in": 8, "height_in": 8, "offset_x_in": 8.2,  "offset_y_in": -11.3, "color_hex": "#ffffff" },
+        { "position": 3, "name": "Plate 4 (lower-left, 8 in dia)",  "shape": "circle", "width_in": 8, "height_in": 8, "offset_x_in": -8.2, "offset_y_in": -11.3, "color_hex": "#ffffff" },
+        { "position": 4, "name": "Plate 5 (upper-left, 8 in dia)",  "shape": "circle", "width_in": 8, "height_in": 8, "offset_x_in": -13.3, "offset_y_in": 4.3,  "color_hex": "#ffffff" }
+      ]
+    },
+    {
+      "name": "IDPA Open Stage (Silhouette + Head Plate)",
+      "description": "Single IDPA cardboard silhouette (12 x 24 in body) with a 6-inch round 'head' plate stacked above. Body and head are scored as separate hits.",
       "rack_kind": "idpa-stage",
       "total_width_in": 12,
       "total_height_in": 33,
+      "notes": "One IDPA cardboard silhouette (humanoid body, 12 x 24 in) with a 6-inch round steel head plate centered above it. Two distinct shapes — engage them as you would in a real IDPA stage.",
       "children": [
         { "position": 0, "name": "Body (IDPA silhouette)", "shape": "silhouette", "width_in": 12, "height_in": 24, "offset_x_in": 0, "offset_y_in": -4.5, "color_hex": "#a08550" },
-        { "position": 1, "name": "Head (6 in plate)",      "shape": "circle",     "width_in": 6,  "height_in": 6,  "offset_x_in": 0, "offset_y_in": 13.5, "color_hex": "#ffffff" }
+        { "position": 1, "name": "Head (6 in dia plate)",  "shape": "circle",     "width_in": 6,  "height_in": 6,  "offset_x_in": 0, "offset_y_in": 13.5, "color_hex": "#ffffff" }
       ]
     }
   ]

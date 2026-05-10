@@ -26,9 +26,9 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loadout/services/hit_probability_service.dart';
-import 'package:loadout/services/wez_analysis_service.dart';
+import 'package:loadout/services/hit_probability_map_service.dart';
 
-const _service = WezAnalysisService();
+const _service = HitProbabilityMapService();
 
 /// 60-point range list at 25 yd steps from 100 to 1500 yd. The standard
 /// curve density: enough resolution to draw a smooth line without
@@ -302,7 +302,7 @@ void main() {
         muzzleVelocityFps: 2710,
       );
       final json = result.curveJsonString();
-      final restored = WezResult.curveFromJson(json);
+      final restored = HitProbabilityMapResult.curveFromJson(json);
       expect(restored.length, result.curve.length);
       for (var i = 0; i < restored.length; i++) {
         expect(restored[i].rangeYd, result.curve[i].rangeYd);
