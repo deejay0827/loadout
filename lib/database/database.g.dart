@@ -3951,6 +3951,18 @@ class $FirearmsRefTable extends FirearmsRef
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _caliberSpecsJsonMeta = const VerificationMeta(
+    'caliberSpecsJson',
+  );
+  @override
+  late final GeneratedColumn<String> caliberSpecsJson = GeneratedColumn<String>(
+    'caliber_specs_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('{}'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3962,6 +3974,7 @@ class $FirearmsRefTable extends FirearmsRef
     notes,
     barrelLengthIn,
     twistRate,
+    caliberSpecsJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4041,6 +4054,15 @@ class $FirearmsRefTable extends FirearmsRef
         twistRate.isAcceptableOrUnknown(data['twist_rate']!, _twistRateMeta),
       );
     }
+    if (data.containsKey('caliber_specs_json')) {
+      context.handle(
+        _caliberSpecsJsonMeta,
+        caliberSpecsJson.isAcceptableOrUnknown(
+          data['caliber_specs_json']!,
+          _caliberSpecsJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4086,6 +4108,10 @@ class $FirearmsRefTable extends FirearmsRef
         DriftSqlType.string,
         data['${effectivePrefix}twist_rate'],
       ),
+      caliberSpecsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}caliber_specs_json'],
+      )!,
     );
   }
 
@@ -4110,11 +4136,43 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
 
   /// Most-common factory barrel length in inches for the documented model
   /// variant. Nullable for entries where we don't have reliable spec data.
+  /// SUPERSEDED for multi-caliber rifles by [caliberSpecsJson] (added
+  /// v34) — the form prefers the per-caliber values when available and
+  /// falls back to this row-level field when the spec map is absent or
+  /// doesn't list the user's chosen caliber.
   final double? barrelLengthIn;
 
   /// Standard factory twist rate, e.g. "1:8" or "1:9.84". Nullable for
   /// entries where the spec varies by sub-variant or isn't documented.
+  /// Same fallback rule as [barrelLengthIn] applies vs [caliberSpecsJson].
   final String? twistRate;
+
+  /// JSON-encoded map of caliber → factory specs for the documented
+  /// model. Lets a multi-chambering rifle (Accuracy International AT-X
+  /// in .308 / 6.5 CM / 6mm CM, Tikka T3x in .308 / 6.5 CM / .300 WSM)
+  /// declare different barrel lengths and twist rates per caliber, so
+  /// the form's barrel-length dropdown and twist field auto-update
+  /// when the user picks a different chambering from the catalog row.
+  ///
+  /// JSON shape — keyed by the same caliber strings as [calibersJson]:
+  /// ```json
+  /// {
+  ///   ".308 Win":         { "barrelLengthsIn": [16.5, 20], "twistRate": "1:10" },
+  ///   "6.5 Creedmoor":    { "barrelLengthsIn": [24],       "twistRate": "1:8"  },
+  ///   "6mm Creedmoor":    { "barrelLengthsIn": [26],       "twistRate": "1:7.25" }
+  /// }
+  /// ```
+  ///
+  /// Entries where the manufacturer offers multiple barrel-length
+  /// variants for a given caliber surface as a dropdown in the form;
+  /// single-length entries auto-fill straight through. The
+  /// `barrelLengthsIn` array MUST be sorted ascending (so the form's
+  /// dropdown matches the manufacturer's literature reading order).
+  ///
+  /// Defaults to `'{}'` so existing FirearmsRef rows seeded before v34
+  /// keep working — the form falls back to the row-level
+  /// [barrelLengthIn] / [twistRate] when this column is empty.
+  final String caliberSpecsJson;
   const FirearmRefRow({
     required this.id,
     required this.manufacturerId,
@@ -4125,6 +4183,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
     this.notes,
     this.barrelLengthIn,
     this.twistRate,
+    required this.caliberSpecsJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4146,6 +4205,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
     if (!nullToAbsent || twistRate != null) {
       map['twist_rate'] = Variable<String>(twistRate);
     }
+    map['caliber_specs_json'] = Variable<String>(caliberSpecsJson);
     return map;
   }
 
@@ -4168,6 +4228,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
       twistRate: twistRate == null && nullToAbsent
           ? const Value.absent()
           : Value(twistRate),
+      caliberSpecsJson: Value(caliberSpecsJson),
     );
   }
 
@@ -4186,6 +4247,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
       notes: serializer.fromJson<String?>(json['notes']),
       barrelLengthIn: serializer.fromJson<double?>(json['barrelLengthIn']),
       twistRate: serializer.fromJson<String?>(json['twistRate']),
+      caliberSpecsJson: serializer.fromJson<String>(json['caliberSpecsJson']),
     );
   }
   @override
@@ -4201,6 +4263,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
       'notes': serializer.toJson<String?>(notes),
       'barrelLengthIn': serializer.toJson<double?>(barrelLengthIn),
       'twistRate': serializer.toJson<String?>(twistRate),
+      'caliberSpecsJson': serializer.toJson<String>(caliberSpecsJson),
     };
   }
 
@@ -4214,6 +4277,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
     Value<String?> notes = const Value.absent(),
     Value<double?> barrelLengthIn = const Value.absent(),
     Value<String?> twistRate = const Value.absent(),
+    String? caliberSpecsJson,
   }) => FirearmRefRow(
     id: id ?? this.id,
     manufacturerId: manufacturerId ?? this.manufacturerId,
@@ -4226,6 +4290,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
         ? barrelLengthIn.value
         : this.barrelLengthIn,
     twistRate: twistRate.present ? twistRate.value : this.twistRate,
+    caliberSpecsJson: caliberSpecsJson ?? this.caliberSpecsJson,
   );
   FirearmRefRow copyWithCompanion(FirearmsRefCompanion data) {
     return FirearmRefRow(
@@ -4244,6 +4309,9 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
           ? data.barrelLengthIn.value
           : this.barrelLengthIn,
       twistRate: data.twistRate.present ? data.twistRate.value : this.twistRate,
+      caliberSpecsJson: data.caliberSpecsJson.present
+          ? data.caliberSpecsJson.value
+          : this.caliberSpecsJson,
     );
   }
 
@@ -4258,7 +4326,8 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
           ..write('calibersJson: $calibersJson, ')
           ..write('notes: $notes, ')
           ..write('barrelLengthIn: $barrelLengthIn, ')
-          ..write('twistRate: $twistRate')
+          ..write('twistRate: $twistRate, ')
+          ..write('caliberSpecsJson: $caliberSpecsJson')
           ..write(')'))
         .toString();
   }
@@ -4274,6 +4343,7 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
     notes,
     barrelLengthIn,
     twistRate,
+    caliberSpecsJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -4287,7 +4357,8 @@ class FirearmRefRow extends DataClass implements Insertable<FirearmRefRow> {
           other.calibersJson == this.calibersJson &&
           other.notes == this.notes &&
           other.barrelLengthIn == this.barrelLengthIn &&
-          other.twistRate == this.twistRate);
+          other.twistRate == this.twistRate &&
+          other.caliberSpecsJson == this.caliberSpecsJson);
 }
 
 class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
@@ -4300,6 +4371,7 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
   final Value<String?> notes;
   final Value<double?> barrelLengthIn;
   final Value<String?> twistRate;
+  final Value<String> caliberSpecsJson;
   const FirearmsRefCompanion({
     this.id = const Value.absent(),
     this.manufacturerId = const Value.absent(),
@@ -4310,6 +4382,7 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
     this.notes = const Value.absent(),
     this.barrelLengthIn = const Value.absent(),
     this.twistRate = const Value.absent(),
+    this.caliberSpecsJson = const Value.absent(),
   });
   FirearmsRefCompanion.insert({
     this.id = const Value.absent(),
@@ -4321,6 +4394,7 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
     this.notes = const Value.absent(),
     this.barrelLengthIn = const Value.absent(),
     this.twistRate = const Value.absent(),
+    this.caliberSpecsJson = const Value.absent(),
   }) : manufacturerId = Value(manufacturerId),
        model = Value(model),
        type = Value(type);
@@ -4334,6 +4408,7 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
     Expression<String>? notes,
     Expression<double>? barrelLengthIn,
     Expression<String>? twistRate,
+    Expression<String>? caliberSpecsJson,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -4345,6 +4420,7 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
       if (notes != null) 'notes': notes,
       if (barrelLengthIn != null) 'barrel_length_in': barrelLengthIn,
       if (twistRate != null) 'twist_rate': twistRate,
+      if (caliberSpecsJson != null) 'caliber_specs_json': caliberSpecsJson,
     });
   }
 
@@ -4358,6 +4434,7 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
     Value<String?>? notes,
     Value<double?>? barrelLengthIn,
     Value<String?>? twistRate,
+    Value<String>? caliberSpecsJson,
   }) {
     return FirearmsRefCompanion(
       id: id ?? this.id,
@@ -4369,6 +4446,7 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
       notes: notes ?? this.notes,
       barrelLengthIn: barrelLengthIn ?? this.barrelLengthIn,
       twistRate: twistRate ?? this.twistRate,
+      caliberSpecsJson: caliberSpecsJson ?? this.caliberSpecsJson,
     );
   }
 
@@ -4402,6 +4480,9 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
     if (twistRate.present) {
       map['twist_rate'] = Variable<String>(twistRate.value);
     }
+    if (caliberSpecsJson.present) {
+      map['caliber_specs_json'] = Variable<String>(caliberSpecsJson.value);
+    }
     return map;
   }
 
@@ -4416,7 +4497,8 @@ class FirearmsRefCompanion extends UpdateCompanion<FirearmRefRow> {
           ..write('calibersJson: $calibersJson, ')
           ..write('notes: $notes, ')
           ..write('barrelLengthIn: $barrelLengthIn, ')
-          ..write('twistRate: $twistRate')
+          ..write('twistRate: $twistRate, ')
+          ..write('caliberSpecsJson: $caliberSpecsJson')
           ..write(')'))
         .toString();
   }
@@ -12443,11 +12525,12 @@ class UserFirearmRow extends DataClass implements Insertable<UserFirearmRow> {
   /// reads them back as factory rifles.
   final bool isCustomBuild;
 
-  /// User-picked chassis. Free-form text — typically `"<Manufacturer>
-  /// <Model>"` populated by the form's autocomplete from the
-  /// `FirearmComponents` catalog (kind = 'chassis'), but the user can
-  /// override with any string so products outside the catalog are
-  /// still usable. Only meaningful when `isCustomBuild` is true.
+  /// User-picked chassis. Free-form text — typically the
+  /// `"Manufacturer Model"` form populated by the firearm form's
+  /// autocomplete from the [FirearmComponents] catalog (kind =
+  /// 'chassis'), but the user can override with any string so
+  /// products outside the catalog are still usable. Only meaningful
+  /// when [isCustomBuild] is true.
   final String? chassisName;
 
   /// Same shape as [chassisName] for the barrel selection. Distinct
@@ -40059,6 +40142,7 @@ typedef $$FirearmsRefTableCreateCompanionBuilder =
       Value<String?> notes,
       Value<double?> barrelLengthIn,
       Value<String?> twistRate,
+      Value<String> caliberSpecsJson,
     });
 typedef $$FirearmsRefTableUpdateCompanionBuilder =
     FirearmsRefCompanion Function({
@@ -40071,6 +40155,7 @@ typedef $$FirearmsRefTableUpdateCompanionBuilder =
       Value<String?> notes,
       Value<double?> barrelLengthIn,
       Value<String?> twistRate,
+      Value<String> caliberSpecsJson,
     });
 
 final class $$FirearmsRefTableReferences
@@ -40149,6 +40234,11 @@ class $$FirearmsRefTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get caliberSpecsJson => $composableBuilder(
+    column: $table.caliberSpecsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$ManufacturersTableFilterComposer get manufacturerId {
     final $$ManufacturersTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -40222,6 +40312,11 @@ class $$FirearmsRefTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get caliberSpecsJson => $composableBuilder(
+    column: $table.caliberSpecsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$ManufacturersTableOrderingComposer get manufacturerId {
     final $$ManufacturersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -40282,6 +40377,11 @@ class $$FirearmsRefTableAnnotationComposer
 
   GeneratedColumn<String> get twistRate =>
       $composableBuilder(column: $table.twistRate, builder: (column) => column);
+
+  GeneratedColumn<String> get caliberSpecsJson => $composableBuilder(
+    column: $table.caliberSpecsJson,
+    builder: (column) => column,
+  );
 
   $$ManufacturersTableAnnotationComposer get manufacturerId {
     final $$ManufacturersTableAnnotationComposer composer = $composerBuilder(
@@ -40344,6 +40444,7 @@ class $$FirearmsRefTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<double?> barrelLengthIn = const Value.absent(),
                 Value<String?> twistRate = const Value.absent(),
+                Value<String> caliberSpecsJson = const Value.absent(),
               }) => FirearmsRefCompanion(
                 id: id,
                 manufacturerId: manufacturerId,
@@ -40354,6 +40455,7 @@ class $$FirearmsRefTableTableManager
                 notes: notes,
                 barrelLengthIn: barrelLengthIn,
                 twistRate: twistRate,
+                caliberSpecsJson: caliberSpecsJson,
               ),
           createCompanionCallback:
               ({
@@ -40366,6 +40468,7 @@ class $$FirearmsRefTableTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<double?> barrelLengthIn = const Value.absent(),
                 Value<String?> twistRate = const Value.absent(),
+                Value<String> caliberSpecsJson = const Value.absent(),
               }) => FirearmsRefCompanion.insert(
                 id: id,
                 manufacturerId: manufacturerId,
@@ -40376,6 +40479,7 @@ class $$FirearmsRefTableTableManager
                 notes: notes,
                 barrelLengthIn: barrelLengthIn,
                 twistRate: twistRate,
+                caliberSpecsJson: caliberSpecsJson,
               ),
           withReferenceMapper: (p0) => p0
               .map(

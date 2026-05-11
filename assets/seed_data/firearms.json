@@ -245,7 +245,7 @@
       {"model":"AT","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor"],"barrelLengthIn":20.0,"twistRate":"1:10","notes":"Tactical/PRS rifle, folding chassis."},
       {"model":"AX","type":"rifle","action":"bolt-action","calibers":[".308 Win","6.5 Creedmoor",".300 Win Mag",".338 Lapua"],"barrelLengthIn":20.0,"twistRate":"1:10","notes":"Premium tactical rifle, replaceable barrel."},
       {"model":"AXSR","type":"rifle","action":"bolt-action","calibers":[".300 Norma Mag",".338 Norma Mag",".338 Lapua"],"barrelLengthIn":27.0,"twistRate":"1:9.35","notes":"Switch-barrel long-range platform."},
-      {"model":"AT-X","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6mm Creedmoor",".308 Win"],"barrelLengthIn":20.0,"twistRate":"1:8","notes":"Competition-focused chassis rifle."}
+      {"model":"AT-X","type":"rifle","action":"bolt-action","calibers":["6.5 Creedmoor","6mm Creedmoor",".308 Win"],"barrelLengthIn":24.0,"twistRate":"1:8","notes":"Competition-focused chassis rifle. Barrel length and twist vary by chambering — see `caliberSpecs` for the per-caliber values pulled from accuracyinternational.us product pages.","caliberSpecs":{"6.5 Creedmoor":{"barrelLengthsIn":[24.0],"twistRate":"1:8"},"6mm Creedmoor":{"barrelLengthsIn":[26.0],"twistRate":"1:7.25"},".308 Win":{"barrelLengthsIn":[16.5,20.0],"twistRate":"1:10"}}}
     ]},
     {"name":"Daniel Defense","country":"USA","category":"rifle","products":[
       {"model":"DDM4 V7","type":"rifle","action":"semi-auto","calibers":["5.56 NATO"],"barrelLengthIn":16.0,"twistRate":"1:7","notes":"Mid-length gas system, M-LOK rail."},

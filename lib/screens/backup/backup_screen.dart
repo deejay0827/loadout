@@ -614,6 +614,17 @@ class _SignInPromptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // Re-worded 2026-05-10. Previously this card read "Sign in to
+    // enable cloud backup" — which was misleading because Cloud
+    // Backup ALREADY works for anonymous LoadOut users (the actual
+    // upload path doesn't check `FirebaseAuth.currentUser`; it
+    // authenticates against the underlying provider — iCloud Drive,
+    // Google Drive, OneDrive — using the OS-level account). Signing
+    // in to LoadOut (Firebase Auth) is only required for cross-
+    // device PRO ENTITLEMENT propagation: a user who buys Pro on
+    // iOS sees Pro on Android when their Firebase UID matches.
+    // Backup encryption is per-device, passphrase-only, never
+    // routed through any LoadOut-operated backend.
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -629,7 +640,7 @@ class _SignInPromptCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Sign in for cloud backup',
+                    'Sign in for cross-device Pro',
                     style: theme.textTheme.titleMedium,
                   ),
                 ),
@@ -637,9 +648,11 @@ class _SignInPromptCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              "Sign in to enable cloud backup of your loads, firearms, "
-              'and brass. Your data is encrypted with a passphrase only '
-              'you know — we never see your reloading data.',
+              'Cloud backup and Cloud Sync work right now — they '
+              'authenticate to your iCloud, Google Drive, or OneDrive '
+              'account directly, not through LoadOut. Sign in to '
+              'LoadOut only if you want your Pro entitlement to '
+              'follow you across iOS, Android, and the web.',
               style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 12),
@@ -654,7 +667,7 @@ class _SignInPromptCard extends StatelessWidget {
                 ),
                 TextButton(
                   onPressed: onDismiss,
-                  child: const Text('Continue without backup'),
+                  child: const Text('Maybe later'),
                 ),
               ],
             ),

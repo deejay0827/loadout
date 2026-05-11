@@ -129,6 +129,7 @@ import 'package:flutter/services.dart';
 
 import '../../services/ballistics/internal_ballistics.dart';
 import '../../services/ballistics/powder_burn_rates.dart';
+import '../../widgets/missing_inputs_card.dart';
 import '../../widgets/pro_gate.dart';
 
 /// Inputs the External Ballistics screen can hand to the Internal
@@ -252,6 +253,14 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
   /// in the form below"; after predict with null result, "load
   /// outside calibration band — see disclaimer."
   bool _lastPredictAttempted = false;
+
+  /// Fields that are blocking a successful predict, populated by
+  /// `_collectMissingInputs()` on every Predict tap. When non-empty
+  /// the result panel surfaces a [MissingInputsCard] AND each
+  /// affected field renders with `errorText: 'Required'` (red
+  /// indicator). Cleared on the next text edit so a user fixing the
+  /// fields one-by-one doesn't see stale errors.
+  MissingInputs _missingInputs = MissingInputs.empty;
 
   @override
   void initState() {
@@ -430,12 +439,13 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _decimalInputFormatters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Case Capacity (grH2O)',
               helperText:
                   'Internal volume of an empty fired case. Common values: '
                   '.308 Win 56, .30-06 68, 6.5 CM 53, .223 Rem 30.5.',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _errorTextFor('caseCapacity'),
             ),
             onChanged: (_) => _clearStaleResult(),
           ),
@@ -445,10 +455,11 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _decimalInputFormatters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Case Length (in)',
               helperText: 'Case head to case mouth, inches.',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _errorTextFor('caseLength'),
             ),
             onChanged: (_) => _clearStaleResult(),
           ),
@@ -556,12 +567,13 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
         controller: _chargeCtrl,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
         inputFormatters: _decimalInputFormatters,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Charge Weight (gr)',
           helperText:
               'Powder charge in grains. Loading density (charge / case '
               'capacity) must be 10 to 110 percent.',
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
+          errorText: _errorTextFor('chargeWeight'),
         ),
         onChanged: (_) => _clearStaleResult(),
       ),
@@ -580,9 +592,10 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _decimalInputFormatters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Bullet Weight (gr)',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _errorTextFor('bulletWeight'),
             ),
             onChanged: (_) => _clearStaleResult(),
           ),
@@ -592,11 +605,12 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _decimalInputFormatters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Bullet Diameter (in)',
               helperText:
                   'Common values: .308 cal 0.308, 6.5mm 0.264, .224 cal 0.224.',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _errorTextFor('bulletDiameter'),
             ),
             onChanged: (_) => _clearStaleResult(),
           ),
@@ -606,11 +620,12 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _decimalInputFormatters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'COAL (in)',
               helperText:
                   'Cartridge Overall Length. Affects effective case capacity.',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _errorTextFor('coal'),
             ),
             onChanged: (_) => _clearStaleResult(),
           ),
@@ -646,9 +661,10 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _decimalInputFormatters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Barrel Length (in)',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _errorTextFor('barrelLength'),
             ),
             onChanged: (_) => _clearStaleResult(),
           ),
@@ -658,12 +674,13 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: _decimalInputFormatters,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Bore Diameter (in)',
               helperText:
                   'Lands-to-lands measurement. Roughly bullet diameter '
                   'minus 0.005 in. Common: .308 cal 0.300, 6.5mm 0.256.',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
+              errorText: _errorTextFor('boreDiameter'),
             ),
             onChanged: (_) => _clearStaleResult(),
           ),
@@ -677,35 +694,64 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
   // ─────────────────────────────────────────────────────────────
 
   Widget _predictButton() {
-    final ready = _formIsComplete();
+    // Always enabled now (was: gated on `_formIsComplete()`). The
+    // missing-input flow gives a better answer than a disabled
+    // button — the user taps Predict, and `_onPredict` either runs
+    // the prediction OR populates `_missingInputs` so the result
+    // panel surfaces a [MissingInputsCard] listing exactly what's
+    // blocking. The TextFormFields show their `errorText:` red
+    // indicator at the same time.
     return FilledButton.icon(
-      onPressed: ready ? _onPredict : null,
+      onPressed: _onPredict,
       icon: const Icon(Icons.calculate_outlined),
       label: const Text('Predict Pressure & MV'),
     );
   }
 
-  bool _formIsComplete() {
-    if (_selectedPowder == null) return false;
-    final required = [
-      _caseCapCtrl.text,
-      _caseLengthCtrl.text,
-      _chargeCtrl.text,
-      _bulletWtCtrl.text,
-      _bulletDiamCtrl.text,
-      _coalCtrl.text,
-      _barrelLenCtrl.text,
-      _boreDiamCtrl.text,
-    ];
-    for (final t in required) {
-      if (t.trim().isEmpty) return false;
-      if (double.tryParse(t.trim()) == null) return false;
+  /// Walks the eight required input fields + the powder picker and
+  /// collects every empty / invalid one into a [MissingInputs]
+  /// bundle. Bullet length is optional and excluded from the check.
+  /// The order of entries here is the order the
+  /// [MissingInputsCard] renders them — match the on-screen field
+  /// order so the user reads them top-down.
+  MissingInputs _collectMissingInputs() {
+    final entries = <MissingInputEntry>[];
+    if (_selectedPowder == null) {
+      entries.add(const MissingInputEntry(
+        fieldId: 'powder',
+        label: 'Powder',
+        detail: 'Pick a powder from the search list above.',
+      ));
     }
-    return true;
+    void check(String id, String label, TextEditingController ctrl) {
+      final t = ctrl.text.trim();
+      if (t.isEmpty || double.tryParse(t) == null) {
+        entries.add(MissingInputEntry(fieldId: id, label: label));
+      }
+    }
+
+    check('caseCapacity', 'Case Capacity (grH₂O)', _caseCapCtrl);
+    check('caseLength', 'Case Length (in)', _caseLengthCtrl);
+    check('chargeWeight', 'Charge Weight (gr)', _chargeCtrl);
+    check('bulletWeight', 'Bullet Weight (gr)', _bulletWtCtrl);
+    check('bulletDiameter', 'Bullet Diameter (in)', _bulletDiamCtrl);
+    check('coal', 'COAL (in)', _coalCtrl);
+    check('barrelLength', 'Barrel Length (in)', _barrelLenCtrl);
+    check('boreDiameter', 'Bore Diameter (in)', _boreDiamCtrl);
+
+    return MissingInputs(entries: entries);
   }
 
   void _onPredict() {
-    if (!_formIsComplete()) return;
+    final missing = _collectMissingInputs();
+    if (missing.isNotEmpty) {
+      setState(() {
+        _missingInputs = missing;
+        _lastPredictAttempted = true;
+        _result = null;
+      });
+      return;
+    }
     final input = InternalBallisticsInput.imperial(
       caseCapacityGrH2o: double.parse(_caseCapCtrl.text.trim()),
       caseLengthIn: double.parse(_caseLengthCtrl.text.trim()),
@@ -721,22 +767,36 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
           : double.tryParse(_bulletLenCtrl.text.trim()),
     );
     setState(() {
+      _missingInputs = MissingInputs.empty;
       _lastPredictAttempted = true;
       _result = predictLoad(input);
     });
   }
 
   void _clearStaleResult() {
-    if (_result != null || _lastPredictAttempted) {
+    if (_result != null || _lastPredictAttempted ||
+        _missingInputs.isNotEmpty) {
       // Wipe out a previous result the moment the user edits any
       // input — never leave a number on screen that doesn't match
-      // the form contents.
+      // the form contents. Also clears the missing-inputs error
+      // state so the user doesn't see red indicators on a field
+      // they're actively typing into.
       setState(() {
         _result = null;
         _lastPredictAttempted = false;
+        _missingInputs = MissingInputs.empty;
       });
     }
   }
+
+  /// Convenience accessor for `errorText:` decisions on each
+  /// TextFormField in the form. Returns `'Required'` when the
+  /// caller's field is in the missing set, else null. Read inline
+  /// in the field's `decoration:` so the red indicator surfaces
+  /// only when the user has tapped Predict against an incomplete
+  /// form.
+  String? _errorTextFor(String fieldId) =>
+      _missingInputs.contains(fieldId) ? 'Required' : null;
 
   // ─────────────────────────────────────────────────────────────
   // Result card
@@ -780,9 +840,26 @@ class _InternalBallisticsScreenState extends State<InternalBallisticsScreen> {
     }
 
     if (_result == null && _lastPredictAttempted) {
-      // The user tapped predict but the model returned null. Tell
-      // them WHY (out-of-band loading density is the most common
-      // case) without inventing a number.
+      // Missing-input case takes priority over the
+      // "Cannot Model This Load" branch. When the user tapped
+      // Predict on an incomplete form, surface exactly which
+      // fields are blocking — alongside the per-field red
+      // `errorText` that's already showing on each TextFormField
+      // via `_errorTextFor`. The user can scroll back up, fix the
+      // listed fields, and tap Predict again.
+      if (_missingInputs.isNotEmpty) {
+        return MissingInputsCard(
+          missing: _missingInputs,
+          headline: "Can't predict pressure & MV yet",
+          detail: 'Fill in the fields below before tapping Predict. '
+              'The red indicator on each affected field marks what\'s '
+              'still needed.',
+        );
+      }
+      // The user tapped predict but the model returned null even
+      // though every field was filled. That's the out-of-band
+      // loading density / unsupported powder case — tell them WHY
+      // without inventing a number.
       return Card(
         elevation: 0,
         shape: RoundedRectangleBorder(

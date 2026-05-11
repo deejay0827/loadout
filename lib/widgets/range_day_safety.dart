@@ -79,6 +79,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../services/crash_reporter.dart';
+
 /// Wraps a Range Day subtree so any render-time exception is replaced by
 /// a friendly error card instead of Flutter's red error screen.
 ///
@@ -128,12 +130,32 @@ class _RangeDayErrorBoundaryState extends State<RangeDayErrorBoundary> {
   }
 
   void _handleFlutterError(FlutterErrorDetails details) {
-    // Forward to the previous handler first — Crashlytics, debugPrint,
-    // etc. still need to see what happened.
+    // Forward to the previous handler first — Crashlytics (installed
+    // in main.dart via `CrashReporter.initialize`), debugPrint, etc.
+    // still need to see what happened. The chain handoff is
+    // load-bearing: this boundary captured `_previousHandler` in
+    // initState, which is whichever boundary or root handler was
+    // active when we mounted. Restoring it on dispose preserves the
+    // chain.
     _previousHandler?.call(details);
     debugPrint(
       '[RangeDayErrorBoundary] caught: ${details.exceptionAsString()}',
     );
+
+    // Tag the report so engineers can tell a Range Day crash from a
+    // generic app-level crash. CrashReporter is a no-op when
+    // collection is disabled / unsupported, so this is safe to call
+    // unconditionally.
+    final label = widget.label ?? 'range-day-screen';
+    // ignore: discarded_futures
+    CrashReporter.instance.setKey('boundary_label', label);
+    // Defensive double-record: even if the previous handler chain
+    // dropped the error somehow, attach our boundary context and
+    // record it. Crashlytics deduplicates near-identical recent
+    // records so this is safe.
+    // ignore: discarded_futures
+    CrashReporter.instance.recordFlutterError(details);
+
     if (!mounted) return;
     // Schedule the rebuild after the current frame so we don't try to
     // rebuild while Flutter is mid-paint.
@@ -268,6 +290,17 @@ Future<T?> safeAsync<T>(
   } catch (error, stack) {
     debugPrint('[safeAsync] $userMessage → $error');
     debugPrintStack(stackTrace: stack, label: 'safeAsync');
+    // Record as a non-fatal in Crashlytics. The handler that
+    // recovered with a SnackBar still wants engineering to know
+    // the failure happened — without this, async failures
+    // (network, plugin calls, drift queries) would never reach a
+    // crash report because they're caught before bubbling up.
+    // ignore: discarded_futures
+    CrashReporter.instance.recordError(
+      error,
+      stack,
+      reason: 'safeAsync: $userMessage',
+    );
     final stillMounted = mounted?.call() ?? true;
     if (!stillMounted) return null;
     if (!context.mounted) return null;

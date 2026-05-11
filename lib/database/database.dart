@@ -291,10 +291,44 @@ class FirearmsRef extends Table {
   // ── Factory-spec fields used to auto-fill the firearm form (added v9) ──
   /// Most-common factory barrel length in inches for the documented model
   /// variant. Nullable for entries where we don't have reliable spec data.
+  /// SUPERSEDED for multi-caliber rifles by [caliberSpecsJson] (added
+  /// v34) — the form prefers the per-caliber values when available and
+  /// falls back to this row-level field when the spec map is absent or
+  /// doesn't list the user's chosen caliber.
   RealColumn get barrelLengthIn => real().nullable()();
   /// Standard factory twist rate, e.g. "1:8" or "1:9.84". Nullable for
   /// entries where the spec varies by sub-variant or isn't documented.
+  /// Same fallback rule as [barrelLengthIn] applies vs [caliberSpecsJson].
   TextColumn get twistRate => text().nullable()();
+
+  // ── Per-caliber spec map (added schema v34) ──
+  /// JSON-encoded map of caliber → factory specs for the documented
+  /// model. Lets a multi-chambering rifle (Accuracy International AT-X
+  /// in .308 / 6.5 CM / 6mm CM, Tikka T3x in .308 / 6.5 CM / .300 WSM)
+  /// declare different barrel lengths and twist rates per caliber, so
+  /// the form's barrel-length dropdown and twist field auto-update
+  /// when the user picks a different chambering from the catalog row.
+  ///
+  /// JSON shape — keyed by the same caliber strings as [calibersJson]:
+  /// ```json
+  /// {
+  ///   ".308 Win":         { "barrelLengthsIn": [16.5, 20], "twistRate": "1:10" },
+  ///   "6.5 Creedmoor":    { "barrelLengthsIn": [24],       "twistRate": "1:8"  },
+  ///   "6mm Creedmoor":    { "barrelLengthsIn": [26],       "twistRate": "1:7.25" }
+  /// }
+  /// ```
+  ///
+  /// Entries where the manufacturer offers multiple barrel-length
+  /// variants for a given caliber surface as a dropdown in the form;
+  /// single-length entries auto-fill straight through. The
+  /// `barrelLengthsIn` array MUST be sorted ascending (so the form's
+  /// dropdown matches the manufacturer's literature reading order).
+  ///
+  /// Defaults to `'{}'` so existing FirearmsRef rows seeded before v34
+  /// keep working — the form falls back to the row-level
+  /// [barrelLengthIn] / [twistRate] when this column is empty.
+  TextColumn get caliberSpecsJson =>
+      text().withDefault(const Constant('{}'))();
 }
 
 @DataClassName('FirearmPartRow')
@@ -2213,7 +2247,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 33;
+  int get schemaVersion => 34;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -2880,6 +2914,20 @@ class AppDatabase extends _$AppDatabase {
             }
             if (!firearmCols.contains('bipod_name')) {
               await m.addColumn(userFirearms, userFirearms.bipodName);
+            }
+          }
+          if (from < 34) {
+            // v34 — Per-caliber spec map on FirearmsRef. Lets the
+            // catalog declare different barrel lengths and twist
+            // rates for each chambering of a multi-caliber rifle
+            // (Accuracy International AT-X, Tikka T3x, etc.) so the
+            // form auto-updates barrel + twist when the user picks
+            // a different caliber from the row's chambering
+            // dropdown. Idempotent for the same partial-migration
+            // protection v33 has — see `_columnsOf` above.
+            final firearmsRefCols = await _columnsOf('firearms_ref');
+            if (!firearmsRefCols.contains('caliber_specs_json')) {
+              await m.addColumn(firearmsRef, firearmsRef.caliberSpecsJson);
             }
           }
         },

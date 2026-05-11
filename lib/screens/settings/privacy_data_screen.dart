@@ -31,7 +31,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../database/database.dart';
-import '../../main.dart' show kCrashlyticsEnabledPrefKey;
+import '../../main.dart'
+    show kCrashlyticsEnabledDefault, kCrashlyticsEnabledPrefKey;
 import '../../services/auth_service.dart';
 import '../backup/backup_screen.dart';
 import '../disclaimer/disclaimer_screen.dart';
@@ -47,7 +48,11 @@ class PrivacyDataScreen extends StatefulWidget {
 
 class _PrivacyDataScreenState extends State<PrivacyDataScreen> {
   bool _busy = false;
-  bool _crashlyticsEnabled = false;
+  // Mirror the same default the boot path uses so the toggle's initial
+  // state matches what `_configureCrashlytics` will actually set —
+  // otherwise a fresh-install user sees the switch off while
+  // collection is on.
+  bool _crashlyticsEnabled = kCrashlyticsEnabledDefault;
   bool _crashlyticsLoaded = false;
 
   @override
@@ -62,12 +67,13 @@ class _PrivacyDataScreenState extends State<PrivacyDataScreen> {
       final prefs = await SharedPreferences.getInstance();
       if (!mounted) return;
       setState(() {
-        _crashlyticsEnabled =
-            prefs.getBool(kCrashlyticsEnabledPrefKey) ?? false;
+        _crashlyticsEnabled = prefs.getBool(kCrashlyticsEnabledPrefKey) ??
+            kCrashlyticsEnabledDefault;
         _crashlyticsLoaded = true;
       });
     } catch (_) {
-      // Disk read failure — leave the toggle in its default OFF state.
+      // Disk read failure — fall back to the documented default so the
+      // toggle still reflects the actual collection state.
       if (mounted) setState(() => _crashlyticsLoaded = true);
     }
   }

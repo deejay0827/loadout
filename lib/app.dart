@@ -151,6 +151,7 @@ import 'services/active_range_day_session.dart';
 import 'services/ai_smart_import_service.dart';
 import 'services/auth_service.dart';
 import 'services/auto_save_service.dart';
+import 'services/breadcrumb_navigator_observer.dart';
 import 'services/device_compatibility_service.dart';
 import 'services/beginner_mode_service.dart';
 import 'services/biometric_service.dart';
@@ -183,6 +184,7 @@ import 'services/unit_service.dart';
 import 'services/watch_bridge_service.dart';
 import 'services/watch_settings_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/app_error_boundary.dart';
 import 'widgets/disclaimer_overlay.dart';
 
 /// Pref key for the legal disclaimer acceptance flag. Versioned so that
@@ -509,6 +511,30 @@ class LoadOutApp extends StatelessWidget {
             locale: localeService.resolvedLocale,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
+            // Universal error handler. Every routed screen passes
+            // through `child` here, which we wrap in an
+            // `AppErrorBoundary`. A render-time crash anywhere in
+            // the app gets caught, recorded to Firebase Crashlytics
+            // (with current_route + breadcrumbs + custom keys), and
+            // surfaced as a friendly fallback card with Reload +
+            // Back buttons. The Range Day screens still ship their
+            // own `RangeDayErrorBoundary` for screen-scoped
+            // fallbacks; both layers compose correctly via the
+            // FlutterError.onError chain handoff (see
+            // `app_error_boundary.dart` for the lock-step contract).
+            builder: (context, child) {
+              return AppErrorBoundary(
+                label: 'app',
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
+            // Breadcrumb tracking. Every push / pop / replace logs a
+            // breadcrumb to Crashlytics + sets the `current_route`
+            // custom key, so a future crash report includes the
+            // user's navigation history WITHOUT us tracking
+            // navigation during normal sessions (breadcrumbs are
+            // local until a crash actually fires).
+            navigatorObservers: [BreadcrumbNavigatorObserver()],
             home: const _DisclaimerGate(),
           );
         },

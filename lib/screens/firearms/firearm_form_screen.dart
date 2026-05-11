@@ -102,6 +102,8 @@
 // - Shows a confirmation `SnackBar` on save.
 // - Pops the navigator on success.
 
+import 'dart:convert';
+
 import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -113,6 +115,7 @@ import '../../repositories/firearm_component_repository.dart';
 import '../../repositories/firearm_repository.dart';
 import '../../repositories/optics_repository.dart';
 import '../../repositories/reticle_repository.dart';
+import '../ballistics/ballistics_screen.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/cloud_sync_service.dart';
 import '../../services/entitlement_notifier.dart';
@@ -125,11 +128,74 @@ import '../../widgets/component_field.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
 
+/// Per-caliber factory specs declared on a `FirearmsRef.caliberSpecsJson`
+/// entry. Lets a multi-chambering rifle (Accuracy International AT-X
+/// — 24" / 1:8 in 6.5 CM, 26" / 1:7.25 in 6mm CM, 16.5"+20" / 1:10 in
+/// .308 Win) auto-update barrel length and twist when the user picks
+/// a different chambering from the catalog row.
+///
+/// `barrelLengthsIn` carries one entry for single-barrel-length
+/// chamberings and N entries when the manufacturer offers a choice
+/// (sorted ascending — manufacturer literature reading order). The
+/// form renders a dropdown when N > 1 and a single-value display
+/// when N == 1.
+class _CaliberSpec {
+  const _CaliberSpec({
+    required this.barrelLengthsIn,
+    required this.twistRate,
+  });
+
+  final List<double> barrelLengthsIn;
+  final String? twistRate;
+
+  /// Decode one `caliberSpecsJson` map entry into a typed spec.
+  /// Returns null when the JSON shape is unexpected (defensive: a
+  /// malformed remote update shouldn't crash the form).
+  static _CaliberSpec? fromJson(Map<String, dynamic> raw) {
+    final lengthsRaw = raw['barrelLengthsIn'];
+    if (lengthsRaw is! List) return null;
+    final lengths = <double>[];
+    for (final v in lengthsRaw) {
+      if (v is num) lengths.add(v.toDouble());
+    }
+    if (lengths.isEmpty) return null;
+    final twist = raw['twistRate'];
+    return _CaliberSpec(
+      barrelLengthsIn: lengths,
+      twistRate: twist is String ? twist : null,
+    );
+  }
+}
+
 typedef _RefEntry = ({
   FirearmRefRow firearm,
   ManufacturerRow manufacturer,
   List<String> calibers,
 });
+
+/// Decode a `_RefEntry`'s `caliberSpecsJson` blob into a typed
+/// `caliber → spec` map. Returns an empty map when the row predates
+/// schema v34, when the JSON is empty `{}`, or when the JSON is
+/// malformed (defensive — bad seed data shouldn't break the form).
+Map<String, _CaliberSpec> _caliberSpecsFor(_RefEntry ref) {
+  final raw = ref.firearm.caliberSpecsJson;
+  if (raw.isEmpty || raw == '{}') return const <String, _CaliberSpec>{};
+  try {
+    final decoded = json.decode(raw);
+    if (decoded is! Map) return const <String, _CaliberSpec>{};
+    final out = <String, _CaliberSpec>{};
+    for (final entry in decoded.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      if (key is! String || value is! Map) continue;
+      final spec = _CaliberSpec.fromJson(value.cast<String, dynamic>());
+      if (spec != null) out[key] = spec;
+    }
+    return out;
+  } catch (_) {
+    return const <String, _CaliberSpec>{};
+  }
+}
 
 class FirearmFormScreen extends StatefulWidget {
   const FirearmFormScreen({super.key, this.existing});
@@ -184,11 +250,14 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   // True iff a "Capture from current weather" pull is in flight.
   bool _zeroWeatherFetching = false;
 
-  // New firearms default to "Pick from Catalog" because most users own
-  // a catalog-listed production rifle/pistol. The Custom path is a
-  // power-user fallback. For edits we honor whatever the row was
-  // saved as (catalog if `referenceFirearmId` was set, custom otherwise).
-  bool _useCatalog = true;
+  // Factory rifles always resolve through the catalog autocomplete
+  // (2026-05-10 — the legacy "Pick from Catalog | Custom" inner
+  // toggle was removed in favor of unconditional catalog binding).
+  // Rows saved before that change with referenceFirearmId == null
+  // and freeform manufacturer/model strings still load and save
+  // correctly; the catalog picker just doesn't pre-select anything
+  // for them. Users can either pick a catalog match for those
+  // rifles or convert to Custom Build.
   bool _busy = false;
 
   Future<List<_RefEntry>>? _refsFuture;
@@ -213,6 +282,21 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   late final TextEditingController _muzzleBrakeName;
   late final TextEditingController _suppressorName;
   late final TextEditingController _bipodName;
+
+  // Manufactured-mode muzzle-device toggle (2026-05-10). A rifle has
+  // EITHER a muzzle brake OR a suppressor installed at any given
+  // moment — this picks which slot the user is editing right now.
+  // Both `_muzzleBrakeName` and `_suppressorName` controllers always
+  // exist and are written through on save; the toggle only changes
+  // which one the form's component picker is bound to. Switching the
+  // toggle does NOT clear the inactive controller — a user who had
+  // a brake recorded, switches to suppressor mode, picks a can, then
+  // toggles back will see their brake still there.
+  //
+  // initState picks the saved active side: if the row has a
+  // suppressor name and no brake, default 'suppressor'; otherwise
+  // 'brake' (the more common case).
+  String _muzzleDevice = 'brake';
   // Cached corpus of every component the user might pick. Loaded once
   // on initState and shared across all seven autocomplete pickers
   // (each picker filters client-side by `kind`). The catalog is small
@@ -300,9 +384,6 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
       text: e?.zeroHumidityPct?.toStringAsFixed(0) ?? '',
     );
     _referenceFirearmId = e?.referenceFirearmId;
-    // For new firearms (e == null) keep the catalog default. For edits,
-    // mirror whatever the row was saved as.
-    _useCatalog = e == null ? true : (_referenceFirearmId != null);
     // Build type — default to factory for new firearms; mirror saved
     // value on edits. A custom-build row by definition has no factory
     // reference, so the migration's `withDefault(false)` matches
@@ -310,11 +391,25 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     _isCustomBuild = e?.isCustomBuild ?? false;
     _chassisName = TextEditingController(text: e?.chassisName ?? '');
     _barrelName = TextEditingController(text: e?.barrelName ?? '');
-    _triggerName = TextEditingController(text: e?.triggerName ?? '');
+    // Trigger + muzzle brake default to "Factory" on new firearms so
+    // the inline Factory chip is pre-selected in the Components
+    // panel — the dominant case for a factory rifle is "stock
+    // trigger, stock brake or thread protector". Existing firearms
+    // (e != null) load whatever was saved on the row, including
+    // empty (the user explicitly cleared it).
+    _triggerName =
+        TextEditingController(text: e?.triggerName ?? (e == null ? 'Factory' : ''));
     _buttstockName = TextEditingController(text: e?.buttstockName ?? '');
-    _muzzleBrakeName = TextEditingController(text: e?.muzzleBrakeName ?? '');
+    _muzzleBrakeName = TextEditingController(
+        text: e?.muzzleBrakeName ?? (e == null ? 'Factory' : ''));
     _suppressorName = TextEditingController(text: e?.suppressorName ?? '');
     _bipodName = TextEditingController(text: e?.bipodName ?? '');
+    // Pick the muzzle-device toggle side based on what's saved on the
+    // row: prefer 'suppressor' iff the suppressor field is non-empty
+    // and the brake is empty; otherwise default to 'brake'.
+    final brakeHasValue = (e?.muzzleBrakeName ?? '').trim().isNotEmpty;
+    final suppHasValue = (e?.suppressorName ?? '').trim().isNotEmpty;
+    _muzzleDevice = (suppHasValue && !brakeHasValue) ? 'suppressor' : 'brake';
     _refsFuture =
         context.read<ComponentRepository>().allReferenceFirearms();
     _componentsFuture =
@@ -419,16 +514,15 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   /// Common path used by both autosave and the manual Save button so
   /// they emit the same row shape.
   UserFirearmsCompanion _buildCompanion() {
-    // Custom builds force `referenceFirearmId = null` regardless of
-    // `_useCatalog` — a custom build by definition has no factory
-    // catalog parent. The seven component-name fields only carry
-    // meaning when the row is a custom build; we still write them
-    // through unconditionally because the data is harmless on factory
-    // rows (and a user toggling Factory ↔ Custom Build mid-edit
-    // shouldn't lose the components they've already typed).
-    final referenceId = _isCustomBuild
-        ? null
-        : (_useCatalog ? _referenceFirearmId : null);
+    // Custom builds force `referenceFirearmId = null` — a custom
+    // build by definition has no factory catalog parent. Factory
+    // mode binds whatever the catalog autocomplete picked; a user
+    // who hasn't picked anything yet (new firearm, blank
+    // autocomplete) has `_referenceFirearmId == null`, which is
+    // correct. The seven component-name fields are written through
+    // in BOTH modes — a factory rifle with an Area 419 brake +
+    // Atlas bipod records those alongside its catalog parent.
+    final referenceId = _isCustomBuild ? null : _referenceFirearmId;
     return UserFirearmsCompanion(
       name: drift.Value(_name.text.trim()),
       manufacturer: drift.Value(_nullIfEmpty(_manufacturer)),
@@ -531,6 +625,44 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     _autoSave.notifyDirty();
   }
 
+  /// Format a barrel-length double for display in the field. Drop a
+  /// trailing `.0` so an integer length displays as `"20"` rather
+  /// than `"20.0"`, and keep one decimal place for half-inches like
+  /// `"16.5"`. Mirrors `_formatTwist` in `ballistics_screen.dart`.
+  String _formatBarrelLength(double v) {
+    if (v == v.truncateToDouble()) return v.toStringAsFixed(0);
+    final s = v.toString();
+    return s.endsWith('.0') ? s.substring(0, s.length - 2) : s;
+  }
+
+  /// Re-apply the catalog's per-caliber spec (barrel length + twist)
+  /// when the user picks a different chambering from the dropdown.
+  /// Called from `_catalogCaliberSection`'s `onChanged` after the
+  /// caliber controller is updated. Pure no-op when:
+  ///
+  ///   * no catalog rifle is selected (`_selectedRef == null`), or
+  ///   * the picked caliber has no entry in `caliberSpecsJson`
+  ///     (single-spec rifle, or pre-v34 catalog row).
+  ///
+  /// Crucially, this OVERWRITES whatever's currently in the barrel-
+  /// length and twist-rate controllers — a user who picks 6.5 CM
+  /// after the form auto-filled .308 specs needs to see the AT-X's
+  /// 24" / 1:8 take over from the .308's 20" / 1:10. The "don't
+  /// clobber user input" rule from `_applyReferenceSelection`
+  /// doesn't apply here because the user's explicit caliber pick is
+  /// itself a strong signal that they want the matching specs.
+  void _applyCaliberSpec(_RefEntry ref, String caliber) {
+    final spec = _caliberSpecsFor(ref)[caliber];
+    if (spec == null) return;
+    setState(() {
+      _barrelLength.text = _formatBarrelLength(spec.barrelLengthsIn.first);
+      if (spec.twistRate != null && spec.twistRate!.isNotEmpty) {
+        _twistRate.text = spec.twistRate!;
+      }
+    });
+    _autoSave.notifyDirty();
+  }
+
   void _applyReferenceSelection(_RefEntry ref) {
     setState(() {
       _selectedRef = ref;
@@ -558,33 +690,92 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           _caliber.text = ref.calibers.first;
         }
       }
-      // Auto-fill barrel length and twist rate from the catalog row, but
-      // ONLY when the user hasn't already typed something. This way a
-      // re-selection of the same model can't clobber a custom value
-      // (a 16" SBR variant of a 20" catalog spec, a re-barreled rifle
-      // with a non-standard twist, etc.).
-      final refBarrel = ref.firearm.barrelLengthIn;
-      if (_barrelLength.text.trim().isEmpty && refBarrel != null) {
-        _barrelLength.text = refBarrel.toString();
+      // Auto-fill barrel length and twist rate from the catalog row.
+      // Per-caliber specs (schema v34) take priority — a multi-
+      // chambering rifle declares different barrel lengths and twist
+      // rates per caliber, and the picked caliber's spec wins. When
+      // a caliber spec exists, it OVERWRITES whatever was in the
+      // controllers (the user has just declared "this is what I
+      // own", and the catalog says ".308 AT-X is 1:10, not 1:8").
+      // When no per-caliber spec is available we fall back to the
+      // row-level `barrelLengthIn` / `twistRate` and only fill when
+      // the user hasn't typed anything.
+      final specs = _caliberSpecsFor(ref);
+      final pickedCaliber = _caliber.text.trim();
+      final caliberSpec = specs[pickedCaliber];
+      if (caliberSpec != null) {
+        // Use the FIRST barrel length offering for this caliber.
+        // The form's barrel-length dropdown surfaces the rest.
+        _barrelLength.text =
+            _formatBarrelLength(caliberSpec.barrelLengthsIn.first);
+        if (caliberSpec.twistRate != null && caliberSpec.twistRate!.isNotEmpty) {
+          _twistRate.text = caliberSpec.twistRate!;
+        }
+      } else {
+        final refBarrel = ref.firearm.barrelLengthIn;
+        if (_barrelLength.text.trim().isEmpty && refBarrel != null) {
+          _barrelLength.text = _formatBarrelLength(refBarrel);
+        }
+        final refTwist = ref.firearm.twistRate;
+        if (_twistRate.text.trim().isEmpty &&
+            refTwist != null &&
+            refTwist.isNotEmpty) {
+          _twistRate.text = refTwist;
+        }
       }
-      final refTwist = ref.firearm.twistRate;
-      if (_twistRate.text.trim().isEmpty &&
-          refTwist != null &&
-          refTwist.isNotEmpty) {
-        _twistRate.text = refTwist;
-      }
+      // Auto-fill the Name field with the catalog manufacturer +
+      // model (+ caliber if known) — but only when the user hasn't
+      // already typed their own name. A user who renamed it to
+      // "Match Rifle" doesn't want their custom name overwritten
+      // when they re-pick the same catalog row.
+      _ensureName();
     });
     _autoSave.notifyDirty();
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    final saved = await _runSavePipeline();
+    if (saved == null) return;
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  /// Save + immediately push the Ballistics screen so the user can
+  /// compute a firing solution with the firearm they just configured.
+  /// Wired to the "Ballistics" button in the side-by-side button row
+  /// at the bottom of the form (2026-05-10 reorg).
+  ///
+  /// Behaviour:
+  ///   * On validation failure: stays on the form (same as `_save`).
+  ///   * On success: replaces the current route with BallisticsScreen
+  ///     so back-navigating goes to wherever launched the firearm
+  ///     form (firearms list, firearm detail, etc.) rather than
+  ///     popping back into a stale form view.
+  Future<void> _saveAndOpenBallistics() async {
+    final navigator = Navigator.of(context);
+    final saved = await _runSavePipeline();
+    if (saved == null) return;
+    if (!mounted) return;
+    navigator.pushReplacement(
+      MaterialPageRoute<void>(builder: (_) => const BallisticsScreen()),
+    );
+  }
+
+  /// Common save pipeline shared by `_save` (Done button) and
+  /// `_saveAndOpenBallistics` (Ballistics button). Returns the row id
+  /// of the saved firearm on success, or null when validation failed
+  /// (so the caller knows to stay on the form rather than navigate).
+  Future<int?> _runSavePipeline() async {
+    // Auto-fill the Name field if the user left it blank — see
+    // `_generatedName` for the priority list. Has to happen BEFORE
+    // form validation so the validator (which still rejects an
+    // empty string as a defensive guard) sees the generated value.
+    _ensureName();
+    if (!_formKey.currentState!.validate()) return null;
     setState(() => _busy = true);
 
     final repo = context.read<FirearmRepository>();
     final components = context.read<ComponentRepository>();
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
 
     // Persist a typed-in caliber as a custom cartridge so it appears in
     // future dropdowns.
@@ -598,17 +789,73 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
 
     final entry = _buildCompanion();
     final existingId = _autoSave.currentRowId;
+    final int rowId;
 
     if (existingId == null) {
-      await repo.insert(entry);
+      rowId = await repo.insert(entry);
       messenger.showSnackBar(const SnackBar(content: Text('Firearm saved.')));
     } else {
       await repo.update(existingId, entry);
+      rowId = existingId;
       messenger
           .showSnackBar(const SnackBar(content: Text('Firearm updated.')));
     }
 
-    if (mounted) navigator.pop();
+    return rowId;
+  }
+
+  /// Compose a sensible default firearm name from whatever the user
+  /// has filled in so far. Always returns a non-empty string — the
+  /// fallbacks are deliberately generic so a user who saves a totally
+  /// blank form still gets a row they can find and rename later.
+  ///
+  /// Order of preference:
+  ///
+  ///   * **Factory mode with manufacturer + model**
+  ///     `"<Manufacturer> <Model>"` plus `" <Caliber>"` if filled
+  ///     (e.g. `"Tikka T3x CTR 6.5 Creedmoor"`).
+  ///   * **Factory mode with only caliber typed**
+  ///     `"<Caliber> Rifle"` (e.g. `"6.5 Creedmoor Rifle"`).
+  ///   * **Custom Build with chassis selected**
+  ///     `"<Chassis>"` plus `" <Caliber>"` if filled
+  ///     (e.g. `"MDT ACC Elite 6.5 Creedmoor"`).
+  ///   * **Custom Build with only caliber**
+  ///     `"<Caliber> Custom Build"`.
+  ///   * **Last resort** `"Custom Rifle"` (Custom Build mode) or
+  ///     `"Untitled Firearm"` (Factory mode with nothing filled).
+  String _generatedName() {
+    final caliber = _caliber.text.trim();
+    if (_isCustomBuild) {
+      final chassis = _chassisName.text.trim();
+      if (chassis.isEmpty && caliber.isEmpty) return 'Custom Rifle';
+      if (chassis.isEmpty) return '$caliber Custom Build';
+      if (caliber.isEmpty) return chassis;
+      return '$chassis $caliber';
+    }
+    final manufacturer = _manufacturer.text.trim();
+    final model = _model.text.trim();
+    if (manufacturer.isEmpty && model.isEmpty) {
+      return caliber.isEmpty ? 'Untitled Firearm' : '$caliber Rifle';
+    }
+    final parts = <String>[
+      if (manufacturer.isNotEmpty) manufacturer,
+      if (model.isNotEmpty) model,
+      if (caliber.isNotEmpty) caliber,
+    ];
+    return parts.join(' ');
+  }
+
+  /// Ensure the Name controller has a non-empty value before save.
+  /// Called from both the catalog-pick handler (so the user sees
+  /// the auto-fill happen as soon as they pick a rifle) and from
+  /// `_runSavePipeline` (so users who didn't pick from catalog
+  /// still end up with a row that has a sensible name).
+  ///
+  /// Pure no-op when the user already typed a name — we never
+  /// clobber a user's explicit choice.
+  void _ensureName() {
+    if (_name.text.trim().isNotEmpty) return;
+    _name.text = _generatedName();
   }
 
   @override
@@ -634,11 +881,24 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
+                      // Name is optional — `_ensureName()` runs on
+                      // save (and on catalog pick) and fills a
+                      // sensible default from manufacturer + model
+                      // + caliber, or chassis + caliber for custom
+                      // builds. The validator returns null
+                      // unconditionally; it only stays as a hook
+                      // in case we ever need to re-tighten this.
                       TextFormField(
                         controller: _name,
-                        decoration: const InputDecoration(labelText: 'Name *'),
-                        validator: (v) =>
-                            (v == null || v.trim().isEmpty) ? 'Required' : null,
+                        decoration: const InputDecoration(
+                          labelText: 'Name',
+                          helperText:
+                              'Optional. Auto-generated from the rifle and '
+                              'caliber if blank — e.g. "Tikka T3x CTR '
+                              '6.5 Creedmoor".',
+                          helperMaxLines: 2,
+                        ),
+                        validator: (_) => null,
                       ),
                       const SizedBox(height: 16),
                       // Build Type toggle (v33). Top-level switch between a
@@ -670,73 +930,67 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
+                      // 2026-05-10 reorg — both modes now render in the
+                      // same canonical section order:
+                      //
+                      //   Manufactured (Factory):
+                      //     Rifle → Optic → Components(3) → Ballistics
+                      //
+                      //   Custom Build:
+                      //     Components(7) → Optic → barrel/twist+shots
+                      //     → Ballistics
+                      //
+                      // The OLD layout interleaved barrel-length / twist
+                      // / shots between the catalog picker and the
+                      // optic section. The new Manufactured layout
+                      // bundles those three with the catalog picker
+                      // inside `_rifleSection`. Custom Build keeps a
+                      // looser layout because it has no factory rifle
+                      // identifier — caliber and barrel come from the
+                      // user-typed component selections.
                       if (_isCustomBuild) ...[
                         _componentsSection(context),
-                      ] else ...[
-                        SegmentedButton<bool>(
-                          segments: const [
-                            ButtonSegment(
-                                value: true, label: Text('Pick from Catalog')),
-                            ButtonSegment(value: false, label: Text('Custom')),
-                          ],
-                          selected: {_useCatalog},
-                          onSelectionChanged: (s) {
-                            setState(() {
-                              _useCatalog = s.first;
-                              if (!_useCatalog) {
-                                _selectedRef = null;
-                                _referenceFirearmId = null;
-                              }
-                            });
-                            _autoSave.notifyDirty();
-                          },
-                        ),
                         const SizedBox(height: 16),
-                        if (_useCatalog)
-                          ..._catalogFields()
-                        else
-                          ..._customFields(),
+                        // Custom builds still need a barrel length +
+                        // twist (the chassis/barrel pickers are brand
+                        // names, not dimensional specs) and a shots-
+                        // fired counter.
+                        Builder(builder: (ctx) {
+                          final smallLen = unitDisplayLabel(ctx
+                              .watch<UnitService>()
+                              .unitFor(UnitCategory.smallLength));
+                          return _ResponsiveRowPair(
+                            first: TextFormField(
+                              controller: _barrelLength,
+                              decoration: InputDecoration(
+                                labelText: 'Barrel Length ($smallLen)',
+                                suffixText: smallLen,
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                decimal: true,
+                              ),
+                            ),
+                            second: _twistRow(),
+                          );
+                        }),
+                        const SizedBox(height: 16),
+                        _shotsFiredField(context),
+                      ] else ...[
+                        _rifleSection(context),
                       ],
-                      const SizedBox(height: 12),
-                      // On wide layouts pair barrel length + twist rate
-                      // (both short numeric fields) into a single row so
-                      // the form doesn't waste horizontal real estate.
-                      // Phone keeps the original stacked layout.
-                      //
-                      // Barrel length displays in the user's chosen
-                      // smallLength unit (in / cm); the persisted column
-                      // stays canonical inches. Twist rate is a text
-                      // string (e.g. "1:8") and has no unit suffix.
-                      Builder(builder: (ctx) {
-                        final smallLen = unitDisplayLabel(ctx
-                            .watch<UnitService>()
-                            .unitFor(UnitCategory.smallLength));
-                        return _ResponsiveRowPair(
-                          first: TextFormField(
-                            controller: _barrelLength,
-                            decoration: InputDecoration(
-                              labelText: 'Barrel Length ($smallLen)',
-                              suffixText: smallLen,
-                            ),
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                          ),
-                          // Twist rate row: text field + Right/Left
-                          // direction segmented button so the user
-                          // declares which way the rifling spins. Right
-                          // is the overwhelming default; left-twist
-                          // exists on a few specialty rifles and flips
-                          // the spin-drift sign at long range.
-                          second: _twistRow(),
-                        );
-                      }),
-                      const SizedBox(height: 16),
-                      _shotsFiredField(context),
                       const SizedBox(height: 16),
                       _opticsSection(context),
                       const SizedBox(height: 16),
+                      // Components panel for Factory mode is the
+                      // 3-component layout (Bipod / Trigger /
+                      // Muzzle Device). Custom Build already
+                      // surfaced the broader 7-component layout
+                      // above — it doesn't get a second one here.
+                      if (!_isCustomBuild) ...[
+                        _componentsSectionFactory(context),
+                        const SizedBox(height: 16),
+                      ],
                       _ballisticsDefaultsSection(context),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -745,9 +999,34 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                         maxLines: 4,
                       ),
                       const SizedBox(height: 24),
-                      FilledButton(
-                        onPressed: _busy ? null : _save,
-                        child: Text(_finalButtonLabel(autoSaveOn, isEdit)),
+                      // Side-by-side action row (2026-05-10). The
+                      // primary "Done" / "Save Changes" button keeps
+                      // the FilledButton emphasis; the new
+                      // "Ballistics" button is an OutlinedButton — a
+                      // secondary action that saves AND immediately
+                      // pushes the Ballistics calculator with this
+                      // firearm preselected, for the workflow where
+                      // the user sets up a rifle then wants to start
+                      // computing solutions right away.
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed:
+                                  _busy ? null : _saveAndOpenBallistics,
+                              icon: const Icon(Icons.calculate_outlined),
+                              label: const Text('Ballistics'),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: FilledButton(
+                              onPressed: _busy ? null : _save,
+                              child:
+                                  Text(_finalButtonLabel(autoSaveOn, isEdit)),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -957,44 +1236,14 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     ];
   }
 
-  List<Widget> _customFields() {
-    return [
-      TextFormField(
-        controller: _manufacturer,
-        decoration: const InputDecoration(labelText: 'Manufacturer'),
-      ),
-      const SizedBox(height: 12),
-      TextFormField(
-        controller: _model,
-        decoration: const InputDecoration(labelText: 'Model'),
-      ),
-      const SizedBox(height: 12),
-      TextFormField(
-        controller: _type,
-        decoration: const InputDecoration(
-          labelText: 'Type',
-          hintText: 'pistol / rifle / shotgun',
-        ),
-      ),
-      const SizedBox(height: 12),
-      TextFormField(
-        controller: _action,
-        decoration: const InputDecoration(
-          labelText: 'Action',
-          hintText: 'e.g. bolt-action, semi-auto',
-        ),
-      ),
-      const SizedBox(height: 12),
-      // In Custom mode the user types their own caliber — keep the
-      // shared autocomplete picker so they get the catalog suggestions
-      // and the SAAMI-favorite cartridges promoted to the top.
-      ComponentField(
-        kind: 'cartridge',
-        label: 'Caliber',
-        controller: _caliber,
-      ),
-    ];
-  }
+  // _customFields() removed 2026-05-10. The legacy "Pick from
+  // Catalog | Custom" inner toggle on Factory mode let users type
+  // freeform manufacturer / model / type / action / caliber when
+  // their rifle wasn't in the catalog. Removed in favor of always
+  // using the catalog autocomplete in Factory mode — users with
+  // catalog-missing rifles either pick the closest catalog match
+  // or convert to Custom Build mode (which configures by
+  // components, not by factory model identifier).
 
   /// Catalog-mode caliber selector. Renders one of three layouts based
   /// on the number of chamberings the catalog row declares for the
@@ -1063,6 +1312,12 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
         onChanged: (v) {
           if (v == null) return;
           setState(() => _caliber.text = v);
+          // If the catalog row has per-caliber specs (schema v34+),
+          // re-apply the picked caliber's barrel length and twist
+          // so the form reflects "the AT-X in 6.5 CM is 24" / 1:8,
+          // not the AT-X in .308's 20" / 1:10". Pure no-op for
+          // single-spec rifles or pre-v34 catalog rows.
+          _applyCaliberSpec(ref, v);
           _autoSave.notifyDirty();
         },
       ),
@@ -1108,6 +1363,98 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           Expanded(child: Text(value)),
         ],
       ),
+    );
+  }
+
+  /// Barrel-length input — renders as a dropdown when the catalog
+  /// row + picked caliber declare multiple factory barrel lengths
+  /// (e.g. AT-X .308 Win ships in 16.5" and 20" variants), and as a
+  /// plain text field otherwise (single-length, custom rifles, or
+  /// pre-v34 catalog rows).
+  ///
+  /// The dropdown is the preferred UI when the manufacturer offers a
+  /// choice — it makes the variants discoverable and prevents
+  /// fat-finger typos. A user with a re-barreled rifle of a known
+  /// non-factory length can still work around by switching to
+  /// Custom Build mode (no catalog ref → text field returns).
+  Widget _barrelLengthField(String smallLen) {
+    final ref = _selectedRef;
+    final caliber = _caliber.text.trim();
+    if (ref != null && caliber.isNotEmpty) {
+      final spec = _caliberSpecsFor(ref)[caliber];
+      if (spec != null && spec.barrelLengthsIn.length > 1) {
+        return _barrelLengthDropdown(smallLen, spec.barrelLengthsIn);
+      }
+    }
+    // Fall through: plain text field. Single-length specs auto-fill
+    // via `_applyReferenceSelection` / `_applyCaliberSpec` and the
+    // user is free to override (re-barrel, SBR variant, etc.).
+    return TextFormField(
+      controller: _barrelLength,
+      decoration: InputDecoration(
+        labelText: 'Barrel Length ($smallLen)',
+        suffixText: smallLen,
+      ),
+      keyboardType:
+          const TextInputType.numberWithOptions(decimal: true),
+    );
+  }
+
+  /// Build a dropdown of factory-offered barrel lengths for the
+  /// picked caliber. Selecting an item rewrites
+  /// `_barrelLength.text` so downstream readers (the firing-solution
+  /// solver, autosave, the saved row) see the same value the user
+  /// sees. The current `_barrelLength` value is added as a "(custom)"
+  /// option when it's outside the factory list — preserves
+  /// re-barrel scenarios where the user's barrel is non-factory.
+  Widget _barrelLengthDropdown(String smallLen, List<double> factoryLengths) {
+    final currentText = _barrelLength.text.trim();
+    final currentValue = double.tryParse(currentText);
+    final inList = currentValue != null &&
+        factoryLengths.any((v) => (v - currentValue).abs() < 0.001);
+    final initial =
+        inList ? currentValue : factoryLengths.first;
+    // Make sure the controller and the dropdown are in sync — if the
+    // user landed on a caliber whose spec list doesn't include
+    // whatever's in the controller, snap to the first factory
+    // length. Safe because the only way to reach this builder with a
+    // mismatched value is via a stale state path (e.g. the form
+    // initially loaded a saved row's custom barrel length, then
+    // user picked a different caliber).
+    if (!inList && currentText != _formatBarrelLength(factoryLengths.first)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (_barrelLength.text != _formatBarrelLength(factoryLengths.first)) {
+          _barrelLength.text = _formatBarrelLength(factoryLengths.first);
+        }
+      });
+    }
+    return DropdownButtonFormField<double>(
+      initialValue: initial,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'Barrel Length ($smallLen)',
+        suffixText: smallLen,
+      ),
+      items: [
+        for (final v in factoryLengths)
+          DropdownMenuItem<double>(
+            value: v,
+            child: Text('${_formatBarrelLength(v)} $smallLen'),
+          ),
+        if (currentValue != null && !inList)
+          DropdownMenuItem<double>(
+            value: currentValue,
+            child: Text('${_formatBarrelLength(currentValue)} $smallLen (custom)'),
+          ),
+      ],
+      onChanged: (v) {
+        if (v == null) return;
+        setState(() {
+          _barrelLength.text = _formatBarrelLength(v);
+        });
+        _autoSave.notifyDirty();
+      },
     );
   }
 
@@ -1343,6 +1690,221 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     );
   }
 
+  /// Manufactured-rifle section (2026-05-10 reorg). Wraps the
+  /// catalog autocomplete picker, the auto-filled rifle details,
+  /// the barrel-length / twist row, and the shots-fired counter
+  /// inside a single Card with a "Rifle" header. Replaces the loose
+  /// stack of unfettered widgets the form used to render in Factory
+  /// mode.
+  ///
+  /// Only rendered when `_isCustomBuild == false`. Custom Build mode
+  /// has no factory rifle to identify, so it skips this section
+  /// entirely and goes straight to the Components panel.
+  Widget _rifleSection(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.gpp_good_outlined,
+                    size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'Rifle',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Pick the manufactured rifle from the catalog. The '
+              'caliber, barrel length, and twist auto-fill from the '
+              'catalog row but stay editable.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ..._catalogFields(),
+            const SizedBox(height: 12),
+            // Barrel length + twist row. Inherits the catalog's
+            // factory-spec default but the user can override (a
+            // re-barreled rifle, a 16" SBR variant of a 20" catalog
+            // entry, etc.).
+            Builder(builder: (ctx) {
+              final smallLen = unitDisplayLabel(ctx
+                  .watch<UnitService>()
+                  .unitFor(UnitCategory.smallLength));
+              return _ResponsiveRowPair(
+                first: _barrelLengthField(smallLen),
+                second: _twistRow(),
+              );
+            }),
+            const SizedBox(height: 16),
+            _shotsFiredField(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Components section for Manufactured rifles (2026-05-10 reorg).
+  /// Surfaces the THREE common aftermarket components a manufactured
+  /// rifle owner typically swaps:
+  ///
+  ///   * Bipod — always aftermarket; no Factory option needed.
+  ///   * Trigger — often replaced (TriggerTech, Timney, Jewell) but
+  ///     a Factory chip lets the user record "stock trigger".
+  ///   * Muzzle device — a single slot toggled between Brake and
+  ///     Suppressor. A rifle has either-or installed at a time, never
+  ///     both. Brake gets a Factory chip (most rifles ship with a
+  ///     thread protector or brake from the factory). Suppressor
+  ///     does not — there's no "factory suppressor" SKU on common
+  ///     rifles.
+  ///
+  /// The remaining four component fields (chassis, barrel, buttstock,
+  /// and the inactive of brake/suppressor) are still written through
+  /// `_buildCompanion` from their controllers — the data is preserved
+  /// across the Manufactured ↔ Custom Build mode toggle so a user who
+  /// flips back and forth doesn't lose what they typed.
+  ///
+  /// Custom Build mode uses the broader `_componentsSection` instead,
+  /// which surfaces all 7 component pickers.
+  Widget _componentsSectionFactory(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.build_outlined,
+                    size: 16, color: theme.colorScheme.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'Components',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Aftermarket parts installed on this rifle. Tap "Factory" '
+              'to record the stock component for trigger or muzzle '
+              'brake.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            FutureBuilder<List<FirearmComponentEntry>>(
+              future: _componentsFuture,
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: LinearProgressIndicator(),
+                  );
+                }
+                final entries = snap.data ?? const <FirearmComponentEntry>[];
+                List<FirearmComponentEntry> entriesOf(
+                        FirearmComponentKind k) =>
+                    entries.where((e) => e.kind == k).toList(growable: false);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Bipod — always aftermarket; no Factory option.
+                    _ComponentPicker(
+                      kind: FirearmComponentKind.bipod,
+                      controller: _bipodName,
+                      entries: entriesOf(FirearmComponentKind.bipod),
+                      onChanged: () => _autoSave.notifyDirty(),
+                    ),
+                    const SizedBox(height: 12),
+                    // Trigger — Factory chip rendered INSIDE the
+                    // picker (under the "Trigger" label, above the
+                    // search field) so the chip is visually owned
+                    // by this section rather than floating between
+                    // Bipod and Trigger as it did in the first
+                    // iteration.
+                    _ComponentPicker(
+                      kind: FirearmComponentKind.trigger,
+                      controller: _triggerName,
+                      entries: entriesOf(FirearmComponentKind.trigger),
+                      allowFactory: true,
+                      onChanged: () => _autoSave.notifyDirty(),
+                    ),
+                    const SizedBox(height: 16),
+                    // Muzzle-device toggle: Brake or Suppressor.
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'Muzzle Device',
+                        style: theme.textTheme.labelLarge,
+                      ),
+                    ),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(
+                            value: 'brake', label: Text('Muzzle Brake')),
+                        ButtonSegment(
+                            value: 'suppressor', label: Text('Suppressor')),
+                      ],
+                      selected: {_muzzleDevice},
+                      onSelectionChanged: (s) {
+                        setState(() {
+                          _muzzleDevice = s.first;
+                        });
+                        _autoSave.notifyDirty();
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    // Active picker for the muzzle-device choice.
+                    // Brake gets the inline Factory chip (a stock
+                    // thread protector or factory brake is common);
+                    // suppressor never gets one since "factory
+                    // suppressor" isn't a real rifle SKU.
+                    if (_muzzleDevice == 'brake')
+                      _ComponentPicker(
+                        kind: FirearmComponentKind.muzzleBrake,
+                        controller: _muzzleBrakeName,
+                        entries: entriesOf(FirearmComponentKind.muzzleBrake),
+                        allowFactory: true,
+                        onChanged: () => _autoSave.notifyDirty(),
+                      )
+                    else
+                      _ComponentPicker(
+                        kind: FirearmComponentKind.suppressor,
+                        controller: _suppressorName,
+                        entries: entriesOf(FirearmComponentKind.suppressor),
+                        onChanged: () => _autoSave.notifyDirty(),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Optics dropdown — lets the user record which scope/red-dot is mounted
   /// on this firearm. The selection only sets `opticsId`; sight height
   /// stays a separate user-edited field on the ballistics defaults card
@@ -1561,6 +2123,39 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                 _autoSave.notifyDirty();
               },
             ),
+            const SizedBox(height: 12),
+            // Sight Height (a.k.a. Scope Height in the user-facing
+            // 2026-05-10 reorg). Lives inside the Optic section
+            // because it's a property of the optic + rings/mount
+            // combination — not a "ballistics default". The solver
+            // reads it as the bore-axis-to-line-of-sight offset for
+            // the geometric line-of-sight correction.
+            Builder(builder: (ctx) {
+              final smallLen = unitDisplayLabel(
+                  ctx.watch<UnitService>().unitFor(UnitCategory.smallLength));
+              return TextFormField(
+                controller: _sightHeightIn,
+                decoration: InputDecoration(
+                  labelText: 'Scope Height ($smallLen)',
+                  helperText:
+                      'Center of optic above bore axis, typically 1.5–2.0 $smallLen',
+                  suffixText: smallLen,
+                ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                autocorrect: false,
+                enableSuggestions: false,
+                validator: (v) {
+                  final t = (v ?? '').trim();
+                  if (t.isEmpty) return null;
+                  final n = double.tryParse(t);
+                  if (n == null || n <= 0) {
+                    return 'Must be a positive number';
+                  }
+                  return null;
+                },
+              );
+            }),
             const SizedBox(height: 4),
             // Optic accuracy expansion — vertical / horizontal scale
             // factors. Hidden behind an ExpansionTile so beginners
@@ -1681,10 +2276,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
   Widget _ballisticsDefaultsSection(BuildContext context) {
     final theme = Theme.of(context);
     final units = context.watch<UnitService>();
-    // velUnit was used by the now-removed MV input; the MV row is gone
-    // (see comment in the build below) so we no longer need it.
     final rangeUnit = unitDisplayLabel(units.unitFor(UnitCategory.range));
-    final smallLen = unitDisplayLabel(units.unitFor(UnitCategory.smallLength));
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
@@ -1699,7 +2291,7 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                     size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 6),
                 Text(
-                  'Ballistics defaults',
+                  'Ballistics',
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w600,
@@ -1709,8 +2301,9 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Optional. Pre-fills the ballistics calculator when this '
-              'firearm is selected.',
+              'Default zero range and (optionally) the atmosphere when '
+              'you sighted in. Pre-fills the ballistics calculator when '
+              'this firearm is selected.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
@@ -1721,19 +2314,17 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
             // form because MV changes per-load (different powders /
             // bullets / temperatures all shift it), so asking the
             // user to pin one number to a rifle was the wrong
-            // affordance. The DB column stays so existing rows
-            // preserve any saved MV; downstream consumers (Range Day
-            // / Ballistics / BC Truing / Hit Probability) no longer
-            // pull from `f.defaultMuzzleVelocityFps` either. The
-            // Garmin Xero `.fit` import + Photo OCR capture remains
-            // available in the app via `MvCaptureButtons` — see
-            // `lib/widgets/mv_capture_buttons.dart`. v1 hosts: the
-            // External Ballistics MV field and the Ballistic Profile
-            // form's MV field.
+            // affordance. See `lib/widgets/mv_capture_buttons.dart`
+            // for the External Ballistics + Ballistic Profile hosts.
+            //
+            // Sight Height (now "Scope Height") was here too, but
+            // moved into the Optic section in the 2026-05-10 reorg
+            // because it's properly a property of the optic +
+            // rings/mount, not a ballistics default.
             TextFormField(
               controller: _defaultZeroRangeYd,
               decoration: InputDecoration(
-                labelText: 'Default Zero Range ($rangeUnit)',
+                labelText: 'Zero Range ($rangeUnit)',
                 helperText: 'Typical: 100-200 $rangeUnit',
                 suffixText: rangeUnit,
               ),
@@ -1747,29 +2338,6 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
                 final n = int.tryParse(t);
                 if (n == null || n <= 0) {
                   return 'Must be a positive integer';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _sightHeightIn,
-              decoration: InputDecoration(
-                labelText: 'Sight Height ($smallLen)',
-                helperText:
-                    'Center of optic above bore axis, typically 1.5–2.0 $smallLen',
-                suffixText: smallLen,
-              ),
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              autocorrect: false,
-              enableSuggestions: false,
-              validator: (v) {
-                final t = (v ?? '').trim();
-                if (t.isEmpty) return null;
-                final n = double.tryParse(t);
-                if (n == null || n <= 0) {
-                  return 'Must be a positive number';
                 }
                 return null;
               },
@@ -1805,21 +2373,30 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
           color: theme.colorScheme.primary,
         ),
         title: Text(
-          'Zero conditions',
+          'Zero Environment Conditions (Advanced)',
           style: theme.textTheme.labelLarge?.copyWith(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.w600,
           ),
         ),
-        subtitle: Text(
-          'The atmosphere where you sighted in. Future ballistics solves '
-          'use these as the baseline so today\'s correction is computed '
-          'relative to zero-day, not to the ICAO standard atmosphere.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ),
+        // No `subtitle:` — the explanatory paragraph used to render
+        // here below the title even when collapsed, which made the
+        // "Advanced" expander loud on a form designed to read calmly
+        // when nothing is expanded. Now the prose lives inside the
+        // expanded body (first child below).
         children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              'The atmosphere where you sighted in. Future ballistics '
+              'solves use these as the baseline so today\'s correction '
+              'is computed relative to zero-day, not to the ICAO '
+              'standard atmosphere.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
           _ResponsiveRowPair(
             first: TextFormField(
               controller: _zeroPressureInHg,
@@ -2054,12 +2631,101 @@ class _ResponsiveRowPair extends StatelessWidget {
 /// autocomplete callback, or Clear). Forms wire this through to
 /// `AutoSaveController.notifyDirty` so the debounce timer restarts
 /// just like every other field on the screen.
-class _ComponentPicker extends StatelessWidget {
+
+/// One-tap chip that fills the bound controller with the literal
+/// string `"Factory"`. Surfaced above the Trigger and Muzzle Brake
+/// pickers in Manufactured rifle mode for the common case where the
+/// rifle still has its factory-installed component.
+///
+/// Tapping the chip sets the controller value, fires `onChanged`,
+/// and visually highlights when the controller is currently holding
+/// `"Factory"` so the user can see that the chip is the active
+/// choice. Typing a different value into the picker below clears the
+/// chip's highlight on the next rebuild.
+class _FactoryChip extends StatefulWidget {
+  const _FactoryChip({
+    required this.controller,
+    required this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onChanged;
+
+  @override
+  State<_FactoryChip> createState() => _FactoryChipState();
+}
+
+class _FactoryChipState extends State<_FactoryChip> {
+  // Listen to the bound controller and rebuild LOCALLY when its text
+  // changes. This keeps the chip's `selected` visual in sync with
+  // whatever's in the field without forcing the parent component
+  // panel to setState — which would cascade into rebuilding every
+  // sibling picker and (crucially) re-trigger the
+  // `_ComponentPicker.fieldViewBuilder` direct-sync logic mid-build.
+  // The parent's `onChanged` callback now does only `notifyDirty`.
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _FactoryChip old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.controller, widget.controller)) {
+      old.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (!mounted) return;
+    setState(() {}); // local rebuild only
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isActive =
+        widget.controller.text.trim().toLowerCase() == 'factory';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: InputChip(
+          label: const Text('Factory'),
+          avatar: Icon(
+            Icons.precision_manufacturing_outlined,
+            size: 16,
+            color: isActive
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.primary,
+          ),
+          selected: isActive,
+          onPressed: () {
+            widget.controller.text = 'Factory';
+            widget.onChanged();
+          },
+          tooltip: 'Set this component to the factory-installed default',
+        ),
+      ),
+    );
+  }
+}
+
+class _ComponentPicker extends StatefulWidget {
   const _ComponentPicker({
     required this.kind,
     required this.controller,
     required this.entries,
     required this.onChanged,
+    this.allowFactory = false,
   });
 
   final FirearmComponentKind kind;
@@ -2067,8 +2733,61 @@ class _ComponentPicker extends StatelessWidget {
   final List<FirearmComponentEntry> entries;
   final VoidCallback onChanged;
 
+  /// Render an inline `_FactoryChip` directly under the picker's
+  /// label (and above the search field) so the chip is visually and
+  /// semantically grouped with THIS picker rather than appearing as
+  /// an unowned widget between two sections. Used for Trigger and
+  /// Muzzle Brake on Manufactured rifles where "Factory" is a
+  /// common, valid value.
+  final bool allowFactory;
+
+  @override
+  State<_ComponentPicker> createState() => _ComponentPickerState();
+}
+
+class _ComponentPickerState extends State<_ComponentPicker> {
+  // Listen to the bound controller so the picker rebuilds when the
+  // value changes from OUTSIDE — e.g. the inline `_FactoryChip` writing
+  // 'Factory' into our shared controller. Without this listener, the
+  // chip's tap silently mutated the controller but the autocomplete's
+  // internal text field didn't pick up the change until the next time
+  // the parent panel rebuilt for some other reason. Now: chip tap →
+  // controller change → this listener fires → setState → build runs →
+  // post-frame sync inside fieldViewBuilder pushes the new value into
+  // textCtrl.
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ComponentPicker old) {
+    super.didUpdateWidget(old);
+    if (!identical(old.controller, widget.controller)) {
+      old.controller.removeListener(_onControllerChanged);
+      widget.controller.addListener(_onControllerChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    if (!mounted) return;
+    setState(() {}); // local rebuild only
+  }
+
   @override
   Widget build(BuildContext context) {
+    final kind = widget.kind;
+    final controller = widget.controller;
+    final entries = widget.entries;
+    final onChanged = widget.onChanged;
+    final allowFactory = widget.allowFactory;
     final theme = Theme.of(context);
     String labelOf(FirearmComponentEntry e) => e.label;
     return Column(
@@ -2081,6 +2800,11 @@ class _ComponentPicker extends StatelessWidget {
             style: theme.textTheme.labelLarge,
           ),
         ),
+        if (allowFactory)
+          _FactoryChip(
+            controller: controller,
+            onChanged: onChanged,
+          ),
         // Autocomplete<FirearmComponentEntry>: type to filter against
         // the catalog's manufacturer + model labels. The
         // `RawAutocomplete`-style fieldViewBuilder uses our shared
@@ -2106,18 +2830,31 @@ class _ComponentPicker extends StatelessWidget {
             });
           },
           fieldViewBuilder: (context, textCtrl, focusNode, onSubmit) {
-            // Sync the autocomplete's internal controller and our
-            // shared one in both directions:
+            // Bidirectional sync between the autocomplete's internal
+            // text controller (`textCtrl`) and the parent's shared
+            // controller (`controller`):
             //
-            //   * On first build, prime the internal controller's
-            //     text from the shared one so existing rows render
-            //     with their saved selection.
-            //   * On every keystroke, push the typed value through
-            //     to the shared controller so a custom typed string
-            //     persists on save even if the user never picks a
-            //     suggestion.
+            //   * Inbound (parent → field) — defer via post-frame
+            //     callback. Direct assignment during build triggers
+            //     `TextFormField`'s internal controller-change
+            //     handler, which calls `markNeedsBuild` → the
+            //     framework throws "setState called during build"
+            //     because we're already inside that frame's build
+            //     phase. The `_FactoryChip` flow exposed this:
+            //     chip tap → controller.text='Factory' → setState
+            //     → rebuild → this fieldViewBuilder runs → direct
+            //     sync triggered the crash. Deferring to the next
+            //     frame moves the FormFieldState rebuild out of the
+            //     current build phase.
+            //   * Outbound (field → parent) — listen synchronously;
+            //     fires from a tap/keystroke event handler, never
+            //     during build.
             if (textCtrl.text != controller.text) {
-              textCtrl.text = controller.text;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (textCtrl.text != controller.text) {
+                  textCtrl.text = controller.text;
+                }
+              });
             }
             void syncOut() {
               if (controller.text != textCtrl.text) {

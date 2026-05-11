@@ -762,6 +762,19 @@ Concretely:
 - Uninstalling the app or wiping the device deletes the on-device data. If
   the user enabled cloud backup or sync, restoring requires
   re-authenticating to their cloud provider and entering the passphrase.
+- **Crash reporting (Firebase Crashlytics, opt-OUT, defaults to ON)** —
+  see § 29. The runtime sends stack traces + privacy-scrubbed context
+  (route name, schema version, app version, platform, anonymous-vs-
+  signed-in flag, row IDs) to Crashlytics whenever an unhandled error
+  fires. **Reports never include user-typed strings** (recipe names,
+  firearm names, notes, brass-lot labels), Firebase UIDs, or any row
+  CONTENT — only stable identifiers. The default flipped from OFF to
+  ON on 2026-05-10 after repeated red-screen crashes that engineering
+  couldn't triage without telemetry; users who want strict no-network-
+  egress can disable collection in Settings → Privacy & Data and the
+  CrashReporter no-ops every public method. Breadcrumbs (route history,
+  log lines) live in-process until a crash actually fires — a normal
+  session uploads nothing.
 - **AI Smart Import (Pro, opt-in per use)** — see § 20. The only feature
   in the app that sends user-provided text to a third party. Scoped
   exclusively to OCR'd recipe text from the photo-import flow. The
@@ -806,7 +819,9 @@ when you discover new blockers. As of 2026-05-06 highlights:
 - Convert Apple Developer + Play Console accounts from personal to org once
   EIN + DUNS land.
 - Replace placeholder `test/widget_test.dart` with real coverage.
-- Add Crashlytics + Analytics if/when policy allows.
+- Crashlytics ships and is on-by-default for fresh installs (see § 29);
+  general analytics (Mixpanel, GA, etc.) remain explicitly off-limits
+  per § 13's privacy promise — do not propose adding them.
 
 `SETUP.md` predates the Firestore removal — read with caution; the
 authoritative architecture description is this file.
@@ -2236,3 +2251,89 @@ The most common silent-failure modes:
 | Updates don't reach devices for a nested file | `_isSafeManifestFilename` rejected the path | Check the filename has at most one `/`, no `\\`, and ends in `.json` |
 | Local install is stuck on bundled v1 forever | Local `seed_version_<key>` pref is at the same number as remote | Bump the remote `version` in the manifest. SeedUpdater anti-downgrade is strictly-greater. |
 | `/seed_data/manifest.json` returns 404 | Bucket isn't populated yet | Run `./scripts/upload_seed_data.sh` for the first time |
+
+## 29. Universal error handler + Crashlytics
+
+LoadOut catches every unhandled error in the app — render-time
+exceptions, async errors, navigation failures, BLE callbacks, you
+name it — and routes them through a single privacy-aware pipeline
+that (a) shows the user a usable fallback UI instead of a red error
+screen and (b) ships a scrubbed report to Firebase Crashlytics so
+engineering can triage. **Crash collection is opt-OUT** — fresh
+installs default to ON; users who care about strict no-network-egress
+can flip it off in Settings → Privacy & Data.
+
+### Components
+
+| | |
+|---|---|
+| Crash service | `lib/services/crash_reporter.dart` (`CrashReporter` singleton — wraps `FirebaseCrashlytics` with privacy-aware custom keys + breadcrumbs; no-ops on web/macOS or when disabled) |
+| Universal in-tree boundary | `lib/widgets/app_error_boundary.dart` (`AppErrorBoundary` — wraps every routed screen via `MaterialApp.builder`; on render error, shows fallback panel with Reload + Back; double-records to Crashlytics) |
+| Per-screen boundary (legacy, kept) | `lib/widgets/range_day_safety.dart` (`RangeDayErrorBoundary` + `safeAsync` — predates the universal one but is still wrapped around Range Day for belt-and-suspenders) |
+| Route breadcrumbs | `lib/services/breadcrumb_navigator_observer.dart` (`BreadcrumbNavigatorObserver` — installed in `MaterialApp.navigatorObservers`; emits a Crashlytics log line on every push/pop/replace and sets the `current_route` custom key) |
+| Boot wiring | `lib/main.dart` `_configureCrashlytics()` — reads opt-out pref, calls `CrashReporter.initialize(...)` with `CrashReporterContext` (app version, schema version, platform, OS version) |
+| Settings toggle | `lib/screens/settings/privacy_data_screen.dart` "Send anonymous crash reports" `SwitchListTile` — flips `crashlytics_enabled` pref + calls `setCrashlyticsCollectionEnabled` |
+
+### "Show what's missing" pattern (Range Day, Internal Ballistics, Ballistic Profile form)
+
+The user's directive: when the app can't compute a result, show
+WHAT'S missing — and the affected text box should also have a red
+indicator. Implemented as:
+
+| | |
+|---|---|
+| Shared widget + model | `lib/widgets/missing_inputs_card.dart` (`MissingInputs` immutable bundle of `MissingInputEntry` rows + `MissingInputsCard` amber-bordered visual) |
+| Internal Ballistics | `lib/screens/ballistics/internal_ballistics_screen.dart` — `_collectMissingInputs()` builds the bundle on every Predict tap; `_errorTextFor(fieldId)` drives per-field `errorText:`; result panel renders the card when `_missingInputs.isNotEmpty`. Predict button always enabled. |
+| Ballistic Profile form | `lib/screens/ballistics/ballistics_screen.dart` — `_collectMissingProfileInputs()` runs in `_onSaveAsProfile` / `_onUpdateProfile` pre-save; on missing fields, refuses the save, shows a SnackBar, and renders `MissingInputsCard` at top of form. Per-field `errorText:` via `_profileErrorTextFor`. Each affected TextField clears the missing state on next keystroke via `onChanged: (_) => _clearStaleProfileMissing()`. |
+| Range Day Solution surface | `lib/screens/range_day/range_day_detail_screen.dart` — already had a comprehensive `_solverMissingFieldsState` widget + `_missingSolverInputs()` method that lists missing fields with location pointers. Left unchanged; do not duplicate with `MissingInputs` infrastructure here. |
+
+When adding a new solver-driven screen, reuse `MissingInputs` /
+`MissingInputsCard` from `lib/widgets/missing_inputs_card.dart`
+rather than inventing a per-screen pattern. The model carries both
+the canonical `fieldId` (drives per-field `errorText:`) and the
+human-readable `label` (drives the bulleted card display) so the
+two surfaces stay in sync.
+
+### Privacy contract for crash reports (firm rule)
+
+Custom keys and breadcrumbs are SAFE TO SHIP only if they meet ALL
+of these:
+
+- **Stable identifiers only.** Route names, enum values, schema
+  version, app version, platform, OS version, anonymous-vs-signed-in
+  flag, row IDs (per-install auto-increment integers).
+- **Never user-typed strings.** No recipe names, firearm names,
+  notes, brass-lot labels, custom-field values, AI chat content.
+- **Never PII.** No Firebase UIDs, no email addresses, no OAuth
+  tokens, no device fingerprints beyond what Crashlytics already
+  collects automatically (OS version, model, locale).
+- **Never row CONTENT.** Logging "load #42 was selected" is fine;
+  logging the cartridge / powder / charge of load #42 is not.
+
+When you add a new `setKey(...)` or `log(...)` call site, ask:
+"could a screenshot of this report leak something the user typed?"
+If yes, redact or drop it. The privacy posture (§ 13) is a
+load-bearing brand promise; one PII leak in a crash report
+undermines it.
+
+### Default-ON rationale
+
+Pre-2026-05-10 the default was OFF (privacy-first opt-in). The user
+hit repeated red-screen crashes that engineering couldn't triage
+without telemetry, so the default flipped to ON with the same
+privacy guarantees in place. The Settings toggle copy makes the
+trade-off visible: "Helps us catch bugs faster. No personal data,
+recipes, or firearms info is included." Users who care about
+strict no-network-egress can flip it off; the CrashReporter
+no-ops every public method when disabled.
+
+When changing the default, also update:
+
+- `lib/main.dart` `kCrashlyticsEnabledDefault` constant + its
+  doc comment
+- `lib/main.dart` file header (lines 17-19, 85-88, 162-165)
+- `lib/screens/settings/privacy_data_screen.dart` initial state
+  (which mirrors `kCrashlyticsEnabledDefault`)
+- This section
+- App Store / Play Store privacy disclosures
+- The Privacy Policy + landing-page copy

@@ -329,7 +329,15 @@
       "Bash(python3 -c \"import json; print\\(json.load\\(open\\('/Users/general/.config/gcloud/application_default_credentials.json'\\)\\).get\\('quota_project_id', '<not set>'\\)\\)\")",
       "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/general/.config/configstore/firebase-tools.json'\\)\\); u=d.get\\('user',{}\\); print\\(f'cached firebase user: {u.get\\(\\\\\"email\\\\\",\\\\\"<none>\\\\\"\\)}'\\)\")",
       "Bash(curl -s 'https://oauth2.googleapis.com/tokeninfo?access_token=__TRACKED_VAR__')",
-      "Bash(firebase deploy *)"
+      "Bash(firebase deploy *)",
+      "Bash(awk '/^  List<Widget> _customFields/,/^  }/{print NR\": \"$0; if\\($0==\"  }\"\\) exit}' /Users/general/Development/Applications/LoadOut/lib/screens/firearms/firearm_form_screen.dart)",
+      "Bash(awk 'NR==955,NR==999{print NR\": \"$0}' /Users/general/Development/Applications/LoadOut/lib/screens/firearms/firearm_form_screen.dart)",
+      "Bash(curl -s \"https://firebasestorage.googleapis.com/v0/b/loadout-precision-reloading.firebasestorage.app/o/seed_data%2Fcomponents%2Fsuppressors.json?alt=media\")",
+      "Bash(python3 -c \"import json, sys; d = json.load\\(sys.stdin\\); area = [r for r in d if r['manufacturer'] == 'Area 419']; print\\('total entries:', len\\(d\\)\\); print\\('Area 419 entries:', [r['model'] for r in area]\\)\")",
+      "Bash(curl -s \"https://firebasestorage.googleapis.com/v0/b/loadout-precision-reloading.firebasestorage.app/o/seed_data%2Ffirearms.json?alt=media\")",
+      "Bash(python3 -c \"import json, sys; d = json.load\\(sys.stdin\\); ai = next\\(m for m in d['manufacturers'] if m['name']=='Accuracy International'\\); atx = next\\(p for p in ai['products'] if p['model']=='AT-X'\\); print\\('caliberSpecs published?', 'caliberSpecs' in atx\\); print\\('keys:', list\\(atx.get\\('caliberSpecs', {}\\).keys\\(\\)\\)\\)\")",
+      "Bash(grep -nB1 \"_bcCtrl,\\\\$\" /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)",
+      "Bash(grep -nB1 -A2 \"_bcCtrl\\\\b\" /Users/general/Development/Applications/LoadOut/lib/screens/range_day/range_day_detail_screen.dart)"
     ]
   }
 }

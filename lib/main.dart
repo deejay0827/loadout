@@ -15,9 +15,12 @@
 // layer (the bridge between Dart and the underlying native platform), it
 // connects to Firebase (Auth is the only Firebase product used at runtime;
 // Crashlytics is conditionally activated below based on a SharedPreferences
-// opt-in), it reads the `crashlytics_enabled` opt-in flag and wires the
-// global Flutter / PlatformDispatcher error handlers to Crashlytics ONLY
-// when the user has opted in, it opens the on-device SQLite database via
+// flag — defaulting to ON for fresh installs so we can triage red-screen
+// crashes, but always overridable from Settings → Privacy & Data), it
+// reads the `crashlytics_enabled` flag and wires the global Flutter /
+// PlatformDispatcher error handlers through `CrashReporter` (the
+// privacy-aware Crashlytics wrapper that scrubs PII before upload), it
+// opens the on-device SQLite database via
 // the `drift` package (a typed Dart ORM that compiles SQL queries from
 // class definitions), it calls `SeedLoader.seedIfNeeded()` to populate the
 // reference catalog from JSON files bundled in `assets/seed_data/` if the
@@ -85,7 +88,10 @@
 // - Reads the `crashlytics_enabled` SharedPreferences flag and either
 //   activates Firebase Crashlytics (installing FlutterError.onError /
 //   PlatformDispatcher.instance.onError handlers) or explicitly disables
-//   collection. The default is DISABLED — see `_configureCrashlytics`.
+//   collection. The default is ENABLED for fresh installs (so we can
+//   triage the red-screen crashes the user reported); users who want
+//   strict no-network-egress can flip it off in Settings → Privacy &
+//   Data. See `_configureCrashlytics`.
 // - Opens / creates the SQLite database file in the app's support
 //   directory on disk.
 // - On first launch (or after a schema upgrade that requires re-seed):
@@ -112,14 +118,38 @@ import 'data/reticle_seed_defaults.dart';
 import 'database/database.dart';
 import 'database/seed_loader.dart';
 import 'firebase_options.dart';
+import 'services/crash_reporter.dart';
 import 'services/device_compatibility_service.dart';
 import 'services/purchases_service.dart';
 import 'services/seed_updater.dart';
 
-/// SharedPreferences key driving the Crashlytics opt-in. Default false
-/// — collection is OFF unless the user flips the
-/// "Send anonymous crash reports" switch in Settings → Diagnostics.
+/// SharedPreferences key driving the Crashlytics opt-in.
+///
+/// **Default changed 2026-05-10**: was `false` (opt-in), now `true`
+/// (opt-out). Users who explicitly flip the "Send anonymous crash
+/// reports" switch off in Settings → Diagnostics still get respected
+/// — the change is in the value the absence of a stored pref implies.
+/// Privacy posture stays intact:
+///
+///   * The CrashReporter never sends user-typed data (recipe names,
+///     firearm names, notes, brass-lot labels, etc.).
+///   * Custom keys are stable identifiers only (route names, row IDs,
+///     enum values).
+///   * Breadcrumbs are local until a crash actually fires — a normal
+///     session uploads nothing.
+///
+/// The justification for the default flip: the user has now seen
+/// repeated red-screen crashes that we can't triage without crash
+/// reports. Defaulting collection ON gives engineering the visibility
+/// to fix them; users who care about strict no-network-egress can
+/// still opt out in Settings.
 const String kCrashlyticsEnabledPrefKey = 'crashlytics_enabled';
+
+/// The default value for `kCrashlyticsEnabledPrefKey` when no stored
+/// pref exists yet. Lives as a top-level constant so the Settings
+/// screen can reference the same default when rendering the toggle's
+/// initial state on a fresh install.
+const bool kCrashlyticsEnabledDefault = true;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -135,10 +165,13 @@ Future<void> main() async {
   // sign-outs.
   await _enforceLoginOnFirstLaunch();
 
-  // Crashlytics is opt-in. Read the SharedPreferences flag (default
-  // false → collection OFF) and wire the global error handlers only
-  // when the user has explicitly enabled crash reports. Privacy-first:
-  // a fresh install never sends anything to Firebase Crashlytics.
+  // Crashlytics is opt-OUT. Read the SharedPreferences flag (default
+  // true → collection ON; see `kCrashlyticsEnabledDefault` for the
+  // privacy rationale) and wire the global error handlers via
+  // `CrashReporter`. Users who want strict no-network-egress can flip
+  // the toggle off in Settings → Privacy & Data; reports never include
+  // user-typed strings (recipe names, firearm names, notes), only
+  // stable identifiers (route names, row IDs, enum values).
   await _configureCrashlytics();
 
   final db = AppDatabase();
@@ -248,24 +281,38 @@ Future<void> _enforceLoginOnFirstLaunch() async {
   }
 }
 
-/// Read the user's opt-in choice and wire global error handlers if
-/// (and ONLY if) collection is enabled. Defaults to OFF — a fresh
-/// install with no preference set is treated as opted-out.
+/// Read the user's opt-in choice and route the global error
+/// handlers (`FlutterError.onError`,
+/// `PlatformDispatcher.instance.onError`) through `CrashReporter`.
+///
+/// Defaults to ON when no stored preference exists — see
+/// `kCrashlyticsEnabledDefault` for the privacy rationale. Users
+/// who flip the toggle off in Settings → Diagnostics still get
+/// respected; only the implied default for a fresh install
+/// changed.
 ///
 /// When the flag is false we still call
 /// `setCrashlyticsCollectionEnabled(false)` so the plugin can short
-/// out any data it might otherwise queue from native crashes between
-/// process launches.
+/// out any data it might otherwise queue from native crashes
+/// between process launches.
 Future<void> _configureCrashlytics() async {
-  if (!_isCrashlyticsSupported) return;
+  if (!_isCrashlyticsSupported) {
+    // No platform bindings — `CrashReporter` stays in its default
+    // disabled state. Every public method on it is a no-op.
+    return;
+  }
 
-  bool enabled = false;
+  bool enabled = kCrashlyticsEnabledDefault;
   try {
     final prefs = await SharedPreferences.getInstance();
-    enabled = prefs.getBool(kCrashlyticsEnabledPrefKey) ?? false;
+    enabled = prefs.getBool(kCrashlyticsEnabledPrefKey) ??
+        kCrashlyticsEnabledDefault;
   } catch (e) {
     debugPrint('main: could not read Crashlytics opt-in flag: $e');
-    // Fail closed — leave collection OFF.
+    // Fail-closed for the read error case specifically: if we can't
+    // even ASK SharedPreferences, fall back to disabled. The
+    // documented default (ON) only applies when the pref read
+    // succeeds and the value is null.
     enabled = false;
   }
 
@@ -277,19 +324,20 @@ Future<void> _configureCrashlytics() async {
     return;
   }
 
-  if (!enabled) return;
-
-  // Forward Flutter-thrown errors (build, layout, paint, etc.) to
-  // Crashlytics. The plugin's `recordFlutterError` strips most of the
-  // PII out of the error context — we still rely on
-  // FirebaseCrashlytics's redaction rather than rolling our own.
-  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
-
-  // Forward errors thrown outside the Flutter framework (async
-  // callbacks, isolates, plugin code). Returning `true` tells the
-  // platform we've handled the error so it isn't escalated.
-  PlatformDispatcher.instance.onError = (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-    return true;
-  };
+  // Hand off to the centralised CrashReporter — it installs the
+  // global error handlers, sets the baseline custom keys
+  // (app version, schema version, platform, OS version), and
+  // exposes `setKey` / `log` / `recordError` to the rest of the
+  // app. See `lib/services/crash_reporter.dart`.
+  await CrashReporter.instance.initialize(
+    enabled: enabled,
+    ctx: CrashReporterContext(
+      appVersion: '1.1.0+2',
+      dbSchemaVersion: 34,
+      platform: kIsWeb
+          ? 'web'
+          : (Platform.isIOS ? 'ios' : 'android'),
+      osVersion: kIsWeb ? 'web' : Platform.operatingSystemVersion,
+    ),
+  );
 }

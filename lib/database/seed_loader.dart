@@ -673,6 +673,14 @@ class SeedLoader {
       );
       final batch = (m['products'] as List<dynamic>).map((p) {
         final prod = p as Map<String, dynamic>;
+        // Per-caliber spec map (added schema v34). Lets a multi-
+        // chambering rifle declare different barrel lengths and twist
+        // rates per caliber. The form auto-updates when the user
+        // picks a different chambering. Optional — entries that omit
+        // it default to '{}' and the form uses the row-level
+        // `barrelLengthIn` / `twistRate` fields. See
+        // `FirearmsRef.caliberSpecsJson` for the JSON schema.
+        final caliberSpecs = prod['caliberSpecs'];
         return FirearmsRefCompanion.insert(
           manufacturerId: mid,
           model: prod['model'] as String,
@@ -688,6 +696,9 @@ class SeedLoader {
               : const Value.absent(),
           twistRate: prod.containsKey('twistRate')
               ? Value(prod['twistRate'] as String?)
+              : const Value.absent(),
+          caliberSpecsJson: caliberSpecs is Map
+              ? Value(json.encode(caliberSpecs))
               : const Value.absent(),
         );
       }).toList();

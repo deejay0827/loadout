@@ -1541,9 +1541,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       // diameter / weight / BC / MV / sight height / zero range /
       // distance. When the user hasn't picked a load yet (or picked
       // a load missing any of these fields), bail SILENTLY — clearing
-      // the prior solution so stale numbers don't linger, but never
-      // surfacing a red error banner. Missing inputs aren't a user
-      // mistake; they're the empty-state path.
+      // the prior solution so stale numbers don't linger. The
+      // Solution card's empty-state path
+      // (`_solverMissingFieldsState` via `_solutionCardBody` →
+      // `_missingSolverInputs()`) renders the missing-fields list +
+      // pointers to where each field lives, so the user always sees
+      // WHY there's no solution.
       final bulletDiameter = _parseOpt(_bulletDiameterCtrl.text);
       final bulletWeight = _parseOpt(_bulletWeightCtrl.text);
       final bc = _parseOpt(_bcCtrl.text);

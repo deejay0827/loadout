@@ -140,6 +140,7 @@ import '../../screens/atmosphere/atmosphere_presets_screen.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
 import '../../widgets/favorite_star_button.dart';
 import '../../widgets/glossary_label.dart';
+import '../../widgets/missing_inputs_card.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/unsaved_changes_dispatcher.dart';
 import 'internal_ballistics_screen.dart';
@@ -205,6 +206,17 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   /// refreshes automatically after any insert / update / delete.
   Stream<List<BallisticProfileRow>>? _profilesStream;
   BallisticProfileRow? _activeProfile;
+
+  /// Fields that are blocking a profile save, populated when the
+  /// user taps "Save as Profile" / "Update Profile" against an
+  /// incomplete form. When non-empty:
+  ///   * The four affected TextFields render with red `errorText:
+  ///     'Required'` indicators.
+  ///   * A [MissingInputsCard] surfaces above the Save buttons
+  ///     listing exactly which fields are blocking.
+  /// Cleared on the next text edit so the indicators don't linger
+  /// after the user fixes a field.
+  MissingInputs _missingProfileInputs = MissingInputs.empty;
 
   /// Per-screen autosave plumbing. Shared with Recipe so the user's
   /// frequency + unsaved-changes preferences govern this screen the
@@ -912,7 +924,82 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     return result;
   }
 
+  /// Walk the four fields a saved profile MUST have to compute a
+  /// future firing solution: bullet weight, bullet diameter, BC,
+  /// muzzle velocity. Returns a [MissingInputs] bundle the caller
+  /// uses to drive the per-field red `errorText:` AND a
+  /// [MissingInputsCard] above the Save buttons.
+  ///
+  /// Zero range and sight height are NOT in the required list —
+  /// `_buildProfileCompanion` substitutes 100 yd / 1.5 in defaults
+  /// when blank, which produces a usable (if generic) profile. The
+  /// four required fields can't be defaulted: a profile without a
+  /// real BC or MV is useless.
+  MissingInputs _collectMissingProfileInputs() {
+    final entries = <MissingInputEntry>[];
+    bool isBlank(String s) =>
+        s.trim().isEmpty || double.tryParse(s.trim()) == null;
+    if (isBlank(_weightCtrl.text)) {
+      entries.add(const MissingInputEntry(
+        fieldId: 'bulletWeight',
+        label: 'Bullet Weight',
+      ));
+    }
+    if (isBlank(_diameterCtrl.text)) {
+      entries.add(const MissingInputEntry(
+        fieldId: 'bulletDiameter',
+        label: 'Bullet Diameter',
+      ));
+    }
+    if (isBlank(_bcCtrl.text)) {
+      entries.add(const MissingInputEntry(
+        fieldId: 'bc',
+        label: 'Ballistic Coefficient',
+      ));
+    }
+    if (isBlank(_muzzleVelCtrl.text)) {
+      entries.add(const MissingInputEntry(
+        fieldId: 'muzzleVelocity',
+        label: 'Muzzle Velocity',
+      ));
+    }
+    return MissingInputs(entries: entries);
+  }
+
+  /// `errorText:` decision for the four profile-required fields.
+  /// Returns 'Required' when the field is in the missing-inputs
+  /// bundle, else null. Read inline by each TextField's
+  /// `decoration:`.
+  String? _profileErrorTextFor(String fieldId) =>
+      _missingProfileInputs.contains(fieldId) ? 'Required' : null;
+
+  /// Hook on every keystroke into one of the four profile-required
+  /// fields. Clears stale missing-inputs state so the user fixing
+  /// a flagged field sees the red indicator vanish immediately.
+  void _clearStaleProfileMissing() {
+    if (_missingProfileInputs.isNotEmpty) {
+      setState(() => _missingProfileInputs = MissingInputs.empty);
+    }
+  }
+
   Future<void> _onSaveAsProfile() async {
+    // Pre-save validation. If the four required fields aren't all
+    // filled in, refuse the save, surface the missing-inputs card,
+    // and turn each affected field's `errorText:` red. The user
+    // sees both the summary (top of form) AND the per-field hint.
+    final missing = _collectMissingProfileInputs();
+    if (missing.isNotEmpty) {
+      setState(() => _missingProfileInputs = missing);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Can't save profile yet — fill in the highlighted fields.",
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
     // Capture the BuildContext-derived dependencies BEFORE the async
     // showDialog call. Lint flags otherwise — and after `_promptForProfileName`
     // returns there's no guarantee the State is still mounted.
@@ -929,7 +1016,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     final fresh = await repo.getById(id);
     if (!mounted) return;
     if (fresh != null) {
-      setState(() => _activeProfile = fresh);
+      setState(() {
+        _activeProfile = fresh;
+        _missingProfileInputs = MissingInputs.empty;
+      });
     }
     messenger.showSnackBar(
       SnackBar(content: Text('Profile "$name" saved.')),
@@ -939,6 +1029,21 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
   Future<void> _onUpdateProfile() async {
     final p = _activeProfile;
     if (p == null) return;
+    // Same pre-save validation as Save-As: an existing profile that
+    // gets emptied out shouldn't be persisted with zeros.
+    final missing = _collectMissingProfileInputs();
+    if (missing.isNotEmpty) {
+      setState(() => _missingProfileInputs = missing);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Can't update profile yet — fill in the highlighted fields.",
+          ),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
     final repo = context.read<BallisticProfileRepository>();
     final messenger = ScaffoldMessenger.of(context);
     await repo.update(p.id, _buildProfileCompanion(p.name));
@@ -946,7 +1051,10 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
     final fresh = await repo.getById(p.id);
     if (!mounted) return;
     if (fresh != null) {
-      setState(() => _activeProfile = fresh);
+      setState(() {
+        _activeProfile = fresh;
+        _missingProfileInputs = MissingInputs.empty;
+      });
     }
     messenger.showSnackBar(
       SnackBar(content: Text('Profile "${p.name}" updated.')),
@@ -1799,6 +1907,17 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                         children: [
                           _profilePickerCard(),
                           const SizedBox(height: 8),
+                          if (_missingProfileInputs.isNotEmpty) ...[
+                            MissingInputsCard(
+                              missing: _missingProfileInputs,
+                              headline: "Can't save profile yet",
+                              detail:
+                                  'Fill in the highlighted fields below '
+                                  'so the profile has everything the '
+                                  'solver needs.',
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                           _firearmSection(),
                           const SizedBox(height: 8),
                           _projectileSection(),
@@ -2242,15 +2361,17 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _diameterCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
-                  decoration: const InputDecoration(
+                  onChanged: (_) => _clearStaleProfileMissing(),
+                  decoration: InputDecoration(
                     // Diameter stays in inches by convention — cartridge
                     // designations ("6.5mm", ".308") still map to bullet
                     // diameters in inches even in metric workflows.
-                    label: GlossaryLabel(
+                    label: const GlossaryLabel(
                       text: 'Diameter (in)',
                       glossaryTerm: 'Bullet diameter vs. groove diameter',
                     ),
                     helperText: 'e.g. 0.264 for 6.5mm',
+                    errorText: _profileErrorTextFor('bulletDiameter'),
                   ),
                 ),
               ),
@@ -2260,12 +2381,14 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                   controller: _weightCtrl,
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
+                  onChanged: (_) => _clearStaleProfileMissing(),
                   decoration: InputDecoration(
                     label: GlossaryLabel(
                       text: 'Weight ($bulletWt)',
                       glossaryTerm: 'Sectional Density',
                     ),
                     suffixText: bulletWt,
+                    errorText: _profileErrorTextFor('bulletWeight'),
                   ),
                 ),
               ),
@@ -2320,12 +2443,14 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                     controller: _bcCtrl,
                     keyboardType: const TextInputType.numberWithOptions(
                         decimal: true),
-                    decoration: const InputDecoration(
-                      label: GlossaryLabel(
+                    onChanged: (_) => _clearStaleProfileMissing(),
+                    decoration: InputDecoration(
+                      label: const GlossaryLabel(
                         text: 'BC',
                         glossaryTerm: 'Ballistic Coefficient — G1',
                       ),
                       helperText: 'In the chosen drag-model family',
+                      errorText: _profileErrorTextFor('bc'),
                     ),
                   ),
                 )
@@ -2868,12 +2993,14 @@ class _BallisticsScreenState extends State<BallisticsScreen> {
                       controller: _muzzleVelCtrl,
                       keyboardType: const TextInputType.numberWithOptions(
                           decimal: true),
+                      onChanged: (_) => _clearStaleProfileMissing(),
                       decoration: InputDecoration(
                         label: GlossaryLabel(
                           text: 'Muzzle velocity ($velUnit)',
                           glossaryTerm: 'Muzzle Velocity',
                         ),
                         suffixText: velUnit,
+                        errorText: _profileErrorTextFor('muzzleVelocity'),
                       ),
                     ),
                     // Inline pivot to the Internal Ballistics tab

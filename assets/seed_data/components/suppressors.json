@@ -586,5 +586,29 @@
     "dbReductionDb": 30,
     "material": "titanium",
     "notes": "Lightweight titanium 7.62 can with Stellite blast baffle. Dual-Taper Locking QD or direct-thread. Rated through .300 Win Mag; precision/hunting use."
+  },
+  {
+    "manufacturer": "Area 419",
+    "model": "Maverick Gen 1",
+    "productLine": "Maverick",
+    "caliberMax": ".300 Winchester Magnum",
+    "mountStyle": "qd-mount",
+    "weightOz": 16.5,
+    "lengthIn": 7.20,
+    "dbReductionDb": 28,
+    "material": "titanium",
+    "notes": "Original Maverick — titanium PRS / NRL-Hunter suppressor with brake-like recoil character; mounts on Area 419 Hellfire / Sidewinder muzzle devices via the Maverick locking interface. Common pairing for shooters who want short-can profile + minimal POI shift between brake and can configurations."
+  },
+  {
+    "manufacturer": "Area 419",
+    "model": "Maverick Gen 2",
+    "productLine": "Maverick",
+    "caliberMax": ".300 PRC",
+    "mountStyle": "qd-mount",
+    "weightOz": 14.8,
+    "lengthIn": 6.90,
+    "dbReductionDb": 30,
+    "material": "titanium",
+    "notes": "Second-generation Maverick — lighter, shorter, improved baffle stack vs Gen 1. Same brake-mount system (Hellfire / Sidewinder host). The current PRS / NRL-Hunter standard for Area 419 host setups; runs as both a competition can and a hunting can in one footprint."
   }
 ]

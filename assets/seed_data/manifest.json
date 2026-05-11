@@ -1,6 +1,6 @@
 {
-  "manifest_version": 2,
-  "generated_at": "2026-05-10T00:00:00Z",
+  "manifest_version": 4,
+  "generated_at": "2026-05-10T22:00:00Z",
   "files": {
     "cartridges": {
       "version": 1,
@@ -23,7 +23,7 @@
       "filename": "brass.json"
     },
     "firearms": {
-      "version": 2,
+      "version": 3,
       "filename": "firearms.json"
     },
     "firearm_parts": {
@@ -91,7 +91,7 @@
       "filename": "components/muzzle_brakes.json"
     },
     "firearm_components_suppressors": {
-      "version": 1,
+      "version": 2,
       "filename": "components/suppressors.json"
     },
     "firearm_components_bipods": {
