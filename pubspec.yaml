@@ -209,6 +209,15 @@ dependencies:
   # Appendix H.2). The parser supports the full SVG path spec including
   # cubic Beziers and arcs.
   path_drawing: ^1.0.1
+  # SVG path-data parser (Phase 7b). Returns a Flutter `Path` directly,
+  # which lets us call `Path.combine(PathOperation.difference, ...)` to
+  # invert SVGs structured as negative-space (white canvas + silhouette
+  # cut out as a hole — e.g. the bigfoot SVG). `path_drawing` above
+  # also returns a Path but uses a more lenient parser; we use both
+  # — `svg_path_parser` for the strict-spec-compliant cases the
+  # Phase 7b parser path takes, with `parseSvgPathData` as the
+  # fallback when the strict parse fails on a malformed `d` string.
+  svg_path_parser: ^1.1.1
   firebase_core: ^4.7.0
   firebase_auth: ^6.4.0
   # Optional crash reporting. OFF by default. Activated only when the
