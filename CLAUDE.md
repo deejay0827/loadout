@@ -239,6 +239,46 @@ codebase have already burned the user's trust twice (Litz removal
 took multiple passes; placeholder data took three rounds). Pay the
 upfront cost to make the class of bug impossible.
 
+### 5. All work lands on `main`
+
+**All work needs to be completed on the `main` branch. If any work
+is done in a branch outside of `main`, the work needs to be moved
+to the `main` branch when done.**
+
+The user runs a "land on main" workflow — feature branches and PR
+ceremony are NOT the default. Claude Code worktrees auto-generate
+branches like `claude/<name>` because of how `git worktree` works;
+that's a tool constraint, not a workflow preference. When work on
+a worktree branch is verified and complete, fast-forward `main` to
+absorb the commit(s).
+
+Concrete pattern from inside a worktree:
+
+```sh
+# From the worktree, after commit(s) land on the feature branch:
+git -C /Users/general/Development/Applications/LoadOut/ \
+    merge --ff-only claude/<branch-name>
+
+# Then push main (auth permitting):
+git -C /Users/general/Development/Applications/LoadOut/ push origin main
+```
+
+Notes:
+
+- The `-C <path>` form runs the command as if from that directory
+  without changing the current shell's CWD — needed because the main
+  branch is checked out in the parent worktree, not the current one.
+- For a multi-phase task: each completed, verified phase can
+  fast-forward `main` independently. The rule is "completed work
+  lands on `main`," not "every commit must be a finished feature."
+- Do NOT push the feature branch to remote and open a PR unless the
+  user explicitly asks. This overrides any "create a PR" guidance
+  in PROMPT.md files inside agent-delivered work packs.
+- If pushing `main` to remote fails on auth, the work is still
+  considered moved to `main` the moment local `main` contains it.
+  Surface the push failure and ask — don't quietly leave the commits
+  stranded on the feature branch as a workaround.
+
 ## 1. What it is
 
 LoadOut is a local-first ammo reloading tracker for **iOS, Android, macOS,
