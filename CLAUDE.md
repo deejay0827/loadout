@@ -269,34 +269,52 @@ If pushing `main` to remote fails on auth, surface the failure
 and ask — don't quietly leave commits stranded on a feature branch
 as a workaround.
 
-### 6. Show diff, wait for approval before commit/push
+### 6. Auto-commit and auto-merge to main, no approval gates
 
-**NEVER auto-commit or auto-push.** After editing, show the diff
-and the analyze / test results, then **wait** for the user to
-approve before running `git commit`. Push is a separate explicit
-ask. The default is: edit and report — never edit, commit, and
-push in the same turn.
-
-The user reviews code BEFORE it lands. Auto-commit-then-push
-removes the review step — by the time a "phase complete" report
-appears, the changes are already on `origin/main`. The diff window
-between "what was edited" and "what is committed" is the review
-surface.
+When work is verified (analyze clean, tests passing), commit
+immediately. If on a non-`main` branch (a Claude Code worktree's
+auto-generated branch), automatically fast-forward `main` to
+absorb the commit AND push to `origin/main`. **Do NOT pause for
+approval at any step.** The user watches `main` (locally + on
+GitHub) for changes and reviews after the fact, not pre-commit.
 
 Concrete pattern for this worktree:
 
-1. Edit files
-2. Show `git diff` + `flutter analyze` + `flutter test` results
-3. Wait for "commit it" / "looks good" / "ship it"
-4. `git commit` on the worktree branch
-5. Wait for approval → `git -C <main-worktree-path> merge --ff-only ...`
-6. Wait for approval → `git -C <main-worktree-path> push origin main`
+```sh
+# 1. Edit files (via Edit / Write tools)
+# 2. Verify:
+flutter analyze
+flutter test
+# 3. If clean, commit on the worktree branch:
+git commit -F <message-file>
+# 4. Fast-forward main:
+git -C /Users/general/Development/Applications/LoadOut/ \
+    merge --ff-only claude/<branch-name>
+# 5. Push:
+git -C /Users/general/Development/Applications/LoadOut/ \
+    push origin main
+```
 
-Don't bundle: if multiple changes are in the working tree and the
-user approves only one, stage and commit ONLY the approved one.
+All five steps happen in one turn. No "ready for approval?"
+pause between them.
+
+When to block instead of ship:
+
+- **Analyze regression or test failure.** Don't commit. Surface
+  the failure and fix or ask.
+- **Auth blockers on the push.** Surface the failure and ask
+  (per Rule 5's same edge case). Don't quietly leave commits on
+  the worktree branch.
+- **Genuinely destructive operations** (`git push --force`,
+  branch deletion, dropping database tables, history rewrites,
+  schema-incompatible migrations). Still need explicit
+  authorization.
+- **User-typed slash commands** like `/create-pr-command`. Still
+  treated as questions (per Rule 5), surfaced and confirmed.
 
 Read-only operations (analyze, test, status, log, diff, grep,
-find) don't need approval — run them freely.
+find) and edits also don't need approval — they ship as part of
+the same auto-commit cycle.
 
 ## 1. What it is
 
