@@ -895,91 +895,103 @@ class _ReticleListRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ListTile(
-      // Leading column carries the LoadOut interoperability caption
-      // directly under the small thumbnail. Required by the
-      // CLAUDE.md § 30 liability checklist — the user must see the
-      // "LoadOut Original" framing on every preview surface in the
-      // picker, even at thumbnail size, so we never imply a
-      // manufacturer-licensed reticle. The caption is wrapped in a
-      // ConstrainedBox so it can break to two lines under the 36 px
-      // glyph rather than push the row width.
-      leading: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 36,
-            height: 36,
-            child: Center(
-              child: ReticleThumbnail(
-                size: 28,
-                color: selected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-          const SizedBox(height: 2),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 80),
-            child: ReticleInteroperabilityLabel(
-              align: TextAlign.center,
-              subtensionOrigin: row.subtensionOrigin,
-              calibrationProvenance:
-                  _decodeProvenance(row.calibrationProvenance),
-            ),
-          ),
-        ],
-      ),
-      title: Text(
-        '${_displayManufacturer(row.manufacturerId)} ${row.model}',
-        style: theme.textTheme.bodyLarge,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        [
-          if (row.family != null) row.family!,
-          '${row.nativeUnit.toUpperCase()} • ${_typeLabel(row.type)}',
-          if (isDefault) 'default for selected optic',
-        ].join(' • '),
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      // Trailing: a "Preview" icon that opens the full-screen preview.
-      // The tap target on the icon is independent of the row tap, so a
-      // user who clicks the row picks the reticle, but a user who taps
-      // the magnifier icon just gets a preview.
-      trailing: Wrap(
-        spacing: 0,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          if (selected)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Icon(
-                Icons.check,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          IconButton(
-            icon: const Icon(Icons.fullscreen),
-            tooltip: 'Preview at full size',
-            onPressed: () {
-              showReticleFullScreenPreview(
-                context,
-                reticle: repo.definitionFromRow(row),
-                reticleLabel: '${row.manufacturerId} ${row.model}',
-              );
-            },
-          ),
-        ],
-      ),
+    // Hand-rolled row instead of ListTile. ListTile caps the leading
+    // slot at the tile's natural height (~56 px for a 2-line tile),
+    // which clips the LoadOut interoperability caption under the
+    // thumbnail when it wraps to 3+ lines. Per CLAUDE.md § 30 the
+    // caption is load-bearing and can't be dropped, so we own the
+    // layout: a fixed-80-px leading column carrying the thumbnail and
+    // the full caption, the title/subtitle in the middle, the selection
+    // check + fullscreen preview trigger on the right. The trailing
+    // IconButton naturally absorbs its own taps (Material InkWell), so
+    // the outer InkWell's onPick only fires when the user taps outside
+    // the icon — same independent-tap behavior the original ListTile +
+    // Wrap delivered.
+    return InkWell(
       onTap: onPick,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            SizedBox(
+              width: 80,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 36,
+                    height: 36,
+                    child: Center(
+                      child: ReticleThumbnail(
+                        size: 28,
+                        color: selected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  ReticleInteroperabilityLabel(
+                    align: TextAlign.center,
+                    subtensionOrigin: row.subtensionOrigin,
+                    calibrationProvenance:
+                        _decodeProvenance(row.calibrationProvenance),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_displayManufacturer(row.manufacturerId)} ${row.model}',
+                    style: theme.textTheme.bodyLarge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    [
+                      if (row.family != null) row.family!,
+                      '${row.nativeUnit.toUpperCase()} • ${_typeLabel(row.type)}',
+                      if (isDefault) 'default for selected optic',
+                    ].join(' • '),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(
+                  Icons.check,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            IconButton(
+              icon: const Icon(Icons.fullscreen),
+              tooltip: 'Preview at full size',
+              onPressed: () {
+                showReticleFullScreenPreview(
+                  context,
+                  reticle: repo.definitionFromRow(row),
+                  reticleLabel: '${row.manufacturerId} ${row.model}',
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
