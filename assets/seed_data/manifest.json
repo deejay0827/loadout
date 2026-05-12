@@ -1,5 +1,5 @@
 {
-  "manifest_version": 6,
+  "manifest_version": 7,
   "generated_at": "2026-05-12T20:00:00Z",
   "files": {
     "cartridges": {
@@ -31,7 +31,7 @@
       "filename": "firearm_parts.json"
     },
     "targets": {
-      "version": 3,
+      "version": 4,
       "filename": "targets.json"
     },
     "reticles": {

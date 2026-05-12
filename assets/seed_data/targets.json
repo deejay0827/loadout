@@ -162,7 +162,7 @@
     "notes": "12-inch square plate."
   },
   {
-    "name": "Rectangle 12×18 in",
+    "name": "Rectangle 12\u00d718 in",
     "category": "target",
     "shape": "rectangle",
     "width_in": 12.0,
@@ -171,7 +171,7 @@
     "notes": "12x18 rectangular plate. Common PRS practice size."
   },
   {
-    "name": "Rectangle 18×24 in",
+    "name": "Rectangle 18\u00d724 in",
     "category": "target",
     "shape": "rectangle",
     "width_in": 18.0,
@@ -180,7 +180,7 @@
     "notes": "18x24 rectangular plate. Half-IPSC PRS practice size."
   },
   {
-    "name": "Rectangle 24×30 in",
+    "name": "Rectangle 24\u00d730 in",
     "category": "target",
     "shape": "rectangle",
     "width_in": 24.0,
@@ -189,7 +189,7 @@
     "notes": "24x30 rectangular plate. Full IPSC-shape PRS rifle target."
   },
   {
-    "name": "Rectangle 24×36 in",
+    "name": "Rectangle 24\u00d736 in",
     "category": "target",
     "shape": "rectangle",
     "width_in": 24.0,
@@ -198,7 +198,7 @@
     "notes": "24x36 rectangular plate. Long-range PRS / NRL plate."
   },
   {
-    "name": "Rectangle 36×48 in",
+    "name": "Rectangle 36\u00d748 in",
     "category": "target",
     "shape": "rectangle",
     "width_in": 36.0,
@@ -207,7 +207,7 @@
     "notes": "36x48 rectangular plate. ELR backer / spotting target."
   },
   {
-    "name": "Rectangle 36×60 in",
+    "name": "Rectangle 36\u00d760 in",
     "category": "target",
     "shape": "rectangle",
     "width_in": 36.0,
@@ -216,7 +216,7 @@
     "notes": "36x60 rectangular plate. Full-height backer / IPSC silhouette stand-in."
   },
   {
-    "name": "NRA SR-1 Reduced 12.71×12.71 in (100 yd)",
+    "name": "NRA SR-1 Reduced 12.71\u00d712.71 in (100 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 12.71,
@@ -225,7 +225,7 @@
     "notes": "100-yard reduced version of the SR target - used in NRA High Power Match Course."
   },
   {
-    "name": "NRA SR-21 19×19 in (200 yd)",
+    "name": "NRA SR-21 19\u00d719 in (200 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 19.0,
@@ -234,7 +234,7 @@
     "notes": "200-yard NRA Service Rifle target. 7-inch X-ring within 12-inch 10-ring."
   },
   {
-    "name": "NRA MR-1 21×21 in (300 yd)",
+    "name": "NRA MR-1 21\u00d721 in (300 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 21.0,
@@ -243,7 +243,7 @@
     "notes": "300-yard NRA Mid-Range target. 6-inch X-ring within 12-inch 10-ring."
   },
   {
-    "name": "NRA LR 36×36 in (600 yd)",
+    "name": "NRA LR 36\u00d736 in (600 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 36.0,
@@ -252,7 +252,7 @@
     "notes": "600-yard NRA Long Range target. 12-inch X-ring within 24-inch 10-ring."
   },
   {
-    "name": "F-Class F-Open 72×72 in (1000 yd)",
+    "name": "F-Class F-Open 72\u00d772 in (1000 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 72.0,
@@ -261,7 +261,7 @@
     "notes": "1000-yard F-Class target. 5-inch X-ring within 10-inch 10-ring."
   },
   {
-    "name": "F-Class F-T/R 36×36 in (600 yd)",
+    "name": "F-Class F-T/R 36\u00d736 in (600 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 36.0,
@@ -270,7 +270,7 @@
     "notes": "600-yard F-Class Target Rifle target. 3-inch X-ring within 6-inch 10-ring."
   },
   {
-    "name": "Bullseye Slow-Fire Pistol 10.5×10.5 in (25 yd)",
+    "name": "Bullseye Slow-Fire Pistol 10.5\u00d710.5 in (25 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 10.5,
@@ -279,7 +279,7 @@
     "notes": "B-16 NRA pistol slow-fire target. Black bullseye on a light field."
   },
   {
-    "name": "Bullseye Slow-Fire Pistol 10.5×10.5 in (50 yd)",
+    "name": "Bullseye Slow-Fire Pistol 10.5\u00d710.5 in (50 yd)",
     "category": "target",
     "shape": "rectangle",
     "width_in": 10.5,
@@ -297,7 +297,7 @@
     "notes": "Texas Star - central hub with five 8-inch satellite plates on radial arms. Hitting a plate shifts the balance and rotates the rig so the next plate moves into the sight picture."
   },
   {
-    "name": "Dueling Tree 36×60 in",
+    "name": "Dueling Tree 36\u00d760 in",
     "category": "target",
     "shape": "rectangle",
     "width_in": 36.0,
@@ -306,7 +306,7 @@
     "notes": "Pivoting plate rack - typically six 6-inch round plates that swing to the opposite side when hit."
   },
   {
-    "name": "IPSC USPSA Classic 18×30 in",
+    "name": "IPSC USPSA Classic 18\u00d730 in",
     "category": "target",
     "shape": "silhouette",
     "width_in": 18.0,
@@ -315,25 +315,25 @@
     "notes": "Full-size USPSA / IPSC competition silhouette (45.7 x 76.2 cm). The reference target for action-pistol matches; A-zone scoring centered on the chest box, head box on top."
   },
   {
-    "name": "IPSC Classic Official 18.12×29.93 in",
+    "name": "IPSC Classic Official 18.12\u00d729.93 in",
     "category": "target",
     "shape": "silhouette",
     "width_in": 18.12,
     "height_in": 29.93,
     "color_hex": "#ffffff",
-    "notes": "Official IPSC Classic Target — 460 x 760 mm. Slightly different proportions than the USPSA Metric; used by IPSC Region matches outside the USA."
+    "notes": "Official IPSC Classic Target \u2014 460 x 760 mm. Slightly different proportions than the USPSA Metric; used by IPSC Region matches outside the USA."
   },
   {
-    "name": "IPSC Classic Mini 18.12×22.84 in",
+    "name": "IPSC Classic Mini 18.12\u00d722.84 in",
     "category": "target",
     "shape": "silhouette",
     "width_in": 18.12,
     "height_in": 22.84,
     "color_hex": "#ffffff",
-    "notes": "Reduced-height IPSC Classic — 460 x 580 mm. Same width as the full Classic, shorter overall for indoor / restricted-bay use."
+    "notes": "Reduced-height IPSC Classic \u2014 460 x 580 mm. Same width as the full Classic, shorter overall for indoor / restricted-bay use."
   },
   {
-    "name": "IPSC Mini 12×20 in",
+    "name": "IPSC Mini 12\u00d720 in",
     "category": "target",
     "shape": "silhouette",
     "width_in": 12.0,
@@ -342,42 +342,42 @@
     "notes": "Mini USPSA / IPSC silhouette (~66% of full Classic). Used for distance training and indoor ranges."
   },
   {
-    "name": "IPSC A4 11.81×23.62 in",
+    "name": "IPSC A4 11.81\u00d723.62 in",
     "category": "target",
     "shape": "silhouette",
     "width_in": 11.81,
     "height_in": 23.62,
     "color_hex": "#ffffff",
-    "notes": "IPSC A4-size target — 300 x 600 mm. Sized to print on a single A4 sheet for at-home practice."
+    "notes": "IPSC A4-size target \u2014 300 x 600 mm. Sized to print on a single A4 sheet for at-home practice."
   },
   {
-    "name": "IPSC Head Box 5.91×11.02 in",
+    "name": "IPSC Head Box 5.91\u00d711.02 in",
     "category": "target",
     "shape": "silhouette",
     "width_in": 5.91,
     "height_in": 11.02,
     "color_hex": "#ffffff",
-    "notes": "USPSA / IPSC head box only — 150 x 280 mm. The high-value shoot-or-no-shoot zone, often used as a small standalone reduced-target drill."
+    "notes": "USPSA / IPSC head box only \u2014 150 x 280 mm. The high-value shoot-or-no-shoot zone, often used as a small standalone reduced-target drill."
   },
   {
-    "name": "Pepper Popper Full 7.87×33.46 in",
+    "name": "Pepper Popper Full 7.87\u00d733.46 in",
     "category": "target",
     "shape": "popper",
     "shape_id": "pepper_popper",
     "width_in": 7.87,
     "height_in": 33.46,
     "color_hex": "#ffffff",
-    "notes": "Full-size pepper popper — 85 cm tall, 20 cm wide at the head. Reactive falling silhouette used in action-pistol matches."
+    "notes": "Full-size pepper popper \u2014 85 cm tall, 20 cm wide at the head. Reactive falling silhouette used in action-pistol matches."
   },
   {
-    "name": "Pepper Popper Mini 7.87×22.05 in",
+    "name": "Pepper Popper Mini 7.87\u00d722.05 in",
     "category": "target",
     "shape": "popper",
     "shape_id": "pepper_popper",
     "width_in": 7.87,
     "height_in": 22.05,
     "color_hex": "#ffffff",
-    "notes": "Mini pepper popper — 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height."
+    "notes": "Mini pepper popper \u2014 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height."
   },
   {
     "id": "deer",
@@ -387,7 +387,7 @@
     "shape_id": "deer",
     "width_in": 60,
     "height_in": 32,
-    "color_hex": "#3D2F1E",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
     "category_tags": [
@@ -405,7 +405,7 @@
     "shape_id": "mule_deer",
     "width_in": 60,
     "height_in": 32,
-    "color_hex": "#3D2F1E",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 250,
     "category_tags": [
@@ -424,7 +424,7 @@
     "shape_id": "elk",
     "width_in": 100,
     "height_in": 53,
-    "color_hex": "#3D2F1E",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 300,
     "category_tags": [
@@ -443,7 +443,7 @@
     "shape_id": "moose",
     "width_in": 120,
     "height_in": 64,
-    "color_hex": "#2A1F14",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
     "category_tags": [
@@ -462,7 +462,7 @@
     "shape_id": "pronghorn",
     "width_in": 60,
     "height_in": 32,
-    "color_hex": "#A87D4E",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#3D2F1E",
     "default_distance_yd": 300,
     "category_tags": [
@@ -482,7 +482,7 @@
     "shape_id": "bear",
     "width_in": 60,
     "height_in": 32,
-    "color_hex": "#1A1410",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#000000",
     "default_distance_yd": 150,
     "category_tags": [
@@ -500,7 +500,7 @@
     "shape_id": "boar",
     "width_in": 60,
     "height_in": 33,
-    "color_hex": "#1A1410",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#000000",
     "default_distance_yd": 150,
     "category_tags": [
@@ -519,7 +519,7 @@
     "shape_id": "mountain_lion",
     "width_in": 84,
     "height_in": 45,
-    "color_hex": "#8B6F47",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#3D2F1E",
     "default_distance_yd": 100,
     "category_tags": [
@@ -537,7 +537,7 @@
     "shape_id": "coyote",
     "width_in": 48,
     "height_in": 26,
-    "color_hex": "#5A4A36",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 300,
     "category_tags": [
@@ -555,7 +555,7 @@
     "shape_id": "fox",
     "width_in": 36,
     "height_in": 19,
-    "color_hex": "#8B4513",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
     "category_tags": [
@@ -573,7 +573,7 @@
     "shape_id": "rabbit",
     "width_in": 18,
     "height_in": 10,
-    "color_hex": "#7D6B53",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 100,
     "category_tags": [
@@ -590,7 +590,7 @@
     "shape_id": "groundhog",
     "width_in": 24,
     "height_in": 13,
-    "color_hex": "#5A4A36",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 200,
     "category_tags": [
@@ -608,7 +608,7 @@
     "shape_id": "prairie_dog",
     "width_in": 12,
     "height_in": 6,
-    "color_hex": "#A87D4E",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#3D2F1E",
     "default_distance_yd": 400,
     "category_tags": [
@@ -626,7 +626,7 @@
     "shape_id": "wild_turkey",
     "width_in": 36,
     "height_in": 19,
-    "color_hex": "#3D2F1E",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 40,
     "category_tags": [
@@ -644,7 +644,7 @@
     "shape_id": "pheasant",
     "width_in": 36,
     "height_in": 19,
-    "color_hex": "#8B4513",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#1A1410",
     "default_distance_yd": 30,
     "category_tags": [
@@ -662,7 +662,7 @@
     "shape_id": "bigfoot",
     "width_in": 84,
     "height_in": 46,
-    "color_hex": "#2A1F14",
+    "color_hex": "#ffffff",
     "rim_color_hex": "#000000",
     "default_distance_yd": 400,
     "category_tags": [

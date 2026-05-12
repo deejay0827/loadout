@@ -3208,19 +3208,28 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ),
       );
     }
-    // Inline preview is intentionally NOT the full ScopeDaytimeBackdrop
-    // (sky / mound / grass) — that painter sizes the silhouette to
-    // sit above the horizon and clips the top off in any short
-    // canvas. Reloaders care about the TARGET, not the scenery, so
-    // this preview shows the target large + centered on a clean
-    // surface. The full daytime backdrop still renders inside the
-    // tap-to-zoom dialog and inside Scope View Pro where the canvas
-    // has the height to show it correctly.
+    // Inline preview renders the full realistic scene (sky / grass /
+    // mound / pole / target) via `TargetPlot` in realistic mode,
+    // which routes to `_RealisticScenePainter` for single targets.
+    // The 4:3 frame aspect and small-canvas correctness are handled
+    // by the painter itself; 180px height gives the scene composition
+    // ~14px headroom above the target with the rest of the scene
+    // (mound + pole + grass strip) below.
+    //
+    // No shots, no aim point, no reticle in this surface — the
+    // realistic scene painter intentionally omits those layers (per
+    // Phase 1) and the picker preview doesn't need them: the user is
+    // configuring a target, not shooting it.
     final preview = SizedBox(
       height: 180,
-      child: _TargetThumbnail(
-        spec: activeTargetSpec,
-        color: _resolveTargetColor(activeTargetSpec),
+      child: TargetPlot(
+        target: activeTargetSpec,
+        shots: const [],
+        onTapAt: (_, _) {},
+        onLongPressShot: (_) {},
+        tapMode: TargetPlotTapMode.aimPoint,
+        viewMode: TargetPlotViewMode.realistic,
+        colorHexOverride: _selectedTargetColorHex,
       ),
     );
     // Tap-to-zoom: opens a full-screen dialog with a larger
@@ -3268,9 +3277,14 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               SizedBox(
                 width: maxW,
                 height: imageH,
-                child: _TargetThumbnail(
-                  spec: spec,
-                  color: _resolveTargetColor(spec),
+                child: TargetPlot(
+                  target: spec,
+                  shots: const [],
+                  onTapAt: (_, _) {},
+                  onLongPressShot: (_) {},
+                  tapMode: TargetPlotTapMode.aimPoint,
+                  viewMode: TargetPlotViewMode.realistic,
+                  colorHexOverride: _selectedTargetColorHex,
                 ),
               ),
               const SizedBox(height: 12),
@@ -3329,7 +3343,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// pick by geometry. The underlying catalog name still lives on
   /// the row for search and saved-session metadata.
   String _targetDropdownLabel(TargetRow t) {
-    final shape = _shapeDisplayLabel(t.shape);
     final w = t.widthIn;
     final h = t.heightIn;
     String dims;
@@ -3338,6 +3351,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     } else {
       dims = '${_formatDim(w)}×${_formatDim(h)} in';
     }
+    // Rows with a `shapeId` set (animals via AnimalSilhouettes,
+    // poppers and future competition targets via TargetSilhouettes)
+    // use the catalog's `name` field directly — that's the species
+    // or product name. The shape-based `_shapeDisplayLabel`
+    // collapses these into "IPSC" because their geometric `shape`
+    // is "silhouette", which is correct for procedural dispatch
+    // but wrong for user-facing labels.
+    if (t.shapeId != null) {
+      return '${t.name} $dims';
+    }
+    final shape = _shapeDisplayLabel(t.shape);
     // Star is a unique geometry — surface the catalog name in
     // parens so the user can tell a Texas Star from a Dueling Tree
     // even though both are "Star 36 in" by geometry.
@@ -9590,273 +9614,6 @@ class _DopeBodyCell extends StatelessWidget {
 }
 
 enum _ShotEditResult { cancel, save, delete }
-
-/// Small bag of "this device gave us this reading" used by the
-/// Inline target thumbnail — renders the target large and centered
-/// on a soft-tinted background. NOT the full daytime backdrop (which
-/// only fits in tall canvases). Used by Range Day Setup → Group 2
-/// and the tap-to-zoom dialog body.
-///
-/// The target paint scales to 70% of the shorter canvas axis so the
-/// shape fills the box without clipping. IPSC silhouettes use the
-/// proper 1.6:1 height-to-width ratio; squares/rectangles honour
-/// their actual `widthIn × heightIn` aspect; circles are 1:1; the
-/// new "star" shape draws a 5-pointed Texas Star with a central hub
-/// and five satellite plates.
-class _TargetThumbnail extends StatelessWidget {
-  const _TargetThumbnail({required this.spec, required this.color});
-  final TargetSpec spec;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-            ],
-          ),
-        ),
-        child: CustomPaint(
-          painter: _TargetThumbnailPainter(spec: spec, color: color),
-          child: const SizedBox.expand(),
-        ),
-      ),
-    );
-  }
-}
-
-class _TargetThumbnailPainter extends CustomPainter {
-  _TargetThumbnailPainter({required this.spec, required this.color});
-  final TargetSpec spec;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    if (w <= 0 || h <= 0) return;
-    final fill = Paint()..color = color;
-    final outline = Paint()
-      ..color = const Color(0xff1f1d1a)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.0, math.min(w, h) * 0.006);
-    final centerX = w / 2;
-    final centerY = h / 2;
-    // Limit the target to ~78% of the shorter axis so it has room to
-    // breathe inside the box without touching the border.
-    final maxBox = math.min(w, h) * 0.78;
-    // SVG dispatch first — animals and competition silhouettes (popper,
-    // future IDPA / USPSA classifier / etc.) resolve via shape_id and
-    // the boot-preloaded path caches. Procedural shapes (circle / star /
-    // IPSC silhouette / rectangle / square) fall through to the switch
-    // below. The same dispatch helper is used by the realistic-scene
-    // painter in target_plot.dart — single source of truth.
-    final shapeId = spec.shapeId;
-    if (shapeId != null) {
-      // Aspect-preserved square bounding box centered in the thumbnail.
-      // scalePathToBounds inside the silhouette cache further fits the
-      // SVG to its source aspect within this rect (with bottom-
-      // alignment), so the rendered silhouette sits at the bottom of
-      // the tile like it's standing on the ground.
-      final svgRect = Rect.fromCenter(
-        center: Offset(centerX, centerY),
-        width: maxBox,
-        height: maxBox,
-      );
-      final svgPath = resolveTargetSvgPath(svgRect, shapeId);
-      if (svgPath != null) {
-        canvas.drawPath(svgPath, fill);
-        canvas.drawPath(svgPath, outline);
-        return;
-      }
-      // shapeId set but cache cold — fall through to procedural so the
-      // thumbnail isn't blank during the brief boot-preload window.
-    }
-
-    final shape = spec.shape.toLowerCase();
-    switch (shape) {
-      case 'circle':
-        final r = maxBox / 2;
-        canvas.drawCircle(Offset(centerX, centerY), r, fill);
-        canvas.drawCircle(Offset(centerX, centerY), r, outline);
-      case 'star':
-        _paintTexasStar(canvas, centerX, centerY, maxBox / 2, fill, outline);
-      case 'silhouette':
-      case 'ipsc':
-      case 'idpa':
-      case 'human':
-        _paintIpscSilhouette(canvas, centerX, centerY, maxBox, fill, outline);
-      case 'rectangle':
-      case 'square':
-      default:
-        // Honor the actual width:height ratio so a 18×24 plate
-        // doesn't draw as a square.
-        final aspect = (spec.heightIn <= 0 || spec.widthIn <= 0)
-            ? 1.0
-            : spec.widthIn / spec.heightIn;
-        double rectW;
-        double rectH;
-        if (aspect >= 1.0) {
-          rectW = maxBox;
-          rectH = maxBox / aspect;
-        } else {
-          rectH = maxBox;
-          rectW = maxBox * aspect;
-        }
-        final rect = Rect.fromCenter(
-          center: Offset(centerX, centerY),
-          width: rectW,
-          height: rectH,
-        );
-        canvas.drawRect(rect, fill);
-        canvas.drawRect(rect, outline);
-    }
-  }
-
-  /// Paint a USPSA / IPSC-style cardboard silhouette (the
-  /// "metric" target). Reproduces the canonical shape: small head
-  /// box on top, full-width shoulders, body that chamfers in at the
-  /// bottom corners. Uses a Path so the chamfered geometry reads
-  /// correctly at every aspect ratio in the catalog (the user's
-  /// approved sizes range from 6×11 head plate up to 18×30 full).
-  /// Falls back to a generic taller-than-wide silhouette when the
-  /// catalog row's aspect is degenerate.
-  void _paintIpscSilhouette(
-    Canvas canvas,
-    double cx,
-    double cy,
-    double maxBox,
-    Paint fill,
-    Paint outline,
-  ) {
-    final aspect = (spec.heightIn <= 0 || spec.widthIn <= 0)
-        ? 0.6
-        : spec.widthIn / spec.heightIn;
-    // Total bounds: scale to fit `maxBox` along the longer axis.
-    final double targetH;
-    final double targetW;
-    if (aspect >= 1.0) {
-      targetW = maxBox;
-      targetH = maxBox / aspect;
-    } else {
-      targetH = maxBox;
-      targetW = maxBox * aspect;
-    }
-    final left = cx - targetW / 2;
-    final right = cx + targetW / 2;
-    final top = cy - targetH / 2;
-    final bottom = cy + targetH / 2;
-    // USPSA Metric Target proportions (relative to total H):
-    //   head box width ≈ 0.27 of total W (~5" of 18")
-    //   head box height ≈ 0.20 of total H (~6" of 30")
-    //   shoulders are the full width
-    //   bottom chamfer cuts the lower 0.18 of H, with the bottom
-    //     edge ~0.55 of W (the "feet" the target stands on)
-    //   neck (between head box and shoulders) is ~0.0 (the head
-    //     sits flush on the shoulders).
-    final headW = targetW * 0.27;
-    final headH = targetH * 0.20;
-    final headLeft = cx - headW / 2;
-    final headRight = cx + headW / 2;
-    final shouldersTop = top + headH;
-    final chamferStartY = bottom - targetH * 0.18;
-    final bottomEdgeHalfW = targetW * 0.275;
-    // Path traces the silhouette clockwise from the top-left of
-    // the head, then the full body outline including chamfers.
-    final body = Path()
-      ..moveTo(headLeft, top)
-      ..lineTo(headRight, top)
-      ..lineTo(headRight, shouldersTop)
-      ..lineTo(right, shouldersTop)
-      ..lineTo(right, chamferStartY)
-      ..lineTo(cx + bottomEdgeHalfW, bottom)
-      ..lineTo(cx - bottomEdgeHalfW, bottom)
-      ..lineTo(left, chamferStartY)
-      ..lineTo(left, shouldersTop)
-      ..lineTo(headLeft, shouldersTop)
-      ..close();
-    canvas.drawPath(body, fill);
-    canvas.drawPath(body, outline);
-    // Inner perimeter inset (the "C-zone outline" in the user's
-    // reference image). Subtle line offset inward — gives the
-    // silhouette its distinctive USPSA look without rendering full
-    // scoring zones (which would be busy in a small thumbnail).
-    final inset = math.max(2.0, targetW * 0.04);
-    final inner = Path()
-      ..moveTo(headLeft + inset, top + inset)
-      ..lineTo(headRight - inset, top + inset)
-      ..lineTo(headRight - inset, shouldersTop)
-      ..lineTo(right - inset, shouldersTop + inset)
-      ..lineTo(right - inset, chamferStartY - inset * 0.5)
-      ..lineTo(cx + bottomEdgeHalfW - inset * 0.7, bottom - inset)
-      ..lineTo(cx - bottomEdgeHalfW + inset * 0.7, bottom - inset)
-      ..lineTo(left + inset, chamferStartY - inset * 0.5)
-      ..lineTo(left + inset, shouldersTop + inset)
-      ..lineTo(headLeft + inset, shouldersTop)
-      ..close();
-    final innerPaint = Paint()
-      ..color = outline.color.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(0.6, outline.strokeWidth * 0.6);
-    canvas.drawPath(inner, innerPaint);
-  }
-
-  /// Paints a Texas Star: central hub with five satellite plates
-  /// arranged radially. The actual reactive target has plates that
-  /// rotate around the central hub when hit; for the static preview
-  /// we just render the layout. Black armature lines connect the
-  /// hub to each plate so the shape reads as a star, not a circle.
-  void _paintTexasStar(
-    Canvas canvas,
-    double cx,
-    double cy,
-    double radius,
-    Paint fill,
-    Paint outline,
-  ) {
-    // Plate sizing — central hub is small; satellite plates are
-    // larger and sit at the radius. Five satellites at 72° apart
-    // starting from the top.
-    final hubR = radius * 0.18;
-    final plateR = radius * 0.22;
-    final orbitR = radius * 0.78;
-    final armPaint = Paint()
-      ..color = const Color(0xff1f1d1a)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(2.0, radius * 0.04);
-    // Arms first so the plates draw on top.
-    for (var i = 0; i < 5; i++) {
-      final angle = -math.pi / 2 + i * (2 * math.pi / 5);
-      final px = cx + orbitR * math.cos(angle);
-      final py = cy + orbitR * math.sin(angle);
-      canvas.drawLine(Offset(cx, cy), Offset(px, py), armPaint);
-    }
-    // Central hub.
-    canvas.drawCircle(Offset(cx, cy), hubR, fill);
-    canvas.drawCircle(Offset(cx, cy), hubR, outline);
-    // Five satellite plates.
-    for (var i = 0; i < 5; i++) {
-      final angle = -math.pi / 2 + i * (2 * math.pi / 5);
-      final px = cx + orbitR * math.cos(angle);
-      final py = cy + orbitR * math.sin(angle);
-      canvas.drawCircle(Offset(px, py), plateR, fill);
-      canvas.drawCircle(Offset(px, py), plateR, outline);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _TargetThumbnailPainter old) {
-    return old.spec != spec || old.color != color;
-  }
-}
 
 /// Whole-rack thumbnail — paints every child plate at its real
 /// (offsetX, offsetY, width, height) position from the rack's
