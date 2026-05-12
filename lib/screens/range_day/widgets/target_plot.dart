@@ -1025,8 +1025,11 @@ class _RealisticScenePainter extends CustomPainter {
   final String? colorHexOverride;
 
   // ── Layout constants ─────────────────────────────────────────────
-  /// Horizon position: sky/grass boundary at 70% from top.
-  static const double _horizonFrac = 0.70;
+  /// Horizon position: sky/grass boundary as a fraction of canvas H.
+  /// Tuned to 0.75 (was 0.70 in Phase 4) — more sky overhead at the
+  /// new target position gives a sense of "looking up at the target"
+  /// rather than the target sitting flat on a wide grass strip.
+  static const double _horizonFrac = 0.75;
   /// Reference scale denominator: 1 inch = H / _inchesPerCanvasHeight px.
   /// Tuned to 200 (was 300 in Phase 1) so a 60″ mound and a 60″-wide
   /// target end up similar widths on screen — visually coherent rather
@@ -1037,6 +1040,12 @@ class _RealisticScenePainter extends CustomPainter {
   /// frame at the new scenery scale.
   static const double _targetBoxWidthFrac = 0.50;
   static const double _targetBoxHeightFrac = 0.28;
+  /// Visible pole stub height as a fraction of the target box height.
+  /// Phase 5 cut the pole from a fixed 72″ real-world height to a
+  /// short mounting stub anchored to target height — bear becomes
+  /// the focal point and the pole no longer reads as a "stilt".
+  /// 0.20 ≈ stub is ~20% of the target's vertical extent.
+  static const double _visiblePoleFracOfTarget = 0.20;
 
   // ── Palette ──────────────────────────────────────────────────────
   static const Color _skyTopColor = Color(0xff5e8db8);
@@ -1062,15 +1071,24 @@ class _RealisticScenePainter extends CustomPainter {
     final inPerPx = h / _inchesPerCanvasHeight;
 
     // Layout math (single source for all paint helpers):
-    //   horizon_y          = 0.70 H (sky/grass boundary)
+    //   horizon_y          = 0.75 H (sky/grass boundary, Phase 5)
     //   mound straddles horizon, half above, half below
-    //   pole rises from mound apex; pole's REAL top sets target's bottom
+    //   visible pole stub is derived from target height (Phase 5 —
+    //     was a fixed 72" real-world inch value through Phase 4)
     //   target rect computed up front so the pole can run THROUGH it
     final horizonY = _horizonFrac * h;
     final moundHeight = 18.0 * inPerPx;
-    final poleHeight = 72.0 * inPerPx;
     final moundApexY = horizonY - moundHeight * 0.5;
-    final targetBottomY = moundApexY - poleHeight;
+
+    // Pole's VISIBLE height (the stub exposed below the target) is
+    // tied to target box height, so the pole reads as a short
+    // mounting post regardless of canvas size. The previous fixed-
+    // inch height made the pole look like a stilt holding a small
+    // target way up in the air.
+    final targetBoxH = h * _targetBoxHeightFrac;
+    final visiblePoleHeight = targetBoxH * _visiblePoleFracOfTarget;
+
+    final targetBottomY = moundApexY - visiblePoleHeight;
     final targetRect = _computeTargetRect(w, h, targetBottomY);
 
     // The pole's VISUAL top extends past the target's bottom up into
@@ -1135,8 +1153,10 @@ class _RealisticScenePainter extends CustomPainter {
     final moundHalfW = moundW * 0.5;
 
     // Step across the horizon at small intervals. Skip the band
-    // where the mound sits.
-    final stepPx = math.max(w / 36.0, 4.0);
+    // where the mound sits. Step tightened to ~3px (Phase 5) — was
+    // ~5-8px in Phase 4. Roughly 1.67× more blades, removes the
+    // visible gaps between tufts that read as sparse.
+    final stepPx = math.max(w / 100.0, 3.0);
     for (var x = stepPx * 0.5; x < w; x += stepPx) {
       // Skip if inside the mound's horizontal extent (with a small
       // margin so tufts blend with the mound edges).
@@ -1151,14 +1171,18 @@ class _RealisticScenePainter extends CustomPainter {
       );
     }
 
-    // A few darker grass clumps right where the mound meets the
-    // grass — gives the mound a sense of being EMBEDDED in the
-    // ground rather than sitting on top.
-    for (var i = 0; i < 6; i++) {
+    // Darker grass clumps where the mound meets the grass —
+    // gives the mound a sense of being EMBEDDED in the ground
+    // rather than sitting on top. Phase 5 expanded from 6 → 10
+    // clumps (5 each side) and stagger heights via a 1.5×
+    // multiplier on alternate indices so the fringe doesn't read
+    // as uniform.
+    for (var i = 0; i < 10; i++) {
       final side = i.isEven ? -1.0 : 1.0;
-      final t = (i ~/ 2) / 3.0; // 0, 0.33, 0.67
+      final t = (i ~/ 2) / 4.0; // 0, 0.25, 0.50, 0.75, 1.0
       final x = cx + side * (moundHalfW - 2.0 - t * 8.0);
-      final bladeH = 2.0 + math.sin(i * 1.7) * 1.5;
+      final heightMultiplier = i.isEven ? 1.5 : 1.0;
+      final bladeH = (2.0 + math.sin(i * 1.7) * 1.5) * heightMultiplier;
       canvas.drawLine(
         Offset(x, horizonY + 1.0),
         Offset(x, horizonY - bladeH),

@@ -3221,7 +3221,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // Phase 1) and the picker preview doesn't need them: the user is
     // configuring a target, not shooting it.
     final preview = SizedBox(
-      height: 180,
+      height: 234,
       child: TargetPlot(
         target: activeTargetSpec,
         shots: const [],
@@ -3255,7 +3255,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       TargetSpec spec, String displayName) async {
     final mediaQuery = MediaQuery.of(context);
     final maxW = (mediaQuery.size.width * 0.92).clamp(280.0, 720.0);
-    final imageH = (maxW * 0.78).clamp(240.0, 560.0);
+    final imageH = (maxW * 1.0).clamp(280.0, 640.0);
     await showDialog<void>(
       context: context,
       builder: (ctx) {
