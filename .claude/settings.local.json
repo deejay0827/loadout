@@ -361,7 +361,8 @@
       "Bash(/Users/general/Development/Applications/LoadOut/scripts/upload_seed_data.sh --dry-run)",
       "Bash(/Users/general/Development/Applications/LoadOut/scripts/upload_seed_data.sh)",
       "Bash(awk '/Future<void> _seedVerifiedScopes/,/^  }$/' /Users/general/Development/Applications/LoadOut/lib/database/seed_loader.dart)",
-      "Bash(grep -n \"^  Future<void>\\\\|^  }$\" /Users/general/Development/Applications/LoadOut/lib/database/seed_loader.dart)"
+      "Bash(grep -n \"^  Future<void>\\\\|^  }$\" /Users/general/Development/Applications/LoadOut/lib/database/seed_loader.dart)",
+      "Bash(awk '/const allowedKeys = /,/^};/' /Users/general/Development/Applications/LoadOut/lib/services/seed_updater.dart)"
     ]
   }
 }
