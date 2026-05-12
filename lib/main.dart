@@ -182,6 +182,7 @@ Future<void> main() async {
 
   // Preload competition target SVGs (per Appendix M).
   unawaited(Future.wait([
+    TargetSilhouettes.loadTargetPath('ipsc'),
     TargetSilhouettes.loadTargetPath('pepper_popper'),
   ]));
 
