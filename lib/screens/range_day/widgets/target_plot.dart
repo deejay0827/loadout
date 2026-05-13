@@ -353,6 +353,7 @@ class TargetPlot extends StatelessWidget {
     this.colorHexOverride,
     this.rangeYards,
     this.lowLightMode = false,
+    this.sizeFloorEnabled = true,
   });
 
   /// Target geometry / color. In rack mode this is the active child's
@@ -463,6 +464,14 @@ class TargetPlot extends StatelessWidget {
   /// behaves identically to before.
   final bool lowLightMode;
 
+  /// Phase 8 Group B — pass-through for `_RealisticScenePainter`'s
+  /// `sizeFloorEnabled`. When true, targets smaller than 4" are
+  /// scaled up uniformly so they remain visible at the new
+  /// physical-dim sizing. Default true; user-toggleable via the
+  /// Range Day picker's "Enlarge small targets" switch.
+  /// Has no effect outside realistic mode.
+  final bool sizeFloorEnabled;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -557,6 +566,7 @@ class TargetPlot extends StatelessWidget {
                           : _RealisticScenePainter(
                               target: target,
                               colorHexOverride: colorHexOverride,
+                              sizeFloorEnabled: sizeFloorEnabled,
                             ),
                     )
                   else
@@ -1057,10 +1067,18 @@ class _RealisticScenePainter extends CustomPainter {
   _RealisticScenePainter({
     required this.target,
     this.colorHexOverride,
+    this.sizeFloorEnabled = true,
   });
 
   final TargetSpec target;
   final String? colorHexOverride;
+
+  /// Phase 8 Group B — when true, targets smaller than
+  /// `_minVisibleSizeInches` (4") scale up uniformly so the smaller
+  /// dimension hits the floor. Keeps tiny targets visible at the
+  /// new physical-dim sizing. Default true; user can flip via the
+  /// Range Day picker's "Enlarge small targets" switch.
+  final bool sizeFloorEnabled;
 
   // ── Layout constants ─────────────────────────────────────────────
   /// Horizon position: sky/grass boundary as a fraction of canvas H.
@@ -1069,21 +1087,27 @@ class _RealisticScenePainter extends CustomPainter {
   /// rather than the target sitting flat on a wide grass strip.
   static const double _horizonFrac = 0.75;
   /// Reference scale denominator: 1 inch = H / _inchesPerCanvasHeight px.
-  /// Tuned to 200 (was 300 in Phase 1) so a 60″ mound and a 60″-wide
-  /// target end up similar widths on screen — visually coherent rather
-  /// than the bear looking 3× wider than the mound it stands on.
-  static const double _inchesPerCanvasHeight = 200.0;
-  /// Target bounding box dimensions as fractions of canvas.
-  /// Phase 6 bumped height 0.28 → 0.40 so the bear / IPSC / animal
-  /// silhouettes become the focal point. A 60×32 bear (aspect 1.875)
-  /// in a 156×93.6 box at H=234 now fits to width (156 wide × 83.2
-  /// tall, bottom-aligned).
-  static const double _targetBoxWidthFrac = 0.50;
-  static const double _targetBoxHeightFrac = 0.40;
-  /// Visible pole stub height as a fraction of the target box height.
-  /// Phase 6 bumped 0.20 → 0.25 in concert with the bigger target
-  /// box so the pole stub stays visually proportional.
+  /// Phase 8 tuned 200 → 150 — the canvas now represents a ~150"
+  /// vertical field-of-view, balancing the smaller new "physical
+  /// dimensions" target rendering (a 60" bear is ~30% canvas height,
+  /// not 40%) against still seeing the full target + scene at a
+  /// glance. Earlier values: 300 (Phase 1), 200 (Phase 4), 150 (Phase 8).
+  static const double _inchesPerCanvasHeight = 150.0;
+  /// Visible pole stub height as a fraction of the target's rendered
+  /// height. Phase 6 set this to 0.25; Phase 8 keeps it but the
+  /// target height is now derived from physical dimensions rather
+  /// than a fixed box fraction.
   static const double _visiblePoleFracOfTarget = 0.25;
+  /// Phase 8 Group B — floor for the smaller physical dimension.
+  /// When `sizeFloorEnabled` is true (the default, user-facing
+  /// "Enlarge small targets" switch), any target whose smaller
+  /// dimension is below this value is uniformly scaled UP so the
+  /// smaller dimension hits the floor. Without this, a 1" patch
+  /// would render at ~1.5 px on a 234-tall preview — essentially
+  /// invisible. With the floor it's clamped to a 4"-equivalent
+  /// size (~6 px at 234-tall), which is small but visible.
+  /// Toggle OFF gives realistic-scale rendering.
+  static const double _minVisibleSizeInches = 4.0;
 
   // ── Palette ──────────────────────────────────────────────────────
   static const Color _skyTopColor = Color(0xff5e8db8);
@@ -1142,30 +1166,47 @@ class _RealisticScenePainter extends CustomPainter {
     final moundHeight = 18.0 * inPerPx;
     final moundApexY = horizonY - moundHeight * 0.5;
 
-    // Target bounding box dimensions (pre fit-to-aspect).
-    final boxW = w * _targetBoxWidthFrac;
-    final boxH = h * _targetBoxHeightFrac;
+    // Phase 8 Group B — target box derived from PHYSICAL dimensions
+    // (widthIn / heightIn ÷ inPerPx) rather than a fixed canvas
+    // fraction. A 1" patch renders ~1.5px; a 60" bear renders
+    // ~94px-wide at H=234. The natural aspect ratio is preserved
+    // automatically because both dimensions come from the same
+    // catalog row.
+    //
+    // Pre-Phase-8 box-sizing constants (_targetBoxWidthFrac,
+    // _targetBoxHeightFrac) were retired — the inch-driven sizing
+    // makes them irrelevant.
+    double effWIn = target.widthIn;
+    double effHIn = target.heightIn;
 
-    // Fit-to-box preserving the target's natural aspect. The actual
-    // rendered target is `targetW × targetH`, ≤ box in both axes.
-    final targetAspect = target.widthIn / target.heightIn;
-    final boxAspect = boxW / boxH;
-    final double targetW;
-    final double targetH;
-    if (targetAspect > boxAspect) {
-      // Target proportionally wider than box → fit to width.
-      targetW = boxW;
-      targetH = boxW / targetAspect;
-    } else {
-      // Target proportionally taller than box → fit to height.
-      targetH = boxH;
-      targetW = boxH * targetAspect;
+    // Min-size floor: when `sizeFloorEnabled` (default true), scale
+    // up uniformly so the smaller dimension hits the floor.
+    // Preserves natural aspect so a 1" circle still renders round.
+    // Floor is currently 4" → ~6px on a 234-tall preview.
+    if (sizeFloorEnabled) {
+      final smaller =
+          effWIn < effHIn ? effWIn : effHIn;
+      if (smaller > 0 && smaller < _minVisibleSizeInches) {
+        final scale = _minVisibleSizeInches / smaller;
+        effWIn *= scale;
+        effHIn *= scale;
+      }
     }
 
-    // Visible pole stub uses the BOX height (per Phase 5), not the
-    // post-fit targetH — keeps stub proportional to the scene rather
-    // than to individual silhouettes.
-    final visiblePoleHeight = boxH * _visiblePoleFracOfTarget;
+    // `inPerPx` is misnamed — it's actually PIXELS PER INCH
+    // (h / inchesPerCanvasHeight). Existing scenery callers
+    // (`18.0 * inPerPx` for mound height, etc.) rely on this
+    // semantic. New box-sizing follows the same pattern:
+    // pixels = inches × (pixels/inch).
+    final targetW = effWIn * inPerPx;
+    final targetH = effHIn * inPerPx;
+
+    // Visible pole stub is tied to the target's rendered HEIGHT
+    // (no separate box anymore — target.heightIn drives both
+    // box and final). 0.25 frac preserves Phase 5/6/7 stub
+    // proportions for "normal-size" targets; small / large targets
+    // get proportionally smaller / larger stubs as expected.
+    final visiblePoleHeight = targetH * _visiblePoleFracOfTarget;
 
     // Phase 8 Group A: pole position is FIXED, target follows.
     //
@@ -1218,7 +1259,7 @@ class _RealisticScenePainter extends CustomPainter {
     _paintTreeline(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
     _paintTallGrass(canvas, w, h, horizonY, inPerPx);
-    _paintForegroundTree(canvas, w, horizonY, boxH);
+    _paintForegroundTree(canvas, w, horizonY, targetH);
     _paintMound(canvas, w, horizonY, inPerPx);
     _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
         visiblePoleHeight);
@@ -1723,7 +1764,13 @@ class _RealisticScenePainter extends CustomPainter {
         old.target.widthIn != target.widthIn ||
         old.target.heightIn != target.heightIn ||
         old.target.colorHex != target.colorHex ||
-        old.colorHexOverride != colorHexOverride;
+        old.target.svgScaleFactor != target.svgScaleFactor ||
+        old.target.centerPoint.verticalFromTop !=
+            target.centerPoint.verticalFromTop ||
+        old.target.centerPoint.horizontalFromLeft !=
+            target.centerPoint.horizontalFromLeft ||
+        old.colorHexOverride != colorHexOverride ||
+        old.sizeFloorEnabled != sizeFloorEnabled;
   }
 }
 

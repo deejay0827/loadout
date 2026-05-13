@@ -241,6 +241,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// [_TargetPickerMode.single].
   _TargetPickerMode _targetPickerMode = _TargetPickerMode.single;
 
+  /// Phase 8 Group B — user preference for the "Enlarge small
+  /// targets" switch above the single-target picker. Persisted to
+  /// `SharedPreferences[realistic_size_floor_enabled]`. Default
+  /// `true` so 1"-4" patches stay visible in the realistic preview;
+  /// flipping OFF gives true-physical-scale rendering (1" ≈ 1.5px).
+  /// Plumbed to every `TargetPlot(viewMode: realistic)` instance in
+  /// this screen via the `sizeFloorEnabled` constructor arg.
+  bool _sizeFloorEnabled = true;
+
+  /// SharedPreferences key for [_sizeFloorEnabled].
+  static const String _sizeFloorPrefKey = 'realistic_size_floor_enabled';
+
   /// User-selected color hex override for the active target's tint.
   /// Null means "use the target row's natural `colorHex`". Set by the
   /// 5-swatch picker in `_targetColorSwatchRow`. Plumbed into
@@ -589,6 +601,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _capabilityRangeUncertaintyCtrl =
         TextEditingController(text: _trimZeros(_rangeUncertaintyYd));
     _targetsFuture = context.read<TargetRepository>().allTargets();
+    // Phase 8 Group B — load the persisted size-floor flag.
+    // Fire-and-forget; default `true` is already on the field, so
+    // the first frame renders correctly. setState fires when the
+    // prefs read resolves, swapping to the persisted value if
+    // different.
+    unawaited(SharedPreferences.getInstance().then((prefs) {
+      final persisted = prefs.getBool(_sizeFloorPrefKey) ?? true;
+      if (!mounted || persisted == _sizeFloorEnabled) return;
+      setState(() => _sizeFloorEnabled = persisted);
+    }));
     // Live stream of favorited target ids — drives the favorite-first
     // sort in the dropdown and the star toggle next to the selected
     // target preview. Reference-data favorites (cartridge, reticle,
@@ -3238,6 +3260,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           tapMode: TargetPlotTapMode.aimPoint,
           viewMode: TargetPlotViewMode.realistic,
           colorHexOverride: _selectedTargetColorHex,
+          sizeFloorEnabled: _sizeFloorEnabled,
         ),
       ),
     );
@@ -3294,6 +3317,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   tapMode: TargetPlotTapMode.aimPoint,
                   viewMode: TargetPlotViewMode.realistic,
                   colorHexOverride: _selectedTargetColorHex,
+                  sizeFloorEnabled: _sizeFloorEnabled,
                 ),
               ),
               const SizedBox(height: 12),
@@ -4833,6 +4857,31 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Phase 8 Group B — "Enlarge small targets" switch above the
+        // shape-filter chips. Persisted under
+        // `realistic_size_floor_enabled` (default ON). When ON,
+        // targets smaller than 4" scale up so they stay visible at
+        // the new physical-dim sizing. When OFF, a 1" patch
+        // renders at true scale (~1.5 px on a 234-tall preview —
+        // essentially invisible). Only meaningful in single-target
+        // realistic mode; harmless in target-focused / rack modes
+        // where the flag is plumbed but ignored.
+        SwitchListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Enlarge Small Targets'),
+          subtitle: const Text(
+            'Targets smaller than 4 inches scale up so they stay '
+            'visible in the realistic preview.',
+          ),
+          value: _sizeFloorEnabled,
+          onChanged: (v) async {
+            setState(() => _sizeFloorEnabled = v);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setBool(_sizeFloorPrefKey, v);
+          },
+        ),
+        const SizedBox(height: 8),
         // Align(centerLeft) to prevent the parent
         // `Column(crossAxisAlignment: stretch)` from forcing infinite
         // width onto the Wrap, which Material chips would propagate to
@@ -8329,6 +8378,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           colorHexOverride: _selectedTargetColorHex,
                           rangeYards: yards > 0 ? yards : null,
                           lowLightMode: _lowLightMode,
+                          sizeFloorEnabled: _sizeFloorEnabled,
                         ),
                       ],
                     );
@@ -8360,6 +8410,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     colorHexOverride: _selectedTargetColorHex,
                     rangeYards: yards > 0 ? yards : null,
                     lowLightMode: _lowLightMode,
+                    sizeFloorEnabled: _sizeFloorEnabled,
                   );
                 },
               )
@@ -8382,6 +8433,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 colorHexOverride: _selectedTargetColorHex,
                 rangeYards: yards > 0 ? yards : null,
                 lowLightMode: _lowLightMode,
+                sizeFloorEnabled: _sizeFloorEnabled,
               ),
             const SizedBox(height: 12),
             Row(
