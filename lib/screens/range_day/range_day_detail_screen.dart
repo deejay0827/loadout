@@ -4960,13 +4960,28 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     //     star) keep the simple direct `shape ==` comparison.
     var filtered = switch (_targetShapeFilter) {
       'all' => all,
+      // Phase 9 Group C.1: animals are silhouette rows whose
+      // shape_id is in the AnimalSilhouettes namespace (not the
+      // IPSC competition-silhouette key). Pre-Phase-6, animals
+      // were discriminated by `shapeId != null` (then `null` meant
+      // "procedural") but Phase 6 added shape_id='ipsc' to the 6
+      // IPSC rows, breaking that simple split. Now: anything with
+      // shape='silhouette' and shape_id != null AND != 'ipsc'.
       'animal' => all
           .where((t) =>
-              t.shape.toLowerCase() == 'silhouette' && t.shapeId != null)
+              t.shape.toLowerCase() == 'silhouette' &&
+              t.shapeId != null &&
+              t.shapeId != 'ipsc')
           .toList(),
+      // Phase 9 Group C.1: IPSC chip matches shape_id='ipsc'
+      // explicitly. Pre-Phase-9 the predicate was `shapeId == null`,
+      // which worked pre-Phase-6 when IPSC rows lacked a shape_id —
+      // but Phase 6 added shape_id='ipsc' to all 6 IPSC rows, so
+      // the old predicate returned an empty list ("No targets in
+      // this shape yet" — the operator's bug report).
       'silhouette' => all
           .where((t) =>
-              t.shape.toLowerCase() == 'silhouette' && t.shapeId == null)
+              t.shape.toLowerCase() == 'silhouette' && t.shapeId == 'ipsc')
           .toList(),
       _ => all
           .where((t) => t.shape.toLowerCase() == _targetShapeFilter)
