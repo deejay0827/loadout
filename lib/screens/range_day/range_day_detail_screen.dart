@@ -3365,52 +3365,24 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   }
 
   /// User-facing label for a [TargetRow] in the picker dropdown.
-  /// Format: "{Shape} {Size}" with the dimensions in inches.
-  ///   * Circle 6 in
-  ///   * Square 8 in
-  ///   * Rectangle 18×24 in
-  ///   * IPSC 18×30 in
-  ///   * Star 36 in (Texas Star)
-  /// Material / brand information is intentionally NOT in the label
-  /// (per user feedback: "stop labeling by material") — reloaders
-  /// pick by geometry. The underlying catalog name still lives on
-  /// the row for search and saved-session metadata.
-  String _targetDropdownLabel(TargetRow t) {
-    final w = t.widthIn;
-    final h = t.heightIn;
-    String dims;
-    if (w == h) {
-      dims = '${_formatDim(w)} in';
-    } else {
-      dims = '${_formatDim(w)}×${_formatDim(h)} in';
-    }
-    // Rows with a `shapeId` set (animals via AnimalSilhouettes,
-    // poppers and future competition targets via TargetSilhouettes)
-    // use the catalog's `name` field directly — that's the species
-    // or product name. The shape-based `_shapeDisplayLabel`
-    // collapses these into "IPSC" because their geometric `shape`
-    // is "silhouette", which is correct for procedural dispatch
-    // but wrong for user-facing labels.
-    if (t.shapeId != null) {
-      return '${t.name} $dims';
-    }
-    final shape = _shapeDisplayLabel(t.shape);
-    // Star is a unique geometry — surface the catalog name in
-    // parens so the user can tell a Texas Star from a Dueling Tree
-    // even though both are "Star 36 in" by geometry.
-    if (t.shape.toLowerCase() == 'star') {
-      return '$shape $dims (${t.name})';
-    }
-    return '$shape $dims';
-  }
-
-  /// Trim a target dimension to a clean integer when it's a whole
-  /// number (e.g. 6.0 → "6"); keep a single decimal otherwise (e.g.
-  /// 11.7 → "11.7").
-  String _formatDim(double v) {
-    if (v == v.truncateToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(1);
-  }
+  ///
+  /// Phase 8 Group D — the catalog's `name` field is now the single
+  /// source of truth for the dropdown label. Every row was renamed
+  /// in `assets/seed_data/targets.json` to match the desired display
+  /// string exactly (e.g. `"1 in Circle"`, `"12\" x 18\" Rectangle"`,
+  /// `"IPSC USPSA Classic 18×30 in"`, `"Deer 60×32 in"`,
+  /// `"Texas Star 36 in"`). The dynamic
+  /// "build-shape-prefix-from-shape-column" logic was retired
+  /// because (a) it produced a duplicate-dims bug for IPSC rows
+  /// whose `name` already carried dimensions, and (b) it collapsed
+  /// catalog-meaningful proper names (NRA SR-1, F-Class F-Open,
+  /// Dueling Tree) into a generic shape label.
+  ///
+  /// The previous geometric-label generator + the `_formatDim` /
+  /// `_shapeDisplayLabel` helpers were removed (the latter still
+  /// lives — it's used by `_showTargetPreviewDialog`'s metadata
+  /// footer).
+  String _targetDropdownLabel(TargetRow t) => t.name;
 
   /// Map a catalog `shape` value to a user-facing label. The seed
   /// catalog uses lowercase machine-readable values ("silhouette",
