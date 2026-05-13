@@ -1140,7 +1140,15 @@ class _RealisticScenePainter extends CustomPainter {
   // stays consistent across canvas sizes. X-position fixed at 85%
   // canvas width so the tree sits to the right of the centered
   // target rect and never overlaps the silhouette.
-  static const double _treeHeightFracOfTarget = 1.2;
+  /// Phase 9 Group C.4 — canvas-h-relative (was target-box-relative).
+  /// Phase 7a originally tied the tree to `targetBoxH` because the box
+  /// was a fixed 0.40 × canvas height; that math implicitly made it
+  /// canvas-h-relative. Phase 8's physical-dim sizing made the target
+  /// box variable, so a 1" circle would render with a tiny tree and
+  /// a 120" moose with an oversized tree. 0.30 × canvas H matches
+  /// the Phase 7a visual at the typical Phase-7-target size; the tree
+  /// stays the same size across all targets now.
+  static const double _treeHeightFracOfCanvas = 0.30;
   static const double _treeXFracOfCanvas = 0.85;
   static const Color _treeTrunkColor = Color(0xff5c3a1e); // dark brown
   static const Color _treeCrownColor = Color(0xff4a6a2f); // dark conifer green
@@ -1259,7 +1267,7 @@ class _RealisticScenePainter extends CustomPainter {
     _paintTreeline(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
     _paintTallGrass(canvas, w, h, horizonY, inPerPx);
-    _paintForegroundTree(canvas, w, horizonY, targetH);
+    _paintForegroundTree(canvas, w, h, horizonY);
     _paintMound(canvas, w, horizonY, inPerPx);
     _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
         visiblePoleHeight);
@@ -1412,10 +1420,15 @@ class _RealisticScenePainter extends CustomPainter {
   void _paintForegroundTree(
     Canvas canvas,
     double w,
+    double h,
     double horizonY,
-    double targetBoxH,
   ) {
-    final treeHeight = targetBoxH * _treeHeightFracOfTarget;
+    // Phase 9 Group C.4 — was `targetBoxH * _treeHeightFracOfTarget`
+    // (target-relative). That coupling produced tiny trees for small
+    // targets and giant trees for large ones after Phase 8's
+    // physical-dim sizing. Now `h * _treeHeightFracOfCanvas` —
+    // canvas-relative, invariant across target sizes.
+    final treeHeight = h * _treeHeightFracOfCanvas;
     final treeX = w * _treeXFracOfCanvas;
     const double trunkW = 4.0;
     final trunkH = treeHeight * 0.35;
