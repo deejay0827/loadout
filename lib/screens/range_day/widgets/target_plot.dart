@@ -1131,36 +1131,78 @@ class _RealisticScenePainter extends CustomPainter {
     // Layout math (single source for all paint helpers):
     //   horizon_y          = 0.75 H (sky/grass boundary, Phase 5)
     //   mound straddles horizon, half above, half below
-    //   visible pole stub is derived from target height (Phase 5 —
-    //     was a fixed 72" real-world inch value through Phase 4)
-    //   target rect computed up front so the pole can run THROUGH it
+    //   visible pole stub is derived from target box height (Phase 5)
+    //   Phase 8: pole is FIXED at canvas center horizontally; pole's
+    //     visual top is at a fixed Y. Target rect MOVES so its
+    //     center_point lands on the pole, not the other way around.
+    //     At default cp=0.5/0.5 this produces zero visual change vs
+    //     Phase 7a — only catalog rows with non-default cp (animals
+    //     at horizontal_from_left=0.7) shift off canvas center.
     final horizonY = _horizonFrac * h;
     final moundHeight = 18.0 * inPerPx;
     final moundApexY = horizonY - moundHeight * 0.5;
 
-    // Pole's VISIBLE height (the stub exposed below the target) is
-    // tied to target box height, so the pole reads as a short
-    // mounting post regardless of canvas size. The previous fixed-
-    // inch height made the pole look like a stilt holding a small
-    // target way up in the air.
-    final targetBoxH = h * _targetBoxHeightFrac;
-    final visiblePoleHeight = targetBoxH * _visiblePoleFracOfTarget;
+    // Target bounding box dimensions (pre fit-to-aspect).
+    final boxW = w * _targetBoxWidthFrac;
+    final boxH = h * _targetBoxHeightFrac;
 
-    final targetBottomY = moundApexY - visiblePoleHeight;
-    final targetRect = _computeTargetRect(w, h, targetBottomY);
+    // Fit-to-box preserving the target's natural aspect. The actual
+    // rendered target is `targetW × targetH`, ≤ box in both axes.
+    final targetAspect = target.widthIn / target.heightIn;
+    final boxAspect = boxW / boxH;
+    final double targetW;
+    final double targetH;
+    if (targetAspect > boxAspect) {
+      // Target proportionally wider than box → fit to width.
+      targetW = boxW;
+      targetH = boxW / targetAspect;
+    } else {
+      // Target proportionally taller than box → fit to height.
+      targetH = boxH;
+      targetW = boxH * targetAspect;
+    }
 
-    // Phase 6 Group A: pole anchor comes from the target's per-row
-    // center_point (defaults to 0.5/0.5, which matches Phase 5's
-    // hardcoded `targetRect.center` behaviour exactly). When animal
-    // SVGs eventually get per-row tuning (e.g. deer at 0.65 vert /
-    // 0.4 horiz to put the pole through the deer's body instead of
-    // its head), the same plumbing flows from JSON → drift → TargetSpec
-    // → here without further painter changes.
+    // Visible pole stub uses the BOX height (per Phase 5), not the
+    // post-fit targetH — keeps stub proportional to the scene rather
+    // than to individual silhouettes.
+    final visiblePoleHeight = boxH * _visiblePoleFracOfTarget;
+
+    // Phase 8 Group A: pole position is FIXED, target follows.
+    //
+    // Pole's geometric top derived to match Phase 7a EXACTLY when
+    // cp.verticalFromTop = 0.5. Derivation:
+    //   Phase 7a: targetBottomY  = moundApex - visiblePoleHeight
+    //             targetTop      = targetBottomY - targetH
+    //             visualPoleTopY = targetTop + 0.5 * targetH
+    //                            = moundApex - visiblePoleHeight
+    //                              - 0.5 * targetH
+    // We use that same formula here, then solve BACKWARDS for the
+    // target rect from cp + the fixed pole position.
+    //
+    // (NB: the spec wrote the formula using `targetBoxH` which would
+    // diverge from Phase 7a for fit-to-width targets like the bear.
+    // We use post-fit `targetH` to honour the spec's stated intent
+    // — "zero visual change for any catalog row at default cp" —
+    // which the literal `targetBoxH` formulation doesn't deliver.)
     final cp = target.centerPoint;
+    final poleX = w / 2;
     final visualPoleTopY =
-        targetRect.top + cp.verticalFromTop * targetRect.height;
-    final poleX =
-        targetRect.left + cp.horizontalFromLeft * targetRect.width;
+        moundApexY - visiblePoleHeight - 0.5 * targetH;
+
+    // Solve backwards for target rect position from cp + pole anchors.
+    //   targetTop  + cp.verticalFromTop  * targetH = visualPoleTopY
+    //   targetLeft + cp.horizontalFromLeft * targetW = poleX
+    //
+    // CONSTRAINT (no runtime guard): cp.verticalFromTop should not
+    // exceed `1.0 - _visiblePoleFracOfTarget` (currently 0.75) or
+    // the target rect's bottom drops below the mound apex. All 58
+    // current catalog rows have cp.verticalFromTop = 0.5, so this
+    // is safe today. Bring back a runtime assert if Phase 9+ adds
+    // per-animal vertical tuning that approaches the limit.
+    final targetLeft = poleX - cp.horizontalFromLeft * targetW;
+    final targetTop = visualPoleTopY - cp.verticalFromTop * targetH;
+    final targetRect =
+        Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
     final visualPoleHeight = moundApexY - visualPoleTopY;
 
     // Phase 7a Group C layer order (extends Phase 6):
@@ -1176,7 +1218,7 @@ class _RealisticScenePainter extends CustomPainter {
     _paintTreeline(canvas, w, horizonY);
     _paintGrass(canvas, w, h, horizonY);
     _paintTallGrass(canvas, w, h, horizonY, inPerPx);
-    _paintForegroundTree(canvas, w, horizonY, targetBoxH);
+    _paintForegroundTree(canvas, w, horizonY, boxH);
     _paintMound(canvas, w, horizonY, inPerPx);
     _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
         visiblePoleHeight);
@@ -1613,35 +1655,12 @@ class _RealisticScenePainter extends CustomPainter {
     );
   }
 
-  /// Computes the target's pixel rect inside the canvas, given the
-  /// y-coordinate where its bottom should sit. Extracted from
-  /// [_paintTarget] so [paint] can know the target's center BEFORE
-  /// painting the pole (the pole's visual top runs to the target's
-  /// center, hidden behind the silhouette).
-  ///
-  /// Sizing is fit-to-frame: the target's natural aspect is preserved
-  /// inside a `0.50 W × 0.28 H` bounding box. Bottom-aligned at
-  /// [targetBottomY], horizontally centered.
-  Rect _computeTargetRect(double w, double h, double targetBottomY) {
-    final boxW = w * _targetBoxWidthFrac;
-    final boxH = h * _targetBoxHeightFrac;
-    final targetAspect = target.widthIn / target.heightIn;
-    final boxAspect = boxW / boxH;
-    final double targetW;
-    final double targetH;
-    if (targetAspect > boxAspect) {
-      // Target proportionally wider than box → fit to width.
-      targetW = boxW;
-      targetH = boxW / targetAspect;
-    } else {
-      // Target proportionally taller than box → fit to height.
-      targetH = boxH;
-      targetW = boxH * targetAspect;
-    }
-    final targetLeft = (w - targetW) / 2;
-    final targetTop = targetBottomY - targetH;
-    return Rect.fromLTWH(targetLeft, targetTop, targetW, targetH);
-  }
+  // _computeTargetRect was retired in Phase 8 Group A — the painter
+  // now inlines the fit-to-box + position math in `paint()` because
+  // the pole-position derivation needs intermediate values
+  // (targetH for visualPoleTopY) that an external helper would
+  // either have to return as a tuple or recompute. The inlined
+  // version is ~20 lines, well-commented, and the only consumer.
 
   void _paintTarget(Canvas canvas, Rect rect) {
     // Fill color: override beats target.colorHex; both go through the

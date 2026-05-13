@@ -32,7 +32,6 @@
 // ============================================================================
 // None. Pure-function tests against in-memory SVG strings.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:loadout/widgets/animal_silhouettes.dart';
 
