@@ -3342,7 +3342,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           Text(
                             '${spec.widthIn.toStringAsFixed(0)} × '
                             '${spec.heightIn.toStringAsFixed(0)} in · '
-                            '${_shapeDisplayLabel(spec.shape)}',
+                            '${_shapeDisplayLabel(spec.category)}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -3459,7 +3459,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             ScopeDaytimeBackdrop(
               target: activeTargetSpec == null
                   ? BackdropTargetSilhouette.none
-                  : _backdropTargetForShape(activeTargetSpec.shape),
+                  : _backdropTargetForShape(activeTargetSpec.category),
               targetWidthFraction: 0.22,
               targetColor: activeTargetSpec == null
                   ? const Color(0xff5e6552)
@@ -4815,14 +4815,16 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // think "I'm shooting a 12" circle" or "an IPSC silhouette" —
     // they don't think "I'm shooting paper today." The chip values
     // map 1:1 to the catalog's `shape` column.
+    // Phase 9.5 — chip values are now `category` enum values.
+    // Popper + Star chips dropped (rolled into the `special` bucket;
+    // 6th 'Special' chip deferred per spec until the bucket grows
+    // past 3-4 rows).
     const shapeChips = <(String value, String label)>[
       ('all', 'All'),
+      ('circle', 'Circle'),
       ('square', 'Square'),
       ('rectangle', 'Rectangle'),
-      ('circle', 'Circle'),
-      ('silhouette', 'IPSC'),
-      ('popper', 'Popper'),
-      ('star', 'Star'),
+      ('ipsc', 'IPSC'),
       ('animal', 'Animal'),
     ];
     final theme = Theme.of(context);
@@ -4958,33 +4960,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     //     over-match by showing 6 IPSC rows + 16 animals.
     //   * Other shape chips (circle / square / rectangle / popper /
     //     star) keep the simple direct `shape ==` comparison.
+    // Phase 9.5 — chip predicates are all positive `category` matches.
+    // Phase 9 Group C.1's silhouette + shape_id complexity is gone:
+    // animals, IPSC, and "special" (poppers + Texas Star) each have
+    // their own category. The 'silhouette' chip value is retired
+    // (replaced by 'ipsc'); the 'popper' / 'star' chip values
+    // collapse into the 'special' bucket (no dedicated chip — spec
+    // §"Out of scope" defers a 'Special' chip until the bucket
+    // grows past 3-4 rows).
     var filtered = switch (_targetShapeFilter) {
       'all' => all,
-      // Phase 9 Group C.1: animals are silhouette rows whose
-      // shape_id is in the AnimalSilhouettes namespace (not the
-      // IPSC competition-silhouette key). Pre-Phase-6, animals
-      // were discriminated by `shapeId != null` (then `null` meant
-      // "procedural") but Phase 6 added shape_id='ipsc' to the 6
-      // IPSC rows, breaking that simple split. Now: anything with
-      // shape='silhouette' and shape_id != null AND != 'ipsc'.
-      'animal' => all
-          .where((t) =>
-              t.shape.toLowerCase() == 'silhouette' &&
-              t.shapeId != null &&
-              t.shapeId != 'ipsc')
-          .toList(),
-      // Phase 9 Group C.1: IPSC chip matches shape_id='ipsc'
-      // explicitly. Pre-Phase-9 the predicate was `shapeId == null`,
-      // which worked pre-Phase-6 when IPSC rows lacked a shape_id —
-      // but Phase 6 added shape_id='ipsc' to all 6 IPSC rows, so
-      // the old predicate returned an empty list ("No targets in
-      // this shape yet" — the operator's bug report).
-      'silhouette' => all
-          .where((t) =>
-              t.shape.toLowerCase() == 'silhouette' && t.shapeId == 'ipsc')
-          .toList(),
       _ => all
-          .where((t) => t.shape.toLowerCase() == _targetShapeFilter)
+          .where((t) => t.category == _targetShapeFilter)
           .toList(),
     };
     // Apply the free-form search query. Tokenize on whitespace and
@@ -5212,7 +5199,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           return ListTile(
                             dense: true,
                             leading: _targetShapeIcon(
-                                t.shape, t.shapeId, theme),
+                                t.category, t.shapeId, theme),
                             title: Text(
                               isFav
                                   ? '★ ${_targetDropdownLabel(t)}'
@@ -5623,7 +5610,18 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 // don't carry shape_id today (v36 added the column on
                 // Targets only). Pass null so the icon picker falls
                 // through to the shape-based dispatch.
-                _targetShapeIcon(active.shape, null, theme),
+                // Phase 9.5 — `active` is a TargetRackChildRow whose
+                // schema still has a `shape` column (Group C will
+                // migrate this to slot-based category). Until then
+                // the rack-child icon picker maps shape strings via
+                // an inline category-equivalent (circle/square/
+                // rectangle map directly; silhouette + popper get
+                // sensible defaults).
+                _targetShapeIcon(
+                  _rackChildShapeToCategory(active.shape),
+                  null,
+                  theme,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -5741,7 +5739,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   String? get _activeTargetShape {
     final child = _activeRackChild;
     if (child != null) return child.shape;
-    return _selectedTarget?.shape;
+    return _selectedTarget?.category;
   }
 
   /// Display name of the active aim point — the rack name + active-
@@ -5799,14 +5797,46 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   int? get _activeRackChildIndex =>
       _hasActiveRack ? _selectedRackChildPosition : null;
 
+  /// Phase 9.5 — bridge from legacy `TargetRackChildRow.shape` to
+  /// Phase 9.5's `TargetSpec.category` enum. Rack children still
+  /// carry the v38 `shape` column (Group C migrates them to a
+  /// slot-based category-driven schema). Until then, map the
+  /// shape string to its category equivalent so the scene painter
+  /// can dispatch correctly.
+  ///
+  /// `'silhouette'` maps to `'ipsc'` because the legacy rack
+  /// children that use that shape value are USPSA Metric targets;
+  /// no rack catalog row uses 'silhouette' to mean 'animal'.
+  String _rackChildShapeToCategory(String shape) {
+    switch (shape.toLowerCase()) {
+      case 'circle':
+        return 'circle';
+      case 'square':
+        return 'square';
+      case 'rectangle':
+        return 'rectangle';
+      case 'silhouette':
+        return 'ipsc';
+      case 'popper':
+      case 'star':
+        return 'special';
+      default:
+        return 'rectangle';
+    }
+  }
+
   /// Build a [TargetSpec] from the current active aim point so the
   /// [TargetPlot] widget can render whichever geometry is in play
   /// without rack-aware code. Returns null when nothing is selected.
   TargetSpec? get _activeTargetSpec {
     final child = _activeRackChild;
     if (child != null) {
+      // Phase 9.5 — TargetRackChildRow still has `shape` (Group C
+      // migrates rack children to slot-based with category). Map
+      // the rack child's shape string to a category here so the
+      // scene painter's category dispatch can route it correctly.
       return TargetSpec(
-        shape: child.shape,
+        category: _rackChildShapeToCategory(child.shape),
         widthIn: child.widthIn,
         heightIn: child.heightIn,
         colorHex: child.colorHex,
@@ -5844,7 +5874,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
         child: Row(
           children: [
-            _targetShapeIcon(t.shape, t.shapeId, theme),
+            _targetShapeIcon(t.category, t.shapeId, theme),
             const SizedBox(width: 10),
             Expanded(
               child: Column(
@@ -5892,7 +5922,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     final h = t.heightIn;
     String fmt(double v) =>
         v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
-    if (t.shape == 'circle') {
+    if (t.category == 'circle') {
       return '${fmt(w)} in dia';
     }
     if (w == h) {

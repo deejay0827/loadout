@@ -1508,14 +1508,27 @@ class LoadDevelopmentShots extends Table {
 class Targets extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get name => text()();
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'star' |
-  /// 'popper'. Animal targets share `shape: 'silhouette'` with IPSC
-  /// rows; the [shapeId] discriminator is what tells animals apart
-  /// from IPSC at filter time and at paint time (v2.3 / v36 catalog
-  /// rewrite). Older `category` / `materialKind` / `manufacturer`
-  /// columns were dropped in v28 because reloaders pick by geometry,
-  /// not by what the target's made of or who printed the label.
-  TextColumn get shape => text()();
+  /// Phase 9.5 — category-driven target taxonomy. Replaces the
+  /// pre-v39 `shape` column (which was redundant with category in
+  /// the new model). Six enum values:
+  ///
+  ///   * `circle` — `width_in == height_in`; painter draws a circle.
+  ///   * `square` — `width_in == height_in`; painter draws a square.
+  ///   * `rectangle` — generic + named competition targets (NRA SR-1,
+  ///     F-Class, etc.).
+  ///   * `ipsc` — IPSC / USPSA / IDPA silhouettes. Painter uses the
+  ///     shared IPSC SVG; `shape_id` is null.
+  ///   * `animal` — hunting silhouettes. `shape_id` carries the
+  ///     species name (`bear`, `mule_deer`, etc.).
+  ///   * `special` — apparatus that doesn't fit the other buckets.
+  ///     `shape_id` carries the apparatus type (`pepper_popper`,
+  ///     `texas_star`, future: `plate_rack`, `dueling_tree_steel`,
+  ///     etc.).
+  ///
+  /// Drives both chip-filter predicates and painter dispatch — see
+  /// `lib/screens/range_day/widgets/target_plot.dart`. Seed loader
+  /// asserts the enum at load time; unknown values raise loud.
+  TextColumn get category => text()();
 
   /// Optional discriminator that routes to a user-authored SVG path
   /// (animal silhouettes, popper). Null for procedural shapes
@@ -2350,7 +2363,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 38;
+  int get schemaVersion => 39;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -3144,6 +3157,17 @@ class AppDatabase extends _$AppDatabase {
               await m.addColumn(targets, targets.svgScaleFactor);
             }
             await delete(targets).go();
+          }
+          if (from < 39) {
+            // v39 — Phase 9.5 category-driven taxonomy. Drops the
+            // legacy `shape` column entirely and introduces a
+            // `category` enum (circle / square / rectangle / ipsc /
+            // animal / special). Pre-launch + reference-table-only,
+            // so the simplest path is drop+recreate: every install
+            // re-seeds from the v39 catalog via SeedLoader on next
+            // cold start. No user data lives on Targets.
+            await customStatement('DROP TABLE IF EXISTS targets');
+            await m.createTable(targets);
           }
         },
       );

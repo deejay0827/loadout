@@ -1,8 +1,7 @@
 [
   {
     "name": "1 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 1.0,
     "height_in": 1.0,
     "color_hex": "#ffffff",
@@ -14,8 +13,7 @@
   },
   {
     "name": "2 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 2.0,
     "height_in": 2.0,
     "color_hex": "#ffffff",
@@ -27,8 +25,7 @@
   },
   {
     "name": "3 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 3.0,
     "height_in": 3.0,
     "color_hex": "#ffffff",
@@ -40,8 +37,7 @@
   },
   {
     "name": "4 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 4.0,
     "height_in": 4.0,
     "color_hex": "#ffffff",
@@ -53,8 +49,7 @@
   },
   {
     "name": "5 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 5.0,
     "height_in": 5.0,
     "color_hex": "#ffffff",
@@ -66,8 +61,7 @@
   },
   {
     "name": "6 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 6.0,
     "height_in": 6.0,
     "color_hex": "#ffffff",
@@ -79,8 +73,7 @@
   },
   {
     "name": "8 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 8.0,
     "height_in": 8.0,
     "color_hex": "#ffffff",
@@ -92,8 +85,7 @@
   },
   {
     "name": "10 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 10.0,
     "height_in": 10.0,
     "color_hex": "#ffffff",
@@ -105,8 +97,7 @@
   },
   {
     "name": "12 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 12.0,
     "height_in": 12.0,
     "color_hex": "#ffffff",
@@ -118,8 +109,7 @@
   },
   {
     "name": "15 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 15.0,
     "height_in": 15.0,
     "color_hex": "#ffffff",
@@ -131,8 +121,7 @@
   },
   {
     "name": "18 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 18.0,
     "height_in": 18.0,
     "color_hex": "#ffffff",
@@ -144,8 +133,7 @@
   },
   {
     "name": "20 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 20.0,
     "height_in": 20.0,
     "color_hex": "#ffffff",
@@ -157,8 +145,7 @@
   },
   {
     "name": "24 in Circle",
-    "category": "target",
-    "shape": "circle",
+    "category": "circle",
     "width_in": 24.0,
     "height_in": 24.0,
     "color_hex": "#ffffff",
@@ -170,8 +157,7 @@
   },
   {
     "name": "2 in Square",
-    "category": "target",
-    "shape": "square",
+    "category": "square",
     "width_in": 2.0,
     "height_in": 2.0,
     "color_hex": "#ffffff",
@@ -183,8 +169,7 @@
   },
   {
     "name": "4 in Square",
-    "category": "target",
-    "shape": "square",
+    "category": "square",
     "width_in": 4.0,
     "height_in": 4.0,
     "color_hex": "#ffffff",
@@ -196,8 +181,7 @@
   },
   {
     "name": "6 in Square",
-    "category": "target",
-    "shape": "square",
+    "category": "square",
     "width_in": 6.0,
     "height_in": 6.0,
     "color_hex": "#ffffff",
@@ -209,8 +193,7 @@
   },
   {
     "name": "8 in Square",
-    "category": "target",
-    "shape": "square",
+    "category": "square",
     "width_in": 8.0,
     "height_in": 8.0,
     "color_hex": "#ffffff",
@@ -222,8 +205,7 @@
   },
   {
     "name": "10 in Square",
-    "category": "target",
-    "shape": "square",
+    "category": "square",
     "width_in": 10.0,
     "height_in": 10.0,
     "color_hex": "#ffffff",
@@ -235,8 +217,7 @@
   },
   {
     "name": "12 in Square",
-    "category": "target",
-    "shape": "square",
+    "category": "square",
     "width_in": 12.0,
     "height_in": 12.0,
     "color_hex": "#ffffff",
@@ -248,8 +229,7 @@
   },
   {
     "name": "12\" x 18\" Rectangle",
-    "category": "target",
-    "shape": "rectangle",
+    "category": "rectangle",
     "width_in": 12.0,
     "height_in": 18.0,
     "color_hex": "#ffffff",
@@ -261,8 +241,7 @@
   },
   {
     "name": "18\" x 24\" Rectangle",
-    "category": "target",
-    "shape": "rectangle",
+    "category": "rectangle",
     "width_in": 18.0,
     "height_in": 24.0,
     "color_hex": "#ffffff",
@@ -274,8 +253,7 @@
   },
   {
     "name": "24\" x 30\" Rectangle",
-    "category": "target",
-    "shape": "rectangle",
+    "category": "rectangle",
     "width_in": 24.0,
     "height_in": 30.0,
     "color_hex": "#ffffff",
@@ -287,8 +265,7 @@
   },
   {
     "name": "24\" x 36\" Rectangle",
-    "category": "target",
-    "shape": "rectangle",
+    "category": "rectangle",
     "width_in": 24.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
@@ -300,8 +277,7 @@
   },
   {
     "name": "36\" x 48\" Rectangle",
-    "category": "target",
-    "shape": "rectangle",
+    "category": "rectangle",
     "width_in": 36.0,
     "height_in": 48.0,
     "color_hex": "#ffffff",
@@ -313,8 +289,7 @@
   },
   {
     "name": "36\" x 60\" Rectangle",
-    "category": "target",
-    "shape": "rectangle",
+    "category": "rectangle",
     "width_in": 36.0,
     "height_in": 60.0,
     "color_hex": "#ffffff",
@@ -325,9 +300,8 @@
     }
   },
   {
-    "name": "NRA SR-1 Reduced 12.71×12.71 in (100 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "NRA SR-1 Reduced 12.71\u00d712.71 in (100 yd)",
+    "category": "rectangle",
     "width_in": 12.71,
     "height_in": 12.71,
     "color_hex": "#ffffff",
@@ -338,9 +312,8 @@
     }
   },
   {
-    "name": "NRA SR-21 19×19 in (200 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "NRA SR-21 19\u00d719 in (200 yd)",
+    "category": "rectangle",
     "width_in": 19.0,
     "height_in": 19.0,
     "color_hex": "#ffffff",
@@ -351,9 +324,8 @@
     }
   },
   {
-    "name": "NRA MR-1 21×21 in (300 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "NRA MR-1 21\u00d721 in (300 yd)",
+    "category": "rectangle",
     "width_in": 21.0,
     "height_in": 21.0,
     "color_hex": "#ffffff",
@@ -364,9 +336,8 @@
     }
   },
   {
-    "name": "NRA LR 36×36 in (600 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "NRA LR 36\u00d736 in (600 yd)",
+    "category": "rectangle",
     "width_in": 36.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
@@ -377,9 +348,8 @@
     }
   },
   {
-    "name": "F-Class F-Open 72×72 in (1000 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "F-Class F-Open 72\u00d772 in (1000 yd)",
+    "category": "rectangle",
     "width_in": 72.0,
     "height_in": 72.0,
     "color_hex": "#ffffff",
@@ -390,9 +360,8 @@
     }
   },
   {
-    "name": "F-Class F-T/R 36×36 in (600 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "F-Class F-T/R 36\u00d736 in (600 yd)",
+    "category": "rectangle",
     "width_in": 36.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
@@ -403,9 +372,8 @@
     }
   },
   {
-    "name": "Bullseye Slow-Fire Pistol 10.5×10.5 in (25 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "Bullseye Slow-Fire Pistol 10.5\u00d710.5 in (25 yd)",
+    "category": "rectangle",
     "width_in": 10.5,
     "height_in": 10.5,
     "color_hex": "#ffffff",
@@ -416,9 +384,8 @@
     }
   },
   {
-    "name": "Bullseye Slow-Fire Pistol 10.5×10.5 in (50 yd)",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "Bullseye Slow-Fire Pistol 10.5\u00d710.5 in (50 yd)",
+    "category": "rectangle",
     "width_in": 10.5,
     "height_in": 10.5,
     "color_hex": "#ffffff",
@@ -430,8 +397,7 @@
   },
   {
     "name": "Texas Star 36 in",
-    "category": "target",
-    "shape": "star",
+    "category": "special",
     "width_in": 36.0,
     "height_in": 36.0,
     "color_hex": "#ffffff",
@@ -439,12 +405,12 @@
     "center_point": {
       "vertical_from_top": 0.5,
       "horizontal_from_left": 0.5
-    }
+    },
+    "shape_id": "texas_star"
   },
   {
-    "name": "Dueling Tree 36×60 in",
-    "category": "target",
-    "shape": "rectangle",
+    "name": "Dueling Tree 36\u00d760 in",
+    "category": "rectangle",
     "width_in": 36.0,
     "height_in": 60.0,
     "color_hex": "#ffffff",
@@ -455,9 +421,8 @@
     }
   },
   {
-    "name": "IPSC USPSA Classic 18×30 in",
-    "category": "target",
-    "shape": "silhouette",
+    "name": "IPSC USPSA Classic 18\u00d730 in",
+    "category": "ipsc",
     "width_in": 18.0,
     "height_in": 30.0,
     "color_hex": "#ffffff",
@@ -465,41 +430,35 @@
     "center_point": {
       "vertical_from_top": 0.5,
       "horizontal_from_left": 0.5
-    },
-    "shape_id": "ipsc"
+    }
   },
   {
-    "name": "IPSC Classic Official 18.12×29.93 in",
-    "category": "target",
-    "shape": "silhouette",
+    "name": "IPSC Classic Official 18.12\u00d729.93 in",
+    "category": "ipsc",
     "width_in": 18.12,
     "height_in": 29.93,
     "color_hex": "#ffffff",
-    "notes": "Official IPSC Classic Target — 460 x 760 mm. Slightly different proportions than the USPSA Metric; used by IPSC Region matches outside the USA.",
+    "notes": "Official IPSC Classic Target \u2014 460 x 760 mm. Slightly different proportions than the USPSA Metric; used by IPSC Region matches outside the USA.",
     "center_point": {
       "vertical_from_top": 0.5,
       "horizontal_from_left": 0.5
-    },
-    "shape_id": "ipsc"
+    }
   },
   {
-    "name": "IPSC Classic Mini 18.12×22.84 in",
-    "category": "target",
-    "shape": "silhouette",
+    "name": "IPSC Classic Mini 18.12\u00d722.84 in",
+    "category": "ipsc",
     "width_in": 18.12,
     "height_in": 22.84,
     "color_hex": "#ffffff",
-    "notes": "Reduced-height IPSC Classic — 460 x 580 mm. Same width as the full Classic, shorter overall for indoor / restricted-bay use.",
+    "notes": "Reduced-height IPSC Classic \u2014 460 x 580 mm. Same width as the full Classic, shorter overall for indoor / restricted-bay use.",
     "center_point": {
       "vertical_from_top": 0.5,
       "horizontal_from_left": 0.5
-    },
-    "shape_id": "ipsc"
+    }
   },
   {
-    "name": "IPSC Mini 12×20 in",
-    "category": "target",
-    "shape": "silhouette",
+    "name": "IPSC Mini 12\u00d720 in",
+    "category": "ipsc",
     "width_in": 12.0,
     "height_in": 20.0,
     "color_hex": "#ffffff",
@@ -507,60 +466,53 @@
     "center_point": {
       "vertical_from_top": 0.5,
       "horizontal_from_left": 0.5
-    },
-    "shape_id": "ipsc"
+    }
   },
   {
-    "name": "IPSC A4 11.81×23.62 in",
-    "category": "target",
-    "shape": "silhouette",
+    "name": "IPSC A4 11.81\u00d723.62 in",
+    "category": "ipsc",
     "width_in": 11.81,
     "height_in": 23.62,
     "color_hex": "#ffffff",
-    "notes": "IPSC A4-size target — 300 x 600 mm. Sized to print on a single A4 sheet for at-home practice.",
-    "center_point": {
-      "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.5
-    },
-    "shape_id": "ipsc"
-  },
-  {
-    "name": "IPSC Head Box 5.91×11.02 in",
-    "category": "target",
-    "shape": "silhouette",
-    "width_in": 5.91,
-    "height_in": 11.02,
-    "color_hex": "#ffffff",
-    "notes": "USPSA / IPSC head box only — 150 x 280 mm. The high-value shoot-or-no-shoot zone, often used as a small standalone reduced-target drill.",
-    "center_point": {
-      "vertical_from_top": 0.5,
-      "horizontal_from_left": 0.5
-    },
-    "shape_id": "ipsc"
-  },
-  {
-    "name": "Pepper Popper Full 7.87×33.46 in",
-    "category": "target",
-    "shape": "popper",
-    "shape_id": "pepper_popper",
-    "width_in": 7.87,
-    "height_in": 33.46,
-    "color_hex": "#ffffff",
-    "notes": "Full-size pepper popper — 85 cm tall, 20 cm wide at the head. Reactive falling silhouette used in action-pistol matches.",
+    "notes": "IPSC A4-size target \u2014 300 x 600 mm. Sized to print on a single A4 sheet for at-home practice.",
     "center_point": {
       "vertical_from_top": 0.5,
       "horizontal_from_left": 0.5
     }
   },
   {
-    "name": "Pepper Popper Mini 7.87×22.05 in",
-    "category": "target",
-    "shape": "popper",
+    "name": "IPSC Head Box 5.91\u00d711.02 in",
+    "category": "ipsc",
+    "width_in": 5.91,
+    "height_in": 11.02,
+    "color_hex": "#ffffff",
+    "notes": "USPSA / IPSC head box only \u2014 150 x 280 mm. The high-value shoot-or-no-shoot zone, often used as a small standalone reduced-target drill.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
+  },
+  {
+    "name": "Pepper Popper Full 7.87\u00d733.46 in",
+    "category": "special",
+    "shape_id": "pepper_popper",
+    "width_in": 7.87,
+    "height_in": 33.46,
+    "color_hex": "#ffffff",
+    "notes": "Full-size pepper popper \u2014 85 cm tall, 20 cm wide at the head. Reactive falling silhouette used in action-pistol matches.",
+    "center_point": {
+      "vertical_from_top": 0.5,
+      "horizontal_from_left": 0.5
+    }
+  },
+  {
+    "name": "Pepper Popper Mini 7.87\u00d722.05 in",
+    "category": "special",
     "shape_id": "pepper_popper",
     "width_in": 7.87,
     "height_in": 22.05,
     "color_hex": "#ffffff",
-    "notes": "Mini pepper popper — 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height.",
+    "notes": "Mini pepper popper \u2014 56 cm tall, 20 cm wide at the head. Same silhouette as the full popper at a reduced height.",
     "center_point": {
       "vertical_from_top": 0.5,
       "horizontal_from_left": 0.5
@@ -568,9 +520,8 @@
   },
   {
     "id": "deer_small",
-    "name": "Small Deer 30×16 in",
+    "name": "Deer, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "deer",
     "width_in": 30,
     "height_in": 16,
@@ -591,9 +542,8 @@
   },
   {
     "id": "deer_medium",
-    "name": "Medium Deer 48×26 in",
+    "name": "Deer, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "deer",
     "width_in": 48,
     "height_in": 26,
@@ -614,9 +564,8 @@
   },
   {
     "id": "deer",
-    "name": "Large Deer 60×32 in",
+    "name": "Deer, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "deer",
     "width_in": 60,
     "height_in": 32,
@@ -637,9 +586,8 @@
   },
   {
     "id": "mule_deer_small",
-    "name": "Small Mule deer 30×16 in",
+    "name": "Mule Deer, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "mule_deer",
     "width_in": 30,
     "height_in": 16,
@@ -661,9 +609,8 @@
   },
   {
     "id": "mule_deer_medium",
-    "name": "Medium Mule deer 48×26 in",
+    "name": "Mule Deer, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "mule_deer",
     "width_in": 48,
     "height_in": 26,
@@ -685,9 +632,8 @@
   },
   {
     "id": "mule_deer",
-    "name": "Large Mule deer 60×32 in",
+    "name": "Mule Deer, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "mule_deer",
     "width_in": 60,
     "height_in": 32,
@@ -709,9 +655,8 @@
   },
   {
     "id": "elk_small",
-    "name": "Small Elk 50×26 in",
+    "name": "Elk, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "elk",
     "width_in": 50,
     "height_in": 26,
@@ -733,9 +678,8 @@
   },
   {
     "id": "elk_medium",
-    "name": "Medium Elk 80×42 in",
+    "name": "Elk, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "elk",
     "width_in": 80,
     "height_in": 42,
@@ -757,9 +701,8 @@
   },
   {
     "id": "elk",
-    "name": "Large Elk 100×53 in",
+    "name": "Elk, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "elk",
     "width_in": 100,
     "height_in": 53,
@@ -781,9 +724,8 @@
   },
   {
     "id": "moose_small",
-    "name": "Small Moose 60×32 in",
+    "name": "Moose, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "moose",
     "width_in": 60,
     "height_in": 32,
@@ -805,9 +747,8 @@
   },
   {
     "id": "moose_medium",
-    "name": "Medium Moose 96×51 in",
+    "name": "Moose, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "moose",
     "width_in": 96,
     "height_in": 51,
@@ -829,9 +770,8 @@
   },
   {
     "id": "moose",
-    "name": "Large Moose 120×64 in",
+    "name": "Moose, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "moose",
     "width_in": 120,
     "height_in": 64,
@@ -853,9 +793,8 @@
   },
   {
     "id": "pronghorn_small",
-    "name": "Small Pronghorn 30×16 in",
+    "name": "Pronghorn, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "pronghorn",
     "width_in": 30,
     "height_in": 16,
@@ -878,9 +817,8 @@
   },
   {
     "id": "pronghorn_medium",
-    "name": "Medium Pronghorn 48×26 in",
+    "name": "Pronghorn, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "pronghorn",
     "width_in": 48,
     "height_in": 26,
@@ -903,9 +841,8 @@
   },
   {
     "id": "pronghorn",
-    "name": "Large Pronghorn 60×32 in",
+    "name": "Pronghorn, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "pronghorn",
     "width_in": 60,
     "height_in": 32,
@@ -928,9 +865,8 @@
   },
   {
     "id": "bear_small",
-    "name": "Small Bear 30×16 in",
+    "name": "Bear, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "bear",
     "width_in": 30,
     "height_in": 16,
@@ -950,9 +886,8 @@
   },
   {
     "id": "bear_medium",
-    "name": "Medium Bear 48×26 in",
+    "name": "Bear, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "bear",
     "width_in": 48,
     "height_in": 26,
@@ -972,9 +907,8 @@
   },
   {
     "id": "bear",
-    "name": "Large Bear 60×32 in",
+    "name": "Bear, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "bear",
     "width_in": 60,
     "height_in": 32,
@@ -994,9 +928,8 @@
   },
   {
     "id": "boar_small",
-    "name": "Small Boar 30×16 in",
+    "name": "Boar, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "boar",
     "width_in": 30,
     "height_in": 16,
@@ -1017,9 +950,8 @@
   },
   {
     "id": "boar_medium",
-    "name": "Medium Boar 48×26 in",
+    "name": "Boar, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "boar",
     "width_in": 48,
     "height_in": 26,
@@ -1040,9 +972,8 @@
   },
   {
     "id": "boar",
-    "name": "Large Boar 60×33 in",
+    "name": "Boar, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "boar",
     "width_in": 60,
     "height_in": 33,
@@ -1063,9 +994,8 @@
   },
   {
     "id": "mountain_lion_small",
-    "name": "Small Mountain lion 42×22 in",
+    "name": "Mountain Lion, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "mountain_lion",
     "width_in": 42,
     "height_in": 22,
@@ -1085,9 +1015,8 @@
   },
   {
     "id": "mountain_lion_medium",
-    "name": "Medium Mountain lion 67×36 in",
+    "name": "Mountain Lion, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "mountain_lion",
     "width_in": 67,
     "height_in": 36,
@@ -1107,9 +1036,8 @@
   },
   {
     "id": "mountain_lion",
-    "name": "Large Mountain lion 84×45 in",
+    "name": "Mountain Lion, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "mountain_lion",
     "width_in": 84,
     "height_in": 45,
@@ -1129,9 +1057,8 @@
   },
   {
     "id": "coyote_small",
-    "name": "Small Coyote 24×13 in",
+    "name": "Coyote, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "coyote",
     "width_in": 24,
     "height_in": 13,
@@ -1151,9 +1078,8 @@
   },
   {
     "id": "coyote_medium",
-    "name": "Medium Coyote 38×21 in",
+    "name": "Coyote, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "coyote",
     "width_in": 38,
     "height_in": 21,
@@ -1173,9 +1099,8 @@
   },
   {
     "id": "coyote",
-    "name": "Large Coyote 48×26 in",
+    "name": "Coyote, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "coyote",
     "width_in": 48,
     "height_in": 26,
@@ -1195,9 +1120,8 @@
   },
   {
     "id": "fox_small",
-    "name": "Small Fox 18×10 in",
+    "name": "Fox, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "fox",
     "width_in": 18,
     "height_in": 10,
@@ -1217,9 +1141,8 @@
   },
   {
     "id": "fox_medium",
-    "name": "Medium Fox 29×15 in",
+    "name": "Fox, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "fox",
     "width_in": 29,
     "height_in": 15,
@@ -1239,9 +1162,8 @@
   },
   {
     "id": "fox",
-    "name": "Large Fox 36×19 in",
+    "name": "Fox, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "fox",
     "width_in": 36,
     "height_in": 19,
@@ -1261,9 +1183,8 @@
   },
   {
     "id": "rabbit_small",
-    "name": "Small Rabbit 9×5 in",
+    "name": "Rabbit, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "rabbit",
     "width_in": 9,
     "height_in": 5,
@@ -1282,9 +1203,8 @@
   },
   {
     "id": "rabbit_medium",
-    "name": "Medium Rabbit 14×8 in",
+    "name": "Rabbit, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "rabbit",
     "width_in": 14,
     "height_in": 8,
@@ -1303,9 +1223,8 @@
   },
   {
     "id": "rabbit",
-    "name": "Large Rabbit 18×10 in",
+    "name": "Rabbit, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "rabbit",
     "width_in": 18,
     "height_in": 10,
@@ -1324,9 +1243,8 @@
   },
   {
     "id": "groundhog_small",
-    "name": "Small Groundhog 12×6 in",
+    "name": "Groundhog, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "groundhog",
     "width_in": 12,
     "height_in": 6,
@@ -1346,9 +1264,8 @@
   },
   {
     "id": "groundhog_medium",
-    "name": "Medium Groundhog 19×10 in",
+    "name": "Groundhog, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "groundhog",
     "width_in": 19,
     "height_in": 10,
@@ -1368,9 +1285,8 @@
   },
   {
     "id": "groundhog",
-    "name": "Large Groundhog 24×13 in",
+    "name": "Groundhog, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "groundhog",
     "width_in": 24,
     "height_in": 13,
@@ -1390,9 +1306,8 @@
   },
   {
     "id": "prairie_dog_small",
-    "name": "Small Prairie dog 6×3 in",
+    "name": "Prairie Dog, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "prairie_dog",
     "width_in": 6,
     "height_in": 3,
@@ -1412,9 +1327,8 @@
   },
   {
     "id": "prairie_dog_medium",
-    "name": "Medium Prairie dog 10×5 in",
+    "name": "Prairie Dog, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "prairie_dog",
     "width_in": 10,
     "height_in": 5,
@@ -1434,9 +1348,8 @@
   },
   {
     "id": "prairie_dog",
-    "name": "Large Prairie dog 12×6 in",
+    "name": "Prairie Dog, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "prairie_dog",
     "width_in": 12,
     "height_in": 6,
@@ -1456,9 +1369,8 @@
   },
   {
     "id": "wild_turkey_small",
-    "name": "Small Wild turkey 18×10 in",
+    "name": "Wild Turkey, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "wild_turkey",
     "width_in": 18,
     "height_in": 10,
@@ -1479,9 +1391,8 @@
   },
   {
     "id": "wild_turkey_medium",
-    "name": "Medium Wild turkey 29×15 in",
+    "name": "Wild Turkey, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "wild_turkey",
     "width_in": 29,
     "height_in": 15,
@@ -1502,9 +1413,8 @@
   },
   {
     "id": "wild_turkey",
-    "name": "Large Wild turkey 36×19 in",
+    "name": "Wild Turkey, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "wild_turkey",
     "width_in": 36,
     "height_in": 19,
@@ -1525,9 +1435,8 @@
   },
   {
     "id": "pheasant_small",
-    "name": "Small Pheasant 18×10 in",
+    "name": "Pheasant, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "pheasant",
     "width_in": 18,
     "height_in": 10,
@@ -1548,9 +1457,8 @@
   },
   {
     "id": "pheasant_medium",
-    "name": "Medium Pheasant 29×15 in",
+    "name": "Pheasant, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "pheasant",
     "width_in": 29,
     "height_in": 15,
@@ -1571,9 +1479,8 @@
   },
   {
     "id": "pheasant",
-    "name": "Large Pheasant 36×19 in",
+    "name": "Pheasant, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "pheasant",
     "width_in": 36,
     "height_in": 19,
@@ -1594,9 +1501,8 @@
   },
   {
     "id": "bigfoot_small",
-    "name": "Small Bigfoot 42×23 in",
+    "name": "Bigfoot, Small",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "bigfoot",
     "width_in": 42,
     "height_in": 23,
@@ -1616,9 +1522,8 @@
   },
   {
     "id": "bigfoot_medium",
-    "name": "Medium Bigfoot 67×37 in",
+    "name": "Bigfoot, Medium",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "bigfoot",
     "width_in": 67,
     "height_in": 37,
@@ -1638,9 +1543,8 @@
   },
   {
     "id": "bigfoot",
-    "name": "Large Bigfoot 84×46 in",
+    "name": "Bigfoot, Large",
     "category": "animal",
-    "shape": "silhouette",
     "shape_id": "bigfoot",
     "width_in": 84,
     "height_in": 46,

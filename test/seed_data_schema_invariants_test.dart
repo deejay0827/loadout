@@ -53,12 +53,19 @@ void main() {
       rows = (jsonDecode(raw) as List).cast<Map<String, dynamic>>();
     });
 
-    test('every row carries name + shape (required by Targets schema)', () {
+    test('every row carries name + category (required by Targets schema)',
+        () {
+      // Phase 9.5 — the legacy `shape` field was retired in favour of a
+      // closed `category` enum (circle / square / rectangle / ipsc /
+      // animal / special). The Targets table column was renamed
+      // accordingly. This invariant catches a seed file that ships
+      // without a category — the seed loader would `throw StateError`
+      // on first launch rather than dropping the row silently.
       for (final r in rows) {
         expect(r['name'], isA<String>(),
             reason: 'row ${r.toString().substring(0, 60)}... lacks `name`');
-        expect(r['shape'], isA<String>(),
-            reason: 'row ${r['name'] ?? '?'} lacks `shape`');
+        expect(r['category'], isA<String>(),
+            reason: 'row ${r['name'] ?? '?'} lacks `category`');
       }
     });
 

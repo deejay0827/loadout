@@ -211,7 +211,7 @@ class _HitProbabilityMapScreenState extends State<HitProbabilityMapScreen> {
     for (var r = _rangeMinYd; r <= _rangeMaxYd + 0.5; r += _rangeStepYd) {
       ranges.add(r);
     }
-    final shape = parseTargetShape(_selectedTarget!.shape);
+    final shape = parseTargetShape(_selectedTarget!.category);
     // Run the compute on the platform thread — the service is fast
     // enough at the default 60-point density (~150ms on a phone).
     // Wrapping in a Future to give the UI a frame to render the
@@ -288,7 +288,7 @@ class _HitProbabilityMapScreenState extends State<HitProbabilityMapScreen> {
               firearmId: Value(_selectedFirearm?.id),
               targetWidthIn: target.widthIn,
               targetHeightIn: target.heightIn,
-              targetShape: target.shape,
+              targetShape: target.category,
               groupMoa: _groupMoa,
               windUncertaintyMph: _windUncertaintyMph,
               rangeUncertaintyYd: _rangeUncertaintyYd,

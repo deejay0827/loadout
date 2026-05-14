@@ -21600,10 +21600,12 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _shapeMeta = const VerificationMeta('shape');
+  static const VerificationMeta _categoryMeta = const VerificationMeta(
+    'category',
+  );
   @override
-  late final GeneratedColumn<String> shape = GeneratedColumn<String>(
-    'shape',
+  late final GeneratedColumn<String> category = GeneratedColumn<String>(
+    'category',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -21714,7 +21716,7 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
   List<GeneratedColumn> get $columns => [
     id,
     name,
-    shape,
+    category,
     shapeId,
     verticalCenterPctFromTop,
     horizontalCenterPctFromLeft,
@@ -21748,13 +21750,13 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
     } else if (isInserting) {
       context.missing(_nameMeta);
     }
-    if (data.containsKey('shape')) {
+    if (data.containsKey('category')) {
       context.handle(
-        _shapeMeta,
-        shape.isAcceptableOrUnknown(data['shape']!, _shapeMeta),
+        _categoryMeta,
+        category.isAcceptableOrUnknown(data['category']!, _categoryMeta),
       );
     } else if (isInserting) {
-      context.missing(_shapeMeta);
+      context.missing(_categoryMeta);
     }
     if (data.containsKey('shape_id')) {
       context.handle(
@@ -21842,9 +21844,9 @@ class $TargetsTable extends Targets with TableInfo<$TargetsTable, TargetRow> {
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
-      shape: attachedDatabase.typeMapping.read(
+      category: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}shape'],
+        data['${effectivePrefix}category'],
       )!,
       shapeId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -21895,14 +21897,27 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   final int id;
   final String name;
 
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'star' |
-  /// 'popper'. Animal targets share `shape: 'silhouette'` with IPSC
-  /// rows; the [shapeId] discriminator is what tells animals apart
-  /// from IPSC at filter time and at paint time (v2.3 / v36 catalog
-  /// rewrite). Older `category` / `materialKind` / `manufacturer`
-  /// columns were dropped in v28 because reloaders pick by geometry,
-  /// not by what the target's made of or who printed the label.
-  final String shape;
+  /// Phase 9.5 — category-driven target taxonomy. Replaces the
+  /// pre-v39 `shape` column (which was redundant with category in
+  /// the new model). Six enum values:
+  ///
+  ///   * `circle` — `width_in == height_in`; painter draws a circle.
+  ///   * `square` — `width_in == height_in`; painter draws a square.
+  ///   * `rectangle` — generic + named competition targets (NRA SR-1,
+  ///     F-Class, etc.).
+  ///   * `ipsc` — IPSC / USPSA / IDPA silhouettes. Painter uses the
+  ///     shared IPSC SVG; `shape_id` is null.
+  ///   * `animal` — hunting silhouettes. `shape_id` carries the
+  ///     species name (`bear`, `mule_deer`, etc.).
+  ///   * `special` — apparatus that doesn't fit the other buckets.
+  ///     `shape_id` carries the apparatus type (`pepper_popper`,
+  ///     `texas_star`, future: `plate_rack`, `dueling_tree_steel`,
+  ///     etc.).
+  ///
+  /// Drives both chip-filter predicates and painter dispatch — see
+  /// `lib/screens/range_day/widgets/target_plot.dart`. Seed loader
+  /// asserts the enum at load time; unknown values raise loud.
+  final String category;
 
   /// Optional discriminator that routes to a user-authored SVG path
   /// (animal silhouettes, popper). Null for procedural shapes
@@ -21951,7 +21966,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   const TargetRow({
     required this.id,
     required this.name,
-    required this.shape,
+    required this.category,
     this.shapeId,
     required this.verticalCenterPctFromTop,
     required this.horizontalCenterPctFromLeft,
@@ -21967,7 +21982,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
-    map['shape'] = Variable<String>(shape);
+    map['category'] = Variable<String>(category);
     if (!nullToAbsent || shapeId != null) {
       map['shape_id'] = Variable<String>(shapeId);
     }
@@ -21992,7 +22007,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return TargetsCompanion(
       id: Value(id),
       name: Value(name),
-      shape: Value(shape),
+      category: Value(category),
       shapeId: shapeId == null && nullToAbsent
           ? const Value.absent()
           : Value(shapeId),
@@ -22017,7 +22032,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return TargetRow(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
-      shape: serializer.fromJson<String>(json['shape']),
+      category: serializer.fromJson<String>(json['category']),
       shapeId: serializer.fromJson<String?>(json['shapeId']),
       verticalCenterPctFromTop: serializer.fromJson<double>(
         json['verticalCenterPctFromTop'],
@@ -22039,7 +22054,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
-      'shape': serializer.toJson<String>(shape),
+      'category': serializer.toJson<String>(category),
       'shapeId': serializer.toJson<String?>(shapeId),
       'verticalCenterPctFromTop': serializer.toJson<double>(
         verticalCenterPctFromTop,
@@ -22059,7 +22074,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   TargetRow copyWith({
     int? id,
     String? name,
-    String? shape,
+    String? category,
     Value<String?> shapeId = const Value.absent(),
     double? verticalCenterPctFromTop,
     double? horizontalCenterPctFromLeft,
@@ -22072,7 +22087,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   }) => TargetRow(
     id: id ?? this.id,
     name: name ?? this.name,
-    shape: shape ?? this.shape,
+    category: category ?? this.category,
     shapeId: shapeId.present ? shapeId.value : this.shapeId,
     verticalCenterPctFromTop:
         verticalCenterPctFromTop ?? this.verticalCenterPctFromTop,
@@ -22089,7 +22104,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return TargetRow(
       id: data.id.present ? data.id.value : this.id,
       name: data.name.present ? data.name.value : this.name,
-      shape: data.shape.present ? data.shape.value : this.shape,
+      category: data.category.present ? data.category.value : this.category,
       shapeId: data.shapeId.present ? data.shapeId.value : this.shapeId,
       verticalCenterPctFromTop: data.verticalCenterPctFromTop.present
           ? data.verticalCenterPctFromTop.value
@@ -22113,7 +22128,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
     return (StringBuffer('TargetRow(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('shape: $shape, ')
+          ..write('category: $category, ')
           ..write('shapeId: $shapeId, ')
           ..write('verticalCenterPctFromTop: $verticalCenterPctFromTop, ')
           ..write('horizontalCenterPctFromLeft: $horizontalCenterPctFromLeft, ')
@@ -22131,7 +22146,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
   int get hashCode => Object.hash(
     id,
     name,
-    shape,
+    category,
     shapeId,
     verticalCenterPctFromTop,
     horizontalCenterPctFromLeft,
@@ -22148,7 +22163,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
       (other is TargetRow &&
           other.id == this.id &&
           other.name == this.name &&
-          other.shape == this.shape &&
+          other.category == this.category &&
           other.shapeId == this.shapeId &&
           other.verticalCenterPctFromTop == this.verticalCenterPctFromTop &&
           other.horizontalCenterPctFromLeft ==
@@ -22164,7 +22179,7 @@ class TargetRow extends DataClass implements Insertable<TargetRow> {
 class TargetsCompanion extends UpdateCompanion<TargetRow> {
   final Value<int> id;
   final Value<String> name;
-  final Value<String> shape;
+  final Value<String> category;
   final Value<String?> shapeId;
   final Value<double> verticalCenterPctFromTop;
   final Value<double> horizontalCenterPctFromLeft;
@@ -22177,7 +22192,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   const TargetsCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
-    this.shape = const Value.absent(),
+    this.category = const Value.absent(),
     this.shapeId = const Value.absent(),
     this.verticalCenterPctFromTop = const Value.absent(),
     this.horizontalCenterPctFromLeft = const Value.absent(),
@@ -22191,7 +22206,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   TargetsCompanion.insert({
     this.id = const Value.absent(),
     required String name,
-    required String shape,
+    required String category,
     this.shapeId = const Value.absent(),
     this.verticalCenterPctFromTop = const Value.absent(),
     this.horizontalCenterPctFromLeft = const Value.absent(),
@@ -22202,14 +22217,14 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     this.notes = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : name = Value(name),
-       shape = Value(shape),
+       category = Value(category),
        widthIn = Value(widthIn),
        heightIn = Value(heightIn),
        colorHex = Value(colorHex);
   static Insertable<TargetRow> custom({
     Expression<int>? id,
     Expression<String>? name,
-    Expression<String>? shape,
+    Expression<String>? category,
     Expression<String>? shapeId,
     Expression<double>? verticalCenterPctFromTop,
     Expression<double>? horizontalCenterPctFromLeft,
@@ -22223,7 +22238,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
-      if (shape != null) 'shape': shape,
+      if (category != null) 'category': category,
       if (shapeId != null) 'shape_id': shapeId,
       if (verticalCenterPctFromTop != null)
         'vertical_center_pct_from_top': verticalCenterPctFromTop,
@@ -22241,7 +22256,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
   TargetsCompanion copyWith({
     Value<int>? id,
     Value<String>? name,
-    Value<String>? shape,
+    Value<String>? category,
     Value<String?>? shapeId,
     Value<double>? verticalCenterPctFromTop,
     Value<double>? horizontalCenterPctFromLeft,
@@ -22255,7 +22270,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     return TargetsCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
-      shape: shape ?? this.shape,
+      category: category ?? this.category,
       shapeId: shapeId ?? this.shapeId,
       verticalCenterPctFromTop:
           verticalCenterPctFromTop ?? this.verticalCenterPctFromTop,
@@ -22279,8 +22294,8 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     if (name.present) {
       map['name'] = Variable<String>(name.value);
     }
-    if (shape.present) {
-      map['shape'] = Variable<String>(shape.value);
+    if (category.present) {
+      map['category'] = Variable<String>(category.value);
     }
     if (shapeId.present) {
       map['shape_id'] = Variable<String>(shapeId.value);
@@ -22321,7 +22336,7 @@ class TargetsCompanion extends UpdateCompanion<TargetRow> {
     return (StringBuffer('TargetsCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
-          ..write('shape: $shape, ')
+          ..write('category: $category, ')
           ..write('shapeId: $shapeId, ')
           ..write('verticalCenterPctFromTop: $verticalCenterPctFromTop, ')
           ..write('horizontalCenterPctFromLeft: $horizontalCenterPctFromLeft, ')
@@ -52625,7 +52640,7 @@ typedef $$TargetsTableCreateCompanionBuilder =
     TargetsCompanion Function({
       Value<int> id,
       required String name,
-      required String shape,
+      required String category,
       Value<String?> shapeId,
       Value<double> verticalCenterPctFromTop,
       Value<double> horizontalCenterPctFromLeft,
@@ -52640,7 +52655,7 @@ typedef $$TargetsTableUpdateCompanionBuilder =
     TargetsCompanion Function({
       Value<int> id,
       Value<String> name,
-      Value<String> shape,
+      Value<String> category,
       Value<String?> shapeId,
       Value<double> verticalCenterPctFromTop,
       Value<double> horizontalCenterPctFromLeft,
@@ -52671,8 +52686,8 @@ class $$TargetsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get shape => $composableBuilder(
-    column: $table.shape,
+  ColumnFilters<String> get category => $composableBuilder(
+    column: $table.category,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -52741,8 +52756,8 @@ class $$TargetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get shape => $composableBuilder(
-    column: $table.shape,
+  ColumnOrderings<String> get category => $composableBuilder(
+    column: $table.category,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -52807,8 +52822,8 @@ class $$TargetsTableAnnotationComposer
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
 
-  GeneratedColumn<String> get shape =>
-      $composableBuilder(column: $table.shape, builder: (column) => column);
+  GeneratedColumn<String> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
 
   GeneratedColumn<String> get shapeId =>
       $composableBuilder(column: $table.shapeId, builder: (column) => column);
@@ -52874,7 +52889,7 @@ class $$TargetsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> name = const Value.absent(),
-                Value<String> shape = const Value.absent(),
+                Value<String> category = const Value.absent(),
                 Value<String?> shapeId = const Value.absent(),
                 Value<double> verticalCenterPctFromTop = const Value.absent(),
                 Value<double> horizontalCenterPctFromLeft =
@@ -52888,7 +52903,7 @@ class $$TargetsTableTableManager
               }) => TargetsCompanion(
                 id: id,
                 name: name,
-                shape: shape,
+                category: category,
                 shapeId: shapeId,
                 verticalCenterPctFromTop: verticalCenterPctFromTop,
                 horizontalCenterPctFromLeft: horizontalCenterPctFromLeft,
@@ -52903,7 +52918,7 @@ class $$TargetsTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String name,
-                required String shape,
+                required String category,
                 Value<String?> shapeId = const Value.absent(),
                 Value<double> verticalCenterPctFromTop = const Value.absent(),
                 Value<double> horizontalCenterPctFromLeft =
@@ -52917,7 +52932,7 @@ class $$TargetsTableTableManager
               }) => TargetsCompanion.insert(
                 id: id,
                 name: name,
-                shape: shape,
+                category: category,
                 shapeId: shapeId,
                 verticalCenterPctFromTop: verticalCenterPctFromTop,
                 horizontalCenterPctFromLeft: horizontalCenterPctFromLeft,

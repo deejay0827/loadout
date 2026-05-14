@@ -78,7 +78,7 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 38', () {
+    test('schemaVersion is 39', () {
       // v35 added Range Day Realistic / per-firearm scope-and-reticle
       // defaults; v36 added `targets.shape_id` for SVG dispatch (v2.3
       // target render fix); v37 added the per-target `center_point`
@@ -86,10 +86,14 @@ void main() {
       // 0.5 for vertical / horizontal anchor fractions; v38 added
       // `targets.svg_scale_factor` (Scene Painter Phase 7a) — a
       // RealColumn with default 1.0 that the silhouette scaler
-      // multiplies on top of fit-to-box. The file keeps its v35
-      // name because every v35-era assertion below is still valid
-      // on v38 — schema bumps are additive.
-      expect(db.schemaVersion, 38);
+      // multiplies on top of fit-to-box. v39 (Scene Painter Phase
+      // 9.5 Group A) replaced `targets.shape` with the
+      // category-driven `targets.category` enum (drop + recreate;
+      // the seed catalog ships the new schema). The file keeps its
+      // v35 name because every v35-era assertion below is still
+      // valid on v39 — schema bumps are additive (except the v39
+      // shape→category rename, which is captured here).
+      expect(db.schemaVersion, 39);
     });
 
     test('targets accepts the new v38 svg_scale_factor column', () async {
@@ -100,7 +104,7 @@ void main() {
       final defaultId = await db.into(db.targets).insert(
             TargetsCompanion.insert(
               name: 'v38 default-scale row',
-              shape: 'silhouette',
+              category: 'ipsc',
               widthIn: 18,
               heightIn: 30,
               colorHex: '#ffffff',
@@ -114,7 +118,7 @@ void main() {
       final tunedId = await db.into(db.targets).insert(
             TargetsCompanion.insert(
               name: 'v38 tuned-scale deer',
-              shape: 'silhouette',
+              category: 'ipsc',
               shapeId: const Value('deer'),
               widthIn: 60,
               heightIn: 32,
@@ -135,7 +139,7 @@ void main() {
       final defaultId = await db.into(db.targets).insert(
             TargetsCompanion.insert(
               name: 'v37 default-center row',
-              shape: 'silhouette',
+              category: 'ipsc',
               widthIn: 18,
               heightIn: 30,
               colorHex: '#ffffff',
@@ -150,7 +154,7 @@ void main() {
       final tunedId = await db.into(db.targets).insert(
             TargetsCompanion.insert(
               name: 'v37 tuned-center deer',
-              shape: 'silhouette',
+              category: 'ipsc',
               shapeId: const Value('deer'),
               widthIn: 60,
               heightIn: 32,
@@ -173,7 +177,7 @@ void main() {
       final animalId = await db.into(db.targets).insert(
             TargetsCompanion.insert(
               name: 'v36 test bear',
-              shape: 'silhouette',
+              category: 'ipsc',
               shapeId: const Value('bear'),
               widthIn: 60,
               heightIn: 32,
@@ -188,7 +192,7 @@ void main() {
       final plainId = await db.into(db.targets).insert(
             TargetsCompanion.insert(
               name: 'v36 plain circle',
-              shape: 'circle',
+              category: 'circle',
               widthIn: 12,
               heightIn: 12,
               colorHex: '#ffffff',

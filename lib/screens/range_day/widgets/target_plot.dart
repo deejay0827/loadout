@@ -163,27 +163,56 @@ import '../../../widgets/target_silhouettes.dart';
 /// Forwarded to whichever silhouette helper handles the shapeId.
 /// Default 1.0 (callers without per-target tuning get unchanged
 /// rendering).
+///
+/// Phase 9.5 — [category] gates which SVG helper to dispatch to:
+///   * `ipsc`   → `TargetSilhouettes['ipsc']`
+///   * `animal` → `AnimalSilhouettes[shapeId]` (shapeId = species)
+///   * `special` + `shapeId == 'pepper_popper'` → TargetSilhouettes
+///   * anything else (`circle` / `square` / `rectangle` /
+///     `special` + `texas_star`) → null; caller renders procedurally
 Path? resolveTargetSvgPath(
   Rect bounds,
+  String category,
   String? shapeId, {
   double scaleFactor = 1.0,
 }) {
-  if (shapeId == null) return null;
-  if (AnimalSilhouettes.isAnimalShape(shapeId)) {
-    return AnimalSilhouettes.cachedScaledPath(
-      bounds,
-      shapeId,
-      scaleFactor: scaleFactor,
-    );
+  switch (category) {
+    case 'ipsc':
+      // IPSC catalog rows have shape_id == null; the dispatch key
+      // is the category, not the per-row shape_id.
+      if (TargetSilhouettes.isTargetShape('ipsc')) {
+        return TargetSilhouettes.cachedScaledPath(
+          bounds,
+          'ipsc',
+          scaleFactor: scaleFactor,
+        );
+      }
+      return null;
+    case 'animal':
+      if (shapeId == null) return null;
+      if (AnimalSilhouettes.isAnimalShape(shapeId)) {
+        return AnimalSilhouettes.cachedScaledPath(
+          bounds,
+          shapeId,
+          scaleFactor: scaleFactor,
+        );
+      }
+      return null;
+    case 'special':
+      // texas_star is procedural; pepper_popper has an SVG.
+      if (shapeId == 'pepper_popper' &&
+          TargetSilhouettes.isTargetShape(shapeId!)) {
+        return TargetSilhouettes.cachedScaledPath(
+          bounds,
+          shapeId,
+          scaleFactor: scaleFactor,
+        );
+      }
+      return null;
+    default:
+      // circle / square / rectangle — procedural, never SVG.
+      return null;
   }
-  if (TargetSilhouettes.isTargetShape(shapeId)) {
-    return TargetSilhouettes.cachedScaledPath(
-      bounds,
-      shapeId,
-      scaleFactor: scaleFactor,
-    );
-  }
-  return null;
 }
 
 /// Two interaction modes for the target plot.
@@ -215,7 +244,7 @@ enum TargetPlotViewMode {
 /// passing the whole [TargetRow] in.
 class TargetSpec {
   const TargetSpec({
-    required this.shape,
+    required this.category,
     this.shapeId,
     required this.widthIn,
     required this.heightIn,
@@ -224,14 +253,16 @@ class TargetSpec {
     this.svgScaleFactor = 1.0,
   });
 
-  /// 'circle' | 'square' | 'rectangle' | 'silhouette' | 'irregular'
-  final String shape;
+  /// Phase 9.5 category-driven taxonomy. Replaces the v38 `shape`
+  /// field. Values: `circle` | `square` | `rectangle` | `ipsc` |
+  /// `animal` | `special`. Drives chip filtering AND painter
+  /// dispatch — see the `_RealisticScenePainter` switch below.
+  final String category;
 
-  /// Optional discriminator that routes to a user-authored SVG path
-  /// (animal silhouettes, popper). Null for procedural shapes
-  /// (circle, square, rectangle, IPSC silhouette, Texas Star, generic
-  /// `silhouette`). When non-null, painters look up
-  /// `AnimalSilhouettes` / `TargetSilhouettes` by this key.
+  /// Optional discriminator within a [category]. Carries the
+  /// species name for `animal` (e.g. `bear`, `mule_deer`), the
+  /// apparatus type for `special` (e.g. `pepper_popper`,
+  /// `texas_star`), and null for everything else.
   final String? shapeId;
 
   final double widthIn;
@@ -252,25 +283,20 @@ class TargetSpec {
   final double svgScaleFactor;
 
   /// Default target used when the user hasn't picked one yet — an
-  /// 18 in × 30 in white silhouette. This matches the canonical IPSC
-  /// (USPSA Metric) competition cardboard target so a fresh user
-  /// opening Range Day sees a recognizable, distance-relevant target.
-  /// They can swap to any other catalog target via the picker.
-  ///
-  /// Color is pure white (`#ffffff`); the 18 × 30 inch dimensions
-  /// match the silhouette body envelope used by USPSA / IPSC. The
-  /// `silhouette` shape value flows through to the painter chain so
-  /// the target draws a torso + head outline rather than a flat
-  /// rectangle.
+  /// 18 in × 30 in white IPSC silhouette. This matches the canonical
+  /// IPSC (USPSA Metric) competition cardboard target so a fresh
+  /// user opening Range Day sees a recognizable, distance-relevant
+  /// target. They can swap to any other catalog target via the
+  /// picker.
   factory TargetSpec.defaultPaper() => const TargetSpec(
-        shape: 'silhouette',
+        category: 'ipsc',
         widthIn: 18,
         heightIn: 30,
         colorHex: '#ffffff',
       );
 
   factory TargetSpec.fromRow(TargetRow row) => TargetSpec(
-        shape: row.shape,
+        category: row.category,
         shapeId: row.shapeId,
         widthIn: row.widthIn,
         heightIn: row.heightIn,
@@ -1209,16 +1235,13 @@ class _RealisticScenePainter extends CustomPainter {
     final targetW = effWIn * inPerPx;
     final targetH = effHIn * inPerPx;
 
-    // Phase 9 Group C.5 — animals stand on the ground (feet at
-    // horizon Y); skip pole + mound + pole-base-ring entirely.
-    // Discriminator: shape == 'silhouette' AND shape_id is set AND
-    // shape_id is not 'ipsc' (IPSC silhouettes still mount on a pole;
-    // only the 48 animal SVGs are ground-standing). cp.verticalFromTop
-    // is IGNORED for animals — only horizontal matters because the
-    // bottom is fixed at horizonY.
-    final isGroundStanding = target.shape.toLowerCase() == 'silhouette' &&
-        target.shapeId != null &&
-        target.shapeId != 'ipsc';
+    // Phase 9.5 — discriminator simplified to `category == 'animal'`
+    // (was: shape == 'silhouette' && shape_id != null && shape_id !=
+    // 'ipsc'). The category field cleanly separates animals from
+    // IPSC silhouettes; the pole/mound rendering skips for animals
+    // only. cp.verticalFromTop is IGNORED for animals — only
+    // horizontal matters because the bottom is fixed at horizonY.
+    final isGroundStanding = target.category == 'animal';
 
     final cp = target.centerPoint;
     final poleX = w / 2;
@@ -1727,13 +1750,15 @@ class _RealisticScenePainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.6;
 
-    // Shared dispatch: SVG path if shapeId resolves, otherwise null.
-    // See top-level [resolveTargetSvgPath]. Phase 7a threads the
-    // per-target svgScaleFactor through so animals with antlers /
-    // horns / tall tails (deer, elk, moose, etc.) can overflow the
-    // rect into the sky region.
+    // Phase 9.5 — category-driven painter dispatch (replaces the
+    // old shape-based switch). SVG-capable categories (`ipsc`,
+    // `animal`) try the SVG path first via resolveTargetSvgPath;
+    // procedural categories (`circle`, `square`, `rectangle`) draw
+    // directly; `special` routes by shape_id sub-discriminator
+    // (pepper_popper, texas_star).
     final svgPath = resolveTargetSvgPath(
       rect,
+      target.category,
       target.shapeId,
       scaleFactor: target.svgScaleFactor,
     );
@@ -1743,21 +1768,84 @@ class _RealisticScenePainter extends CustomPainter {
       return;
     }
 
-    // Procedural fallback.
-    switch (target.shape) {
+    switch (target.category) {
       case 'circle':
         final r = rect.shortestSide / 2;
         canvas.drawCircle(rect.center, r, fillPaint);
         canvas.drawCircle(rect.center, r, outlinePaint);
         break;
-      case 'silhouette':
+      case 'ipsc':
         final ipsc = buildIpscPath(rect);
         canvas.drawPath(ipsc, fillPaint);
         canvas.drawPath(ipsc, outlinePaint);
         break;
+      case 'special':
+        _drawSpecial(canvas, rect, fillPaint, outlinePaint);
+        break;
       case 'square':
       case 'rectangle':
       default:
+        canvas.drawRect(rect, fillPaint);
+        canvas.drawRect(rect, outlinePaint);
+        break;
+    }
+  }
+
+  /// Phase 9.5 — Texas Star: 5-pointed star path with two radii
+  /// (outer = `min(w,h) / 2`, inner = `outer * 0.4`), 5 points at
+  /// 72° intervals, starting at -90° (point up). Fill with the
+  /// row's color, stroke 1px black for definition.
+  void _drawTexasStar(
+    Canvas canvas,
+    Rect rect,
+    Paint fillPaint,
+    Paint outlinePaint,
+  ) {
+    final cx = rect.center.dx;
+    final cy = rect.center.dy;
+    final outer = (rect.width < rect.height ? rect.width : rect.height) / 2;
+    final inner = outer * 0.4;
+    final path = Path();
+    // 10 vertices alternating outer / inner around a circle.
+    // Start at -90° (point up).
+    for (int i = 0; i < 10; i++) {
+      final r = i.isEven ? outer : inner;
+      final angle = -math.pi / 2 + i * (math.pi / 5);
+      final x = cx + r * math.cos(angle);
+      final y = cy + r * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    canvas.drawPath(path, fillPaint);
+    canvas.drawPath(path, outlinePaint);
+  }
+
+  /// Phase 9.5 — `category: 'special'` apparatus dispatch. Routes by
+  /// `shape_id` to per-apparatus painters. Currently supports
+  /// `pepper_popper` (fall-through to procedural IPSC-like geometry
+  /// — the SVG path is normally already resolved at the top of
+  /// `_paintTarget` so this branch only fires when the SVG cache is
+  /// cold) and `texas_star`. Future apparatuses (plate_rack,
+  /// dueling_tree_steel, etc.) add new cases here.
+  void _drawSpecial(
+    Canvas canvas,
+    Rect rect,
+    Paint fillPaint,
+    Paint outlinePaint,
+  ) {
+    switch (target.shapeId) {
+      case 'texas_star':
+        _drawTexasStar(canvas, rect, fillPaint, outlinePaint);
+        break;
+      case 'pepper_popper':
+      default:
+        // SVG-cache-cold fallback: draw a rect placeholder so the
+        // operator sees SOMETHING. The next repaint after preload
+        // returns the authored popper silhouette.
         canvas.drawRect(rect, fillPaint);
         canvas.drawRect(rect, outlinePaint);
         break;
@@ -1772,7 +1860,7 @@ class _RealisticScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RealisticScenePainter old) {
-    return old.target.shape != target.shape ||
+    return old.target.category != target.category ||
         old.target.shapeId != target.shapeId ||
         old.target.widthIn != target.widthIn ||
         old.target.heightIn != target.heightIn ||
@@ -1976,21 +2064,21 @@ class _RealisticTargetPainter extends CustomPainter {
           canvas,
           layout.childRects[i],
           isActive: false,
-          shape: target.shape,
+          shape: target.category,
         );
       }
       _paintTargetSilhouette(
         canvas,
         layout.activeChildRect,
         isActive: true,
-        shape: target.shape,
+        shape: target.category,
       );
     } else {
       _paintTargetSilhouette(
         canvas,
         layout.activeChildRect,
         isActive: true,
-        shape: target.shape,
+        shape: target.category,
       );
     }
 
@@ -2550,7 +2638,7 @@ class _RealisticTargetPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RealisticTargetPainter old) {
-    if (old.target.shape != target.shape) return true;
+    if (old.target.category != target.category) return true;
     if (old.target.widthIn != target.widthIn) return true;
     if (old.target.heightIn != target.heightIn) return true;
     if (old.colorHexOverride != colorHexOverride) return true;
@@ -2646,7 +2734,7 @@ class _TargetPainter extends CustomPainter {
       targetRect.width * (1 - 2 * inset),
       targetRect.height * (1 - 2 * inset),
     );
-    switch (target.shape) {
+    switch (target.category) {
       case 'circle':
         final centre = rect.center;
         final radius = rect.shortestSide / 2;
@@ -2809,7 +2897,7 @@ class _TargetPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TargetPainter old) {
-    if (old.target.shape != target.shape) return true;
+    if (old.target.category != target.category) return true;
     if (old.target.widthIn != target.widthIn) return true;
     if (old.target.heightIn != target.heightIn) return true;
     if (old.target.colorHex != target.colorHex) return true;

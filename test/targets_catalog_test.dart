@@ -91,12 +91,15 @@ void main() {
             reason: "Species '${entry.key}' should have 3 size "
                 "variants; got ${entry.value.length}");
         final names = entry.value.map((r) => r['name'] as String);
-        expect(names.any((n) => n.startsWith('Small ')), isTrue,
+        // Phase 9.5 — names are "Species, Size" (e.g. "Bear, Small"),
+        // not "Size Species" (e.g. "Small Bear"). The size suffix is
+        // what we check for now.
+        expect(names.any((n) => n.endsWith(', Small')), isTrue,
             reason: "Species '${entry.key}' missing Small variant");
-        expect(names.any((n) => n.startsWith('Medium ')), isTrue,
+        expect(names.any((n) => n.endsWith(', Medium')), isTrue,
             reason:
                 "Species '${entry.key}' missing Medium variant");
-        expect(names.any((n) => n.startsWith('Large ')), isTrue,
+        expect(names.any((n) => n.endsWith(', Large')), isTrue,
             reason: "Species '${entry.key}' missing Large variant");
       }
     });
@@ -115,13 +118,15 @@ void main() {
       final square2 =
           rows.where((r) => r['name'] == '2 in Square').toList();
       expect(square2, hasLength(1));
-      expect(square2.first['shape'], 'square');
+      // Phase 9.5 — `shape` field dropped; `category` is the
+      // taxonomy now.
+      expect(square2.first['category'], 'square');
       expect(square2.first['width_in'], 2.0);
       expect(square2.first['height_in'], 2.0);
     });
 
     test('every generic circle name matches ^N in Circle\$', () {
-      final circles = rows.where((r) => r['shape'] == 'circle');
+      final circles = rows.where((r) => r['category'] == 'circle');
       final pat = RegExp(r'^\d+ in Circle$');
       for (final r in circles) {
         expect(pat.hasMatch(r['name'] as String), isTrue,
@@ -130,7 +135,7 @@ void main() {
     });
 
     test('every generic square name matches ^N in Square\$', () {
-      final squares = rows.where((r) => r['shape'] == 'square');
+      final squares = rows.where((r) => r['category'] == 'square');
       final pat = RegExp(r'^\d+ in Square$');
       for (final r in squares) {
         expect(pat.hasMatch(r['name'] as String), isTrue,
@@ -139,33 +144,82 @@ void main() {
     });
 
     test('every GENERIC rectangle name matches Phase 8 pattern', () {
-      // The 6 generic rectangles ship as `12" x 18" Rectangle` etc.
-      // Named-rectangle rows (NRA SR-1, F-Class F-Open, Bullseye,
-      // Dueling Tree) keep their proper names and aren't matched
-      // by this pattern. Filter to the generic ones by name shape.
       final pat =
           RegExp(r'^\d+(?:\.\d+)?" x \d+(?:\.\d+)?" Rectangle$');
       final genericRects = rows
-          .where((r) => r['shape'] == 'rectangle')
+          .where((r) => r['category'] == 'rectangle')
           .where((r) => pat.hasMatch(r['name'] as String))
           .toList();
-      // The catalog has exactly 6 generic rectangles per Phase 8
-      // (12×18, 18×24, 24×30, 24×36, 36×48, 36×60).
       expect(genericRects, hasLength(6));
     });
 
-    test('every animal name contains " in" (dims appended)', () {
+    test(
+        'Phase 9.5 — category enum populated for every row '
+        '(circle / square / rectangle / ipsc / animal / special)',
+        () {
+      const valid = <String>{
+        'circle',
+        'square',
+        'rectangle',
+        'ipsc',
+        'animal',
+        'special',
+      };
+      for (final r in rows) {
+        final c = r['category'];
+        expect(c, isA<String>(),
+            reason: "Row '${r['name']}' missing category");
+        expect(valid.contains(c), isTrue,
+            reason: "Row '${r['name']}' has invalid category '$c'");
+      }
+    });
+
+    test(
+        'Phase 9.5 — `shape` field is GONE from every row '
+        '(category-driven taxonomy)',
+        () {
+      for (final r in rows) {
+        expect(r.containsKey('shape'), isFalse,
+            reason: "Row '${r['name']}' still carries legacy 'shape' field");
+      }
+    });
+
+    test('Phase 9.5 — animal names use the new "Species, Size" format', () {
       final animals =
           rows.where((r) => r['category'] == 'animal').toList();
-      // Phase 8 expanded all animal names from a single noun
-      // (e.g. `"Deer"`) to `"Deer 60×32 in"` for picker readability.
-      // Phase 9 Group B expanded to 48 animals (16 species × 3 sizes,
-      // each prefixed `Small ` / `Medium ` / `Large `).
       expect(animals, hasLength(48));
+      // Phase 9.5 — names are "Bear, Small" / "Mountain Lion, Large"
+      // etc. Title-case species; size after a comma. No dimensions in
+      // the name.
+      final pat = RegExp(r'^[A-Z][a-zA-Z ]+, (Small|Medium|Large)$');
       for (final r in animals) {
-        expect((r['name'] as String).contains(' in'), isTrue,
-            reason: "Animal name '${r['name']}' lacks dimensions");
+        expect(pat.hasMatch(r['name'] as String), isTrue,
+            reason: "Animal name '${r['name']}' doesn't match "
+                "'Species, Size' format");
       }
+    });
+
+    test('Phase 9.5 — special-category rows: pepper_popper + texas_star', () {
+      final specials =
+          rows.where((r) => r['category'] == 'special').toList();
+      expect(specials, hasLength(3),
+          reason: '2 poppers + Texas Star = 3 special-category rows');
+      final shapeIds = specials.map((r) => r['shape_id']).toSet();
+      expect(shapeIds, containsAll(['pepper_popper', 'texas_star']));
+    });
+
+    test('Phase 9.5 — category counts match expected', () {
+      final counts = <String, int>{};
+      for (final r in rows) {
+        final c = r['category'] as String;
+        counts[c] = (counts[c] ?? 0) + 1;
+      }
+      expect(counts['circle'], 13);
+      expect(counts['square'], 6);
+      expect(counts['rectangle'], 15);
+      expect(counts['ipsc'], 6);
+      expect(counts['animal'], 48);
+      expect(counts['special'], 3);
     });
 
     test('no IPSC name has duplicate dimensions (Phase 8 bugfix)', () {

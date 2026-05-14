@@ -98,9 +98,9 @@ class TargetRepository {
   /// `getByCategory` which keyed off the `category` column dropped in
   /// schema v28 (per user feedback: reloaders pick by geometry, not
   /// material).
-  Future<List<TargetRow>> getByShape(String shape) async {
+  Future<List<TargetRow>> getByShape(String category) async {
     final rows = await (db.select(db.targets)
-          ..where((t) => t.shape.equals(shape)))
+          ..where((t) => t.category.equals(category)))
         .get();
     final list = [...rows];
     list.sort((a, b) => naturalCompare(a.name, b.name));

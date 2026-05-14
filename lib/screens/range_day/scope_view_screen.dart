@@ -1162,7 +1162,7 @@ class _ScopeFovPainter extends CustomPainter {
       ..color = Colors.black
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
-    switch (targetSpec.shape) {
+    switch (targetSpec.category) {
       case 'circle':
         canvas.drawCircle(movingCenter, math.min(wPx, hPx) / 2, fill);
         canvas.drawCircle(movingCenter, math.min(wPx, hPx) / 2, outline);
@@ -1375,7 +1375,7 @@ class _ScopeFovPainter extends CustomPainter {
         old.reticleRenderScale != reticleRenderScale ||
         old.targetSpec.widthIn != targetSpec.widthIn ||
         old.targetSpec.heightIn != targetSpec.heightIn ||
-        old.targetSpec.shape != targetSpec.shape ||
+        old.targetSpec.category != targetSpec.category ||
         old.targetSpec.colorHex != targetSpec.colorHex ||
         old.rangeYards != rangeYards ||
         old.magnification != magnification ||

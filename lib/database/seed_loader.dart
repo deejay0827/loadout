@@ -855,9 +855,28 @@ class SeedLoader {
       // sky region.
       final svgScaleFactor =
           (m['svg_scale_factor'] as num?)?.toDouble() ?? 1.0;
+      // Phase 9.5 — `category` enum drives the painter dispatch.
+      // Validate at load time so any catalog typo raises loud
+      // (a stray "circles" / "ipsk" / "Special" stops the seed
+      // before it pollutes the table).
+      const validCategories = <String>{
+        'circle',
+        'square',
+        'rectangle',
+        'ipsc',
+        'animal',
+        'special',
+      };
+      final category = m['category'] as String;
+      if (!validCategories.contains(category)) {
+        throw StateError(
+          "targets.json row '${m['name']}': invalid category "
+          "'$category' (must be one of $validCategories).",
+        );
+      }
       batch.add(TargetsCompanion.insert(
         name: m['name'] as String,
-        shape: m['shape'] as String,
+        category: category,
         shapeId: Value(shapeId),
         widthIn: widthIn.toDouble(),
         heightIn: heightIn.toDouble(),

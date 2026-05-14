@@ -174,7 +174,7 @@ void main() {
     await harness.db.into(harness.db.targets).insert(
           TargetsCompanion.insert(
             name: 'Circle 12 in',
-            shape: 'circle',
+            category: 'circle',
             widthIn: 12,
             heightIn: 12,
             colorHex: '#ffffff',
