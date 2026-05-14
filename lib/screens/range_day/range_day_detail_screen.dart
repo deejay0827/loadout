@@ -5152,33 +5152,57 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
             _scheduleAutoSave();
           },
           optionsViewBuilder: (context, onSelected, options) {
-            // Phase 8 Group E + Phase 9 Group C.6 layered fix.
+            // Phase 8 Group E + Phase 9 Group C.6 + Phase 9.5 Group D
+            // layered fix. The actual root cause (diagnosed in Phase
+            // 9.5 Group D) is the NotificationListener path, not the
+            // gesture-arena / hit-test path — but the gesture-side
+            // primitives are cheap belt-and-suspenders and stay.
             //
-            // Phase 8 added TextFieldTapRegion so taps inside the
-            // overlay don't unfocus the underlying TextField. The
-            // operator reported the dismiss-on-scroll bug persisted
-            // despite that wrapper, hypothesis: the inner ListView's
-            // scroll gesture leaks up to a parent Scrollable and the
-            // parent's scroll-start unfocuses + dismisses.
+            // The real fix: `NotificationListener<ScrollNotification>`
+            // around the overlay's inner ListView, returning `true`
+            // from `onNotification` to STOP scroll notifications from
+            // bubbling up the widget-tree ancestry.
             //
-            // Phase 9 additions (without simulator-side empirical
-            // diagnosis — operator-side QA confirms which actually
-            // helped):
-            //   1. Explicit `ClampingScrollPhysics` on the inner
-            //      ListView. Makes the overlay's own scrollable a
-            //      higher-priority gesture claimant for vertical
-            //      drags that originate within its bounds.
-            //   2. `behavior: HitTestBehavior.opaque` on the surrounding
-            //      Material (via a Listener wrapper). Absorbs pointer
-            //      events at the overlay's edges that might otherwise
-            //      bubble to the parent.
-            //   3. Reordered the wrapper stack so TextFieldTapRegion
-            //      is OUTERMOST — keeps the field focused even if
-            //      one of the inner layers fails to claim a gesture.
+            // Why this is the load-bearing layer:
+            //   * `Notification` (`scroll_notification.dart`) bubbles
+            //     via `Element.visitAncestorElements`, INDEPENDENT of
+            //     pointer routing. The overlay is rendered inside an
+            //     `OverlayEntry` (sibling of the body in the
+            //     RenderTree), BUT its widget-tree ancestor chain is
+            //     the `_RawAutocompleteState`'s element — which IS a
+            //     descendant of the outer SingleChildScrollView at
+            //     line 2549.
+            //   * That outer SingleChildScrollView has
+            //     `keyboardDismissBehavior:
+            //     ScrollViewKeyboardDismissBehavior.onDrag` (line
+            //     2556), which (per SDK source) installs an
+            //     ancestor `NotificationListener<ScrollUpdateNotification>`
+            //     that calls
+            //     `FocusManager.instance.primaryFocus?.unfocus()`
+            //     whenever it sees a drag-update notification with
+            //     `dragDetails != null` ANYWHERE in its subtree.
+            //   * Each tick the user scrolls the inner ListView, the
+            //     inner Scrollable fires a `ScrollUpdateNotification`.
+            //     The notification bubbles up through the widget-tree
+            //     ancestry, reaches the outer listener, fires
+            //     `unfocus()`, the Autocomplete's `_onFocusChange`
+            //     callback hides the overlay, dismissed.
+            //   * `TextFieldTapRegion` intercepts TAPS that would
+            //     unfocus the field. It has zero effect on a
+            //     programmatic `unfocus()` triggered by a drag-side
+            //     notification. `HitTestBehavior.opaque` on a
+            //     `Listener` absorbs POINTER events, also irrelevant
+            //     here.
+            //   * The fix is `onNotification: (_) => true` — Flutter's
+            //     contract for "handled, do not bubble." The outer
+            //     listener never sees the inner list's drags; focus
+            //     stays; overlay stays open.
             //
-            // If the operator confirms the bug is fixed, the helpful
-            // primitive is likely (1) — (2) and (3) are belt-and-
-            // suspenders that don't hurt.
+            // The Phase 8 / 9 belt-and-suspenders layers (TapRegion,
+            // opaque Listener, ClampingScrollPhysics) are kept so the
+            // overlay still behaves well against gesture-arena edge
+            // cases (e.g. the FUTURE day Range Day's outer scroll
+            // controller is replaced with a CustomScrollView).
             return TextFieldTapRegion(
               child: Listener(
                 behavior: HitTestBehavior.opaque,
@@ -5188,26 +5212,33 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     elevation: 4,
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxHeight: 360),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.zero,
-                        physics: const ClampingScrollPhysics(),
-                        itemCount: options.length,
-                        itemBuilder: (context, i) {
-                          final t = options.elementAt(i);
-                          final isFav = favIds.contains(t.id);
-                          return ListTile(
-                            dense: true,
-                            leading: _targetShapeIcon(
-                                t.category, t.shapeId, theme),
-                            title: Text(
-                              isFav
-                                  ? '★ ${_targetDropdownLabel(t)}'
-                                  : _targetDropdownLabel(t),
-                            ),
-                            onTap: () => onSelected(t),
-                          );
-                        },
+                      child: NotificationListener<ScrollNotification>(
+                        // Phase 9.5 Group D — load-bearing line. STOP
+                        // the inner ListView's scroll notifications
+                        // from bubbling to the outer SingleChildScrollView's
+                        // keyboardDismissBehavior.onDrag handler.
+                        onNotification: (_) => true,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: options.length,
+                          itemBuilder: (context, i) {
+                            final t = options.elementAt(i);
+                            final isFav = favIds.contains(t.id);
+                            return ListTile(
+                              dense: true,
+                              leading: _targetShapeIcon(
+                                  t.category, t.shapeId, theme),
+                              title: Text(
+                                isFav
+                                    ? '★ ${_targetDropdownLabel(t)}'
+                                    : _targetDropdownLabel(t),
+                              ),
+                              onTap: () => onSelected(t),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
