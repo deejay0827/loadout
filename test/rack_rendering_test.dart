@@ -333,12 +333,12 @@ void main() {
 
   group('Active vs inactive outline stroke widths', () {
     test('active stroke is ≥ 1.5× the inactive stroke', () {
-      // Per §6A.3 line 1244: "the active plate renders with a 50%
-      // thicker stroke (e.g., 2.5px instead of 1.5px)." The
-      // exported constants live at the top of `target_plot.dart`
-      // — asserting their ratio here catches a future
-      // "consistency-cleanup" pass that nudges them back toward the
-      // legacy 1.6 / 1.2 values.
+      // The active plate must read as visually distinct from the
+      // inactive plates. The v2.3 brief illustrated this as
+      // "2.5 vs 1.5"; Phase 9.6 tightened to "2.0 vs 1.0" — same
+      // ≥1.5× ratio, less visual weight overall (the active black
+      // outline is the load-bearing highlight, the inactive
+      // stroke just delineates the plate edge).
       expect(kRackActiveStrokeWidth / kRackInactiveStrokeWidth,
           greaterThanOrEqualTo(1.5),
           reason: 'active stroke must be at least 50% thicker than inactive');
@@ -349,16 +349,16 @@ void main() {
       expect(kRackInactiveStrokeWidth, greaterThan(0));
     });
 
-    test('active stroke matches the brief example (2.5 px)', () {
-      // The brief gives a concrete example value; pinning it here
-      // keeps the visual weight stable across refactors. The brief
-      // doesn't mandate exactly 2.5 — "e.g., 2.5px" — but the
-      // landed value is 2.5 and pinning it surfaces any drift.
-      expect(kRackActiveStrokeWidth, closeTo(2.5, 0.01));
+    test('Phase 9.6 — active stroke is exactly 2.0 px', () {
+      // Phase 9.6 spec E.5: "the slot at activeSlotIndex gets a 2px
+      // black stroke around its outer boundary, drawn over the
+      // plate fill." Pinning the exact value here surfaces drift
+      // from any future "visual polish" pass.
+      expect(kRackActiveStrokeWidth, closeTo(2.0, 0.01));
     });
 
-    test('inactive stroke matches the brief example (1.5 px)', () {
-      expect(kRackInactiveStrokeWidth, closeTo(1.5, 0.01));
+    test('Phase 9.6 — inactive stroke is exactly 1.0 px', () {
+      expect(kRackInactiveStrokeWidth, closeTo(1.0, 0.01));
     });
   });
 }

@@ -5670,7 +5670,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   Widget _selectedRackPreview(TargetRackRow rack, RackSlot active) {
     final theme = Theme.of(context);
     final dims = _rackChildDimensionLabel(active);
-    final activeIndex = _selectedRackChildren.indexOf(active);
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Column(
@@ -5729,19 +5728,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          // Whole-rack visual — every plate rendered together with
-          // the active plate highlighted by a thicker outline. Per
-          // user feedback: "show all targets at the same time."
-          SizedBox(
-            height: 200,
-            child: _RackThumbnail(
-              rack: rack,
-              children: _selectedRackChildren,
-              activeIndex: activeIndex,
-              activePlateColor: theme.colorScheme.primary,
-            ),
-          ),
+          // Phase 9.6 Group E.1 — the schematic rack thumbnail
+          // (gray panel above the realistic scene preview) is gone.
+          // The realistic `TargetPlot` widget below the picker is
+          // now the rack's only visual representation. Rationale:
+          // showing two parallel renders of the same rack (one
+          // schematic, one realistic) was redundant and confused
+          // the chip-row "active plate" feedback. The active-plate
+          // chip row stays; selecting a chip updates the realistic
+          // scene's active-slot highlight.
         ],
       ),
     );
@@ -9800,145 +9795,12 @@ class _DopeBodyCell extends StatelessWidget {
 
 enum _ShotEditResult { cancel, save, delete }
 
-/// Whole-rack thumbnail — paints every child plate at its real
-/// (offsetX, offsetY, width, height) position from the rack's
-/// `total_width_in × total_height_in` envelope, scaled to fit the
-/// canvas. The active plate is highlighted with a thick gold
-/// outline (per user request: "show all targets at the same time…
-/// highlight that circle or square with a bold outline of that
-/// target"). Replaces the prior single-active-plate preview which
-/// hid the rack's overall shape.
-class _RackThumbnail extends StatelessWidget {
-  const _RackThumbnail({
-    required this.rack,
-    required this.children,
-    required this.activeIndex,
-    required this.activePlateColor,
-  });
-  final TargetRackRow rack;
-  final List<RackSlot> children;
-  final int activeIndex;
-  final Color activePlateColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.25),
-            ],
-          ),
-        ),
-        child: CustomPaint(
-          painter: _RackThumbnailPainter(
-            rack: rack,
-            children: children,
-            activeIndex: activeIndex,
-            activeColor: activePlateColor,
-          ),
-          child: const SizedBox.expand(),
-        ),
-      ),
-    );
-  }
-}
-
-class _RackThumbnailPainter extends CustomPainter {
-  _RackThumbnailPainter({
-    required this.rack,
-    required this.children,
-    required this.activeIndex,
-    required this.activeColor,
-  });
-  final TargetRackRow rack;
-  final List<RackSlot> children;
-  final int activeIndex;
-  final Color activeColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    if (w <= 0 || h <= 0 || children.isEmpty) return;
-    final rackW = rack.totalWidthIn <= 0 ? 60.0 : rack.totalWidthIn;
-    final rackH = rack.totalHeightIn <= 0 ? 30.0 : rack.totalHeightIn;
-    // Scale so the rack fits inside ~88% of the shorter dimension
-    // (leave a small margin for the active outline to extend
-    // without touching the canvas edge).
-    final scale = math.min(w / rackW, h / rackH) * 0.88;
-    final cx = w / 2;
-    final cy = h / 2;
-    Offset placeIn(double x, double y) =>
-        Offset(cx + x * scale, cy - y * scale);
-    final outline = Paint()
-      ..color = const Color(0xff1f1d1a)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1.0, scale * 0.04);
-    final activeOutline = Paint()
-      ..color = activeColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(2.5, scale * 0.10)
-      ..strokeJoin = StrokeJoin.round
-      ..strokeCap = StrokeCap.round;
-    for (var i = 0; i < children.length; i++) {
-      final c = children[i];
-      final fill = Paint()..color = _parseHex(c.colorHex);
-      final pos = placeIn(c.offsetXIn, c.offsetYIn);
-      // v40 (Phase 9.5 Group C) — slot's category drives the
-      // thumbnail dispatch. `ipsc` / `animal` / `special` all fall
-      // through to the rectangle case (the thumbnail is intentionally
-      // schematic; rack thumbnails don't render SVG silhouettes).
-      final shape = c.category.toLowerCase();
-      switch (shape) {
-        case 'circle':
-          final r = (c.widthIn / 2) * scale;
-          canvas.drawCircle(pos, r, fill);
-          canvas.drawCircle(pos, r, outline);
-          if (i == activeIndex) {
-            // Pulled slightly outside the plate so the outline reads
-            // around the plate edge, not over the top of it.
-            canvas.drawCircle(pos, r + activeOutline.strokeWidth * 0.5,
-                activeOutline);
-          }
-        case 'square':
-        case 'rectangle':
-        default:
-          final wPx = c.widthIn * scale;
-          final hPx = c.heightIn * scale;
-          final rect = Rect.fromCenter(
-            center: pos, width: wPx, height: hPx);
-          canvas.drawRect(rect, fill);
-          canvas.drawRect(rect, outline);
-          if (i == activeIndex) {
-            final activeRect = rect.inflate(activeOutline.strokeWidth * 0.5);
-            canvas.drawRect(activeRect, activeOutline);
-          }
-      }
-    }
-  }
-
-  Color _parseHex(String hex) {
-    final raw = hex.startsWith('#') ? hex.substring(1) : hex;
-    final v = int.tryParse(raw, radix: 16);
-    if (v == null) return const Color(0xff5e6552);
-    return Color(0xff000000 | v);
-  }
-
-  @override
-  bool shouldRepaint(covariant _RackThumbnailPainter old) {
-    return old.rack.id != rack.id ||
-        old.children != children ||
-        old.activeIndex != activeIndex ||
-        old.activeColor != activeColor;
-  }
-}
+// Phase 9.6 Group E.1 — `_RackThumbnail` + `_RackThumbnailPainter`
+// classes deleted. The schematic rack preview ("gray panel" above the
+// realistic scene) was redundant with the unified rack rendering in
+// `TargetPlot`. The realistic scene is the rack's only visual
+// representation now. Active-slot highlighting is handled inside the
+// realistic painter (`target_plot.dart`).
 
 /// _rangefinderQuickFill picker to find the freshest reading across
 /// all connected rangefinders. The reading is nullable so we can build

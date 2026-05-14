@@ -358,17 +358,22 @@ class RackChildSpec {
 
 /// Top-level outline-stroke width for the ACTIVE rack child / single-
 /// target silhouette in realistic mode. Exposed at top level so the
-/// `test/rack_rendering_test.dart` regression can assert the ≥1.5×
-/// ratio against [kRackInactiveStrokeWidth] without breaking when the
-/// painter internals are refactored. Per
-/// `range_day_realistic_rewrite_v23.md` §6A.3 line 1244: the active
-/// plate renders with a "50% thicker stroke (e.g., 2.5px instead of
-/// 1.5px)."
-const double kRackActiveStrokeWidth = 2.5;
+/// `test/rack_rendering_test.dart` regression can assert the ratio
+/// against [kRackInactiveStrokeWidth] without breaking when the
+/// painter internals are refactored.
+///
+/// Phase 9.6 Group E.5 — tightened from 2.5 to 2.0 to match the
+/// Phase 9.6 spec's explicit "2px black stroke" for the active rack
+/// slot. The v2.3 brief had originally illustrated 2.5px as an
+/// example; Phase 9.6 fixes the exact value. The active stroke is
+/// also pure black (`#000000`) rather than the near-black 0x1a1a1a
+/// used for inactive plates, so the active highlight pops against
+/// the cream plate fill.
+const double kRackActiveStrokeWidth = 2.0;
 
 /// Companion to [kRackActiveStrokeWidth]: outline-stroke width for
 /// NON-active rack children. Same rationale as the active constant.
-const double kRackInactiveStrokeWidth = 1.5;
+const double kRackInactiveStrokeWidth = 1.0;
 
 class TargetPlot extends StatelessWidget {
   const TargetPlot({
@@ -1921,21 +1926,23 @@ class _RealisticTargetPainter extends CustomPainter {
           // 0.78 H, mound as a foreground berm at 0.82–0.92 H × 0.18 W)
           // instead of the legacy picker / scope-view layout.
           //
-          // [paintMound] is `false` ONLY for the two mount styles
-          // that bring their own per-child ground furniture — popper
-          // bases (concrete trapezoids on the grass line) and
-          // individual posts (per-child wooden post + earth berm).
-          // For every other mode (single target, hanging rail,
-          // standing stakes, unknown rack mount style) the shared
-          // foreground berm stays on so the post / stakes look
-          // planted in the dirt.
+          // [paintMound] is `false` for the mount styles that bring
+          // their own per-child ground furniture — popper bases
+          // (concrete trapezoids on the grass line), individual
+          // posts (per-child wooden post + earth berm), and the
+          // Phase 9.6 silhouette stand (per-silhouette stake behind
+          // each silhouette). For every other mode (single target,
+          // hanging rail, standing stakes, unknown rack mount style)
+          // the shared foreground berm stays on so the post / stakes
+          // look planted in the dirt.
           target: BackdropTargetSilhouette.none,
           targetWidthFraction: 0,
           targetColor: const Color(0xff5e6552),
           lowLightMode: lowLightMode,
           realisticMode: true,
           paintMound: !(rackMountStyle == 'popper_base' ||
-              rackMountStyle == 'individual_posts'),
+              rackMountStyle == 'individual_posts' ||
+              rackMountStyle == 'silhouette_stand'),
         ),
         // Wood-brown post per §6.2.1 of the v2.3 brief — the legacy
         // dark-grey colour read as a steel pole; the realistic scene
@@ -2042,13 +2049,24 @@ class _RealisticTargetPainter extends CustomPainter {
     if (!layout.isRack) {
       _paintPole(canvas);
     } else {
+      // Phase 9.6 Group E.4 — mount-structure dispatch normalised
+      // to the spec's 4-value enum. The Phase 9.5 alias names
+      // (`standing_stakes` plural, `individual_posts`) are still
+      // accepted so any cached / in-flight data continues to render
+      // correctly during the v40 → v41 cutover. Map:
+      //   `standing_stake` / `standing_stakes`   → `_paintStakes`
+      //   `popper_base`                           → `_paintPopperBases`
+      //   `silhouette_stand` / `individual_posts` → `_paintIndividualPosts`
+      //   `hanging_rail` / anything else          → `_paintHangingRail`
       switch (rackMountStyle) {
+        case 'standing_stake':
         case 'standing_stakes':
           _paintStakes(canvas, size);
           break;
         case 'popper_base':
           _paintPopperBases(canvas, size);
           break;
+        case 'silhouette_stand':
         case 'individual_posts':
           _paintIndividualPosts(canvas, size);
           break;
@@ -2409,8 +2427,16 @@ class _RealisticTargetPainter extends CustomPainter {
       _targetFillPaint.color = Color.fromRGBO(0xf2, 0xef, 0xe6,
           fillAlpha);
     }
-    _targetOutlinePaint.color = Color.fromRGBO(
-        0x1a, 0x1a, 0x1a, isActive ? 1.0 : 0.70);
+    // Phase 9.6 Group E.5 — active rack slot gets a PURE BLACK 2px
+    // stroke per spec; inactive slots keep the near-black 0x1a1a1a
+    // at 70% opacity (reads as a subtle outline against the cream
+    // plate fill without competing visually with the active
+    // highlight). Single targets (which always render with
+    // `isActive: true`) pick up the black stroke too — it reads
+    // as a subtle weight bump vs the previous 0x1a1a1a, acceptable.
+    _targetOutlinePaint.color = isActive
+        ? const Color(0xff000000)
+        : Color.fromRGBO(0x1a, 0x1a, 0x1a, 0.70);
     _targetOutlinePaint.strokeWidth = outlineWidth;
 
     // v40 (Phase 9.5 Group C) — `shape` is now the v9.5 category
