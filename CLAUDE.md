@@ -316,6 +316,93 @@ Read-only operations (analyze, test, status, log, diff, grep,
 find) and edits also don't need approval — they ship as part of
 the same auto-commit cycle.
 
+## 0c. TARGET LABEL CHANGES REQUIRE EXPLICIT CONFIRMATION (firm rule)
+
+**Never change a user-visible target catalog label without
+surfacing the proposed change to the user FIRST and getting
+explicit confirmation. Always show before / after examples
+side-by-side.** Wait for the user to say "yes" (or to modify the
+proposed copy). This rule was added 2026-05-14 after Phase 9.5
+Group A's "Species, Size" animal rename — the user owned that
+specific decision and wants the same explicit owner on every
+future rename.
+
+### Scope of the rule
+
+The rule applies to any user-visible label sourced from or
+derived from the target catalogs:
+
+- `assets/seed_data/targets.json` — every row's `name` field.
+- `assets/seed_data/target_racks.json` — every rack's `name`
+  field AND every slot's `name` field (the slot list is the
+  active-child picker).
+- Any constant or helper that maps a catalog row to a display
+  string at runtime (e.g. `_targetDropdownLabel` in
+  `range_day_detail_screen.dart`, `_rackChildDimensionLabel`,
+  `_rackKindLabel`).
+- Any pre-filled `name` value the user sees in a Range Day
+  session created from a catalog row.
+
+### Why
+
+Target labels are the load-bearing identifier for shooters. They
+appear in pickers, on Range Day session rows, on shot exports, in
+DOPE clipboard copies, in batch-naming flows ("18 × 30 IPSC @
+500 yd"). Renaming "5-Plate KYL" to "Five-Plate Know-Your-Limits
+Rack" might read more clearly to a new user but breaks every
+workflow muscle-memory built around the original. The reloading
+audience is precision-minded and notices label churn instantly.
+
+The Phase 8 / Phase 9 / Phase 9.5 rewrites already touched every
+target label (Phase 8: dropped duplicate-dimensions on IPSC;
+Phase 9: animal size variants; Phase 9.5: animal "Species, Size"
+format). Each was a deliberate decision the user owned; no future
+rename should happen without the same explicit owner.
+
+### How to apply
+
+Before changing a label:
+
+1. List the rows in scope ("all 48 animals", "all 6 IPSC", "the
+   3 special-category apparatus rows", "the Texas Star slot
+   names", etc.).
+2. Show a side-by-side table:
+
+   | Row id | Before | After |
+   |---|---|---|
+   | `bear_small` | `Small Bear` | `Bear, Small` |
+   | `kyl_5_plate_circles` | `5-Plate KYL · Circles` | `5-Plate KYL Circles` |
+   | … | … | … |
+
+3. Include EVERY affected row in the table — not a "sample." If
+   the change is uniform across 48 rows, show the first 3 plus a
+   `…` row stating "remaining 45 follow the same pattern" plus
+   the LAST row so the user can verify the pattern holds at both
+   ends.
+4. Wait for explicit confirmation. Treat ambiguous responses
+   ("sure" / "looks fine" / "yes") as a YES; treat questions or
+   modifications as the user wanting to negotiate the wording.
+5. If the user proposes their own copy, render the diff again
+   and re-confirm before writing the JSON.
+
+### What does NOT need confirmation
+
+- Bumping `version` in `manifest.json` after a data change
+  (version is internal plumbing, not a label).
+- Adding a brand-NEW target row with a NEW label (the user is
+  reviewing the addition wholesale, not a rename).
+- Changing the `shape_id` / `category` / dimensions / colorHex on
+  an existing row (data-driven, not a label).
+- Internal identifiers — `shape_id`, `id` slug, `manufacturer`
+  string. Those are not user-visible.
+- Per-row computed labels that read directly from the catalog
+  `name` without modification (e.g. the picker dropdown that
+  passes `t.name` through unchanged isn't a separate label to
+  confirm — the catalog `name` is the source of truth).
+
+The rule is about user-visible label CHURN on already-shipped
+content, not about data-driven changes or new content.
+
 ## 1. What it is
 
 LoadOut is a local-first ammo reloading tracker for **iOS, Android, macOS,
@@ -361,6 +448,28 @@ Reference (seeded, read-only at runtime):
 - `BrassProducts` — manufacturer FK, tier, `calibersJson`.
 - `FirearmsRef` — manufacturer FK, model, type, action, `calibersJson`.
 - `FirearmParts` — manufacturer FK, name, category, `compatibleWithJson`.
+- `Targets` — Range Day target catalog. Carries `name`, `category` enum
+  (`circle | square | rectangle | ipsc | animal | special` — Phase 9.5
+  Group A, v39), optional `shapeId` (SVG dispatch key for animal /
+  special apparatus), `widthIn` / `heightIn`, `colorHex`, per-target
+  `centerPoint` (anchor fractions for aim point — Phase 7a), and
+  `svgScaleFactor` (silhouette overflow scale — Phase 7a). 91 rows in
+  the seeded catalog. Animal rows use a uniform LEFT-facing convention
+  (Phase 9.5 Group B) so `centerPoint.horizontal_from_left = 0.6`
+  lands behind the front shoulder for every species.
+- `TargetRacks` — multi-target rack catalog. Carries rack envelope
+  (`name`, `description`, `rackKind`, `totalWidthIn`, `totalHeightIn`,
+  `notes`) plus `slotsJson` — a JSON-encoded `List<RackSlot>` via the
+  drift TypeConverter `RackSlotsConverter` (Phase 9.5 Group C, v40).
+  Each `RackSlot` is one shootable apparatus inside the rack (a
+  popper, a KYL plate, a Texas Star plate, etc.) with its own
+  position, category, dimensions, offset, and color. The v40
+  migration dropped the legacy `TargetRackChildren` FK child table
+  entirely. 9 racks in the seeded catalog. See
+  `lib/database/rack_slot.dart` for the value type + converter.
+- `Reticles`, `Scopes`, `ScopeReticleOptions` — v2.3 scope catalog
+  (see § 30 / § 31).
+- `FirearmComponents` — Custom-build firearm components (§ 27).
 
 User data (writable):
 
@@ -372,10 +481,17 @@ User data (writable):
   date established, notes, timestamps).
 - `UserFirearms` — name, manufacturer, model, type, action, caliber, barrel
   length, twist rate, shotsFired, optional `referenceFirearmId` linking back
-  to `FirearmsRef`, notes, timestamps.
+  to `FirearmsRef`, notes, timestamps. Plus custom-build component
+  fields (§ 27).
+- Range Day session rows (`RangeDaySessions`, `ShotImpacts`, etc.) and
+  the other user-data tables for batches, brass lots, load development,
+  component inventory, ballistic profiles, etc. — see the table list
+  in `@DriftDatabase(tables: [...])` for the full set.
 
 JSON-encoded text columns are used wherever we need a list (aliases, calibers,
-compatibleWith). Decode with `json.decode(...) as List<dynamic>`.
+compatibleWith). Decode with `json.decode(...) as List<dynamic>`. For the
+`TargetRacks.slotsJson` column the TypeConverter does the work — callers
+see a typed `List<RackSlot>` and never touch the raw JSON.
 
 ### Runtime wiring
 
@@ -397,6 +513,9 @@ lib/
   database/
     database.dart                  Drift table definitions + AppDatabase class
     database.g.dart                GENERATED — never edit
+    rack_slot.dart                 RackSlot value type + RackSlotsConverter
+                                   TypeConverter for TargetRacks.slotsJson
+                                   (Phase 9.5 Group C, v40)
     seed_loader.dart               Reads assets/seed_data/*.json into SQLite
   repositories/
     component_repository.dart      Reference + custom components for dropdowns
@@ -595,15 +714,42 @@ flutterfire configure --project=loadout-precision-reloading
 
 - `lib/database/database.g.dart` is **generated**. Never edit it by hand.
   Re-run `dart run build_runner build` after touching `database.dart`.
-- `schemaVersion` lives in `AppDatabase` (currently `8`). Bumping it requires
-  adding a `MigrationStrategy.onUpgrade` clause that brings older installs up
-  to date. Schema v8 added the `BallisticProfiles` table for saved
-  ballistics-calculator configurations.
+  (`--delete-conflicting-outputs` is deprecated on current build_runner —
+  the bare `build` invocation does the right thing.)
+- `schemaVersion` lives in `AppDatabase` (currently **`40`** as of Phase
+  9.5 Group C, 2026-05-14). Bumping it requires adding a
+  `MigrationStrategy.onUpgrade` clause that brings older installs up
+  to date.
+- Recent reference-data-only migrations used **drop+recreate** (safe
+  pre-launch since no installed users own row content in those tables):
+  - **v39** (Phase 9.5 Group A): `Targets.shape` text column dropped;
+    `Targets.category` enum column added (closed set `circle | square |
+    rectangle | ipsc | animal | special`). Catalog seed re-shipped with
+    the new vocabulary.
+  - **v40** (Phase 9.5 Group C): legacy `TargetRackChildren` FK child
+    table dropped entirely; each rack's children now ride inline as a
+    JSON list on `TargetRacks.slotsJson` (drift TypeConverter
+    `RackSlotsConverter`). `RangeDaySessions.rackChildPosition` column
+    unchanged — it was always a plain `int` indexing into the children
+    list, never an FK.
+- Pre-Phase-9.5 migrations (v37 / v38) added additive columns to
+  `Targets` (`center_point` anchor fractions; `svg_scale_factor`).
+  Schema bumps after the pre-launch reference-data wipe rule expires
+  will need additive `addColumn` migrations with the `_columnsOf`
+  defensive pattern — see existing examples in `database.dart`.
 - Reference tables are populated by `SeedLoader.seedIfNeeded()` on first run.
   The check is `Cartridges` row count == 0. If you change the seed data
   shape, an existing user's DB will keep the old data — handle via migration.
 - List-valued fields (`aliasesJson`, `calibersJson`, `compatibleWithJson`)
   are JSON-encoded `text` columns. Decode at the repository boundary.
+- For columns with a **structured** JSON shape (not just a flat list of
+  strings), use a drift `TypeConverter` rather than ad-hoc decode at
+  the boundary. `RackSlotsConverter` is the reference pattern: extends
+  `TypeConverter<List<RackSlot>, String>`, lives in its own
+  `lib/database/<thing>.dart` file (NOT inside `database.dart`) so
+  consumers can import the value type without dragging the drift code
+  along, and ships with a round-trip + degenerate-input regression
+  test (`test/rack_slot_converter_test.dart`).
 - Column conventions: `*In` for inches, `*Gr` for grains, `*Cps` for primer
   cup depth thousandths.
 
@@ -2749,3 +2895,283 @@ fill change, no other visual treatment.
 - `test/reticle_disclaimer_templates_test.dart` — per-origin disclaimer regression
 - `test/reticle_mapping_top35_test.dart` — Appendix G top-35 reticle reference set
 - `test/scope_catalog_v2_test.dart` — scope catalog service tests
+
+---
+
+## 32. Scene Painter Phase 9.5 architecture
+
+Phase 9.5 (2026-05-14) consolidated the target and rack data models
+on a single closed vocabulary, made the animal silhouette catalog
+uniform-direction, and fixed a long-standing dropdown-dismiss-on-
+scroll bug at its actual root cause. Four atomic commits landed on
+`main` (`d6b2566` → `7ee5e42` → `af8ec75` → `08afd7e`); the full
+writeup is at `SCENE_PAINTER_PHASE_9_5_REPORT.md` in the repo
+root. This section documents the architectural patterns introduced
+so future work doesn't reinvent them.
+
+### 32.1 — Category-driven target taxonomy (v39)
+
+Replaces the legacy `Targets.shape` text column with a closed
+`category` enum.
+
+**Vocabulary** (closed set — every target catalog row carries
+exactly one of these):
+
+| Category | What's in it | Painter dispatch |
+|---|---|---|
+| `circle` | Round plates, generic round paper. | `canvas.drawCircle(...)` |
+| `square` | Square steel, square paper. | `canvas.drawRect(...)` |
+| `rectangle` | Asymmetric rectangles, USPSA-class paper. | `canvas.drawRect(...)` |
+| `ipsc` | IPSC / USPSA Metric / Classic silhouette. | `buildIpscPath(rect)` |
+| `animal` | 16 species × 3 sizes = 48 rows. | `AnimalSilhouettes.buildAnimalPath` |
+| `special` | Apparatus that needs procedural geometry — pepper popper, Texas Star. | `shape_id` dispatch (`pepper_popper`, `texas_star`, …) |
+
+**Rules:**
+
+- The catalog row's `shape_id` is the SECOND-level dispatch key —
+  used for `animal` (which species) and `special` (which
+  apparatus). Categories `circle / square / rectangle / ipsc`
+  ignore it (and ship with `shape_id` null in the seed).
+- The seed loader validates every row's `category` against the
+  closed set and throws `StateError` on unknown values — better
+  to crash on first launch than ship a silently-rectangular
+  popper to users.
+- The Range Day chip filter row uses the category enum directly:
+  All / Circle / Square / Rectangle / IPSC / Animal. No
+  `special` chip — those rows are reachable via the dropdown
+  search but don't have a dedicated filter (only 3 rows, would
+  read as overkill).
+- Adding a new category requires updating: the enum validator in
+  `seed_loader.dart`, the painter dispatch in
+  `target_plot.dart`'s `_paintTarget`, the chip-filter list in
+  `range_day_detail_screen.dart`, and the regression test in
+  `test/targets_catalog_test.dart`.
+
+### 32.2 — RackSlot + TypeConverter pattern (v40)
+
+The v40 schema collapsed the rack model from a two-table
+parent+child design to a single-table design with an inline JSON
+`slotsJson` column. This is the **reference pattern for any
+structured-but-bounded child collection** in this codebase:
+
+**When to use this pattern:**
+
+- The child list is **always read as a whole**, never paged or
+  individually queried.
+- The child count per parent is **bounded** (single digits to
+  low double digits — racks ship with 1–10 slots).
+- Children are **read-only reference data** (seeded from JSON,
+  never edited at runtime).
+- The schema is **stable** (changing the child shape is rare and
+  always paired with a seed file rewrite).
+
+**When NOT to use it:** user-writable data, unbounded growth,
+need to query across children (e.g. "find all racks with a
+6-inch plate"). For those, stay on a FK child table.
+
+**Layering** (see `lib/database/rack_slot.dart`):
+
+```
+RackSlot                            — immutable value type with
+                                      fromJson / toJson.
+RackSlotsConverter                  — extends drift's
+                                      TypeConverter<List<RackSlot>, String>.
+                                      fromSql sorts defensively,
+                                      returns UnmodifiableListView.
+                                      toSql preserves in-memory order.
+TargetRacks.slotsJson               — TextColumn declared with
+                                      `.map(const RackSlotsConverter())`.
+                                      drift codegen does the rest.
+TargetRacksCompanion.insert(...)    — accepts a typed
+                                      `List<RackSlot>`; the converter
+                                      runs at insert time.
+```
+
+**Rules:**
+
+- The value type's file lives in `lib/database/` (NOT inside
+  `database.dart`) so consumers can import the type without
+  pulling in drift's generated parts.
+- Always export the value type from the repository as a courtesy
+  — see `target_repository.dart`'s
+  `export '../database/rack_slot.dart' show RackSlot;`.
+- The converter's `fromSql` sorts defensively by the natural
+  position key. The seed loader sorts BEFORE insert too, so the
+  stored JSON is canonical and the read-time sort is a
+  belt-and-braces guard against hand-edited DB rows.
+- `fromSql` on an empty string returns `const []` (degenerate
+  case for a rack with zero slots — the painter handles it as
+  "render furniture only").
+- The result list is **unmodifiable**. Callers that try to
+  mutate it throw at runtime; that's deliberate (cached
+  reference data must never be mutated).
+- Ship a `test/<thing>_converter_test.dart` regression suite
+  covering: full-field round-trip, optional-null-field
+  round-trip, defensive sort on out-of-order input, empty-string
+  input, unmodifiable result, non-list-JSON loud fail,
+  missing-required-field loud fail.
+
+### 32.3 — Animal SVG canonical-LEFT convention
+
+Every animal silhouette in `assets/silhouettes/animals/` faces
+**LEFT** in the rendered scene. Uniform direction means a single
+per-animal aim point (`center_point.horizontal_from_left = 0.6`)
+lands behind the front shoulder for every species — no per-row
+overrides.
+
+**The convention** (Phase 9.5 Group B):
+
+8 SVGs already face LEFT and are untouched: bear, coyote, elk,
+moose, mule_deer, pheasant, pronghorn, wild_turkey.
+
+7 SVGs were authored facing RIGHT and have been horizontally
+mirrored via a canonical wrapper: boar, deer, fox, groundhog,
+mountain_lion, prairie_dog, rabbit. Each wrapped SVG looks like
+this around its existing path content:
+
+```svg
+<svg viewBox="0 0 W H" ...>
+  <g data-loadout-mirror="true" transform="translate(W 0) scale(-1 1)">
+    <!-- original path content unchanged -->
+  </g>
+</svg>
+```
+
+where `W` matches the viewBox width. The `data-loadout-mirror`
+data-attribute is the dispatch key (not the `transform` value
+alone) — the parser recognises ONLY the canonical form.
+
+1 SVG (bigfoot) is a front-facing biped — no clean side-profile
+direction applies. Left as-is; the chest-vital aim point lands
+centered regardless.
+
+**Parser implementation** (in
+`lib/widgets/animal_silhouettes.dart`):
+
+- `extractAndCombinePaths(svgContent, assetPath)` finds the
+  canonical wrapper via `_extractMirrorTransform(svgContent)`.
+- Returns a `Matrix4` for the canonical form; returns `null` for
+  ANY other transform pattern (the SVG renders un-flipped).
+- The Matrix4 is applied to the final combined `Path` before
+  return — every Pattern dispatch (A/B/C/D/E + fallback) wraps
+  its return through `applyMirror(p)`.
+- **Strictness is deliberate**: the wrapper is a recognised
+  LoadOut convention, not a general-purpose SVG transform
+  implementation. Future canonical transforms can extend the
+  helper as named patterns.
+
+**Rules:**
+
+- New animal SVG additions face LEFT in the artwork, OR get
+  wrapped with the canonical mirror group. Never ship a
+  right-facing SVG without the wrapper.
+- The Python helper that does the wrapping (`python3` inline in
+  Group B's commit, reproducible from
+  `SCENE_PAINTER_PHASE_9_5_REPORT.md`) is **idempotent** — it
+  refuses to re-wrap an already-wrapped SVG. Re-running the
+  audit + flip script is a no-op against the 16 shipped files.
+- Regression test:
+  `test/animal_silhouettes_test.dart` — 3 Phase 9.5 cases assert
+  (a) the canonical wrapper mirrors paths correctly, (b) the
+  wrapper-absent case is a no-op, (c) non-canonical transforms
+  on the marker group are rejected and the SVG renders
+  un-flipped (the fail-safe).
+
+### 32.4 — NotificationListener pattern for Autocomplete inside `keyboardDismissBehavior: onDrag`
+
+A long-standing Range Day picker bug: the target dropdown
+dismissed as soon as the user scrolled the options list.
+Phase 8 + Phase 9 added speculative gesture-arena fixes that
+didn't address the cause. Phase 9.5 Group D found the actual
+root cause:
+
+**The bug travels through Flutter's NOTIFICATION bus, not the
+pointer-event tree.**
+
+The outer `SingleChildScrollView` (the phone-body screen
+scroller in `range_day_detail_screen.dart:2549`) has
+`keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag`.
+Per Flutter SDK (`scroll_view.dart:520-540`), that installs an
+ancestor `NotificationListener<ScrollUpdateNotification>` that
+calls `FocusManager.instance.primaryFocus?.unfocus()` on every
+drag-update notification with `dragDetails != null`.
+
+The `Autocomplete<TargetRow>` overlay is rendered in an
+`OverlayEntry` (sibling of the body in the render tree) BUT its
+`_RawAutocompleteState` element is a **widget-tree descendant**
+of the SingleChildScrollView. ScrollNotifications bubble through
+widget-tree ancestry (`Element.visitAncestorElements`),
+INDEPENDENT of pointer routing.
+
+So every tick the user scrolls the overlay's inner ListView, a
+`ScrollUpdateNotification` bubbles up the widget tree, reaches
+the outer listener, fires `unfocus()`, the Autocomplete's
+`_onFocusChange` callback (`autocomplete.dart:423`) sees
+`_focusNode.hasFocus == false` and tears the overlay down.
+
+**The load-bearing fix** is one widget wrap around the overlay's
+scrollable:
+
+```dart
+NotificationListener<ScrollNotification>(
+  onNotification: (_) => true,  // "handled, do not bubble"
+  child: ListView.builder(...),
+)
+```
+
+`true` from `onNotification` is Flutter's canonical "handled, do
+not bubble" contract. The outer listener never sees the inner
+list's drags. Focus stays. Overlay stays open.
+
+**Rules:**
+
+- **`grep keyboardDismissBehavior.*onDrag lib/`** today finds
+  exactly one call site — the Range Day phone body. Other
+  Autocomplete users (ballistics, firearms, recipes, saami) live
+  under a normal SingleChildScrollView with no kbd-dismiss-on-drag
+  and don't have this bug.
+- **If a future screen combines `keyboardDismissBehavior.onDrag`
+  with `Autocomplete` / `DropdownMenu` / any other scrollable
+  overlay, copy the wrapper.** This is a known Flutter design
+  wart, not a one-off bug; the wrapper is the standard
+  mitigation.
+- `TextFieldTapRegion` does NOT help here — it intercepts TAPS
+  that would unfocus the field, not programmatic `unfocus()`
+  triggered by a drag-side notification. Phase 8 added it for a
+  different (real but different) bug; it stays as
+  belt-and-suspenders.
+- `HitTestBehavior.opaque` on a `Listener` does NOT help here —
+  it absorbs POINTER events; notifications use a separate
+  channel. Phase 9 C.6 added it for a hypothetical
+  gesture-arena race; it stays as belt-and-suspenders.
+- Regression test: `test/range_day_picker_scroll_notification_test.dart`
+  — 2 tests assert (a) the swallow wrapper stops bubbling, (b)
+  without the wrapper the bubble reaches the outer listener
+  (sanity check on the test harness).
+
+### 32.5 — Operator verification checklist (after any Range Day data-model change)
+
+When making changes that touch the target / rack catalog or the
+Range Day picker / painter:
+
+1. **Target picker chip filter** — open the dropdown, scroll
+   through every chip (All / Circle / Square / Rectangle / IPSC
+   / Animal); confirm each shows only its category's targets.
+2. **Texas Star + pepper popper** — search the picker for both;
+   confirm the Texas Star renders as a 5-point geometric star
+   (not a fallback rectangle), the popper renders as an IPSC
+   silhouette.
+3. **Animal facing direction** — open the picker, scroll into
+   the animal section; confirm every animal faces LEFT in the
+   preview row. Spot-check the aim point lands behind the front
+   shoulder on bear, deer, fox (mirror-wrapped) AND on elk,
+   mule_deer (already-LEFT) — should look identical at the
+   rendering level.
+4. **Rack picker** — switch through the 9 racks; confirm each
+   one's plates render in the right positions. Active-child
+   highlighting (thicker stroke) should work on every rack type.
+5. **Dropdown scroll-no-dismiss** — open the target picker, type
+   a partial query to filter to multiple results, scroll the
+   dropdown list; confirm the overlay STAYS OPEN through the
+   scroll. (The bug is particularly visible on the long animal
+   section after the LEFT-flip.)
