@@ -137,6 +137,7 @@ import '../../../widgets/animal_silhouettes.dart';
 import '../../../widgets/reticle_renderer.dart';
 import '../../../widgets/scope_daytime_backdrop.dart';
 import '../../../widgets/target_silhouettes.dart';
+import 'scene_input.dart';
 
 /// Shape dispatch for any painter rendering a [TargetSpec].
 ///
@@ -591,6 +592,10 @@ class TargetPlot extends StatelessWidget {
                       // subsequent phases for the single-target path;
                       // the legacy painter still renders them for racks
                       // until the rack rewrite lands.
+                      // Phase 9.7 Group B — singles now go through the
+                      // sealed-type SceneInput API. Racks still hit the
+                      // legacy `_RealisticTargetPainter` until Group C
+                      // ships the unified rack-rendering branch.
                       painter: layout.isRack
                           ? _RealisticTargetPainter(
                               target: target,
@@ -606,7 +611,7 @@ class TargetPlot extends StatelessWidget {
                               rackMountStyle: rackMountStyle,
                             )
                           : _RealisticScenePainter(
-                              target: target,
+                              sceneInput: SingleTargetScene(target: target),
                               colorHexOverride: colorHexOverride,
                               sizeFloorEnabled: sizeFloorEnabled,
                             ),
@@ -1107,12 +1112,51 @@ class RealisticLayout {
 /// palette will return when low-light mode is reinstated.
 class _RealisticScenePainter extends CustomPainter {
   _RealisticScenePainter({
-    required this.target,
+    required this.sceneInput,
     this.colorHexOverride,
     this.sizeFloorEnabled = true,
   });
 
-  final TargetSpec target;
+  /// Phase 9.7 Group B — painter input is now a [SceneInput] sealed
+  /// type. `SingleTargetScene` runs the existing single-target code
+  /// path verbatim (pixel parity gate against `b60f9e9`). `RackScene`
+  /// throws [UnimplementedError] in Group B; Group C lands the
+  /// `_paintRack` branch with mount-structure dispatch + multi-slot
+  /// rendering.
+  final SceneInput sceneInput;
+
+  /// The focus target (the geometry that drives aim / shots / scope
+  /// ring anchoring + the single-target paint body's box-sizing). For
+  /// `SingleTargetScene` this is the scene's own target. For
+  /// `RackScene` this is the active slot's geometry, projected into a
+  /// transient `TargetSpec`.
+  ///
+  /// Phase 9.7 Group B — kept as a getter named `target` (not
+  /// `_focusTarget`) so the ~20 existing `target.x` references inside
+  /// the painter's helpers (`_drawSpecial`, `_paintTarget`,
+  /// `shouldRepaint`, etc.) continue to compile without per-call-site
+  /// rewrites. The pre-9.7 implementation stored `target` as a
+  /// constructor field; the 9.7 implementation derives it from the
+  /// scene input. Same call site, different storage shape.
+  ///
+  /// The clamp on `activeSlotIndex` is defensive — a stale Range Day
+  /// session row pointing at a slot that no longer exists falls back
+  /// to the first slot rather than throwing.
+  TargetSpec get target => switch (sceneInput) {
+        SingleTargetScene(:final target) => target,
+        RackScene(:final rack, :final activeSlotIndex) => () {
+            final i = activeSlotIndex.clamp(0, rack.slots.length - 1);
+            final s = rack.slots[i];
+            return TargetSpec(
+              category: s.category,
+              shapeId: s.shapeId,
+              widthIn: s.widthIn,
+              heightIn: s.heightIn,
+              colorHex: s.colorHex,
+            );
+          }(),
+      };
+
   final String? colorHexOverride;
 
   /// Phase 8 Group B — when true, targets smaller than
@@ -1198,6 +1242,34 @@ class _RealisticScenePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
+    // Phase 9.7 Group B — sealed-type dispatch. Single-target rendering
+    // runs the existing body verbatim (pixel parity gate against
+    // `b60f9e9`). Rack rendering throws until Group C lands the
+    // `_paintRack` branch; the call-site dispatch in `TargetPlot.build`
+    // still routes racks through `_RealisticTargetPainter` so this
+    // branch is unreachable from production code in Group B.
+    switch (sceneInput) {
+      case SingleTargetScene():
+        _paintSingle(canvas, size);
+      case RackScene():
+        throw UnimplementedError(
+          'RackScene rendering lands in Phase 9.7 Group C. The Group B '
+          'call site (TargetPlot.build) still dispatches racks to '
+          '_RealisticTargetPainter; constructing a RackScene against '
+          '_RealisticScenePainter directly before Group C ships hits '
+          'this guard.',
+        );
+    }
+  }
+
+  /// Phase 9.7 Group B extraction — the verbatim Phase 9.6 paint()
+  /// body. Single-target rendering path. Pixel-parity gate against
+  /// `b60f9e9`. The body reads `target.x` against the painter's
+  /// derived `target` getter (which returns the focus target from the
+  /// scene input); for `SingleTargetScene` the getter just unwraps
+  /// the scene's target, so behaviour is identical to the pre-9.7
+  /// `final TargetSpec target` field.
+  void _paintSingle(Canvas canvas, Size size) {
     final w = size.width;
     final h = size.height;
     final inPerPx = h / _inchesPerCanvasHeight;
@@ -1876,6 +1948,16 @@ class _RealisticScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RealisticScenePainter old) {
+    // Phase 9.7 Group B — repaint on scene-type change (Single↔Rack),
+    // OR if the focus target changed inside the same scene type, OR
+    // if any non-scene painter knob changed.
+    //
+    // The focus-target comparison handles BOTH cases automatically:
+    // for SingleTargetScene it's the scene's own target (existing
+    // Phase 9.6 behavior), for RackScene it's the active slot's
+    // geometry (Group C will add a slot-list comparison on top so a
+    // non-active slot change still triggers repaint).
+    if (old.sceneInput.runtimeType != sceneInput.runtimeType) return true;
     return old.target.category != target.category ||
         old.target.shapeId != target.shapeId ||
         old.target.widthIn != target.widthIn ||
