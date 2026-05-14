@@ -118,17 +118,86 @@ void main() {
       racks = (root['racks'] as List).cast<Map<String, dynamic>>();
     });
 
-    test('every rack provides mount_style OR rack_kind as a String', () {
-      // Mirrors `_seedTargetRacks` line 867-868:
-      //   final mountStyle =
-      //       (m['mount_style'] as String?) ?? (m['rack_kind'] as String);
-      // The legacy `rack_kind` is the non-null fallback when `mount_style`
-      // is absent. At least one must be a String, or the cast crashes.
+    test(
+        'every rack provides mount_structure / mount_style / rack_kind '
+        'as a String (preference order)', () {
+      // Mirrors `_seedTargetRacks` Phase 9.6 cascade:
+      //   final mountStyle = (m['mount_structure'] as String?) ??
+      //                      (m['mount_style'] as String?) ??
+      //                      (m['rack_kind'] as String);
+      // At least one of the three MUST be a String, or the final
+      // `as String` cast on `rack_kind` crashes the seed loader.
       for (final r in racks) {
-        final mountOrKind = r['mount_style'] ?? r['rack_kind'];
-        expect(mountOrKind, isA<String>(),
-            reason: 'rack "${r['name']}" provides neither `mount_style` '
-                'nor `rack_kind` as a String.');
+        final mount =
+            r['mount_structure'] ?? r['mount_style'] ?? r['rack_kind'];
+        expect(mount, isA<String>(),
+            reason: 'rack "${r['name']}" provides neither '
+                '`mount_structure`, `mount_style`, nor `rack_kind` '
+                'as a String.');
+      }
+    });
+
+    test(
+        'Phase 9.6 — every rack name is free of "· {mount}" suffix', () {
+      // Phase 9.6 Group D stripped the legacy `· hanging_rail` /
+      // `· popper_base` / `· standing_stake` suffix from rack names.
+      // The mount taxonomy stays as the `mount_structure` data field;
+      // the user-visible name no longer leaks engineering-internal
+      // mount semantics. Catches a regression where a future rack
+      // addition forgets the rename.
+      for (final r in racks) {
+        final name = r['name'] as String;
+        expect(name.contains('hanging_rail'), isFalse,
+            reason: 'rack name "$name" carries the mount suffix');
+        expect(name.contains('popper_base'), isFalse,
+            reason: 'rack name "$name" carries the mount suffix');
+        expect(name.contains('standing_stake'), isFalse,
+            reason: 'rack name "$name" carries the mount suffix');
+        expect(name.contains('individual_posts'), isFalse,
+            reason: 'rack name "$name" carries the mount suffix');
+        expect(name.contains('silhouette_stand'), isFalse,
+            reason: 'rack name "$name" carries the mount suffix');
+      }
+    });
+
+    test(
+        'Phase 9.6 — catalog ships exactly 9 racks with the spec ids',
+        () {
+      const expected = <String>{
+        'decreasing_3_plate_circles',
+        'decreasing_3_plate_squares',
+        'equal_rack_5_circles',
+        'equal_rack_5_squares',
+        'kyl_5_plate_circles',
+        'kyl_5_plate_squares',
+        'pepper_popper_5',
+        'ipsc_stage_3',
+        'idpa_open_stage_5',
+      };
+      final actual = racks.map((r) => r['id'] as String).toSet();
+      expect(actual, expected,
+          reason: 'Phase 9.6 §Architecture-decisions locks the rack '
+              'catalog at exactly 9 racks. Any addition or removal '
+              'requires a spec update and operator confirmation.');
+    });
+
+    test(
+        'Phase 9.6 — mount_structure uses the canonical taxonomy '
+        '(hanging_rail | standing_stake | popper_base | silhouette_stand)',
+        () {
+      const valid = <String>{
+        'hanging_rail',
+        'standing_stake',
+        'popper_base',
+        'silhouette_stand',
+      };
+      for (final r in racks) {
+        final mount = r['mount_structure'] as String?;
+        expect(mount, isA<String>(),
+            reason: 'rack "${r['name']}" missing `mount_structure`');
+        expect(valid.contains(mount), isTrue,
+            reason: 'rack "${r['name']}" has invalid '
+                'mount_structure "$mount". Allowed: $valid');
       }
     });
 

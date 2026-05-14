@@ -59,17 +59,19 @@ void main() {
   // Fixture builders.
   //
   // Every test runs against a canonical 600 × 800 (3:4 portrait
-  // scope view). The two rack shapes covered — a 5-popper rack at
-  // 8 × 18 in poppers (canonical pepper-popper rack from
-  // `target_racks.json`) and a 5-plate KYL rack at 5/4/3/2/1 in
-  // circle plates (canonical KYL spec from `target_racks.json`) —
-  // exercise both small and tall children so the popper-base
-  // vertical branch and the hanging-rail vertical branch produce
-  // visibly different child rects.
+  // scope view). The two rack shapes covered — a 5-popper rack and
+  // a 5-plate KYL — exercise both small and tall children so the
+  // popper-base vertical branch and the hanging-rail vertical
+  // branch produce visibly different child rects. Fixtures are
+  // SYNTHETIC test data (intentionally decoupled from the seed
+  // catalog) so a future Phase 9.x seed-data change doesn't
+  // ripple into these painter tests. The Phase 9.6 seed catalog
+  // ships poppers at 7.87 × 33.46 and KYL at 12/8/6/4/2 — these
+  // fixtures don't track those specs.
   // ─────────────────────────────────────────────────────────────────────
 
-  /// 5-popper rack (8 × 18 in each, 12 in spacing — matches the
-  /// `pepper_popper_5` seed). Used for `popper_base` tests.
+  /// Synthetic 5-popper rack (8 × 18 in each, 12 in spacing).
+  /// Used for `popper_base` painter dispatch tests.
   List<RackChildSpec> makeFivePopperChildren() {
     return [
       const RackChildSpec(
@@ -105,10 +107,11 @@ void main() {
     ];
   }
 
-  /// 5-plate KYL rack (5/4/3/2/1 in circles, 12 in spacing — matches
-  /// the `kyl_5_plate_circles` seed). Used for hanging_rail /
-  /// standing_stakes / individual_posts tests so the tests run
-  /// against a shape distinct from the popper rack.
+  /// Synthetic 5-plate KYL rack (5/4/3/2/1 in circles, 12 in
+  /// spacing). Used for hanging_rail / standing_stake /
+  /// silhouette_stand tests so the tests run against a shape
+  /// distinct from the popper rack. Synthetic — does NOT match
+  /// the Phase 9.6 catalog's kyl_5_plate_circles seed (12/8/6/4/2).
   List<RackChildSpec> makeFiveKylChildren() {
     return [
       const RackChildSpec(

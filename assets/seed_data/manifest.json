@@ -1,6 +1,6 @@
 {
-  "manifest_version": 14,
-  "generated_at": "2026-05-14T02:00:00Z",
+  "manifest_version": 15,
+  "generated_at": "2026-05-14T03:00:00Z",
   "files": {
     "cartridges": {
       "version": 1,
@@ -47,7 +47,7 @@
       "filename": "factory_loads.json"
     },
     "target_racks": {
-      "version": 3,
+      "version": 4,
       "filename": "target_racks.json"
     },
     "scopes_v2": {

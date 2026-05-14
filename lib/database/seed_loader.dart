@@ -928,13 +928,16 @@ class SeedLoader {
 
     for (final entry in racks) {
       final m = entry as Map<String, dynamic>;
-      // Prefer the v2.3 §6A.3 `mount_style` taxonomy
-      // (`hanging_rail | standing_stakes | popper_base | individual_posts`)
-      // — falls back to the legacy `rack_kind` field when a JSON row
-      // doesn't yet carry the new one. The drift column name stays
-      // `rackKind` for now.
-      final mountStyle =
-          (m['mount_style'] as String?) ?? (m['rack_kind'] as String);
+      // Phase 9.6 Group D — `mount_structure` is the spec-canonical
+      // field name for the mount taxonomy
+      // (`hanging_rail | standing_stake | popper_base |
+      // silhouette_stand`). Falls back to the Phase 2.3 `mount_style`
+      // alias, then the legacy `rack_kind` field. The drift column
+      // name stays `rackKind` regardless of which JSON key supplied
+      // the value — they all carry the same semantic.
+      final mountStyle = (m['mount_structure'] as String?) ??
+          (m['mount_style'] as String?) ??
+          (m['rack_kind'] as String);
 
       // Phase 9.5 — build the slot list from the JSON `children`
       // array (the field name stays `children` in JSON for backwards

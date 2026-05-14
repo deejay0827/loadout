@@ -189,6 +189,12 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// truth; the (legacy) `category` column is no longer surfaced as
   /// a chip.
   String _targetShapeFilter = 'all';
+  /// Phase 9.6 Group D — rack picker chip filter. Same 7-chip set as
+  /// the target picker (`All / Circle / Square / Rectangle / IPSC /
+  /// Animal / Special`). A rack matches the chip iff ANY slot in the
+  /// rack carries `category == _rackShapeFilter`. Empty-chip behaviour:
+  /// chip stays visible, picker shows "No racks match" empty state.
+  String _rackShapeFilter = 'all';
   /// Free-form search query for the target picker. Now handled
   /// inline by the Autocomplete widget's own TextField; this state
   /// field is retained so the legacy filtering code still compiles
@@ -5424,23 +5430,40 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         if (snap.connectionState == ConnectionState.waiting) {
           return const LinearProgressIndicator();
         }
-        final racks = snap.data ?? const <TargetRackRow>[];
-        if (racks.isEmpty) {
+        final allRacks = snap.data ?? const <TargetRackRow>[];
+        if (allRacks.isEmpty) {
           return Text(
             'No racks in the catalog yet.',
             style: theme.textTheme.bodySmall,
           );
         }
+        // Phase 9.6 Group D — apply the rack chip filter. Same chip
+        // set as the target picker. A rack matches iff any of its
+        // slots has `category == _rackShapeFilter`. Empty filter
+        // result is rendered as the "No racks match" empty state
+        // INSIDE the dropdown (the chips stay visible above so the
+        // user can switch back to a populated chip).
+        final racks = _rackShapeFilter == 'all'
+            ? allRacks
+            : allRacks.where((r) {
+                final slots = r.slotsJson;
+                return slots.any((s) => s.category == _rackShapeFilter);
+              }).toList();
         // Stale-id guard — same pattern as the single-target dropdown.
         // If `_selectedRack`'s id is no longer in the catalog (e.g. a
-        // re-seed dropped it between sessions), present null to the
-        // dropdown so Flutter doesn't assert "exactly one item with
-        // value: <id>". The user can re-pick from the now-fresh list.
+        // re-seed dropped it between sessions), or filtered out by
+        // the current chip, present null to the dropdown so Flutter
+        // doesn't assert "exactly one item with value: <id>". The
+        // user can re-pick from the now-fresh list.
         final selectedRack = _selectedRack;
         final rackStillInCatalog =
             selectedRack != null && racks.any((r) => r.id == selectedRack.id);
         final dropdownValue =
             (selectedRack != null && rackStillInCatalog) ? selectedRack.id : null;
+        // Phase 9.6 Group D — drop the legacy `· {rack_kind}` suffix
+        // from the dropdown label. Rack names already encode their
+        // configuration ("5-Plate KYL (Circles)") so the suffix was
+        // redundant; the mount taxonomy is engineering-internal data.
         final items = <DropdownMenuItem<int?>>[
           const DropdownMenuItem<int?>(
             value: null,
@@ -5449,15 +5472,59 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           ...racks.map((r) => DropdownMenuItem<int?>(
                 value: r.id,
                 child: Text(
-                  '${r.name} · ${_rackKindLabel(r.rackKind)}',
+                  r.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               )),
         ];
+        // Phase 9.6 Group D — 7-chip filter row, identical layout to
+        // the target picker's chip row. `(value, label)` tuples; the
+        // value goes into _rackShapeFilter, the label into the chip.
+        const rackChips = <(String value, String label)>[
+          ('all', 'All'),
+          ('circle', 'Circle'),
+          ('square', 'Square'),
+          ('rectangle', 'Rectangle'),
+          ('ipsc', 'IPSC'),
+          ('animal', 'Animal'),
+          ('special', 'Special'),
+        ];
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Align(centerLeft) bulletproofs the Wrap against the
+            // parent `Column.stretch` — same pattern as the
+            // target picker's chip row at line ~4864.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 6,
+                children: [
+                  for (final chip in rackChips)
+                    ChoiceChip(
+                      label: Text(chip.$2),
+                      selected: _rackShapeFilter == chip.$1,
+                      onSelected: (v) {
+                        if (!v) return;
+                        setState(() => _rackShapeFilter = chip.$1);
+                      },
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (racks.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  'No racks match.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
             DropdownButtonFormField<int?>(
               initialValue: dropdownValue,
               isExpanded: true,
@@ -5584,25 +5651,6 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     _scheduleSolve();
     _scheduleHitProb();
     _scheduleAutoSave();
-  }
-
-  /// Display label for a rack-kind enum string. Falls back to the raw
-  /// string for unknown / future kinds so a stale catalog never throws.
-  String _rackKindLabel(String rackKind) {
-    switch (rackKind) {
-      case 'kyl':
-        return 'KYL';
-      case 'pepper-popper':
-        return 'Pepper Popper';
-      case 'plate-rack':
-        return 'Plate Rack';
-      case 'idpa-stage':
-        return 'IDPA Stage';
-      case 'custom':
-        return 'Custom';
-      default:
-        return rackKind;
-    }
   }
 
   /// Compact chip label for a rack child — falls back to "Plate N" if
