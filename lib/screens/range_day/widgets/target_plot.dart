@@ -2108,7 +2108,15 @@ class _RealisticScenePainter extends CustomPainter {
       // inactive = 1.0 px black @ 70% opacity. Ratio 2.0× — well
       // above the ≥1.5× regression test threshold in
       // test/rack_rendering_test.dart.
-      final fillPaint = Paint()..color = _parseHexColor(slot.colorHex);
+      //
+      // Phase 9.8.A — slot fill now consults `colorHexOverride`
+      // first. The override is a user-picked color from the rack
+      // picker's swatch row (mirror of the single-target swatch).
+      // Applied uniformly across every slot in the rack — per-slot
+      // overrides are out of scope for v1. Null override = use the
+      // slot's authored `colorHex` from the seed catalog.
+      final fillPaint = Paint()
+        ..color = _parseHexColor(colorHexOverride ?? slot.colorHex);
       final outlinePaint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = isActive ? 2.0 : 1.0
