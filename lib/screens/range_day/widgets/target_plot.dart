@@ -171,6 +171,101 @@ import 'scene_input.dart';
 ///   * `special` + `shapeId == 'pepper_popper'` → TargetSilhouettes
 ///   * anything else (`circle` / `square` / `rectangle` /
 ///     `special` + `texas_star`) → null; caller renders procedurally
+/// Phase 9.8.B — top-level rack slot rect computation. Both the
+/// realistic painter ([_RealisticScenePainter._paintRack]) AND the
+/// gesture handler ([TargetPlot._handleTap] for rack mode) need
+/// slot rects in the SAME canvas coordinates, otherwise the user
+/// taps a visible slot and the hit test thinks they tapped
+/// elsewhere. Co-locating the rect math in one place removes the
+/// divergence risk.
+///
+/// Returns per-slot rects anchored per [rack.mountStructure]:
+///   * `hanging_rail` — top edge below the rail (rail at
+///     `horizonY - canvas_h * 0.18`, slot top at `rail_y + 6 + 4 *
+///     inPerPx`).
+///   * `standing_stake` — bottom edge at the top of the stake
+///     (stake height = `slot.heightIn * 1.5 * inPerPx`).
+///   * `popper_base` — bottom edge at `horizonY - baseHeight`
+///     (base height = `max(slot.widthIn * inPerPx * 0.75, 6 px)`;
+///     base trapezoid renders between slot bottom and horizon).
+///   * `silhouette_stand` — bottom edge at `horizonY`
+///     (silhouette is ground-anchored; stake renders BEHIND it).
+///
+/// Horizontal: each slot's center is `canvasCenterX +
+/// slot.offsetXFromCenterIn * inPerPx`. Phase 9.6 catalog ships
+/// pre-computed `x_offset_in` per slot.
+///
+/// Overflow guard: if natural span exceeds canvas width minus an
+/// 8 px margin, every slot's horizontal position scales uniformly
+/// to fit. (Currently unused at default canvas sizes.)
+List<Rect> computeRackSlotRects(
+  Size canvas,
+  RackSpec rack, {
+  double horizonFrac = 0.75,
+  double inchesPerCanvasHeight = 150.0,
+}) {
+  if (rack.slots.isEmpty) return const [];
+  final w = canvas.width;
+  final h = canvas.height;
+  final inPerPx = h / inchesPerCanvasHeight;
+  final horizonY = horizonFrac * h;
+  final canvasCenterX = w / 2;
+  final natural = <Rect>[];
+  for (final slot in rack.slots) {
+    final slotW = slot.widthIn * inPerPx;
+    final slotH = slot.heightIn * inPerPx;
+    final slotCenterX =
+        canvasCenterX + slot.offsetXFromCenterIn * inPerPx;
+    double slotCenterY;
+    switch (rack.mountStructure) {
+      case 'standing_stake':
+        final stakeHeight = slot.heightIn * 1.5 * inPerPx;
+        final slotBottomY = horizonY - stakeHeight;
+        slotCenterY = slotBottomY - slotH / 2;
+        break;
+      case 'hanging_rail':
+        final railY = horizonY - w * 0.18;
+        final slotTopY = railY + 6 + 4 * inPerPx;
+        slotCenterY = slotTopY + slotH / 2;
+        break;
+      case 'popper_base':
+        final baseHeight = math.max(slotW * 0.75, 6.0);
+        final slotBottomY = horizonY - baseHeight;
+        slotCenterY = slotBottomY - slotH / 2;
+        break;
+      case 'silhouette_stand':
+      default:
+        slotCenterY = horizonY - slotH / 2;
+        break;
+    }
+    natural.add(Rect.fromCenter(
+      center: Offset(slotCenterX, slotCenterY),
+      width: slotW,
+      height: slotH,
+    ));
+  }
+  // Overflow guard — scale uniformly so the rack fits inside the
+  // canvas with an 8 px margin per side.
+  const margin = 8.0;
+  final leftmost = natural.map((r) => r.left).reduce(math.min);
+  final rightmost = natural.map((r) => r.right).reduce(math.max);
+  final span = rightmost - leftmost;
+  final available = w - 2 * margin;
+  if (span <= available) {
+    return natural;
+  }
+  final scale = available / span;
+  return natural.map((r) {
+    final newCenterX =
+        canvasCenterX + (r.center.dx - canvasCenterX) * scale;
+    return Rect.fromCenter(
+      center: Offset(newCenterX, r.center.dy),
+      width: r.width,
+      height: r.height,
+    );
+  }).toList();
+}
+
 Path? resolveTargetSvgPath(
   Rect bounds,
   String category,
@@ -383,6 +478,7 @@ class TargetPlot extends StatelessWidget {
     required this.shots,
     required this.onTapAt,
     required this.onLongPressShot,
+    this.onActiveRackSlotChange,
     this.tapMode = TargetPlotTapMode.recordShot,
     this.viewMode = TargetPlotViewMode.targetFocused,
     this.aimPointX,
@@ -415,6 +511,15 @@ class TargetPlot extends StatelessWidget {
   /// Called when the user long-presses a recorded shot dot. The parent
   /// uses this to offer edit / delete on the impact.
   final void Function(ShotImpactRow shot) onLongPressShot;
+
+  /// Phase 9.8.B — fired when the user taps a non-active slot in
+  /// rack mode. Parent screen wires this to its
+  /// `_selectedRackChildPosition` setter so the tapped slot becomes
+  /// active. Null = tap-to-activate disabled (single-target mode or
+  /// caller doesn't want this behaviour). The chip row above the
+  /// scene continues to work regardless — tap-to-activate is an
+  /// additional affordance, not a replacement.
+  final void Function(int newActiveSlotIndex)? onActiveRackSlotChange;
 
   /// Active tap interpretation. See [TargetPlotTapMode].
   final TargetPlotTapMode tapMode;
@@ -571,9 +676,37 @@ class TargetPlot extends StatelessWidget {
           if (ax != null && ay != null) {
             aimPx = _normalizedToOffsetIn(ax, ay, targetRect);
           }
+          // Phase 9.8.B — when in rack mode AND
+          // [onActiveRackSlotChange] is wired up AND the user taps a
+          // non-active slot, fire the callback to make that slot
+          // active. Falls through to the regular `_handleTap` for
+          // taps that don't hit any slot (e.g. tapping the sky or
+          // the grass) and for taps inside the already-active slot.
+          // Single-target mode bypasses this entirely.
+          final rackSlotRects = layout.isRack && rackChildren != null
+              ? computeRackSlotRects(
+                  outerSize,
+                  RackSpec(
+                    mountStructure: rackMountStyle ?? 'hanging_rail',
+                    slots: rackChildren!,
+                  ),
+                )
+              : const <Rect>[];
           return GestureDetector(
-            onTapDown: (details) =>
-                _handleTap(details.localPosition, targetRect),
+            onTapDown: (details) {
+              if (onActiveRackSlotChange != null &&
+                  rackSlotRects.isNotEmpty) {
+                final activeIdx = activeRackChildIndex ?? 0;
+                for (var i = 0; i < rackSlotRects.length; i++) {
+                  if (i == activeIdx) continue;
+                  if (rackSlotRects[i].contains(details.localPosition)) {
+                    onActiveRackSlotChange!(i);
+                    return;
+                  }
+                }
+              }
+              _handleTap(details.localPosition, targetRect);
+            },
             onLongPressStart: (details) =>
                 _handleLongPress(details.localPosition, targetRect),
             child: ClipRRect(
@@ -2045,7 +2178,9 @@ class _RealisticScenePainter extends CustomPainter {
     final h = size.height;
     final inPerPx = h / _inchesPerCanvasHeight;
     final horizonY = _horizonFrac * h;
-    final canvasCenterX = w / 2;
+    // Phase 9.8.B — slot rect math now lives in the top-level
+    // [computeRackSlotRects] helper (shared with the gesture handler).
+    // `canvasCenterX` removed here — only the helper needs it.
 
     // ── 1. Common backdrop ───────────────────────────────────────
     _paintSky(canvas, w, h, horizonY);
@@ -2056,12 +2191,16 @@ class _RealisticScenePainter extends CustomPainter {
     _paintForegroundTree(canvas, w, h, horizonY);
 
     // ── 2. Slot rects ────────────────────────────────────────────
-    final slotRects = _computeRackSlotRects(
+    // Phase 9.8.B — slot rect computation lives at file scope
+    // (`computeRackSlotRects`) so the gesture handler in
+    // [TargetPlot.build] can hit-test against the SAME rects the
+    // painter draws. Pre-9.8.B the math lived only inside this
+    // painter; tap-to-activate would have needed to duplicate it.
+    final slotRects = computeRackSlotRects(
+      size,
       rack,
-      w,
-      canvasCenterX,
-      horizonY,
-      inPerPx,
+      horizonFrac: _horizonFrac,
+      inchesPerCanvasHeight: _inchesPerCanvasHeight,
     );
 
     // ── 3. Mount-structure rig ──────────────────────────────────
@@ -2133,105 +2272,11 @@ class _RealisticScenePainter extends CustomPainter {
     }
   }
 
-  /// Computes the on-canvas rect for every rack slot, anchored
-  /// per [RackSpec.mountStructure]:
-  ///
-  ///   * hanging_rail  — top edge below the rail (rail at
-  ///                     `horizonY - canvas_h * 0.18`, slot top at
-  ///                     `rail_y + 6 + 4 * inPerPx` per spec §C.2).
-  ///   * standing_stake — bottom edge at the top of the stake; stake
-  ///                     height = `slot.heightIn * 1.5 * inPerPx`.
-  ///   * popper_base   — bottom edge at `horizonY` (ground-standing).
-  ///   * silhouette_stand — bottom edge at `horizonY`
-  ///                     (silhouette is ground-anchored; stake is
-  ///                     drawn BEHIND it by the rig pass).
-  ///
-  /// Horizontal: each slot's center is `canvasCenterX +
-  /// slot.offsetXFromCenterIn * inPerPx`. The Phase 9.6 Group D
-  /// catalog ships pre-computed `x_offset_in` per slot, so the
-  /// painter doesn't recompute spacing from `default_spacing_in`
-  /// (the offsets ARE the spec's center-to-center interpretation
-  /// applied at seed time).
-  ///
-  /// If the resulting span overflows the canvas width with a small
-  /// margin, every slot's horizontal position scales uniformly so
-  /// the rack fits. (Currently unused at default canvas sizes; the
-  /// Phase 9.6 catalog's widest rack — IDPA Open Stage at
-  /// `total_width_in = 138` — fits without scaling at typical
-  /// preview canvas widths.)
-  List<Rect> _computeRackSlotRects(
-    RackSpec rack,
-    double canvasW,
-    double canvasCenterX,
-    double horizonY,
-    double inPerPx,
-  ) {
-    // First pass — compute natural rects without scaling.
-    final natural = <Rect>[];
-    for (final slot in rack.slots) {
-      final slotW = slot.widthIn * inPerPx;
-      final slotH = slot.heightIn * inPerPx;
-      final slotCenterX =
-          canvasCenterX + slot.offsetXFromCenterIn * inPerPx;
-      double slotCenterY;
-      switch (rack.mountStructure) {
-        case 'standing_stake':
-          final stakeHeight = slot.heightIn * 1.5 * inPerPx;
-          final slotBottomY = horizonY - stakeHeight;
-          slotCenterY = slotBottomY - slotH / 2;
-          break;
-        case 'hanging_rail':
-          final railY = horizonY - canvasW * 0.18;
-          final slotTopY = railY + 6 + 4 * inPerPx;
-          slotCenterY = slotTopY + slotH / 2;
-          break;
-        case 'popper_base':
-          // Phase 9.7 Group C.2 hotfix — popper bottom sits at TOP of
-          // its concrete base (the base itself extends from popper
-          // bottom down to horizonY). Base height matches the legacy
-          // formula `_paintPopperBases` used: `max(slotW * 0.75, 6 px)`
-          // with a 6-px floor so the base stays visible at small canvas
-          // sizes.
-          final baseHeight = math.max(slotW * 0.75, 6.0);
-          final slotBottomY = horizonY - baseHeight;
-          slotCenterY = slotBottomY - slotH / 2;
-          break;
-        case 'silhouette_stand':
-        default:
-          // Ground-standing: bottom edge of slot at horizon.
-          slotCenterY = horizonY - slotH / 2;
-          break;
-      }
-      natural.add(Rect.fromCenter(
-        center: Offset(slotCenterX, slotCenterY),
-        width: slotW,
-        height: slotH,
-      ));
-    }
-
-    // Overflow guard — if the natural span exceeds the canvas width
-    // minus an 8 px margin per side, scale every slot's horizontal
-    // offset uniformly so the rightmost slot fits inside the margin.
-    // Vertical positions stay anchored to horizon / rail.
-    const margin = 8.0;
-    final leftmost = natural.map((r) => r.left).reduce(math.min);
-    final rightmost = natural.map((r) => r.right).reduce(math.max);
-    final span = rightmost - leftmost;
-    final available = canvasW - 2 * margin;
-    if (span <= available) {
-      return natural;
-    }
-    final scale = available / span;
-    return natural.map((r) {
-      final newCenterX =
-          canvasCenterX + (r.center.dx - canvasCenterX) * scale;
-      return Rect.fromCenter(
-        center: Offset(newCenterX, r.center.dy),
-        width: r.width,
-        height: r.height,
-      );
-    }).toList();
-  }
+  // Phase 9.8.B — the per-slot rect computation moved to the top-level
+  // `computeRackSlotRects` helper (above `resolveTargetSvgPath`) so
+  // [TargetPlot]'s gesture handler can hit-test against the SAME rects
+  // this painter draws. Single source of truth — see the helper's
+  // doc comment for the math.
 
   /// `hanging_rail` mount rig per spec §C.2:
   ///   * Brass-tinted (`#C5A572`) horizontal bar, 6 px tall, with a

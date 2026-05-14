@@ -5611,10 +5611,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                         selected: _selectedRackChildPosition == i,
                         onSelected: (v) {
                           if (!v) return;
-                          setState(() => _selectedRackChildPosition = i);
-                          _scheduleSolve();
-                          _scheduleHitProb();
-                          _scheduleAutoSave();
+                          _setActiveRackSlot(i);
                         },
                       ),
                   ],
@@ -5677,6 +5674,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
       _selectedRackChildren = children;
       _selectedRackChildPosition = 0;
     });
+    _scheduleSolve();
+    _scheduleHitProb();
+    _scheduleAutoSave();
+  }
+
+  /// Phase 9.8.B — sets the active rack slot AND reschedules every
+  /// downstream computation that depends on it (solver, hit-prob,
+  /// auto-save). Wired from BOTH the chip row's `onSelected` and
+  /// `TargetPlot.onActiveRackSlotChange` (tap-to-activate on the
+  /// rendered scene). Single source of truth for the side-effects;
+  /// the chip row and the tap gesture both go through this helper.
+  void _setActiveRackSlot(int newIndex) {
+    setState(() => _selectedRackChildPosition = newIndex);
     _scheduleSolve();
     _scheduleHitProb();
     _scheduleAutoSave();
@@ -8513,6 +8523,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           shots: _shots,
                           onTapAt: _recordShot,
                           onLongPressShot: _editShotDialog,
+                          // Phase 9.8.B — tap an inactive rack slot
+                          // to activate it. Active slot still records
+                          // shots via onTapAt; chip row still works.
+                          onActiveRackSlotChange: _setActiveRackSlot,
                           tapMode: _tapMode,
                           viewMode: _targetPlotViewMode,
                           aimPointX: _aimPointX,
@@ -8545,6 +8559,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     shots: shots,
                     onTapAt: _recordShot,
                     onLongPressShot: _editShotDialog,
+                    // Phase 9.8.B — tap-to-activate (see sibling
+                    // call site above for rationale).
+                    onActiveRackSlotChange: _setActiveRackSlot,
                     tapMode: _tapMode,
                     viewMode: _targetPlotViewMode,
                     aimPointX: _aimPointX,
@@ -8568,6 +8585,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 shots: _shots,
                 onTapAt: _recordShot,
                 onLongPressShot: (_) {},
+                // Phase 9.8.B — tap-to-activate (see sibling call
+                // sites for rationale).
+                onActiveRackSlotChange: _setActiveRackSlot,
                 tapMode: _tapMode,
                 viewMode: _targetPlotViewMode,
                 aimPointX: _aimPointX,
