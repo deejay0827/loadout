@@ -3263,33 +3263,61 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     // null). Without this, the picker-preview surface rendered as
     // single-target even when a rack was selected — caught by
     // operator cold-restart QA on commit 7d2fd2e.
+    // Phase 9.8.B.3 — picker preview gestures:
+    //   * SINGLE tap → active-slot change (rack mode only; routes
+    //     into TargetPlot's own GestureDetector → onTapDown →
+    //     onActiveRackSlotChange callback). Single-target mode taps
+    //     are no-ops here (no `onAimPointSet` wired in this surface).
+    //   * DOUBLE tap → enlarge dialog. Moved from single-tap
+    //     (operator request 2026-05-15).
+    //
+    // The pre-9.8.B.3 wrapper had `IgnorePointer` blocking
+    // TargetPlot's gestures and an outer `InkWell.onTap` routing
+    // single taps to the zoom dialog. That blocked tap-to-activate
+    // from working in the picker preview. New layout:
+    //   * Outer `GestureDetector.onDoubleTap` → zoom dialog.
+    //   * Inner `TargetPlot` (no IgnorePointer) — its own
+    //     GestureDetector handles single-tap activation via the
+    //     onTapDown → onActiveRackSlotChange path added in 9.8.B.
+    //
+    // Gesture arena behaviour: when the user single-taps, the inner
+    // TargetPlot's onTapDown fires immediately (no double-tap
+    // window delay because the inner GestureDetector only has
+    // onTapDown / onLongPressStart, no onDoubleTap of its own). The
+    // outer GestureDetector's onDoubleTap only commits when a
+    // SECOND tap arrives within the platform double-tap window
+    // (~300 ms by default).
     final preview = SizedBox(
       height: 234,
-      child: IgnorePointer(
-        child: TargetPlot(
-          target: activeTargetSpec,
-          shots: const [],
-          onTapAt: (_, _) {},
-          onLongPressShot: (_) {},
-          tapMode: TargetPlotTapMode.aimPoint,
-          viewMode: TargetPlotViewMode.realistic,
-          colorHexOverride: _selectedTargetColorHex,
-          sizeFloorEnabled: _sizeFloorEnabled,
-          rackChildren: _rackChildrenSpec,
-          activeRackChildIndex: _activeRackChildIndex,
-          rackMountStyle: _selectedRack?.rackKind,
-        ),
+      child: TargetPlot(
+        target: activeTargetSpec,
+        shots: const [],
+        onTapAt: (_, _) {},
+        onLongPressShot: (_) {},
+        // Wire tap-to-activate for the picker preview (Phase 9.8.B
+        // skipped this surface because of IgnorePointer; that's
+        // gone now).
+        onActiveRackSlotChange: _setActiveRackSlot,
+        tapMode: TargetPlotTapMode.aimPoint,
+        viewMode: TargetPlotViewMode.realistic,
+        colorHexOverride: _selectedTargetColorHex,
+        sizeFloorEnabled: _sizeFloorEnabled,
+        rackChildren: _rackChildrenSpec,
+        activeRackChildIndex: _activeRackChildIndex,
+        rackMountStyle: _selectedRack?.rackKind,
       ),
     );
-    // Tap-to-zoom: opens a full-screen dialog with a larger
-    // version of the same painter, so the user can inspect the
-    // target without squinting at the small inline preview.
     final displayName = _activeTargetDisplayName ?? 'Target';
     return Material(
       color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () =>
+      // No `Material.borderRadius` clip needed — the inner painter
+      // already clips to its rounded-rect. Behavior: pointer events
+      // pass through Material to the GestureDetector below.
+      child: GestureDetector(
+        // Double-tap → enlarge. Single-tap intentionally NOT
+        // handled here; falls through the gesture arena to the
+        // inner TargetPlot's onTapDown for rack-slot activation.
+        onDoubleTap: () =>
             _showTargetPreviewDialog(activeTargetSpec, displayName),
         child: preview,
       ),
