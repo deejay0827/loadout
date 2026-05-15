@@ -127,6 +127,7 @@
 // I/O triggered by the callbacks.
 
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
@@ -1317,6 +1318,22 @@ class _RealisticScenePainter extends CustomPainter {
   /// migration.
   final VisualStyle visualStyle;
 
+  /// Phase 10 Group C.1 / Group D — single source of truth for the
+  /// photo→polished alias. Every effect dispatch inside this painter
+  /// reads `_effectiveStyle`, not `visualStyle`, so the alias is
+  /// enforced in exactly one place. When Phase 12 / 13 light up
+  /// photo's own rendering, the `photo => polished` arm flips to
+  /// `photo => photo` and every downstream branch picks it up for
+  /// free.
+  ///
+  /// Returns `cartoon` when the user picked cartoon; otherwise
+  /// `polished` (covers both `polished` and `photo` until Phase 12).
+  VisualStyle get _effectiveStyle => switch (visualStyle) {
+        VisualStyle.cartoon => VisualStyle.cartoon,
+        VisualStyle.polished => VisualStyle.polished,
+        VisualStyle.photo => VisualStyle.polished,
+      };
+
   /// The focus target (the geometry that drives aim / shots / scope
   /// ring anchoring + the single-target paint body's box-sizing). For
   /// `SingleTargetScene` this is the scene's own target. For
@@ -1435,19 +1452,10 @@ class _RealisticScenePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
 
-    // Phase 10 Group C.1 — photo mode aliases to polished at the
-    // dispatch site. The enum keeps three real values so Settings +
-    // Range Day surface them, persistence preserves the user's
-    // choice, and Phases 12 / 13 can light up photo's own rendering
-    // (photo stands, photo backdrops) without forcing a migration.
-    // Until then, photo == polished here. Every downstream
-    // conditional in this painter tests `effectiveStyle`, not
-    // `visualStyle`, so the alias is enforced in exactly one place.
-    final effectiveStyle = switch (visualStyle) {
-      VisualStyle.cartoon => VisualStyle.cartoon,
-      VisualStyle.polished => VisualStyle.polished,
-      VisualStyle.photo => VisualStyle.polished,
-    };
+    // Phase 10 Group C.1 — photo mode aliases to polished via the
+    // `_effectiveStyle` getter (single source of truth). Every
+    // downstream conditional in this painter reads the getter so
+    // the alias is enforced in exactly one place.
 
     // Phase 10 Group C.2 — saveLayer scaffold for polished + photo.
     // Group F will hang the color-grade / vignette / grain compositing
@@ -1459,7 +1467,7 @@ class _RealisticScenePainter extends CustomPainter {
     // entirely. Polished + photo render through one extra layer; with
     // a default Paint() that layer is a straight passthrough, so the
     // visible output is identical until Group D lights up effects.
-    final usePolishedLayer = effectiveStyle != VisualStyle.cartoon;
+    final usePolishedLayer = _effectiveStyle != VisualStyle.cartoon;
     if (usePolishedLayer) {
       canvas.saveLayer(Offset.zero & size, Paint());
     }
@@ -1593,16 +1601,18 @@ class _RealisticScenePainter extends CustomPainter {
       visualPoleHeight = moundApexY - visualPoleTopY;
     }
 
-    // Paint order — animals get sky → hills → treeline → grass →
-    // tall grass → foreground tree → TARGET (no mound, no pole,
-    // no pole-base ring, no horizon tufts). Non-animals keep the
-    // full Phase 8 order with mound + pole + tufts + base ring.
-    _paintSky(canvas, w, h, horizonY);
-    _paintDistantHills(canvas, w, horizonY);
-    _paintTreeline(canvas, w, horizonY);
-    _paintGrass(canvas, w, h, horizonY);
-    _paintTallGrass(canvas, w, h, horizonY, inPerPx);
-    _paintForegroundTree(canvas, w, h, horizonY);
+    // Paint order — animals get backdrop → TARGET (no mound, no
+    // pole, no pole-base ring, no horizon tufts). Non-animals keep
+    // the full Phase 8 order with mound + pole + tufts + base ring.
+    //
+    // Phase 10 Group D — the backdrop pass (sky + distant hills +
+    // treeline + grass + tall grass + foreground tree) is funneled
+    // through [_paintBackdrop], which in polished/photo mode wraps
+    // the distant pair in a `saveLayer(blur σ=1.5)` and emits a
+    // ground-haze gradient band over the horizon afterward. Cartoon
+    // mode is byte-identical — the helper's polished guards are
+    // skipped.
+    _paintBackdrop(canvas, size, horizonY, inPerPx);
     if (!isGroundStanding) {
       _paintMound(canvas, w, horizonY, inPerPx);
       _paintPole(canvas, poleX, visualPoleTopY, visualPoleHeight,
@@ -1611,6 +1621,123 @@ class _RealisticScenePainter extends CustomPainter {
       _paintPoleBaseRing(canvas, poleX, moundApexY, visiblePoleHeight);
     }
     _paintTarget(canvas, targetRect);
+  }
+
+  /// Phase 10 Group D — shared backdrop pass for the single-target
+  /// and rack scenes. Used to be six inline calls in each of
+  /// [_paintSingle] / [_paintRack]; centralising the sequence here
+  /// keeps the polished-mode effects in one place and prevents the
+  /// two paths from drifting.
+  ///
+  /// Paint order (top of scene → front of scene):
+  ///   1. Sky gradient — always cartoon, no blur (a blur on the
+  ///      sky would smudge the horizon line we anchor the ground
+  ///      haze to).
+  ///   2. Distant hills + treeline — cartoon in [VisualStyle.cartoon];
+  ///      wrapped in a `saveLayer(blur σ=1.5)` in polished/photo so
+  ///      the far field reads as atmospheric depth rather than
+  ///      crisp silhouettes.
+  ///   3. Grass + tall grass + foreground tree — always cartoon, no
+  ///      blur. These are the FOREGROUND backdrop helpers per the
+  ///      Phase 10 spec; they have to stay sharp so the DOF effect
+  ///      reads as "near vs far," not "everything's blurred."
+  ///   4. Ground haze — a horizontal gradient band painted over the
+  ///      horizon line in polished/photo only. White, alpha 0 at the
+  ///      top edge and alpha 0.18 at the bottom edge (spec §Effect-
+  ///      specifications ground haze), srcOver, anchored
+  ///      `horizon_y - 0.06 H` to `horizon_y + 0.01 H`. Visual goal:
+  ///      atmospheric perspective; the horizon feels softened by
+  ///      distance haze.
+  ///
+  /// The DOF blur σ=1.5 and the haze alpha 0.18 are the spec's
+  /// starting parameters used verbatim — no aesthetic invention.
+  /// Both can be tuned in a follow-up if cold-restart QA finds
+  /// them too strong or too weak; per the Phase 10 spec the haze
+  /// alpha range to consider is 0.15-0.25.
+  void _paintBackdrop(
+    Canvas canvas,
+    Size size,
+    double horizonY,
+    double inPerPx,
+  ) {
+    final w = size.width;
+    final h = size.height;
+    final polish = _effectiveStyle != VisualStyle.cartoon;
+
+    // 1. Sky — outside any blur layer so the horizon line is crisp.
+    _paintSky(canvas, w, h, horizonY);
+
+    // 2. Distant backdrop — wrapped in a blur saveLayer in
+    //    polished/photo. The saveLayer is INSIDE the outer
+    //    polished-mode wrap (opened in [paint]) so Group F's color
+    //    grade still applies to the blurred output.
+    if (polish) {
+      canvas.saveLayer(
+        Offset.zero & size,
+        Paint()..imageFilter = ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
+      );
+    }
+    _paintDistantHills(canvas, w, horizonY);
+    _paintTreeline(canvas, w, horizonY);
+    if (polish) {
+      canvas.restore();
+    }
+
+    // 3. Foreground backdrop — sharp in every mode.
+    _paintGrass(canvas, w, h, horizonY);
+    _paintTallGrass(canvas, w, h, horizonY, inPerPx);
+    _paintForegroundTree(canvas, w, h, horizonY);
+
+    // 4. Ground haze — polished/photo only. Painted AFTER the
+    //    foreground backdrop so grass / tall grass / tree along
+    //    the horizon are washed by the gradient (consistent
+    //    atmospheric perspective). Painted BEFORE the mid-scene
+    //    content (mound, pole, target/slots, mount rig) so those
+    //    elements appear in front of the haze, anchored visually
+    //    to the foreground.
+    if (polish) {
+      _paintGroundHaze(canvas, size, horizonY);
+    }
+  }
+
+  /// Phase 10 Group D — horizontal white gradient band that softens
+  /// the horizon in polished/photo mode. Spec §Effect-specifications
+  /// ground haze, parameters used verbatim:
+  ///
+  ///   * Top edge:     horizon_y − canvas_h × 0.06
+  ///   * Bottom edge:  horizon_y + canvas_h × 0.01
+  ///   * Top alpha:    0.0 (transparent)
+  ///   * Bottom alpha: 0.18 (subtle white wash)
+  ///   * Color:        Colors.white
+  ///   * Blend mode:   srcOver (default; we don't set it explicitly)
+  ///
+  /// The band straddles the horizon with the bulk above it (~7%
+  /// of canvas height above vs 1% below) so the wash falls on the
+  /// distant elements rather than the grass field. Painted with a
+  /// LinearGradient (top → bottom alpha) inside a `drawRect` rather
+  /// than a saveLayer-with-filter approach, because we want the
+  /// haze to COMPOSITE OVER existing content, not transform a
+  /// captured layer.
+  ///
+  /// Visual goal: atmospheric perspective. Strength is tunable in
+  /// the 0.15-0.25 alpha range per spec; surface in the Group D
+  /// report if cold-restart QA wants an adjustment.
+  void _paintGroundHaze(Canvas canvas, Size size, double horizonY) {
+    final w = size.width;
+    final h = size.height;
+    final topY = horizonY - h * 0.06;
+    final bottomY = horizonY + h * 0.01;
+    final rect = Rect.fromLTRB(0, topY, w, bottomY);
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.0),
+          Colors.white.withValues(alpha: 0.18),
+        ],
+      ).createShader(rect);
+    canvas.drawRect(rect, paint);
   }
 
   void _paintSky(Canvas canvas, double w, double h, double horizonY) {
@@ -2295,12 +2422,11 @@ class _RealisticScenePainter extends CustomPainter {
     // `canvasCenterX` removed here — only the helper needs it.
 
     // ── 1. Common backdrop ───────────────────────────────────────
-    _paintSky(canvas, w, h, horizonY);
-    _paintDistantHills(canvas, w, horizonY);
-    _paintTreeline(canvas, w, horizonY);
-    _paintGrass(canvas, w, h, horizonY);
-    _paintTallGrass(canvas, w, h, horizonY, inPerPx);
-    _paintForegroundTree(canvas, w, h, horizonY);
+    // Phase 10 Group D — shared helper. Same sequence as the
+    // single-target path; in polished/photo it adds DOF blur on
+    // the distant pair + a ground-haze gradient over the horizon.
+    // Cartoon mode is byte-identical to pre-Phase-10.
+    _paintBackdrop(canvas, size, horizonY, inPerPx);
 
     // ── 2. Slot rects ────────────────────────────────────────────
     // Phase 9.8.B — slot rect computation lives at file scope
