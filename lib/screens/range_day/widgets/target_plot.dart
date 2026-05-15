@@ -141,6 +141,7 @@ import '../../../widgets/animal_silhouettes.dart';
 import '../../../widgets/reticle_renderer.dart';
 import '../../../widgets/scope_daytime_backdrop.dart';
 import '../../../widgets/target_silhouettes.dart';
+import 'popper_path.dart';
 import 'scene_input.dart';
 
 /// Shape dispatch for any painter rendering a [TargetSpec].
@@ -2453,7 +2454,12 @@ class _RealisticScenePainter extends CustomPainter {
   /// backdrop rather than floating. The blur σ=4.0 falloff reaches
   /// ~12 px (3σ) beyond the rect edges; at the default 234-px-tall
   /// preview that's ~5% of canvas height — visible but not heavy.
-  void _paintTargetShadow(Canvas canvas, Rect rect, String category) {
+  void _paintTargetShadow(
+    Canvas canvas,
+    Rect rect,
+    String category,
+    String? shapeId,
+  ) {
     if (_effectiveStyle == VisualStyle.cartoon) return;
     final shadowRect = rect.shift(const Offset(0, 3));
     final shadowPaint = Paint()
@@ -2471,12 +2477,26 @@ class _RealisticScenePainter extends CustomPainter {
       return;
     }
 
-    // square, rectangle, ipsc, animal, special — all use the
-    // shifted bounds rect. For square/rectangle this is the same
-    // path; for the SVG-ish complex paths (ipsc, animal, special)
-    // this is the bounds-rect approximation per spec. Unknown
-    // categories fall through here too (safe default — they
-    // already drawRect for their fill).
+    // Phase 11 Group A.3 — procedural pepper popper gets a
+    // path-shaped shadow that follows the silhouette geometry
+    // (circular head, narrow neck, flared body with rounded base)
+    // rather than the pre-Phase-11 bounds-rect approximation. Now
+    // that the drawer is procedural and crisp at preview canvas
+    // sizes, a bounds-rect shadow under it would read as a
+    // rectangular halo around the silhouette — visibly mismatched.
+    // The same drawer used for the fill renders the shadow path.
+    if (category == 'special' && shapeId == 'pepper_popper') {
+      final shadowPath = drawPepperPopperPath(shadowRect);
+      canvas.drawPath(shadowPath, shadowPaint);
+      return;
+    }
+
+    // square, rectangle, ipsc, animal, special (texas_star) — all
+    // use the shifted bounds rect. For square/rectangle this is
+    // the same path; for the SVG-ish complex paths (ipsc, animal,
+    // texas_star) this is the bounds-rect approximation per spec.
+    // Unknown categories fall through here too (safe default —
+    // they already drawRect for their fill).
     canvas.drawRect(shadowRect, shadowPaint);
   }
 
@@ -2524,7 +2544,28 @@ class _RealisticScenePainter extends CustomPainter {
     // cold-restart QA — particularly for `silhouette_stand` racks
     // where the stake sits directly behind the silhouette — the
     // shadow could be moved to draw inside the rig painter instead.
-    _paintTargetShadow(canvas, rect, spec.category);
+    //
+    // Phase 11 Group A.3 — `shape_id` is now part of the shadow
+    // signature so the `special` category can pick a path-shaped
+    // shadow for `pepper_popper` instead of a bounds-rect
+    // approximation. Other categories ignore the parameter.
+    _paintTargetShadow(canvas, rect, spec.category, spec.shapeId);
+
+    // Phase 11 Group A.2 — procedural pepper popper bypasses the SVG
+    // resolver entirely. The pepper popper used to render via the
+    // SVG at `assets/silhouettes/targets/pepper_popper.svg`, which
+    // at preview canvas sizes (~30 × 130 px in rack mode) read as a
+    // tall thin rectangle because the bowling-pin curves in the SVG
+    // were too subtle to survive that resolution. The procedural
+    // drawer scales correctly at any size and renders crisp
+    // mathematically defined curves. Texas Star (the other `special`
+    // shape) still routes through `_drawSpecial` below.
+    if (spec.category == 'special' && spec.shapeId == 'pepper_popper') {
+      final path = drawPepperPopperPath(rect);
+      canvas.drawPath(path, fillPaint);
+      canvas.drawPath(path, outlinePaint);
+      return;
+    }
 
     final svgPath = resolveTargetSvgPath(
       rect,
@@ -2621,10 +2662,25 @@ class _RealisticScenePainter extends CustomPainter {
         _drawTexasStar(canvas, rect, fillPaint, outlinePaint);
         break;
       case 'pepper_popper':
+        // Phase 11 Group A.2 — procedural drawer. Replaces the
+        // pre-Phase-11 rect placeholder + SVG-loaded path (the SVG
+        // resolved fine but read as a rectangle at preview canvas
+        // sizes). `_drawCategoryShape` short-circuits to the same
+        // drawer above the SVG resolver, so this `_drawSpecial` arm
+        // is only reached if a caller routes a `pepper_popper`
+        // through `_drawSpecial` directly — currently no such path
+        // exists, but keeping this arm aligned with the primary
+        // dispatch means a future direct caller can't drift back
+        // into the placeholder rect.
+        final path = drawPepperPopperPath(rect);
+        canvas.drawPath(path, fillPaint);
+        canvas.drawPath(path, outlinePaint);
+        break;
       default:
-        // SVG-cache-cold fallback: draw a rect placeholder so the
-        // operator sees SOMETHING. The next repaint after preload
-        // returns the authored popper silhouette.
+        // Unknown special shape — last-resort rect placeholder. Should
+        // never fire (the catalog ships exactly two special apparatuses
+        // today: texas_star and pepper_popper). Surfaces visibly if a
+        // future catalog row lands without an explicit drawer.
         canvas.drawRect(rect, fillPaint);
         canvas.drawRect(rect, outlinePaint);
         break;
