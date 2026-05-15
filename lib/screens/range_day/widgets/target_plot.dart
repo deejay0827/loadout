@@ -495,6 +495,7 @@ class TargetPlot extends StatelessWidget {
     this.rangeYards,
     this.lowLightMode = false,
     this.sizeFloorEnabled = true,
+    this.visualStyle = VisualStyle.cartoon,
   });
 
   /// Target geometry / color. In rack mode this is the active child's
@@ -634,6 +635,17 @@ class TargetPlot extends StatelessWidget {
   /// Has no effect outside realistic mode.
   final bool sizeFloorEnabled;
 
+  /// Phase 10 Group B.3 — pass-through for `_RealisticScenePainter`'s
+  /// `visualStyle`. Defaults to `VisualStyle.cartoon` so non-Range-
+  /// Day callers (preview thumbnails, dialog widgets) that don't
+  /// have a notifier on hand still compile. Range Day call sites
+  /// pass `context.watch<VisualStyleNotifier>().style` so the
+  /// painter sees the user's current choice and the scene
+  /// repaints when they flip modes via Settings or the AppBar
+  /// toggle. Group A introduced the field on the painter; Group C
+  /// + later light up the actual rendering branches.
+  final VisualStyle visualStyle;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -752,11 +764,19 @@ class TargetPlot extends StatelessWidget {
                             : SingleTargetScene(target: target),
                         colorHexOverride: colorHexOverride,
                         sizeFloorEnabled: sizeFloorEnabled,
-                        // Phase 10 Group A — hardcoded to cartoon
-                        // here. Group B wires this to the
-                        // `VisualStyleNotifier` via Consumer so the
-                        // painter reacts to user toggles.
-                        visualStyle: VisualStyle.cartoon,
+                        // Phase 10 Group B.3 — the visual style flows
+                        // down from the parent widget. Range Day call
+                        // sites pass `context.watch<VisualStyleNotifier>().style`
+                        // so the painter repaints when the user
+                        // flips the Settings segment or the AppBar
+                        // toggle (the notifier's
+                        // `notifyListeners()` triggers a rebuild on
+                        // the watching screen, which rebuilds
+                        // TargetPlot, which reconstructs the painter
+                        // with the new style; `shouldRepaint`
+                        // (updated in Group A) sees the diff and
+                        // repaints).
+                        visualStyle: visualStyle,
                       ),
                     )
                   else

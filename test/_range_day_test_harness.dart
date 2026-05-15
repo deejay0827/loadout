@@ -114,6 +114,7 @@ import 'package:loadout/services/sensors/magnetometer_service.dart';
 import 'package:loadout/services/scope_tracking_service.dart';
 import 'package:loadout/services/unit_service.dart';
 import 'package:loadout/services/hit_probability_map_service.dart';
+import 'package:loadout/services/visual_style_notifier.dart';
 import 'package:loadout/services/watch_bridge_service.dart';
 
 /// `EntitlementNotifier` subclass with deterministic `isPro`. The
@@ -280,6 +281,17 @@ Future<RangeDayHarness> pumpRangeDayScreen(
   addTearDown(units.dispose);
   final autoSave = AutoSaveService();
   addTearDown(autoSave.dispose);
+  // Phase 10 Group B — VisualStyleNotifier mirrors the LocaleService
+  // pattern: hydrates from SharedPreferences async, defaults to
+  // `VisualStyle.cartoon` pre-hydrate. Range Day's AppBar
+  // SegmentedButton, the picker preview TargetPlot, and the four
+  // workspace TargetPlot call sites all `context.watch` this notifier.
+  // Without it registered here, Consumer / context.watch lookups
+  // throw `ProviderNotFoundError` and Range Day's
+  // RangeDayErrorBoundary swallows the entire screen — every widget
+  // test that pumps RangeDayDetailScreen fails as a result.
+  final visualStyle = VisualStyleNotifier();
+  addTearDown(visualStyle.dispose);
 
   // Watch bridge in unsupported mode. Range Day screens push to the
   // bridge whenever the user picks a load / firearm / common load /
@@ -364,6 +376,9 @@ Future<RangeDayHarness> pumpRangeDayScreen(
         ),
         ChangeNotifierProvider<UnitService>.value(value: units),
         ChangeNotifierProvider<AutoSaveService>.value(value: autoSave),
+        ChangeNotifierProvider<VisualStyleNotifier>.value(
+          value: visualStyle,
+        ),
         ChangeNotifierProvider<EntitlementNotifier>.value(value: entitlements),
         ChangeNotifierProvider<BleService>.value(value: ble),
         ChangeNotifierProvider<KestrelService>.value(value: kestrel),

@@ -33,10 +33,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../../models/visual_style.dart';
 import '../../services/auto_save_service.dart';
 import '../../services/beginner_mode_service.dart';
 import '../../services/locale_service.dart';
 import '../../services/unit_service.dart';
+import '../../services/visual_style_notifier.dart';
 import '../atmosphere/atmosphere_presets_screen.dart';
 
 class AppPreferencesScreen extends StatelessWidget {
@@ -48,6 +50,7 @@ class AppPreferencesScreen extends StatelessWidget {
     final beginner = context.watch<BeginnerModeService>();
     final units = context.watch<UnitService>();
     final localeService = context.watch<LocaleService>();
+    final visualStyle = context.watch<VisualStyleNotifier>();
     final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(title: const Text('App Preferences')),
@@ -70,6 +73,14 @@ class AppPreferencesScreen extends StatelessWidget {
           const _SectionHeader('Auto-save'),
           _AutoSaveFrequencyTile(service: autoSave),
           _UnsavedChangesPolicyTile(service: autoSave),
+          // Phase 10 Group B.1 — visual style picker. Three modes:
+          // cartoon (the existing rendering), polished (cartoon +
+          // atmospheric effects, lit up in Group C+), photo (placeholder
+          // for Phases 12 / 13's photo-realistic backdrops; aliases to
+          // polished pre-12). Persisted via VisualStyleNotifier; the
+          // Range Day AppBar shows a synced compact toggle (B.2).
+          const _SectionHeader('Visual Style'),
+          _VisualStyleTile(service: visualStyle),
           // Language picker.
           _LanguageTile(
             localeService: localeService,
@@ -473,6 +484,76 @@ class _SingleChoiceSheet<T> extends StatelessWidget {
               onTap: () => Navigator.of(context).pop(v),
             ),
           const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+/// Phase 10 Group B.1 — visual style picker tile. Three-segment
+/// `SegmentedButton<VisualStyle>` with labels (Cartoon / Polished /
+/// Photo) plus helper text below explaining what each does.
+///
+/// Mirrors the layout pattern used by [_UnitsSection]'s master
+/// switch — segmented control inside a Padding-wrapped Column with
+/// optional explanatory text underneath. Writes go through
+/// [VisualStyleNotifier.setStyle] (which persists +
+/// notifies). Reads from the watched service so the Range Day
+/// AppBar's compact toggle stays in sync — both surfaces see the
+/// same `style` getter and rebuild on any change.
+class _VisualStyleTile extends StatelessWidget {
+  const _VisualStyleTile({required this.service});
+
+  final VisualStyleNotifier service;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SegmentedButton<VisualStyle>(
+            segments: const [
+              ButtonSegment<VisualStyle>(
+                value: VisualStyle.cartoon,
+                label: Text('Cartoon'),
+                icon: Icon(Icons.brush_outlined),
+              ),
+              ButtonSegment<VisualStyle>(
+                value: VisualStyle.polished,
+                label: Text('Polished'),
+                icon: Icon(Icons.auto_awesome_outlined),
+              ),
+              ButtonSegment<VisualStyle>(
+                value: VisualStyle.photo,
+                label: Text('Photo'),
+                icon: Icon(Icons.image_outlined),
+              ),
+            ],
+            selected: {service.style},
+            showSelectedIcon: false,
+            onSelectionChanged: (sel) {
+              // Fire-and-forget persistence — notifier writes
+              // synchronously to its in-memory cache before
+              // notifying listeners, so the UI updates before the
+              // SharedPrefs round-trip.
+              // ignore: discarded_futures
+              service.setStyle(sel.first);
+            },
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Cartoon is the default look. Polished adds atmospheric '
+            'effects (subtle DOF, ground haze, drop shadow, warm '
+            'color grade, vignette, film grain). Photo is a '
+            'placeholder for upcoming photo-realistic backdrops; '
+            'until those ship it renders the same as Polished.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );

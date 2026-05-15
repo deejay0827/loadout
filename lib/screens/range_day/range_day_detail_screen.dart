@@ -91,8 +91,10 @@ import '../../services/sensors/cant_service.dart';
 import '../../services/common_loads_catalog.dart';
 import '../../services/sensors/inclinometer_service.dart';
 import '../../services/sensors/magnetometer_service.dart';
+import '../../models/visual_style.dart';
 import '../../services/scope_catalog_v2.dart';
 import '../../services/unit_service.dart';
+import '../../services/visual_style_notifier.dart';
 import '../../services/watch_bridge_service.dart';
 import '../../services/watch_payload_projection.dart';
 import '../../widgets/empty_state_card.dart';
@@ -2489,6 +2491,54 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               },
             ),
           ),
+          // Phase 10 Group B.2 — visual style toggle. Compact icon-
+          // only `SegmentedButton<VisualStyle>` matching the
+          // Quick/Full toggle's visual density. Three options:
+          // Cartoon (brush icon), Polished (auto_awesome icon),
+          // Photo (image icon). Synced with the Settings → App
+          // preferences segmented button via `VisualStyleNotifier`.
+          // Both surfaces read + write the same notifier, so a
+          // change in one updates the other immediately. The
+          // painter watches the notifier too (B.3) and repaints
+          // when the mode flips.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Consumer<VisualStyleNotifier>(
+              builder: (context, visualStyle, _) {
+                return SegmentedButton<VisualStyle>(
+                  segments: const [
+                    ButtonSegment<VisualStyle>(
+                      value: VisualStyle.cartoon,
+                      icon: Icon(Icons.brush_outlined),
+                      tooltip: 'Cartoon — flat procedural scene',
+                    ),
+                    ButtonSegment<VisualStyle>(
+                      value: VisualStyle.polished,
+                      icon: Icon(Icons.auto_awesome_outlined),
+                      tooltip: 'Polished — atmospheric effects',
+                    ),
+                    ButtonSegment<VisualStyle>(
+                      value: VisualStyle.photo,
+                      icon: Icon(Icons.image_outlined),
+                      tooltip: 'Photo — placeholder, renders as polished',
+                    ),
+                  ],
+                  selected: {visualStyle.style},
+                  showSelectedIcon: false,
+                  style: SegmentedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  onSelectionChanged: (sel) {
+                    final next = sel.first;
+                    if (next == visualStyle.style) return;
+                    // ignore: discarded_futures
+                    visualStyle.setStyle(next);
+                  },
+                );
+              },
+            ),
+          ),
           // Low Light toggle (§6A.2). Sun when off, moon when on.
           // Flips the Realistic scene to a dusk backdrop +
           // illuminates reticle elements that publish an
@@ -3304,6 +3354,13 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         rackChildren: _rackChildrenSpec,
         activeRackChildIndex: _activeRackChildIndex,
         rackMountStyle: _selectedRack?.rackKind,
+        // Phase 10 Group B.3 — subscribe to the user's chosen
+        // visual style. `watch` rebuilds when the notifier
+        // notifies; that rebuilds TargetPlot which reconstructs
+        // its internal painter; painter.shouldRepaint sees the
+        // style diff and repaints. Settings and AppBar toggles
+        // both flow through this single path.
+        visualStyle: context.watch<VisualStyleNotifier>().style,
       ),
     );
   }
@@ -3355,6 +3412,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                   rackChildren: _rackChildrenSpec,
                   activeRackChildIndex: _activeRackChildIndex,
                   rackMountStyle: _selectedRack?.rackKind,
+                  // Phase 10 Group B.3 — subscribe via the dialog's
+                  // own context so the zoom view reflects the
+                  // current chosen style. Provider lookups walk
+                  // ancestor InheritedWidgets, and the dialog
+                  // overlay is mounted under the same Navigator
+                  // root as the MultiProvider, so `ctx.watch`
+                  // finds the notifier and rebuilds the dialog if
+                  // the user flips the AppBar toggle while the
+                  // dialog is open.
+                  visualStyle:
+                      ctx.watch<VisualStyleNotifier>().style,
                 ),
               ),
               const SizedBox(height: 12),
@@ -8559,6 +8627,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           rangeYards: yards > 0 ? yards : null,
                           lowLightMode: _lowLightMode,
                           sizeFloorEnabled: _sizeFloorEnabled,
+                          // Phase 10 Group B.3 — see sibling
+                          // _targetVisualBox call site for the
+                          // single-path rationale. `context` here
+                          // is the StreamBuilder's local context;
+                          // it still finds the notifier through
+                          // ancestor lookup.
+                          visualStyle: context
+                              .watch<VisualStyleNotifier>()
+                              .style,
                         ),
                       ],
                     );
@@ -8594,6 +8671,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     rangeYards: yards > 0 ? yards : null,
                     lowLightMode: _lowLightMode,
                     sizeFloorEnabled: _sizeFloorEnabled,
+                    // Phase 10 Group B.3 — see sibling
+                    // _targetVisualBox call site for the
+                    // single-path rationale.
+                    visualStyle:
+                        context.watch<VisualStyleNotifier>().style,
                   );
                 },
               )
@@ -8620,6 +8702,11 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 rangeYards: yards > 0 ? yards : null,
                 lowLightMode: _lowLightMode,
                 sizeFloorEnabled: _sizeFloorEnabled,
+                // Phase 10 Group B.3 — see sibling
+                // _targetVisualBox call site for the single-path
+                // rationale.
+                visualStyle:
+                    context.watch<VisualStyleNotifier>().style,
               ),
             const SizedBox(height: 12),
             Row(
