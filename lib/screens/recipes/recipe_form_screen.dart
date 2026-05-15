@@ -1169,8 +1169,12 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       final repo = context.read<ComponentRepository>();
       final hit = await repo.bulletByLabel(label);
       if (!mounted || hit == null) return;
-      final caliber = _caliberLabelFromDiameter(hit.bullet.diameterIn);
-      if (caliber == null) return;
+      // Phase One Group 3: caliber-family lookup is a repository
+      // concern now (`ComponentRepository.caliberLabelForBulletDiameter`).
+      // Previously a form-private 14-entry hardcoded table lived here.
+      final caliber =
+          await repo.caliberLabelForBulletDiameter(hit.bullet.diameterIn);
+      if (!mounted || caliber == null) return;
       // Only overwrite caliber when it's empty — never clobber a
       // value the user explicitly typed. Same defensive pattern
       // used by the Ballistics firearm-pre-fill path.
@@ -1180,30 +1184,6 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     } catch (e) {
       debugPrint('[recipe_form] _backfillFromBullet failed: $e');
     }
-  }
-
-  /// Map a bullet diameter (inches) to a colloquial caliber label
-  /// the user would type ("0.264" → "6.5mm", "0.308" → ".308").
-  /// Returns null when the diameter doesn't match a common cartridge
-  /// family — the picker leaves the caliber field alone in that
-  /// case rather than guessing.
-  String? _caliberLabelFromDiameter(double diameterIn) {
-    bool nearly(double a, double b) => (a - b).abs() < 0.0015;
-    if (nearly(diameterIn, 0.172)) return '.17';
-    if (nearly(diameterIn, 0.204)) return '.204';
-    if (nearly(diameterIn, 0.224)) return '.224';
-    if (nearly(diameterIn, 0.243)) return '6mm';
-    if (nearly(diameterIn, 0.257)) return '.257';
-    if (nearly(diameterIn, 0.264)) return '6.5mm';
-    if (nearly(diameterIn, 0.277)) return '.277';
-    if (nearly(diameterIn, 0.284)) return '7mm';
-    if (nearly(diameterIn, 0.308)) return '.308';
-    if (nearly(diameterIn, 0.338)) return '.338';
-    if (nearly(diameterIn, 0.355) || nearly(diameterIn, 0.356)) return '9mm';
-    if (nearly(diameterIn, 0.358)) return '.358';
-    if (nearly(diameterIn, 0.400)) return '.40';
-    if (nearly(diameterIn, 0.451) || nearly(diameterIn, 0.452)) return '.45';
-    return null;
   }
 
   /// When the user picks a primer like `"Federal #210M"`, look it up in

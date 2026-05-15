@@ -128,6 +128,67 @@ import 'package:drift/drift.dart';
 import '../database/database.dart';
 import '../utils/natural_sort.dart';
 
+/// Tolerance used when matching a bullet diameter (in inches) to a
+/// caliber-family entry. Matches the value the retired hardcoded
+/// table in `recipe_form_screen.dart` used so we don't lose
+/// behaviour during the Phase One Group 3 move.
+const double _kCaliberDiameterToleranceIn = 0.0015;
+//
+// ────────────────────────────────────────────────────────────────────
+// CALIBER FAMILIES — diameter → colloquial family label
+// ────────────────────────────────────────────────────────────────────
+//
+// Lifted verbatim from the form-private `_caliberLabelFromDiameter`
+// that lived on `recipe_form_screen.dart` (lines 1190-1207 before the
+// Group 3 move). Each entry is (bullet diameter in inches → the
+// colloquial family label a reloader would type into the Caliber
+// field when they pick a bullet of that diameter).
+//
+// **Why this is a static const rather than a query against the
+// cartridge catalog.** The catalog has rows for specific cartridges
+// (".308 Winchester", "6.5 Creedmoor", ".380 ACP") but NOT for the
+// shorter family labels (".308", "6.5mm", "9mm"). Four of the 14
+// entries below are metric families (`6mm` / `6.5mm` / `7mm` / `9mm`)
+// that don't appear as standalone cartridge names. Several of the
+// imperial entries have edge-case collisions with cartridge-name
+// leading tokens (`.25-06 Rem` vs `.257 Roberts` at 0.257";
+// `.270 Winchester` vs `.277 Fury` at 0.277"; `9x19 Parabellum` vs
+// `.380 ACP` at 0.355"). A leading-token-from-name extraction over
+// the catalog is too brittle to be the source of truth.
+//
+// TODO(phase-2): move to `assets/seed_data/caliber_families.json`
+// with a small drift table (`CaliberFamilies` — diameter +
+// familyLabel) so the manifest-driven seed pipeline (Engineering.md
+// § 5) participates. Keying the lookup off a seed file lets future
+// catalog updates (e.g. a `.224 Valkyrie` family promotion) ship
+// without a store release. See Phase Two queue item #4-ish.
+//
+// Entries are ordered by diameter ascending for readability.
+//
+// `final`, not `const`, because Dart bans `const Map<double, _>` —
+// `double` overrides `==` / `hashCode` (NaN + signed-zero semantics),
+// and a const map needs primitive-equality keys. The map is still
+// build-time-constant in spirit; the runtime instance is immutable
+// because nothing mutates it.
+final Map<double, String> _kCaliberFamiliesByDiameter = <double, String>{
+  0.172: '.17',
+  0.204: '.204',
+  0.224: '.224',
+  0.243: '6mm',
+  0.257: '.257',
+  0.264: '6.5mm',
+  0.277: '.277',
+  0.284: '7mm',
+  0.308: '.308',
+  0.338: '.338',
+  0.355: '9mm',
+  0.356: '9mm',
+  0.358: '.358',
+  0.400: '.40',
+  0.451: '.45',
+  0.452: '.45',
+};
+
 /// Reads reference + custom components and exposes them as flat option lists
 /// for dropdowns. Also writes user-added custom components.
 class ComponentRepository {
@@ -145,6 +206,43 @@ class ComponentRepository {
   Future<CartridgeRow?> cartridgeByName(String name) =>
       (db.select(db.cartridges)..where((c) => c.name.equals(name)))
           .getSingleOrNull();
+
+  /// Returns the canonical, colloquial caliber-family label for a
+  /// bullet diameter (in inches), or null when no family in the
+  /// `_kCaliberFamiliesByDiameter` table matches within ±0.0015 in.
+  ///
+  /// Example: `0.264` → `"6.5mm"`, `0.308` → `".308"`, `0.355` →
+  /// `"9mm"`, `0.123` → `null`.
+  ///
+  /// Used by the recipe form to back-fill the Caliber field when the
+  /// user picks a bullet from the autocomplete. Previously lived as
+  /// the form-private `_caliberLabelFromDiameter` (a 14-entry
+  /// hardcoded match); Phase One Group 3 moved it here so the
+  /// "what caliber is this bullet" question is a repository concern
+  /// instead of a form-private detail.
+  ///
+  /// The signature is `Future<String?>` even though the body is
+  /// synchronous so the call sites stay forward-compatible with a
+  /// future catalog-backed implementation (see the TODO on
+  /// `_kCaliberFamiliesByDiameter`).
+  ///
+  /// **Tie-breaking** (per spec § 3 of PHASE_ONE_RECIPES_UNIFIED_IMPORT.md):
+  /// when multiple family entries fall within tolerance, the entry
+  /// with the smallest residual diameter difference wins. The static
+  /// map's authored ordering doesn't matter — comparison is by
+  /// |diameter − key|.
+  Future<String?> caliberLabelForBulletDiameter(double diameterIn) async {
+    String? bestLabel;
+    double bestResidual = double.infinity;
+    for (final entry in _kCaliberFamiliesByDiameter.entries) {
+      final residual = (diameterIn - entry.key).abs();
+      if (residual <= _kCaliberDiameterToleranceIn && residual < bestResidual) {
+        bestResidual = residual;
+        bestLabel = entry.value;
+      }
+    }
+    return bestLabel;
+  }
 
   // ───── Powders / bullets / primers / brass — unified label helpers ─────
 
