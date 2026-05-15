@@ -1434,6 +1434,36 @@ class _RealisticScenePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
+
+    // Phase 10 Group C.1 — photo mode aliases to polished at the
+    // dispatch site. The enum keeps three real values so Settings +
+    // Range Day surface them, persistence preserves the user's
+    // choice, and Phases 12 / 13 can light up photo's own rendering
+    // (photo stands, photo backdrops) without forcing a migration.
+    // Until then, photo == polished here. Every downstream
+    // conditional in this painter tests `effectiveStyle`, not
+    // `visualStyle`, so the alias is enforced in exactly one place.
+    final effectiveStyle = switch (visualStyle) {
+      VisualStyle.cartoon => VisualStyle.cartoon,
+      VisualStyle.polished => VisualStyle.polished,
+      VisualStyle.photo => VisualStyle.polished,
+    };
+
+    // Phase 10 Group C.2 — saveLayer scaffold for polished + photo.
+    // Group F will hang the color-grade / vignette / grain compositing
+    // off the restore of this layer; Group D + E add intermediate
+    // layers between this open and restore. For Group C the scaffold
+    // is intentionally a no-op: open the layer with a default Paint(),
+    // run the existing paint pass unchanged, restore. The cartoon
+    // path is byte-identical because the if-guard skips the saveLayer
+    // entirely. Polished + photo render through one extra layer; with
+    // a default Paint() that layer is a straight passthrough, so the
+    // visible output is identical until Group D lights up effects.
+    final usePolishedLayer = effectiveStyle != VisualStyle.cartoon;
+    if (usePolishedLayer) {
+      canvas.saveLayer(Offset.zero & size, Paint());
+    }
+
     // Phase 9.7 — sealed-type dispatch. Single-target rendering runs
     // the verbatim Phase 9.6 body via [_paintSingle] (pixel-parity
     // gate against `b60f9e9` was Group B). Rack rendering runs
@@ -1446,6 +1476,15 @@ class _RealisticScenePainter extends CustomPainter {
         _paintSingle(canvas, size);
       case RackScene(:final rack, :final activeSlotIndex):
         _paintRack(canvas, size, rack, activeSlotIndex);
+    }
+
+    if (usePolishedLayer) {
+      // Group F lands color-grade + vignette + film-grain
+      // composites here, between the scene paint and the restore.
+      // Group C ships the restore as a no-op so the scaffold is
+      // visually inert (the saveLayer with a default Paint draws
+      // straight through on restore).
+      canvas.restore();
     }
   }
 
