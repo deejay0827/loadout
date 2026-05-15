@@ -2297,6 +2297,52 @@ class RecipeTemplates extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+// ─── Schema v42 additions (Phase Two Group 2) ──────────────────────
+//
+// Reference-data tables for the Status and Use Case dropdowns on
+// the recipe form. Pre-Phase-Two-Group-2 these lived as two private
+// const record-list constants (`_statusOptions` and `_useCaseOptions`)
+// inside `lib/screens/recipes/recipe_form_screen.dart`. Phase Two
+// Group 2 (2026-05-15) moved them out so they ride the manifest-
+// versioned live update path — adding "Match-Ready" or "Range-
+// Checked" post-launch is now a JSON change + a manifest bump, not
+// a code change and a store release.
+//
+// Both tables follow the same shape: `value` is the stable enum-
+// style key persisted on `UserLoads.status` / `UserLoads.useCase`;
+// `label` is the human-readable display string the dropdown shows.
+// Phase Two ships read-only values — user-defined custom statuses
+// are a separate (future) feature; not in scope.
+
+@DataClassName('RecipeStatusRow')
+class RecipeStatuses extends Table {
+  /// Stable enum-style key. Persisted on `UserLoads.status` when
+  /// the user picks this option. Ported verbatim from the retired
+  /// `_statusOptions` (`active` / `testing` / `retired`).
+  TextColumn get value => text()();
+
+  /// Human-readable display string shown in the dropdown.
+  TextColumn get label => text()();
+
+  @override
+  Set<Column> get primaryKey => {value};
+}
+
+@DataClassName('RecipeUseCaseRow')
+class RecipeUseCases extends Table {
+  /// Stable enum-style key. Persisted on `UserLoads.useCase` when
+  /// the user picks this option. Ported verbatim from the retired
+  /// `_useCaseOptions` (`match` / `practice` / `hunting` /
+  /// `plinking`).
+  TextColumn get value => text()();
+
+  /// Human-readable display string shown in the dropdown.
+  TextColumn get label => text()();
+
+  @override
+  Set<Column> get primaryKey => {value};
+}
+
 // ─────────────────────── Database ───────────────────────
 
 @DriftDatabase(
@@ -2388,6 +2434,13 @@ class RecipeTemplates extends Table {
     // templates moved from a static const Dart list to seed JSON so
     // they ride the manifest-versioned live update path.
     RecipeTemplates,
+    // Schema v42 additions (Phase Two Group 2, 2026-05-15) —
+    // recipe Status and Use Case dropdowns moved from private const
+    // record lists in `recipe_form_screen.dart` to seeded reference
+    // tables. Post-launch "we should add Match-Ready" requests
+    // become JSON edits + a manifest bump, not store releases.
+    RecipeStatuses,
+    RecipeUseCases,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -2396,7 +2449,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 41;
+  int get schemaVersion => 42;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -3238,6 +3291,18 @@ class AppDatabase extends _$AppDatabase {
             // cold start via `_seedRecipeTemplates()`.
             await m.createTable(recipeTemplates);
           }
+          if (from < 42) {
+            // v42 — Phase Two Group 2: recipe Status + Use Case
+            // dropdowns moved from private const record lists in
+            // `recipe_form_screen.dart` to seeded reference tables.
+            // Same shape, same posture as v41 — pre-launch,
+            // reference-only, additive `createTable`s. SeedLoader
+            // populates from `assets/seed_data/recipe_statuses.json`
+            // and `assets/seed_data/recipe_use_cases.json` on next
+            // cold start.
+            await m.createTable(recipeStatuses);
+            await m.createTable(recipeUseCases);
+          }
         },
       );
 
@@ -3635,6 +3700,30 @@ class AppDatabase extends _$AppDatabase {
     final count = await (selectOnly(recipeTemplates)
           ..addColumns([recipeTemplates.id.count()]))
         .map((row) => row.read(recipeTemplates.id.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the [RecipeStatuses] catalog is empty. Used by the
+  /// seed loader to decide whether to insert the bundled recipe
+  /// status set on first launch or after the v42 migration (Phase
+  /// Two Group 2).
+  Future<bool> get recipeStatusesAreEmpty async {
+    final count = await (selectOnly(recipeStatuses)
+          ..addColumns([recipeStatuses.value.count()]))
+        .map((row) => row.read(recipeStatuses.value.count()) ?? 0)
+        .getSingle();
+    return count == 0;
+  }
+
+  /// True when the [RecipeUseCases] catalog is empty. Used by the
+  /// seed loader to decide whether to insert the bundled recipe
+  /// use-case set on first launch or after the v42 migration
+  /// (Phase Two Group 2).
+  Future<bool> get recipeUseCasesAreEmpty async {
+    final count = await (selectOnly(recipeUseCases)
+          ..addColumns([recipeUseCases.value.count()]))
+        .map((row) => row.read(recipeUseCases.value.count()) ?? 0)
         .getSingle();
     return count == 0;
   }

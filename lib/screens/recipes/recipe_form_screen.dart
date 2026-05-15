@@ -233,20 +233,16 @@ const List<String> _primerPocketOptions = <String>[
   'Other',
 ];
 
-/// Allowed values for the recipe Status dropdown.
-const List<({String value, String label})> _statusOptions = [
-  (value: 'active', label: 'Active'),
-  (value: 'testing', label: 'Testing'),
-  (value: 'retired', label: 'Retired'),
-];
-
-/// Allowed values for the Use Case dropdown.
-const List<({String value, String label})> _useCaseOptions = [
-  (value: 'match', label: 'Match'),
-  (value: 'practice', label: 'Practice'),
-  (value: 'hunting', label: 'Hunting'),
-  (value: 'plinking', label: 'Plinking'),
-];
+// Phase Two Group 2 (2026-05-15, v42) retired the private const
+// `_statusOptions` and `_useCaseOptions` record lists. The Status
+// and Use Case dropdown options now live in the seeded
+// `RecipeStatuses` and `RecipeUseCases` drift tables (see
+// `assets/seed_data/recipe_statuses.json` /
+// `assets/seed_data/recipe_use_cases.json`). The form reads them
+// via `RecipeRepository.allStatuses()` / `allUseCases()` cached
+// as `_statusOptionsFuture` / `_useCaseOptionsFuture` in
+// `initState`, and the field-builders consume them via the
+// `_seededDropdown` helper.
 
 /// Allowed values for the Bolt Lift dropdown.
 const List<({String value, String label})> _boltLiftOptions = [
@@ -666,6 +662,17 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
 
   late final AutoSaveController _autoSave;
 
+  /// Cached futures for the Status + Use Case dropdown options.
+  /// Phase Two Group 2 (2026-05-15, v42) moved these from private
+  /// const record lists in this file to the seeded `RecipeStatuses`
+  /// and `RecipeUseCases` drift tables; we load them once in
+  /// `initState` so each FutureBuilder rebuild reuses the same
+  /// snapshot instead of re-hitting SQLite on every form rebuild.
+  late final Future<List<({String value, String label})>>
+      _statusOptionsFuture;
+  late final Future<List<({String value, String label})>>
+      _useCaseOptionsFuture;
+
   @override
   void initState() {
     super.initState();
@@ -676,6 +683,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _sectionKeys = {
       for (final s in _sections) s.id: GlobalKey(),
     };
+    // Phase Two Group 2 future-init moved further down alongside
+    // the existing `repo = context.read<RecipeRepository>()` block
+    // that initializes the lot pickers — avoids a duplicate
+    // `repo` local in this same scope.
     final e = widget.existing;
     final d = e == null ? widget.initialDraft : null;
     // The Quick Add → Regular bridge passes a draft companion when the
@@ -816,6 +827,11 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     _bulletLotsFuture = repo.allBulletLots();
     _brassLotsFuture = repo.allBrassLots();
     _customFieldsFuture = repo.customFieldsForEntity('recipe');
+    // Phase Two Group 2 (v42): Status + Use Case dropdown options
+    // now live in seeded reference tables. Load once here so each
+    // FutureBuilder rebuild reuses the same snapshot.
+    _statusOptionsFuture = repo.allStatuses();
+    _useCaseOptionsFuture = repo.allUseCases();
 
     // Hydrate the user's saved detail-level preference. Done lazily so the
     // first frame doesn't block on disk I/O.
@@ -1488,14 +1504,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Status',
         level: DetailLevel.detailed,
         aliases: const ['active', 'testing', 'retired', 'state'],
-        builder: (ctx) => DropdownButtonFormField<String>(
-          initialValue: _status,
-          isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Status'),
-          items: [
-            for (final s in _statusOptions)
-              DropdownMenuItem(value: s.value, child: Text(s.label)),
-          ],
+        builder: (ctx) => _seededDropdown(
+          future: _statusOptionsFuture,
+          label: 'Status',
+          selected: _status,
           onChanged: (v) {
             setState(() => _status = v);
             _autoSave.notifyDirty();
@@ -1507,14 +1519,10 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
         label: 'Use Case',
         level: DetailLevel.detailed,
         aliases: const ['match', 'practice', 'hunting', 'plinking', 'purpose'],
-        builder: (ctx) => DropdownButtonFormField<String>(
-          initialValue: _useCase,
-          isExpanded: true,
-          decoration: const InputDecoration(labelText: 'Use Case'),
-          items: [
-            for (final s in _useCaseOptions)
-              DropdownMenuItem(value: s.value, child: Text(s.label)),
-          ],
+        builder: (ctx) => _seededDropdown(
+          future: _useCaseOptionsFuture,
+          label: 'Use Case',
+          selected: _useCase,
           onChanged: (v) {
             setState(() => _useCase = v);
             _autoSave.notifyDirty();
@@ -3184,6 +3192,46 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       curve: Curves.easeOut,
       alignment: 0.0,
       alignmentPolicy: ScrollPositionAlignmentPolicy.explicit,
+    );
+  }
+
+  /// Build a Status / Use Case dropdown backed by a seeded list
+  /// future. Phase Two Group 2 (v42) moved both dropdowns off
+  /// private const record lists; this helper consolidates the
+  /// FutureBuilder + DropdownButtonFormField glue so the two
+  /// field-builders stay one-liners.
+  ///
+  /// While the seed query is in flight (millisecond-scale on the
+  /// local SQLite catalog) the dropdown renders disabled with a
+  /// "—" placeholder so the form layout doesn't jump. On error or
+  /// an empty seed table, same disabled-placeholder fallback —
+  /// better than a half-rendered dropdown with no items.
+  Widget _seededDropdown({
+    required Future<List<({String value, String label})>> future,
+    required String label,
+    required String? selected,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return FutureBuilder<List<({String value, String label})>>(
+      future: future,
+      builder: (ctx, snapshot) {
+        final ready = snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData &&
+            snapshot.data!.isNotEmpty;
+        final options = ready
+            ? snapshot.data!
+            : const <({String value, String label})>[];
+        return DropdownButtonFormField<String>(
+          initialValue: selected,
+          isExpanded: true,
+          decoration: InputDecoration(labelText: label),
+          items: [
+            for (final opt in options)
+              DropdownMenuItem(value: opt.value, child: Text(opt.label)),
+          ],
+          onChanged: ready ? onChanged : null,
+        );
+      },
     );
   }
 

@@ -38092,6 +38092,434 @@ class RecipeTemplatesCompanion extends UpdateCompanion<RecipeTemplateRow> {
   }
 }
 
+class $RecipeStatusesTable extends RecipeStatuses
+    with TableInfo<$RecipeStatusesTable, RecipeStatusRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecipeStatusesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [value, label];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recipe_statuses';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecipeStatusRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {value};
+  @override
+  RecipeStatusRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecipeStatusRow(
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+    );
+  }
+
+  @override
+  $RecipeStatusesTable createAlias(String alias) {
+    return $RecipeStatusesTable(attachedDatabase, alias);
+  }
+}
+
+class RecipeStatusRow extends DataClass implements Insertable<RecipeStatusRow> {
+  /// Stable enum-style key. Persisted on `UserLoads.status` when
+  /// the user picks this option. Ported verbatim from the retired
+  /// `_statusOptions` (`active` / `testing` / `retired`).
+  final String value;
+
+  /// Human-readable display string shown in the dropdown.
+  final String label;
+  const RecipeStatusRow({required this.value, required this.label});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['value'] = Variable<String>(value);
+    map['label'] = Variable<String>(label);
+    return map;
+  }
+
+  RecipeStatusesCompanion toCompanion(bool nullToAbsent) {
+    return RecipeStatusesCompanion(value: Value(value), label: Value(label));
+  }
+
+  factory RecipeStatusRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecipeStatusRow(
+      value: serializer.fromJson<String>(json['value']),
+      label: serializer.fromJson<String>(json['label']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'value': serializer.toJson<String>(value),
+      'label': serializer.toJson<String>(label),
+    };
+  }
+
+  RecipeStatusRow copyWith({String? value, String? label}) =>
+      RecipeStatusRow(value: value ?? this.value, label: label ?? this.label);
+  RecipeStatusRow copyWithCompanion(RecipeStatusesCompanion data) {
+    return RecipeStatusRow(
+      value: data.value.present ? data.value.value : this.value,
+      label: data.label.present ? data.label.value : this.label,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecipeStatusRow(')
+          ..write('value: $value, ')
+          ..write('label: $label')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(value, label);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecipeStatusRow &&
+          other.value == this.value &&
+          other.label == this.label);
+}
+
+class RecipeStatusesCompanion extends UpdateCompanion<RecipeStatusRow> {
+  final Value<String> value;
+  final Value<String> label;
+  final Value<int> rowid;
+  const RecipeStatusesCompanion({
+    this.value = const Value.absent(),
+    this.label = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecipeStatusesCompanion.insert({
+    required String value,
+    required String label,
+    this.rowid = const Value.absent(),
+  }) : value = Value(value),
+       label = Value(label);
+  static Insertable<RecipeStatusRow> custom({
+    Expression<String>? value,
+    Expression<String>? label,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (value != null) 'value': value,
+      if (label != null) 'label': label,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecipeStatusesCompanion copyWith({
+    Value<String>? value,
+    Value<String>? label,
+    Value<int>? rowid,
+  }) {
+    return RecipeStatusesCompanion(
+      value: value ?? this.value,
+      label: label ?? this.label,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecipeStatusesCompanion(')
+          ..write('value: $value, ')
+          ..write('label: $label, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RecipeUseCasesTable extends RecipeUseCases
+    with TableInfo<$RecipeUseCasesTable, RecipeUseCaseRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecipeUseCasesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [value, label];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'recipe_use_cases';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecipeUseCaseRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {value};
+  @override
+  RecipeUseCaseRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecipeUseCaseRow(
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+    );
+  }
+
+  @override
+  $RecipeUseCasesTable createAlias(String alias) {
+    return $RecipeUseCasesTable(attachedDatabase, alias);
+  }
+}
+
+class RecipeUseCaseRow extends DataClass
+    implements Insertable<RecipeUseCaseRow> {
+  /// Stable enum-style key. Persisted on `UserLoads.useCase` when
+  /// the user picks this option. Ported verbatim from the retired
+  /// `_useCaseOptions` (`match` / `practice` / `hunting` /
+  /// `plinking`).
+  final String value;
+
+  /// Human-readable display string shown in the dropdown.
+  final String label;
+  const RecipeUseCaseRow({required this.value, required this.label});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['value'] = Variable<String>(value);
+    map['label'] = Variable<String>(label);
+    return map;
+  }
+
+  RecipeUseCasesCompanion toCompanion(bool nullToAbsent) {
+    return RecipeUseCasesCompanion(value: Value(value), label: Value(label));
+  }
+
+  factory RecipeUseCaseRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecipeUseCaseRow(
+      value: serializer.fromJson<String>(json['value']),
+      label: serializer.fromJson<String>(json['label']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'value': serializer.toJson<String>(value),
+      'label': serializer.toJson<String>(label),
+    };
+  }
+
+  RecipeUseCaseRow copyWith({String? value, String? label}) =>
+      RecipeUseCaseRow(value: value ?? this.value, label: label ?? this.label);
+  RecipeUseCaseRow copyWithCompanion(RecipeUseCasesCompanion data) {
+    return RecipeUseCaseRow(
+      value: data.value.present ? data.value.value : this.value,
+      label: data.label.present ? data.label.value : this.label,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecipeUseCaseRow(')
+          ..write('value: $value, ')
+          ..write('label: $label')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(value, label);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecipeUseCaseRow &&
+          other.value == this.value &&
+          other.label == this.label);
+}
+
+class RecipeUseCasesCompanion extends UpdateCompanion<RecipeUseCaseRow> {
+  final Value<String> value;
+  final Value<String> label;
+  final Value<int> rowid;
+  const RecipeUseCasesCompanion({
+    this.value = const Value.absent(),
+    this.label = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecipeUseCasesCompanion.insert({
+    required String value,
+    required String label,
+    this.rowid = const Value.absent(),
+  }) : value = Value(value),
+       label = Value(label);
+  static Insertable<RecipeUseCaseRow> custom({
+    Expression<String>? value,
+    Expression<String>? label,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (value != null) 'value': value,
+      if (label != null) 'label': label,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecipeUseCasesCompanion copyWith({
+    Value<String>? value,
+    Value<String>? label,
+    Value<int>? rowid,
+  }) {
+    return RecipeUseCasesCompanion(
+      value: value ?? this.value,
+      label: label ?? this.label,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecipeUseCasesCompanion(')
+          ..write('value: $value, ')
+          ..write('label: $label, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -38166,6 +38594,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RecipeTemplatesTable recipeTemplates = $RecipeTemplatesTable(
     this,
   );
+  late final $RecipeStatusesTable recipeStatuses = $RecipeStatusesTable(this);
+  late final $RecipeUseCasesTable recipeUseCases = $RecipeUseCasesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -38216,6 +38646,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     componentInventoryAdjustments,
     firearmComponents,
     recipeTemplates,
+    recipeStatuses,
+    recipeUseCases,
   ];
 }
 
@@ -62602,6 +63034,304 @@ typedef $$RecipeTemplatesTableProcessedTableManager =
       RecipeTemplateRow,
       PrefetchHooks Function()
     >;
+typedef $$RecipeStatusesTableCreateCompanionBuilder =
+    RecipeStatusesCompanion Function({
+      required String value,
+      required String label,
+      Value<int> rowid,
+    });
+typedef $$RecipeStatusesTableUpdateCompanionBuilder =
+    RecipeStatusesCompanion Function({
+      Value<String> value,
+      Value<String> label,
+      Value<int> rowid,
+    });
+
+class $$RecipeStatusesTableFilterComposer
+    extends Composer<_$AppDatabase, $RecipeStatusesTable> {
+  $$RecipeStatusesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RecipeStatusesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecipeStatusesTable> {
+  $$RecipeStatusesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RecipeStatusesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecipeStatusesTable> {
+  $$RecipeStatusesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+}
+
+class $$RecipeStatusesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecipeStatusesTable,
+          RecipeStatusRow,
+          $$RecipeStatusesTableFilterComposer,
+          $$RecipeStatusesTableOrderingComposer,
+          $$RecipeStatusesTableAnnotationComposer,
+          $$RecipeStatusesTableCreateCompanionBuilder,
+          $$RecipeStatusesTableUpdateCompanionBuilder,
+          (
+            RecipeStatusRow,
+            BaseReferences<
+              _$AppDatabase,
+              $RecipeStatusesTable,
+              RecipeStatusRow
+            >,
+          ),
+          RecipeStatusRow,
+          PrefetchHooks Function()
+        > {
+  $$RecipeStatusesTableTableManager(
+    _$AppDatabase db,
+    $RecipeStatusesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecipeStatusesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecipeStatusesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecipeStatusesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> value = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecipeStatusesCompanion(
+                value: value,
+                label: label,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String value,
+                required String label,
+                Value<int> rowid = const Value.absent(),
+              }) => RecipeStatusesCompanion.insert(
+                value: value,
+                label: label,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RecipeStatusesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecipeStatusesTable,
+      RecipeStatusRow,
+      $$RecipeStatusesTableFilterComposer,
+      $$RecipeStatusesTableOrderingComposer,
+      $$RecipeStatusesTableAnnotationComposer,
+      $$RecipeStatusesTableCreateCompanionBuilder,
+      $$RecipeStatusesTableUpdateCompanionBuilder,
+      (
+        RecipeStatusRow,
+        BaseReferences<_$AppDatabase, $RecipeStatusesTable, RecipeStatusRow>,
+      ),
+      RecipeStatusRow,
+      PrefetchHooks Function()
+    >;
+typedef $$RecipeUseCasesTableCreateCompanionBuilder =
+    RecipeUseCasesCompanion Function({
+      required String value,
+      required String label,
+      Value<int> rowid,
+    });
+typedef $$RecipeUseCasesTableUpdateCompanionBuilder =
+    RecipeUseCasesCompanion Function({
+      Value<String> value,
+      Value<String> label,
+      Value<int> rowid,
+    });
+
+class $$RecipeUseCasesTableFilterComposer
+    extends Composer<_$AppDatabase, $RecipeUseCasesTable> {
+  $$RecipeUseCasesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RecipeUseCasesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecipeUseCasesTable> {
+  $$RecipeUseCasesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RecipeUseCasesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecipeUseCasesTable> {
+  $$RecipeUseCasesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+}
+
+class $$RecipeUseCasesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecipeUseCasesTable,
+          RecipeUseCaseRow,
+          $$RecipeUseCasesTableFilterComposer,
+          $$RecipeUseCasesTableOrderingComposer,
+          $$RecipeUseCasesTableAnnotationComposer,
+          $$RecipeUseCasesTableCreateCompanionBuilder,
+          $$RecipeUseCasesTableUpdateCompanionBuilder,
+          (
+            RecipeUseCaseRow,
+            BaseReferences<
+              _$AppDatabase,
+              $RecipeUseCasesTable,
+              RecipeUseCaseRow
+            >,
+          ),
+          RecipeUseCaseRow,
+          PrefetchHooks Function()
+        > {
+  $$RecipeUseCasesTableTableManager(
+    _$AppDatabase db,
+    $RecipeUseCasesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecipeUseCasesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecipeUseCasesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecipeUseCasesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> value = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecipeUseCasesCompanion(
+                value: value,
+                label: label,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String value,
+                required String label,
+                Value<int> rowid = const Value.absent(),
+              }) => RecipeUseCasesCompanion.insert(
+                value: value,
+                label: label,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RecipeUseCasesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecipeUseCasesTable,
+      RecipeUseCaseRow,
+      $$RecipeUseCasesTableFilterComposer,
+      $$RecipeUseCasesTableOrderingComposer,
+      $$RecipeUseCasesTableAnnotationComposer,
+      $$RecipeUseCasesTableCreateCompanionBuilder,
+      $$RecipeUseCasesTableUpdateCompanionBuilder,
+      (
+        RecipeUseCaseRow,
+        BaseReferences<_$AppDatabase, $RecipeUseCasesTable, RecipeUseCaseRow>,
+      ),
+      RecipeUseCaseRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -62706,4 +63436,8 @@ class $AppDatabaseManager {
       $$FirearmComponentsTableTableManager(_db, _db.firearmComponents);
   $$RecipeTemplatesTableTableManager get recipeTemplates =>
       $$RecipeTemplatesTableTableManager(_db, _db.recipeTemplates);
+  $$RecipeStatusesTableTableManager get recipeStatuses =>
+      $$RecipeStatusesTableTableManager(_db, _db.recipeStatuses);
+  $$RecipeUseCasesTableTableManager get recipeUseCases =>
+      $$RecipeUseCasesTableTableManager(_db, _db.recipeUseCases);
 }

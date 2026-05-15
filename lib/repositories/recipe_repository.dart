@@ -214,6 +214,41 @@ class RecipeRepository {
         notes: r.notes,
       );
 
+  // ─────────────── Recipe Status + Use Case dropdowns ───────────────
+  //
+  // Phase Two Group 2 (2026-05-15, v42): the recipe form's Status
+  // and Use Case dropdowns moved from private const record lists
+  // in `recipe_form_screen.dart` to seeded reference tables
+  // (`assets/seed_data/recipe_statuses.json` /
+  // `recipe_use_cases.json`). Both return value+label record
+  // pairs to preserve the existing UX — the dropdown persists
+  // `value` to `UserLoads.status` / `UserLoads.useCase`; the
+  // user sees `label`.
+  //
+  // The Dart-record return type matches the shape the retired
+  // private constants used (`({String value, String label})`),
+  // which keeps the call-site change in the form mechanical.
+
+  /// All Status dropdown options, in seed-author order. Used by
+  /// the recipe form's Status field. Empty list when the table
+  /// hasn't been seeded yet (defensive — the seeder runs at
+  /// startup, so production never sees this state).
+  Future<List<({String value, String label})>> allStatuses() async {
+    final rows = await db.select(db.recipeStatuses).get();
+    return [
+      for (final r in rows) (value: r.value, label: r.label),
+    ];
+  }
+
+  /// All Use Case dropdown options, in seed-author order. Same
+  /// shape and posture as [allStatuses].
+  Future<List<({String value, String label})>> allUseCases() async {
+    final rows = await db.select(db.recipeUseCases).get();
+    return [
+      for (final r in rows) (value: r.value, label: r.label),
+    ];
+  }
+
   // ─────────────────────── Recipes ───────────────────────
 
   Stream<List<UserLoadRow>> watchAll() =>

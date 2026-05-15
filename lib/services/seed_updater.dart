@@ -191,6 +191,13 @@ const allowedKeys = <String>{
   // they ride the manifest-versioned live update path. See
   // `lib/models/recipe_template.dart` + `_seedRecipeTemplates`.
   'recipe_templates',
+  // v42 (Phase Two Group 2, 2026-05-15) — recipe Status + Use Case
+  // dropdowns moved from private const record lists in
+  // `recipe_form_screen.dart` to seeded reference tables. Each
+  // table stores `value` + `label` pairs; the dropdown reads via
+  // `RecipeRepository.allStatuses()` / `allUseCases()`.
+  'recipe_statuses',
+  'recipe_use_cases',
 };
 
 /// Pulls fresh reference-catalog JSON from Firebase Storage and caches it

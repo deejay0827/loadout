@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "statuses": [
+    { "value": "active", "label": "Active" },
+    { "value": "testing", "label": "Testing" },
+    { "value": "retired", "label": "Retired" }
+  ]
+}

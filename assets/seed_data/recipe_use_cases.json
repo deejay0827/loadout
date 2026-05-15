@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "useCases": [
+    { "value": "match", "label": "Match" },
+    { "value": "practice", "label": "Practice" },
+    { "value": "hunting", "label": "Hunting" },
+    { "value": "plinking", "label": "Plinking" }
+  ]
+}

@@ -1,6 +1,6 @@
 {
-  "manifest_version": 17,
-  "generated_at": "2026-05-15T12:00:00Z",
+  "manifest_version": 18,
+  "generated_at": "2026-05-15T13:00:00Z",
   "files": {
     "cartridges": {
       "version": 1,
@@ -93,6 +93,14 @@
     "recipe_templates": {
       "version": 1,
       "filename": "recipe_templates.json"
+    },
+    "recipe_statuses": {
+      "version": 1,
+      "filename": "recipe_statuses.json"
+    },
+    "recipe_use_cases": {
+      "version": 1,
+      "filename": "recipe_use_cases.json"
     }
   }
 }

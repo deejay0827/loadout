@@ -255,6 +255,16 @@ class SeedLoader {
     final recipeTemplatesReseed = firstRun ||
         await db.recipeTemplatesAreEmpty ||
         flag('recipe_templates');
+    // Recipe Status + Use Case dropdowns (added schema v42, Phase
+    // Two Group 2). Moved from private const record lists in
+    // `recipe_form_screen.dart` so post-launch additions ride the
+    // manifest-versioned update path.
+    final recipeStatusesReseed = firstRun ||
+        await db.recipeStatusesAreEmpty ||
+        flag('recipe_statuses');
+    final recipeUseCasesReseed = firstRun ||
+        await db.recipeUseCasesAreEmpty ||
+        flag('recipe_use_cases');
 
     final any = cartridgesReseed ||
         powdersReseed ||
@@ -271,7 +281,9 @@ class SeedLoader {
         // verifiedScopesReseed retired in the v2.3 hotfix (see above).
         manufacturedAmmoReseed ||
         firearmComponentsReseed ||
-        recipeTemplatesReseed;
+        recipeTemplatesReseed ||
+        recipeStatusesReseed ||
+        recipeUseCasesReseed;
     if (!any) return;
 
     await db.transaction(() async {
@@ -443,6 +455,22 @@ class SeedLoader {
           await db.delete(db.recipeTemplates).go();
         }
         await _seedRecipeTemplates();
+      }
+      if (recipeStatusesReseed) {
+        // Recipe Status dropdown options (Phase Two Group 2, v42).
+        // Reference-only; wipe + reinsert pattern matches the
+        // other v41+ reference tables.
+        if (!firstRun) {
+          await db.delete(db.recipeStatuses).go();
+        }
+        await _seedRecipeStatuses();
+      }
+      if (recipeUseCasesReseed) {
+        // Recipe Use Case dropdown options (Phase Two Group 2, v42).
+        if (!firstRun) {
+          await db.delete(db.recipeUseCases).go();
+        }
+        await _seedRecipeUseCases();
       }
       // Re-seed primers if they're missing — the v3 migration intentionally
       // clears them so the new productLine field gets populated for
@@ -1152,6 +1180,46 @@ class SeedLoader {
               cbtoIn: Value(t.cbtoIn),
               useCase: Value(t.useCase),
               notes: Value(t.notes),
+            ),
+          );
+    }
+  }
+
+  /// Seed the [RecipeStatuses] reference catalog from
+  /// `assets/seed_data/recipe_statuses.json` (Phase Two Group 2,
+  /// v42). The JSON shape is `{ "version": N, "statuses": [
+  /// { "value": "...", "label": "..." }, ... ] }`. Each row's
+  /// `value` doubles as the primary key (it's the enum-style
+  /// string persisted on `UserLoads.status`).
+  Future<void> _seedRecipeStatuses() async {
+    final root = await _readJsonObject('recipe_statuses.json');
+    final entries =
+        (root['statuses'] as List<dynamic>? ?? const <dynamic>[]);
+    for (final entry in entries) {
+      final m = entry as Map<String, dynamic>;
+      await db.into(db.recipeStatuses).insert(
+            RecipeStatusesCompanion.insert(
+              value: m['value'] as String,
+              label: m['label'] as String,
+            ),
+          );
+    }
+  }
+
+  /// Seed the [RecipeUseCases] reference catalog from
+  /// `assets/seed_data/recipe_use_cases.json` (Phase Two Group 2,
+  /// v42). Same shape as `_seedRecipeStatuses`; different file +
+  /// JSON list key.
+  Future<void> _seedRecipeUseCases() async {
+    final root = await _readJsonObject('recipe_use_cases.json');
+    final entries =
+        (root['useCases'] as List<dynamic>? ?? const <dynamic>[]);
+    for (final entry in entries) {
+      final m = entry as Map<String, dynamic>;
+      await db.into(db.recipeUseCases).insert(
+            RecipeUseCasesCompanion.insert(
+              value: m['value'] as String,
+              label: m['label'] as String,
             ),
           );
     }

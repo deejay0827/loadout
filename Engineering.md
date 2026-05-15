@@ -310,6 +310,8 @@ Reference catalog tables (seeded from JSON; not user data):
 - `Cartridges`, `Powders`, `Bullets`, `Primers`, `Brass`, `Firearms`, `FirearmParts`
 - `Reticles`, `Scopes`, `Targets`, `TargetRacks`
 - `ManufacturedAmmo`, `FactoryLoads`
+- `RecipeTemplates` (Phase Two Group 1, v41)
+- `RecipeStatuses`, `RecipeUseCases` (Phase Two Group 2, v42 — recipe form's Status and Use Case dropdowns; each row is a `(value, label)` pair where `value` is the enum-style key persisted on `UserLoads.status` / `UserLoads.useCase` and `label` is the dropdown display string)
 
 For the per-column detail on `UserLoads` (the recipes table), see § 19.2.
 

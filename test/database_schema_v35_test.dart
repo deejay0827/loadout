@@ -78,7 +78,7 @@ void main() {
       await db.close();
     });
 
-    test('schemaVersion is 41', () {
+    test('schemaVersion is 42', () {
       // v35 added Range Day Realistic / per-firearm scope-and-reticle
       // defaults; v36 added `targets.shape_id` for SVG dispatch (v2.3
       // target render fix); v37 added the per-target `center_point`
@@ -101,9 +101,13 @@ void main() {
       // pipeline. The file keeps its v35 name because every
       // v35-era assertion below is still valid on v41 — schema
       // bumps are additive (except v39 / v40 which are explicit
-      // drop-and-recreate cycles for reference data, and v41
-      // which is a plain `createTable`).
-      expect(db.schemaVersion, 41);
+      // drop-and-recreate cycles for reference data, and v41 /
+      // v42 which are plain `createTable`s). v42 (Phase Two
+      // Group 2, 2026-05-15) added the `RecipeStatuses` +
+      // `RecipeUseCases` reference tables — Status and Use Case
+      // dropdowns moved from private const record lists in
+      // `recipe_form_screen.dart` to seeded reference tables.
+      expect(db.schemaVersion, 42);
     });
 
     test('targets accepts the new v38 svg_scale_factor column', () async {
