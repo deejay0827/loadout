@@ -104,7 +104,7 @@ void main() {
       final scopes = await ScopeCatalogV2Service.instance.allScopes();
       // Sample a subset to keep the test fast. Every 10th row is fine
       // for catching parse-time id loss; the production catalog is
-      // 183 rows so this still covers ~18 ids.
+      // 194 rows so this still covers ~19 ids.
       for (var i = 0; i < scopes.length; i += 10) {
         final s = scopes[i];
         final back =
@@ -253,6 +253,86 @@ void main() {
       });
       expect(r, isNotNull);
       expect(r!.secondaryLine, 'FIXED · 1x');
+    });
+  });
+
+  group('ScopeV2Row FOV fields (VFP Phase 1 Group B)', () {
+    test('parses fov_at_100yd_ft_max_zoom and sfp_calibration_zoom', () {
+      final r = ScopeV2Row.fromJson(<String, dynamic>{
+        'id': 'foo_sfp_1',
+        'manufacturer': 'Foo',
+        'model_name': 'SFP 1',
+        'fov_at_100yd_ft_max_zoom': 4.8,
+        'sfp_calibration_zoom': 24, // int in JSON coerces to double
+      });
+      expect(r, isNotNull);
+      expect(r!.fovAt100ydFtMaxZoom, 4.8);
+      expect(r.sfpCalibrationZoom, 24.0);
+      expect(r.sfpCalibrationZoom, isA<double>());
+    });
+
+    test('new FOV fields are null when JSON keys are absent (additive)', () {
+      final r = ScopeV2Row.fromJson(<String, dynamic>{
+        'id': 'foo_bar_1',
+        'manufacturer': 'Foo',
+        'model_name': 'Bar 1',
+        'category': 'precision',
+        'focal_plane': 'ffp',
+        'magnification_min': 5,
+        'magnification_max': 25,
+      });
+      expect(r, isNotNull);
+      expect(r!.fovAt100ydFtMaxZoom, isNull);
+      expect(r.sfpCalibrationZoom, isNull);
+    });
+
+    test('new FOV fields are null when JSON values are explicitly null', () {
+      final r = ScopeV2Row.fromJson(<String, dynamic>{
+        'id': 'foo_null',
+        'manufacturer': 'Foo',
+        'model_name': 'Null',
+        'fov_at_100yd_ft_max_zoom': null,
+        'sfp_calibration_zoom': null,
+      });
+      expect(r, isNotNull);
+      expect(r!.fovAt100ydFtMaxZoom, isNull);
+      expect(r.sfpCalibrationZoom, isNull);
+    });
+
+    test('live catalog carries cited manufacturer FOV oracle values',
+        () async {
+      // §0.5 Level 4 / §11.1: oracle = real manufacturer-published data,
+      // not an implementation-coupled formula.
+      final razor = await ScopeCatalogV2Service.instance
+          .scopeById('vortex_optics_razor_hd_gen_iii_6_36x56_ffp');
+      expect(razor, isNotNull);
+      expect(razor!.fovAt100ydFtMaxZoom, 3.5,
+          reason: "vortexoptics.com publishes 20.5'–3.5' @ 100 yd");
+      expect(razor.sfpCalibrationZoom, isNull, reason: 'FFP scope');
+
+      final zeiss = await ScopeCatalogV2Service.instance
+          .scopeById('carl_zeiss_conquest_v4_6_24x50');
+      expect(zeiss, isNotNull);
+      expect(zeiss!.fovAt100ydFtMaxZoom, 4.8);
+      expect(zeiss.sfpCalibrationZoom, 24.0,
+          reason: 'Zeiss publishes ZMOAi/ZBi subtension @ 24x (SFP)');
+    });
+
+    test('>=20 scopes carry a sourced max-zoom FOV (Group B exit criterion)',
+        () async {
+      final scopes = await ScopeCatalogV2Service.instance.allScopes();
+      final withMaxFov =
+          scopes.where((s) => s.fovAt100ydFtMaxZoom != null).length;
+      expect(withMaxFov, greaterThanOrEqualTo(20),
+          reason:
+              'VFP Phase 1 Group B exit criterion: >=20 representative '
+              'scopes documented with manufacturer FOV-at-max-zoom');
+      for (final s in scopes) {
+        final hi = s.fovAt100ydFtMaxZoom;
+        if (hi == null) continue;
+        expect(hi, greaterThan(0),
+            reason: '${s.id}: max-zoom FOV must be a positive feet value');
+      }
     });
   });
 
