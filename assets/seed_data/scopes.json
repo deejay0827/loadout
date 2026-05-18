@@ -252,7 +252,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": null,
     "source_url": "https://arkenoptics.com/products/ep-5-5-25x56-ffp-glass-etched-illuminated-tactical-rifle-scope-with-zero-stop-side-parallax-34mm-tube-with-rings",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Arken EP5 5-25x56 FFP. 34 mm tube. Reticle options: VPR MIL, VPR MOA. Direct-to-consumer budget PRS scope. Specs from manufacturer product page."
   },
   {
@@ -444,7 +444,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "APRS6 MIL / APLR6 MOA",
     "source_url": "https://www.athlonoptics.com/product/cronus-btr-gen2-4-5-29x56-direct-dial-illumination-side-focus-34mm-ffp-riflescope/",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Athlon Cronus BTR Gen2 4.5-29x56. 34 mm tube. Reticle options: APRS6 FFP IR MIL, APLR8 FFP IR MOA. Specs from the manufacturer product page."
   },
   {
@@ -636,7 +636,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "E3 / Ballistic Plex E1",
     "source_url": "https://www.burrisoptics.com/scopes/fullfield-iv-4-16x50mm",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Mid-tier hunting / shooting scope."
   },
   {
@@ -764,7 +764,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "SCR 2 MIL / SCR 2 MOA",
     "source_url": "https://www.burrisoptics.com/scopes/xtr-iii-5-5-30x56mm",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Burris XTR III 5.5-30x56. 34 mm tube. Reticle options: SCR2 MIL, SCR2 MOA, Tremor3 MIL. Specs from the manufacturer product page."
   },
   {
@@ -860,7 +860,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "G4P MIL",
     "source_url": "https://www.bushnell.com/optics/rifle-scopes/elite-tactical/elite-tactical-xrs3-6-36x56-riflescope/ET63656G4.html",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Top-tier Bushnell ELR scope."
   },
   {
@@ -924,7 +924,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "Deploy MOA",
     "source_url": "https://www.bushnell.com/optics/rifle-scopes/engage/engage-4-16x44-riflescope/RE4164BS3.html",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Affordable mid-mag hunter."
   },
   {
@@ -1084,7 +1084,7 @@
     "sfp_calibration_zoom": 24,
     "stock_reticle": "ZBR-1 / ZMOAi",
     "source_url": "https://www.zeiss.com/consumer-products/us/hunting/riflescopes/conquest-v4/conquest-v4-6-24x50.html",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Mid-tier German SFP scope."
   },
   {
@@ -1244,7 +1244,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "ZF-MRi / ZF-MOAi",
     "source_url": "https://www.zeiss.com/consumer-products/us/precision-shooting/first-focal-plane-riflescopes/lrp-s5/lrp-s5-525-56.html",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Zeiss's premium tactical FFP long-range scope. 34 mm main tube (62 mm objective tube, 46 mm eyepiece tube), 0.1 MRAD or 0.25 MOA clicks, 12 MIL / 30 MOA per rotation. Class-leading 40.7 MIL / 140 MOA elevation travel and 24 MIL / 60 MOA windage travel via Ballistic Stop turret. 90% light transmission. Eye relief 90 mm (3.54 in), length 396 mm (15.6 in), weight 1030 g (36.3 oz, body without inner rail). Parallax 25 m (27 yd) to infinity. Reticle options: ZF-MRi (FFP MRAD), ZF-MOAi (FFP MOA). Specs sourced verbatim from the official Zeiss product page."
   },
   {
@@ -1596,7 +1596,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": null,
     "source_url": "https://www.elementoptics.com/helix-6-24x50-ffp",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Element Optics Helix 6-24x50 FFP. 30 mm tube. Reticle options: APR-2D MIL, APR-2D MOA, EHR-2 MOA. Popular budget PRS scope."
   },
   {
@@ -2108,7 +2108,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "SKMR3 / MSR2 / SKMR4",
     "source_url": "https://www.kahles.at/en/riflescope-k525i-5-25x56/",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Kahles K525i 5-25x56 FFP. 34 mm tube. Reticle options: SKMR3, SKMR4, MSR, AMR, MOAK. Hallmark 'Twist Guard Wheels' parallax + ergonomic CCW windage on Right side. Metric converted (925 g -> 32.6 oz, 382 mm -> 15.04 in)."
   },
   {
@@ -2300,7 +2300,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "TMR / PR1-MIL / H59",
     "source_url": "https://www.leupold.com/mark-5hd-5-25x56-m5c3-ffp-pr2-mil-riflescope",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Flagship Mark 5HD FFP scope. 35 mm tube (rare for a US-built scope). M5C3 = 0.1 MIL turret, 3 revolutions, ZeroLock; M1C3 = 1/4 MOA turret, 3 revolutions, ZeroLock. Reticle options: PR2-MIL, PR2-MOA, PR1-MIL, PR1-MOA, TMR, FFP H59, Tremor 3 (MIL only). Travel-per-rev, max elevation, max windage values copied from the leupold.com product page (MIL turret variant)."
   },
   {
@@ -2332,7 +2332,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "PR2-MOA / TMR / H59",
     "source_url": "https://www.leupold.com/mark-5hd-7-35x56-m5c3-pr-2-mil-illum",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Top-tier US-made precision scope."
   },
   {
@@ -2460,7 +2460,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "Boone & Crockett / TMOA",
     "source_url": "https://www.leupold.com/vx-5hd-4-20x52-cds-zl2-side-focus-firedot-duplex-riflescope",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Premium hunting / long-range crossover."
   },
   {
@@ -2908,7 +2908,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "MIL-XT / TReMoR3 / H59",
     "source_url": "https://www.nightforceoptics.com/riflescopes/atacr/atacr-5-25x56-f1",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Long-range / military configuration."
   },
   {
@@ -2940,7 +2940,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "MIL-XT / Mil-C",
     "source_url": "https://www.nightforceoptics.com/riflescopes/atacr/atacr-7-35x56-f1",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Flagship long-range FFP scope. Sold in 7 reticle SKUs: MOAR F1, MIL-R F1, MIL-C F1, MIL-XT, Horus TREMOR3, MOA-XT, Horus TREMOR5. Click value, internal adjustment range, eye relief, length, weight and parallax taken verbatim from the Nightforce product spec sheet."
   },
   {
@@ -3068,7 +3068,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "MIL-XT / Mil-C",
     "source_url": "https://www.nightforceoptics.com/riflescopes/nx8/nx8-4-32x50-f1",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Compact 8x-zoom F1 with 30mm tube. Reticle options: MOAR F1, MIL-C F1, MIL-XT, Horus TREMOR3, MOA-XT, Horus TREMOR5. Specs from the Nightforce product page."
   },
   {
@@ -3132,7 +3132,7 @@
     "sfp_calibration_zoom": 22,
     "stock_reticle": "MOAR / MIL-R",
     "source_url": "https://www.nightforceoptics.com/riflescopes/nxs/nxs-5-5-22x56",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Long-running SFP precision optic."
   },
   {
@@ -3356,7 +3356,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "ACSS Apollo / Athena BPR",
     "source_url": "https://www.primaryarms.com/primary-arms-plx-6-30x56-ffp-rifle-scope-illuminated-acss-apollo-6.5-grendel-creedmoor-reticle",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Top-tier PA precision scope."
   },
   {
@@ -4092,7 +4092,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "MOA Milling 2.0",
     "source_url": "https://www.sigsauer.com/tango6-riflescope.html",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "PRS-class FFP scope."
   },
   {
@@ -5052,7 +5052,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "MRAD / MOA Long Range",
     "source_url": "https://www.trijicon.com/products/details/tenmile-4-5-30x56",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Versatile FFP precision scope."
   },
   {
@@ -5116,7 +5116,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "MOA Ranging",
     "source_url": "https://www.trijicon.com/products/details/tenmile-hx-6-24x50",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Hunter / shooter SFP scope."
   },
   {
@@ -5436,7 +5436,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "EBR-7C MRAD",
     "source_url": "https://vortexoptics.com/vortex-razor-hd-gen-2-45-27x56-riflescope.html",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Workhorse FFP precision rifle scope. Sold in 6 reticle SKUs spanning EBR-7C MRAD/MOA, EBR-2C MRAD/MOA, and the Horus-licensed H59 MRAD and TReMoR3 MRAD variants. MRAD spec (RZR-42708) sourced from sportoptics.com product page; MOA spec (RZR-42707) cross-checked. MOA travel-per-rev value from the manufacturer's L-Tec turret system (25 MOA/rev consistent with 10 mil/rev)."
   },
   {
@@ -5500,7 +5500,7 @@
     "sfp_calibration_zoom": null,
     "stock_reticle": "EBR-7D MOA/MRAD",
     "source_url": "https://vortexoptics.com/razor-hd-gen-iii-6-36x56.html",
-    "verified_at": "2026-05-11",
+    "verified_at": "2026-05-16",
     "notes": "Flagship long-range FFP scope. Sold in MRAD (RZR-63600) and MOA variants under one base model. Spec values cross-checked against vortexoptics.com product page and the Vortex Razor HD Gen III review aggregator (specs sourced 2026-05-09)."
   },
   {
