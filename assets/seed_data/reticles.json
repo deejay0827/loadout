@@ -15700,13 +15700,13 @@
     "subtension_origin": "published_spec",
     "calibration_provenance": {
       "manufacturer": "EOTech (L3Harris Technologies)",
-      "reticle_name": "65 MOA ring + 1 MOA dot (Holographic Weapon Sight family)",
+      "reticle_name": "68 MOA ring + 1 MOA dot (Holographic Weapon Sight family)",
       "published_url": "https://www.eotechinc.com/holographic-weapon-sights",
       "verified_at": "2026-05-11"
     },
     "illumination_supported": true,
     "subtensions": {
-      "centerDotSizeUnits": 0.36,
+      "centerDotSizeUnits": 1.0,
       "majorHashIntervalUnits": 1.5,
       "minorHashIntervalUnits": null,
       "subHashIntervalUnits": null,
@@ -15726,7 +15726,7 @@
         "type": "dot",
         "x": 0,
         "y": 0,
-        "radius": 0.18,
+        "radius": 0.5,
         "open": false,
         "illuminated_color_hex": "#E03D2D"
       },
@@ -15980,7 +15980,7 @@
     "manufacturer": "LoadOut",
     "designer": "LoadOut",
     "license": null,
-    "type": "ffp",
+    "type": "fixed",
     "nativeUnit": "mil",
     "maxExtentUnits": 9.0,
     "verified": true,
@@ -16943,7 +16943,7 @@
   },
   {
     "id": "loadout_hunting_bdc",
-    "model": "Hunting BDC",
+    "model": "Hunting BDC (Generic)",
     "family": "LoadOut Hunting reticles",
     "manufacturer": "LoadOut",
     "designer": "LoadOut",
@@ -16954,13 +16954,8 @@
     "verified": true,
     "sourceUrl": null,
     "verifiedAt": "2026-05-09",
-    "subtension_origin": "published_spec",
-    "calibration_provenance": {
-      "manufacturer": "Leupold & Stevens, Inc.",
-      "reticle_name": "CDS-ZL Boone & Crockett",
-      "published_url": "https://www.leupold.com/scopes/rifle-scopes",
-      "verified_at": "2026-05-11"
-    },
+    "subtension_origin": "original",
+    "calibration_provenance": null,
     "illumination_supported": true,
     "subtensions": {
       "centerDotSizeUnits": 0.1,
@@ -16976,7 +16971,7 @@
       ],
       "treeDepthUnits": 3.5
     },
-    "notes": "LoadOut hunting reticle: thin inner plex with calibrated holdover dots at 200 / 300 / 400 yd typical hunting holds, heavy outer plex posts.",
+    "notes": "Generic non-linear hunting BDC holdover. NOT calibrated to any specific manufacturer's published table. Users with a Leupold Boone & Crockett or similar branded BDC should consult their manufacturer's table for cartridge-specific holdovers. Thin inner plex with generic holdover dots, heavy outer plex posts.",
     "elements": [
       {
         "type": "crosshair",
@@ -17234,7 +17229,7 @@
     "subtension_origin": "published_spec",
     "calibration_provenance": {
       "manufacturer": "EOTech, Inc.",
-      "reticle_name": "1-MOA dot + 65-MOA ring (XPS3-0 reference)",
+      "reticle_name": "1-MOA dot + 68-MOA ring (XPS3-2 reference)",
       "published_url": "https://www.eotechinc.com/holographic-weapon-sights/xps3",
       "verified_at": "2026-05-11"
     },
@@ -17284,7 +17279,7 @@
     "subtension_origin": "published_spec",
     "calibration_provenance": {
       "manufacturer": "EOTech, Inc.",
-      "reticle_name": "1-MOA dot + 65-MOA segmented ring (552-series reference)",
+      "reticle_name": "1-MOA dot + 68-MOA solid ring (552-series reference)",
       "published_url": "https://www.eotechinc.com/holographic-weapon-sights/552",
       "verified_at": "2026-05-11"
     },
@@ -17311,477 +17306,477 @@
       },
       {
         "type": "dot",
-        "x": 32.376,
-        "y": -2.833,
+        "x": 33.87,
+        "y": -2.964,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 32.006,
-        "y": -5.644,
+        "x": 33.483,
+        "y": -5.904,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 31.393,
-        "y": -8.412,
+        "x": 32.842,
+        "y": -8.8,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 30.54,
-        "y": -11.116,
+        "x": 31.95,
+        "y": -11.629,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 29.455,
-        "y": -13.735,
+        "x": 30.814,
+        "y": -14.369,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 28.146,
-        "y": -16.25,
+        "x": 29.445,
+        "y": -17.0,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 26.622,
-        "y": -18.641,
+        "x": 27.851,
+        "y": -19.501,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 24.896,
-        "y": -20.891,
+        "x": 26.045,
+        "y": -21.855,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 22.981,
-        "y": -22.981,
+        "x": 24.042,
+        "y": -24.042,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 20.891,
-        "y": -24.896,
+        "x": 21.855,
+        "y": -26.045,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 18.641,
-        "y": -26.622,
+        "x": 19.501,
+        "y": -27.851,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 16.25,
-        "y": -28.146,
+        "x": 17.0,
+        "y": -29.445,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 13.735,
-        "y": -29.455,
+        "x": 14.369,
+        "y": -30.814,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 11.116,
-        "y": -30.54,
+        "x": 11.629,
+        "y": -31.95,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 8.412,
-        "y": -31.393,
+        "x": 8.8,
+        "y": -32.842,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 5.644,
-        "y": -32.006,
+        "x": 5.904,
+        "y": -33.483,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 2.833,
-        "y": -32.376,
+        "x": 2.964,
+        "y": -33.87,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -2.833,
-        "y": -32.376,
+        "x": -2.964,
+        "y": -33.87,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -5.644,
-        "y": -32.006,
+        "x": -5.904,
+        "y": -33.483,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -8.412,
-        "y": -31.393,
+        "x": -8.8,
+        "y": -32.842,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -11.116,
-        "y": -30.54,
+        "x": -11.629,
+        "y": -31.95,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -13.735,
-        "y": -29.455,
+        "x": -14.369,
+        "y": -30.814,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -16.25,
-        "y": -28.146,
+        "x": -17.0,
+        "y": -29.445,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -18.641,
-        "y": -26.622,
+        "x": -19.501,
+        "y": -27.851,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -20.891,
-        "y": -24.896,
+        "x": -21.855,
+        "y": -26.045,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -22.981,
-        "y": -22.981,
+        "x": -24.042,
+        "y": -24.042,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -24.896,
-        "y": -20.891,
+        "x": -26.045,
+        "y": -21.855,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -26.622,
-        "y": -18.641,
+        "x": -27.851,
+        "y": -19.501,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -28.146,
-        "y": -16.25,
+        "x": -29.445,
+        "y": -17.0,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -29.455,
-        "y": -13.735,
+        "x": -30.814,
+        "y": -14.369,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -30.54,
-        "y": -11.116,
+        "x": -31.95,
+        "y": -11.629,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -31.393,
-        "y": -8.412,
+        "x": -32.842,
+        "y": -8.8,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -32.006,
-        "y": -5.644,
+        "x": -33.483,
+        "y": -5.904,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -32.376,
-        "y": -2.833,
+        "x": -33.87,
+        "y": -2.964,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -32.376,
-        "y": 2.833,
+        "x": -33.87,
+        "y": 2.964,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -32.006,
-        "y": 5.644,
+        "x": -33.483,
+        "y": 5.904,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -31.393,
-        "y": 8.412,
+        "x": -32.842,
+        "y": 8.8,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -30.54,
-        "y": 11.116,
+        "x": -31.95,
+        "y": 11.629,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -29.455,
-        "y": 13.735,
+        "x": -30.814,
+        "y": 14.369,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -28.146,
-        "y": 16.25,
+        "x": -29.445,
+        "y": 17.0,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -26.622,
-        "y": 18.641,
+        "x": -27.851,
+        "y": 19.501,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -24.896,
-        "y": 20.891,
+        "x": -26.045,
+        "y": 21.855,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -22.981,
-        "y": 22.981,
+        "x": -24.042,
+        "y": 24.042,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -20.891,
-        "y": 24.896,
+        "x": -21.855,
+        "y": 26.045,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -18.641,
-        "y": 26.622,
+        "x": -19.501,
+        "y": 27.851,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -16.25,
-        "y": 28.146,
+        "x": -17.0,
+        "y": 29.445,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -13.735,
-        "y": 29.455,
+        "x": -14.369,
+        "y": 30.814,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -11.116,
-        "y": 30.54,
+        "x": -11.629,
+        "y": 31.95,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -8.412,
-        "y": 31.393,
+        "x": -8.8,
+        "y": 32.842,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -5.644,
-        "y": 32.006,
+        "x": -5.904,
+        "y": 33.483,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": -2.833,
-        "y": 32.376,
+        "x": -2.964,
+        "y": 33.87,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 2.833,
-        "y": 32.376,
+        "x": 2.964,
+        "y": 33.87,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 5.644,
-        "y": 32.006,
+        "x": 5.904,
+        "y": 33.483,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 8.412,
-        "y": 31.393,
+        "x": 8.8,
+        "y": 32.842,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 11.116,
-        "y": 30.54,
+        "x": 11.629,
+        "y": 31.95,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 13.735,
-        "y": 29.455,
+        "x": 14.369,
+        "y": 30.814,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 16.25,
-        "y": 28.146,
+        "x": 17.0,
+        "y": 29.445,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 18.641,
-        "y": 26.622,
+        "x": 19.501,
+        "y": 27.851,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 20.891,
-        "y": 24.896,
+        "x": 21.855,
+        "y": 26.045,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 22.981,
-        "y": 22.981,
+        "x": 24.042,
+        "y": 24.042,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 24.896,
-        "y": 20.891,
+        "x": 26.045,
+        "y": 21.855,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 26.622,
-        "y": 18.641,
+        "x": 27.851,
+        "y": 19.501,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 28.146,
-        "y": 16.25,
+        "x": 29.445,
+        "y": 17.0,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 29.455,
-        "y": 13.735,
+        "x": 30.814,
+        "y": 14.369,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 30.54,
-        "y": 11.116,
+        "x": 31.95,
+        "y": 11.629,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 31.393,
-        "y": 8.412,
+        "x": 32.842,
+        "y": 8.8,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 32.006,
-        "y": 5.644,
+        "x": 33.483,
+        "y": 5.904,
         "radius": 0.6,
         "open": false
       },
       {
         "type": "dot",
-        "x": 32.376,
-        "y": 2.833,
+        "x": 33.87,
+        "y": 2.964,
         "radius": 0.6,
         "open": false
       }

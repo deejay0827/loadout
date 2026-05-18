@@ -153,7 +153,7 @@ reproduction" posture. Documented here for traceability.
 | Angular subtension verified vs ≥1 source; ≥50% vs ≥2 | ✅ 10 published_spec vs cited manufacturer (multi-source where available); 2 mil public_domain vs canonical; structure for the rest |
 | Every focal-plane (`type`) classification verified | ✅ (1 concern → D-9e) |
 | Every pattern-class classification verified | ✅ via derived taxonomy (`RETICLE_PATTERN_CLASSES.md`); 0 mismatches |
-| All discrepancies have operator decisions / documented acceptance | ⏸ **6 items (D-9a–f) `pending_operator_decision`** — surfaced, no silent edits (task 7) |
+| All discrepancies have operator decisions / documented acceptance | ✅ 5 of 6 operator-authorized + applied 2026-05-18 (see Part II); **D-9d held for one clarification** (precision-data, not guessed) |
 | Audit dossier committed to `docs/` | ✅ this file + `RETICLE_PATTERN_CLASSES.md` |
 | IP-posture sweep: 0 manufacturer trade names | ✅ user-facing clean; provenance internal-only |
 | Reticle catalog tests pass | (run at commit — see Group D report) |
@@ -163,3 +163,55 @@ reproduction" posture. Documented here for traceability.
 operator decisions before the data is consumed by VFP Phase 11/20/26.
 Per the §0.5/Group-D halt protocol, flagged rows are excluded from
 Phase 11 oracle use until resolved; the rest of the catalog proceeds.
+
+---
+
+# PART II — D-9 Remediation (operator-authorized, applied 2026-05-18)
+
+Operator authorized all six D-9 dispositions with explicit per-row
+instructions. Five applied; **D-9d held** for one clarification
+(precision reticle holdover geometry — not guessed, per §0.5 /
+CLAUDE.md §0). Source-data commit: VFP Phase 1 Group D (`c48309e`);
+remediation landed on branch `claude/nifty-babbage-2cfc2f`.
+
+| Item | Disposition | Applied change | Verified-after |
+|---|---|---|---|
+| D-9a `loadout_hunting_bdc` | re-tag `original` | `subtension_origin` published_spec→original; `calibration_provenance`→null; `model`→"Hunting BDC (Generic)"; `notes` rewritten (generic non-linear BDC; advises consulting manufacturer table). scope_reticle_options.json (7 maps) unchanged per operator (closest archetype). | origin distribution now **22/21/9**; IP sweep clean |
+| D-9b `loadout_combat` | corrected | center-dot element radius 0.18→**0.5** (dia 1.0 MOA = EOTech HWS published); `subtensions.centerDotSizeUnits` 0.36→**1.0**. `published_spec` + EOTech provenance retained. | dot now 1.0 MOA |
+| D-9c `loadout_red_dot_circle` | re-cite only | `calibration_provenance.reticle_name` → "1-MOA dot + 68-MOA ring (**XPS3-2** reference)". No geometry change (catalog 2.0 MOA dot correct for XPS3-2). | string updated |
+| D-9d `loadout_sfp_lpvo_chevron` | **HELD — clarification** | none | current `treeRowCount`=4 already; "add the 5th holdover mark" vs "4 hashes + chevron tip = 5 reference points" is ambiguous against actual data, and the catalog uses abstract `bdc` units with no meter-range field. Precise question raised to operator; not guessed. |
+| D-9e `loadout_combat_bdc` | corrected type | `type` `ffp`→**`fixed`** (Burris AR-332 = fixed 3×; `sfp` would imply a 2nd focal plane that doesn't exist on a fixed-mag optic). | type=fixed |
+| D-9f EOTech trio | corrected strings (+1 geometry) | provenance "65 MOA"→"**68 MOA**"; "segmented ring"→"**solid ring**" (552). **Ring-geometry verification (operator-required):** `loadout_holographic_ring` ring was a literal 65-MOA dia (perimeter r=32.5) → **geometry corrected**: 68 ring dots scaled r 32.5→**34.0** (= 68 MOA dia). `loadout_combat` (~6 MOA CQB dot-ring) and `loadout_red_dot_circle` (32 MOA ring; D-9c "no geometry") are **not literal 65-MOA rings** → string-only fix; documented per §30 "calibrated to, not a reproduction." | ring max r=34.0 ✓ |
+
+**Verified-after (commands):** `jq length` = 52 (field-level edits,
+no row add/del) · `subtension_origin` = **original 22 /
+public_domain 21 / published_spec 9** (D-9a moved one
+published_spec→original, as operator predicted) · IP sweep
+(word-boundary, id+model+family) = **0 manufacturer trade names**
+(provenance trade names remain internal-only per §30 rule 6;
+`ReticleV2Row` does not project `calibration_provenance`) ·
+5-test reticle gate (`reticle_library`, `reticle_disclaimer_templates`,
+`reticle_lod`, `reticle_mapping_top35`, `seed_data_schema_invariants`)
+= **157/157 PASS**.
+
+**Residual items for V6.12 codification (surfaced, NOT silently
+edited — per "no edits without explicit per-row authorization"):**
+
+1. **D-9c wording:** after the authorized substring edits the string
+   reads "**1-MOA** dot + 68-MOA ring (XPS3-2 reference)", but
+   XPS3-2 is a **2-MOA** dot (catalog geometry 2.0 is correct). The
+   "1-MOA" token was outside the authorized substitutions
+   ("XPS3-0"→"XPS3-2", "65"→"68"). Recommend a V6.12 follow-up
+   substring fix "1-MOA dot"→"2-MOA dot" for this row's provenance.
+2. **D-9d:** held — see clarification question in the Group D report.
+3. **`loadout_combat` provenance vs geometry:** after the 65→68
+   string fix, the row's rendered ring is a ~6 MOA CQB dot-ring
+   (not an EOTech 68-MOA ring). Consistent with §30 "calibrated to,
+   not a reproduction," but the operator may wish to review whether
+   the EOTech HWS provenance is the right reference for a CQB
+   pattern (analogous to the D-9a re-tag decision).
+
+**Disposition vocabulary final:** D-9a `accepted` (re-tag) · D-9b
+`corrected_to_manufacturer` · D-9c `accepted` (re-cite) · D-9d
+`pending_operator_decision` · D-9e `corrected_to_manufacturer` ·
+D-9f `corrected_to_manufacturer` (string + 1 geometry).
