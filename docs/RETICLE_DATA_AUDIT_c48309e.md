@@ -215,3 +215,52 @@ edited — per "no edits without explicit per-row authorization"):**
 `corrected_to_manufacturer` · D-9c `accepted` (re-cite) · D-9d
 `pending_operator_decision` · D-9e `corrected_to_manufacturer` ·
 D-9f `corrected_to_manufacturer` (string + 1 geometry).
+
+---
+
+# PART III — D-9 follow-on (operator-authorized, applied 2026-05-18)
+
+EOTech trio enumerated (rows citing EOTech in `calibration_provenance`):
+`loadout_combat`, `loadout_red_dot_circle`, `loadout_holographic_ring`.
+Operator-authorized geometry-vs-cite rule applied per row.
+
+| Row | Rendered ring | Cited EOTech | Disposition | Action |
+|---|---|---|---|---|
+| `loadout_combat` | ~6 MOA dia (r=3.0) | HWS 68 MOA | **`re_tag_original`** | subtension_origin→`original`; `calibration_provenance`→null; model "LoadOut Combat"→**"Combat CQB Ring (Generic)"**; notes→generic CQB (not manufacturer-derived). scope_reticle_options maps unchanged (closest archetype, per operator). |
+| `loadout_holographic_ring` | **68 MOA** dia (r=34.0, rescaled Part II) + 1 MOA dot = EOTech 552 published | 552 | **`correct_provenance_strings`** | keep `published_spec`; provenance already corrected in Part II ("1-MOA dot + 68-MOA solid ring (552-series reference)") — accurate; no new edit. |
+| `loadout_red_dot_circle` | **HELD** — dot 2.0 MOA ✓ matches XPS3-2; ring 32 MOA dia ✗ vs XPS3-2 published 68 MOA | XPS3-2 | **`pending_operator_decision`** | D-9c ("re-cite, keep, dot correct for XPS3-2") conflicts with the D-9f-trio rule ("ring ≠ 68 → re-tag original") for this specific row. Not guessed (§0.5). D-9c "1-MOA"→"2-MOA" string fix also held (can't finalize a provenance string on a possibly-re-tagged row). |
+
+**D-9d `loadout_sfp_lpvo_chevron` (option B — operator-chosen):**
+notes-only update to the canonical TA31-class BAC layout description
+(chevron tip = 5th reference point; abstract bdc units; derive
+holdovers via solver; public-domain BAC archetype, not a Trijicon
+copy). **No geometry, no tag change** (operator explicitly scoped B
+= notes-only). *V6.12 nuance (surfaced, not silently changed):* the
+new notes characterize this row as a public-domain BAC archetype
+"not derived from any third-party manufacturer specification," while
+the row retains `subtension_origin: published_spec` + a Trijicon
+`calibration_provenance`. Operator deliberately scoped D-9d to
+notes-only; flagged for V6.12 to decide whether the tag/provenance
+should follow the notes (re-tag like D-9a/loadout_combat) or the
+"calibrated to, not a reproduction" framing is retained.
+
+**Verified-after (commands):** `jq length` = 52 (field-level) ·
+`subtension_origin` = **23 original / 21 public_domain / 8
+published_spec** (provisional — `loadout_red_dot_circle` held; if
+later re-tagged → 24/21/7, if kept → stays 23/21/8) · IP sweep
+(id+model+family, word-boundary incl. eotech/xps3/hws/boone) =
+**0 trade names** · 5-test reticle gate = **157/157 PASS**
+(incl. published_spec provenance-integrity invariant — the 8
+remaining published_spec rows all valid).
+
+**Cumulative V6.12 codification feed (D-6+D-7+D-8+D-9 + follow-on):**
+1. D-6/D-7/D-8 schema/rule adaptations (Part I header).
+2. D-9a, D-9b, D-9c(partial), D-9e, D-9f applied (Part II);
+   D-9c follow-on string fix **held with `loadout_red_dot_circle`**.
+3. Follow-on (Part III): `loadout_combat` re-tagged original;
+   `loadout_holographic_ring` kept (`correct_provenance_strings`);
+   D-9d notes-only.
+4. **Open for operator / V6.12:**
+   (a) `loadout_red_dot_circle` keep-cite-vs-re-tag (one question);
+   (b) D-9d tag-vs-notes nuance (published_spec + Trijicon prov
+   retained while notes disclaim manufacturer derivation).

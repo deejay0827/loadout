@@ -15686,7 +15686,7 @@
   },
   {
     "id": "loadout_combat",
-    "model": "LoadOut Combat",
+    "model": "Combat CQB Ring (Generic)",
     "family": "LoadOut Combat reticles",
     "manufacturer": "LoadOut",
     "designer": "LoadOut",
@@ -15697,13 +15697,8 @@
     "verified": true,
     "sourceUrl": null,
     "verifiedAt": "2026-05-09",
-    "subtension_origin": "published_spec",
-    "calibration_provenance": {
-      "manufacturer": "EOTech (L3Harris Technologies)",
-      "reticle_name": "68 MOA ring + 1 MOA dot (Holographic Weapon Sight family)",
-      "published_url": "https://www.eotechinc.com/holographic-weapon-sights",
-      "verified_at": "2026-05-11"
-    },
+    "subtension_origin": "original",
+    "calibration_provenance": null,
     "illumination_supported": true,
     "subtensions": {
       "centerDotSizeUnits": 1.0,
@@ -15720,7 +15715,7 @@
       ],
       "treeDepthUnits": 6.0
     },
-    "notes": "LoadOut combat reticle: wide horseshoe (180-deg arc) at center plus a small center dot and four holdover dots below. Designed for fast acquisition on close to mid-range targets.",
+    "notes": "LoadOut-original close-quarters battle (CQB) reticle: a compact ring of dots around a bright center aim dot for rapid close-range acquisition. Generic CQB archetype \u2014 NOT derived from, calibrated to, or a copy of any specific manufacturer's published holographic / red-dot reticle. The rendered ring is an intentionally small ~6 MOA CQB aiming pattern, not a large HWS-style ring.",
     "elements": [
       {
         "type": "dot",
@@ -19786,7 +19781,7 @@
       ],
       "treeDepthUnits": 7.5
     },
-    "notes": "LoadOut-original second-focal-plane LPVO chevron BDC for 1-6x scopes: inverted-V chevron with a daylight-bright dot at the chevron tip, four numbered BDC dots below for 5.56 NATO holds at 400 / 500 / 600 / 800 m. Subtensions are valid only at the spec magnification (6x). The chevron-with-BDC pattern is a longstanding combat-optic convention; LoadOut variant is original art.",
+    "notes": "SFP LPVO chevron reticle modeled on the canonical Trijicon ACOG TA31-class BAC layout: chevron tip as the primary aim point (100 m-equivalent zero) plus 4 drop hashes spanning the typical 300 / 500 / 700 / 800 m BAC progression. Catalog stores subtensions in abstract bdc units rather than meter labels; derive load-specific holdovers via the in-app ballistics solver. Not derived from any third-party manufacturer specification \u2014 the pattern reflects the public-domain BAC archetype, not a copy of a specific Trijicon variant.",
     "elements": [
       {
         "type": "crosshair",
