@@ -7,11 +7,11 @@
 // scope + reticle catalog. Loads three flat-array JSON assets from
 // `assets/seed_data/`:
 //
-//   * `scopes.json`               — 183 scope rows, each with a stable
+//   * `scopes.json`               — 194 scope rows, each with a stable
 //                                    string `id` (e.g. `vortex_razor_hd_gen_iii_6_36x56_ffp`).
 //   * `reticles.json`             — 52 reticle rows, each with a stable
 //                                    string `id` (e.g. `loadout_mil_tree_flare`).
-//   * `scope_reticle_options.json`— 183 junction rows mapping
+//   * `scope_reticle_options.json`— 194 junction rows mapping
 //                                    `{scope_id, reticle_id}`, one per scope.
 //
 // Exposes three typed models — [ScopeV2Row], [ReticleV2Row], and
@@ -57,7 +57,7 @@
 //     no string normalization (case, whitespace, punctuation) to worry
 //     about. The id is the contract.
 //   * `scope_reticle_options.json` is a 1:N junction in principle, but
-//     today every scope_id appears EXACTLY ONCE (183 scopes / 183 rows).
+//     today every scope_id appears EXACTLY ONCE (194 scopes / 194 rows).
 //     `defaultReticleIdForScope` returns the first match it finds —
 //     when the catalog grows a second mapping per scope (e.g. "ships
 //     with EBR-7D" vs "ships with TReMoR3") this will need an
