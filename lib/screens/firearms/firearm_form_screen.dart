@@ -588,6 +588,23 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
     });
     _autoSave.notifyDirty();
     if (scope == null) return;
+    if (scope.isIronSights) {
+      // Iron-sight optics (VFP Phase 2) have no reticle. Unlike the
+      // scope→scope path below — which preserves a user-set reticle —
+      // switching TO an iron sight MUST clear any carried-over
+      // reticle, because a reticle on an iron optic is incoherent.
+      // The reticle picker is hidden for iron optics
+      // (_defaultScopeReticleSection); the broader Range Day /
+      // ScopeViewInputs null-guard is VFP Phase 2 Group D's scope.
+      if (_defaultReticleId != null || _defaultReticleRow != null) {
+        setState(() {
+          _defaultReticleRow = null;
+          _defaultReticleId = null;
+        });
+        _autoSave.notifyDirty();
+      }
+      return;
+    }
     // Auto-fill the reticle only when no reticle is currently set.
     // A user who's already picked a custom reticle keeps it; a fresh
     // pick (or a previously-cleared reticle) gets the catalog default.
@@ -2369,10 +2386,73 @@ class _FirearmFormScreenState extends State<FirearmFormScreen> {
             const SizedBox(height: 12),
             _defaultScopePicker(context),
             const SizedBox(height: 12),
-            _defaultReticlePicker(context),
+            // Iron-sight optics have no reticle (VFP Phase 2 Group C):
+            // show a read-only sight-type summary instead of the
+            // reticle picker. Scope / red-dot rows are unaffected.
+            if (_defaultScopeRow?.isIronSights ?? false)
+              _ironSightInfo(context)
+            else
+              _defaultReticlePicker(context),
           ],
         ),
       ),
+    );
+  }
+
+  /// Read-only sight-type summary shown in place of the reticle
+  /// picker when the selected optic is an iron sight (VFP Phase 2
+  /// Group C). Iron sights have no reticle; this surfaces the sight
+  /// geometry the user picked. Front/rear values are the catalog's
+  /// snake_case enums, prettied for display. Reuses the same Icon +
+  /// labelLarge / bodySmall composition as the section header so it
+  /// stays visually consistent and free of M3 color-role risk.
+  Widget _ironSightInfo(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = _defaultScopeRow;
+    String pretty(String? v) => (v == null || v.isEmpty)
+        ? '—'
+        : v
+            .split('_')
+            .map((w) => w.isEmpty
+                ? w
+                : '${w[0].toUpperCase()}${w.substring(1)}')
+            .join(' ');
+    final rear = s?.rearSightType ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.straighten,
+                size: 16, color: theme.colorScheme.primary),
+            const SizedBox(width: 6),
+            Text(
+              'Iron Sights',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'This optic uses iron sights — there is no reticle to '
+          'select. The sighting picture is rendered from the sight '
+          'geometry below.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          rear.isEmpty
+              ? 'Front sight: ${pretty(s?.frontSightType)}'
+              : 'Front sight: ${pretty(s?.frontSightType)}'
+                  '   ·   Rear sight: ${pretty(s?.rearSightType)}',
+          style: theme.textTheme.bodyMedium,
+        ),
+      ],
     );
   }
 
