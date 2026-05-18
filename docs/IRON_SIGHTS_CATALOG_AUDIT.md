@@ -62,6 +62,16 @@ All 7 §B.9 worked-example anchors authored (AR-15 A2, M4, AK,
 
 No fabrication used to "rescue" either row.
 
+**Status for future authoring passes: DELIBERATELY OMITTED, not
+"not-yet-added."** Both rows were evaluated, sourced-attempted, and
+intentionally excluded because no reputable published numeric
+dimensions exist. Do NOT re-author `ar15_buis_generic` or
+`mosin_91_30_rifle` in a later pass unless *new sourceable
+measurements appear* — re-adding them with estimated/averaged
+dimensions would violate CLAUDE.md §0 / §0.5 L4 (the D-9a precedent
+applied to authoring). If a future pass needs a generic BUIS or a
+Mosin entry, it must bring a citable spec, not a guess.
+
 ## 3. §0.5 finding — §B.9 host-dependent sight radius (operator decision)
 
 **Both `tang_peep`/`globe` §B.9 anchors (`marbles_pattern_tang_peep`,
@@ -115,6 +125,44 @@ block Group B; analogous to D-9d / D-5 deferral posture):**
   above). And: notch `width` vs the depth-only schema — a future
   additive `rear_sight_notch_width_mm` field if Phase 21
   `IronSightsPainter` needs it (operator deferred in Group A).
+
+### Operator-locked V6.12 directives (post-Group-B review 2026-05-18)
+
+- **§30 rule 2 — third manufacturer value `"Generic"`** (operator
+  amendment). `manufacturer ∈ {"LoadOut","Public Domain","Generic"}`:
+  *LoadOut* = LoadOut-authored/redrawn (designer "LoadOut", LoadOut
+  family); *Public Domain* = canonical public-domain pattern rows
+  (designer "Public domain", `subtension_origin: public_domain`);
+  *Generic* = factually-descriptive military/historical/commodity
+  equipment rows without commercial trade names (iron-sights, BUIS-
+  class) under the §9.5 descriptive exception. Manufacturer trade
+  names remain forbidden across all three. The 19 iron rows already
+  comply (manufacturer uniformly "Generic"; IP sweep 0 trade names).
+- **New disposition class: `expand_enum`** — authoring legitimately
+  needs a value the V6.11 schema did not anticipate (first instance:
+  `"Generic"` manufacturer). Sits alongside the D-9 five
+  (`matches`/`re-cite`/`re-tag`/`accept_with_rationale`/
+  `clarify_scope`). Triggers a §0.5 surface + V6.12 feed, not a
+  silent add.
+- **Tang/globe host-radius rule — LOCKED option (c)** (operator).
+  Catalog stores host-INDEPENDENT geometry only
+  (`front_sight_diameter_mm`, `rear_sight_aperture_mm`);
+  `sight_radius_in = null` for intrinsically host-mounted sights
+  (`tang_peep`, `globe`, future host-mounted categories). Phase 21
+  `IronSightsPainter` receives `sight_radius_in` as a runtime
+  parameter from the host firearm's row. **This already matches the
+  as-implemented Group B state — no code change; finding #1 is
+  resolved as LOCKED, not pending.**
+- **§B.9 worked-example framing clarification** (operator): the §B.9
+  numbers (target rifle 1.85 mil; Marble's tang 3.33 mil) are math
+  *demonstrations with specific assumed inputs documented inline*,
+  NOT catalog-derivable invariants. V6.12 to annotate §B.9 prose
+  accordingly.
+- **§0.5 finding #2 (scope→reticle invariant)**: handling confirmed
+  correct by operator; Group D owns re-broadening the invariant once
+  its null-guard design lands (iron rows should then PASS a
+  broadened invariant rather than be scope-excluded). Carried to
+  Group D as a verifiable exit criterion.
 
 ## 6. Group B → Group D handoff (consumer-contract conflict, concrete)
 
