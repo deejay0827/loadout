@@ -92,9 +92,13 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart' show rootBundle;
 
-/// One row from `scopes.json`. Carries only the fields the firearm form's
-/// picker actually displays — the rest (FOV, click value, eye relief, etc.)
-/// stay in the JSON and are consumed by Range Day Realistic's renderer.
+/// One row from `scopes.json`. Carries the fields the firearm form's
+/// picker displays PLUS the two FOV-interpolation inputs the Visual
+/// Fidelity Program's `FovInterpolator` (VFP Phase 11) consumes —
+/// [fovAt100ydFtMaxZoom] and [sfpCalibrationZoom]. The remaining JSON
+/// columns (single-zoom `fov_at_100yd_ft`, click value, eye relief,
+/// etc.) still stay in the raw JSON and are read by Range Day
+/// Realistic's renderer directly.
 class ScopeV2Row {
   const ScopeV2Row({
     required this.id,
@@ -104,6 +108,8 @@ class ScopeV2Row {
     this.focalPlane,
     this.magnificationMin,
     this.magnificationMax,
+    this.fovAt100ydFtMaxZoom,
+    this.sfpCalibrationZoom,
   });
 
   /// Stable string id from `scopes.json`, e.g.
@@ -116,6 +122,22 @@ class ScopeV2Row {
   final String? focalPlane;
   final num? magnificationMin;
   final num? magnificationMax;
+
+  /// Manufacturer-published field of view, in feet at 100 yards, at the
+  /// scope's MAXIMUM magnification. The existing JSON `fov_at_100yd_ft`
+  /// is the min-zoom (widest) FOV; this is the narrow end. Null when the
+  /// manufacturer does not publish a max-zoom value — FOV interpolation
+  /// (VFP Phase 11 `FovInterpolator`) then falls back to single-FOV
+  /// behaviour. Populated from cited manufacturer specs in VFP Phase 1.
+  final double? fovAt100ydFtMaxZoom;
+
+  /// For second-focal-plane scopes: the magnification at which the
+  /// reticle subtensions read true. Null for FFP scopes, and null for
+  /// SFP scopes where the manufacturer does not publish a calibration
+  /// magnification (they rarely do — the SFP-true-at-max-mag convention
+  /// is an operator decision, NOT sourced data, so this stays null
+  /// until the operator rules per the VFP Phase 1 Group B report).
+  final double? sfpCalibrationZoom;
 
   /// `"<Manufacturer> <Model>"`. The form's autocomplete uses this as
   /// the visible label so the user reads what they'd say out loud.
@@ -166,6 +188,9 @@ class ScopeV2Row {
       magnificationMax: m['magnification_max'] is num
           ? m['magnification_max'] as num
           : null,
+      fovAt100ydFtMaxZoom:
+          (m['fov_at_100yd_ft_max_zoom'] as num?)?.toDouble(),
+      sfpCalibrationZoom: (m['sfp_calibration_zoom'] as num?)?.toDouble(),
     );
   }
 }
