@@ -93,12 +93,20 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 
 /// One row from `scopes.json`. Carries the fields the firearm form's
-/// picker displays PLUS the two FOV-interpolation inputs the Visual
-/// Fidelity Program's `FovInterpolator` (VFP Phase 11) consumes —
-/// [fovAt100ydFtMaxZoom] and [sfpCalibrationZoom]. The remaining JSON
-/// columns (single-zoom `fov_at_100yd_ft`, click value, eye relief,
-/// etc.) still stay in the raw JSON and are read by Range Day
-/// Realistic's renderer directly.
+/// picker displays, the two FOV-interpolation inputs the Visual
+/// Fidelity Program's `FovInterpolator` (VFP Phase 11) consumes
+/// ([fovAt100ydFtMaxZoom], [sfpCalibrationZoom]), and the iron-sight
+/// sighting-picture inputs (VFP Phase 2; consumed by the firearm-form
+/// optic picker and `IronSightsPainter`, VFP Phase 21). Iron-sight
+/// rows are discriminated by `category == "iron-sights"` (see
+/// [isIronSights]); every iron-sight field is nullable and absent on
+/// the 194 non-iron rows, so this is purely additive. Remaining JSON
+/// columns (single-zoom `fov_at_100yd_ft`, `click_value_moa`,
+/// `max_elevation_moa`, `max_windage_moa`, eye relief, etc.) stay in
+/// the raw JSON and are read by the renderer / solver directly — note
+/// `click_value_moa` / `max_elevation_moa` / `max_windage_moa`
+/// already exist in the schema and are REUSED for iron sights, not
+/// re-added here (VFP Phase 2 Group A §0.5 finding).
 class ScopeV2Row {
   const ScopeV2Row({
     required this.id,
@@ -110,6 +118,15 @@ class ScopeV2Row {
     this.magnificationMax,
     this.fovAt100ydFtMaxZoom,
     this.sfpCalibrationZoom,
+    this.frontSightType,
+    this.frontSightWidthMm,
+    this.frontSightDiameterMm,
+    this.rearSightType,
+    this.rearSightApertureMm,
+    this.rearSightDepthMm,
+    this.sightRadiusIn,
+    this.elevationAdjustment,
+    this.windageAdjustment,
   });
 
   /// Stable string id from `scopes.json`, e.g.
@@ -138,6 +155,52 @@ class ScopeV2Row {
   /// is an operator decision, NOT sourced data, so this stays null
   /// until the operator rules per the VFP Phase 1 Group B report).
   final double? sfpCalibrationZoom;
+
+  // --- Iron-sight sighting-picture fields (VFP Phase 2) ---
+  // All nullable; present only on `category == "iron-sights"` rows
+  // (added in VFP Phase 2 Group B). Canonical value sets are operator-
+  // finalized in Group A and documented in docs/IRON_SIGHTS_SCHEMA.md.
+
+  /// Front sight geometry class. Canonical: `post` | `blade` | `bead`
+  /// | `fiber_optic`. Null for non-iron-sight rows.
+  final String? frontSightType;
+
+  /// Front blade/post width in millimetres (post / blade types).
+  final double? frontSightWidthMm;
+
+  /// Front bead/fiber diameter in millimetres (bead / fiber_optic).
+  final double? frontSightDiameterMm;
+
+  /// Rear sight geometry class. Canonical: `notch` | `aperture` |
+  /// `ghost_ring` | `buckhorn` | `tang_peep`. Null for non-iron rows.
+  final String? rearSightType;
+
+  /// Rear aperture inner diameter in millimetres (aperture /
+  /// ghost_ring types).
+  final double? rearSightApertureMm;
+
+  /// Rear notch depth in millimetres (notch / buckhorn types).
+  final double? rearSightDepthMm;
+
+  /// Sight radius (front-to-rear sight distance) in inches — drives
+  /// perceived sight separation in the sighting-picture render.
+  final double? sightRadiusIn;
+
+  /// Which sight carries elevation adjustment. Canonical: `fixed` |
+  /// `rear` | `front` | `both`.
+  final String? elevationAdjustment;
+
+  /// Which sight carries windage adjustment. Canonical: `fixed` |
+  /// `rear` | `front` | `both`.
+  final String? windageAdjustment;
+
+  /// True when this row is an iron-sight optic. The discriminator is
+  /// `category == "iron-sights"` (a free-string category value; no
+  /// exhaustive switch keys off scope category, so adding it is
+  /// non-breaking — VFP Phase 2 Group A §0.5 verification). Consumed
+  /// by the firearm-form optic picker (Group C) and the iron-sights
+  /// consumer-contract trace (Group D).
+  bool get isIronSights => category == 'iron-sights';
 
   /// `"<Manufacturer> <Model>"`. The form's autocomplete uses this as
   /// the visible label so the user reads what they'd say out loud.
@@ -191,6 +254,17 @@ class ScopeV2Row {
       fovAt100ydFtMaxZoom:
           (m['fov_at_100yd_ft_max_zoom'] as num?)?.toDouble(),
       sfpCalibrationZoom: (m['sfp_calibration_zoom'] as num?)?.toDouble(),
+      frontSightType: (m['front_sight_type'] as String?)?.trim(),
+      frontSightWidthMm: (m['front_sight_width_mm'] as num?)?.toDouble(),
+      frontSightDiameterMm:
+          (m['front_sight_diameter_mm'] as num?)?.toDouble(),
+      rearSightType: (m['rear_sight_type'] as String?)?.trim(),
+      rearSightApertureMm:
+          (m['rear_sight_aperture_mm'] as num?)?.toDouble(),
+      rearSightDepthMm: (m['rear_sight_depth_mm'] as num?)?.toDouble(),
+      sightRadiusIn: (m['sight_radius_in'] as num?)?.toDouble(),
+      elevationAdjustment: (m['elevation_adjustment'] as String?)?.trim(),
+      windageAdjustment: (m['windage_adjustment'] as String?)?.trim(),
     );
   }
 }

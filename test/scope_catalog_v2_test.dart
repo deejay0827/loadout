@@ -336,6 +336,96 @@ void main() {
     });
   });
 
+  group('ScopeV2Row iron-sight fields (VFP Phase 2 Group A)', () {
+    test('parses a full iron-sight row and isIronSights is true', () {
+      final r = ScopeV2Row.fromJson(<String, dynamic>{
+        'id': 'generic_ar15_a2_post_ghost',
+        'manufacturer': 'Generic',
+        'model_name': 'AR-15 A2 Post + Ghost Ring',
+        'category': 'iron-sights',
+        'front_sight_type': 'post',
+        'front_sight_width_mm': 1.78,
+        'front_sight_diameter_mm': null,
+        'rear_sight_type': 'ghost_ring',
+        'rear_sight_aperture_mm': 5.0,
+        'rear_sight_depth_mm': null,
+        'sight_radius_in': 19.75,
+        'elevation_adjustment': 'front',
+        'windage_adjustment': 'rear',
+      });
+      expect(r, isNotNull);
+      expect(r!.isIronSights, isTrue);
+      expect(r.frontSightType, 'post');
+      expect(r.frontSightWidthMm, 1.78);
+      expect(r.frontSightDiameterMm, isNull);
+      expect(r.rearSightType, 'ghost_ring');
+      expect(r.rearSightApertureMm, 5.0);
+      expect(r.rearSightDepthMm, isNull);
+      expect(r.sightRadiusIn, 19.75);
+      expect(r.elevationAdjustment, 'front');
+      expect(r.windageAdjustment, 'rear');
+    });
+
+    test('iron-sight fields null + isIronSights false for a normal scope',
+        () {
+      final r = ScopeV2Row.fromJson(<String, dynamic>{
+        'id': 'foo_bar_1',
+        'manufacturer': 'Foo',
+        'model_name': 'Bar 1',
+        'category': 'rifle-scope',
+        'focal_plane': 'ffp',
+        'magnification_min': 5,
+        'magnification_max': 25,
+      });
+      expect(r, isNotNull);
+      expect(r!.isIronSights, isFalse);
+      expect(r.frontSightType, isNull);
+      expect(r.rearSightType, isNull);
+      expect(r.sightRadiusIn, isNull);
+      expect(r.elevationAdjustment, isNull);
+      expect(r.windageAdjustment, isNull);
+      expect(r.frontSightWidthMm, isNull);
+      expect(r.frontSightDiameterMm, isNull);
+      expect(r.rearSightApertureMm, isNull);
+      expect(r.rearSightDepthMm, isNull);
+    });
+
+    test('iron-sight fields null when JSON values are explicitly null', () {
+      final r = ScopeV2Row.fromJson(<String, dynamic>{
+        'id': 'foo_null',
+        'manufacturer': 'Foo',
+        'model_name': 'Null',
+        'category': 'iron-sights',
+        'front_sight_type': null,
+        'rear_sight_type': null,
+        'sight_radius_in': null,
+        'elevation_adjustment': null,
+        'windage_adjustment': null,
+      });
+      expect(r, isNotNull);
+      expect(r!.isIronSights, isTrue); // discriminator is category
+      expect(r.frontSightType, isNull);
+      expect(r.rearSightType, isNull);
+      expect(r.sightRadiusIn, isNull);
+    });
+
+    test(
+        'live catalog has no iron-sight rows yet (latent schema; '
+        'rows land in VFP Phase 2 Group B)', () async {
+      final scopes = await ScopeCatalogV2Service.instance.allScopes();
+      final irons = scopes.where((s) => s.isIronSights).length;
+      expect(irons, 0,
+          reason:
+              'VFP Phase 2 Group A is schema-only; iron-sight rows are '
+              'added in Group B. This guard flips intentionally then.');
+      // Every existing row parses with iron-sight fields null (additive).
+      for (final s in scopes) {
+        expect(s.frontSightType, isNull);
+        expect(s.rearSightType, isNull);
+      }
+    });
+  });
+
   group('ReticleV2Row.fromJson', () {
     test('parses a complete row', () {
       final r = ReticleV2Row.fromJson(<String, dynamic>{
