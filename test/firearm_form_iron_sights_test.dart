@@ -137,5 +137,37 @@ void main() {
           reason: 'Group C must not regress the magnified-optic '
               'reticle-mapping invariant. Missing: $misses');
     });
+
+    test(
+        'TOTAL scope→reticle partition (VFP Phase 2 Group D '
+        're-broaden of §0.5 finding #2 — no scope unhandled)',
+        () async {
+      // Group C scope-excluded iron rows from the "every scope has a
+      // reticle mapping" invariant. Group D re-broadens it to a TOTAL
+      // partition: EVERY scope is exactly one of
+      //   • non-iron  ⇒ HAS a scope_reticle_options mapping, or
+      //   • iron-sight ⇒ has NO mapping (by design).
+      // No third (silently-unhandled) case may exist. A regression in
+      // either direction — an iron row gaining a mapping, or a
+      // non-iron row losing one — fails here. This same "iron ⇒ no
+      // reticle id" fact is precisely what makes Range Day's
+      // _applyV2DefaultsFromFirearm `if (v2ReticleId == null) return;`
+      // early-return for an iron-sights firearm (task 5 contract).
+      final svc = ScopeCatalogV2Service.instance;
+      final scopes = await svc.allScopes();
+      final unhandled = <String>[];
+      for (final s in scopes) {
+        final hasMapping =
+            (await svc.defaultReticleIdForScope(s.id)) != null;
+        final ok = s.isIronSights ? !hasMapping : hasMapping;
+        if (!ok) {
+          unhandled.add('${s.id} '
+              '(iron=${s.isIronSights}, hasMapping=$hasMapping)');
+        }
+      }
+      expect(unhandled, isEmpty,
+          reason: 'Every scope must be exactly {non-iron+mapping} or '
+              '{iron+no-mapping}. Violations: $unhandled');
+    });
   });
 }

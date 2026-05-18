@@ -101,6 +101,25 @@ enum ScopeSubtensionUnit { moa, mil, inches }
 /// All inputs the scope view needs to render. Computed by the parent
 /// (Range Day detail screen) from the existing solution + reticle +
 /// target state and passed in as one bag.
+///
+/// For iron-sights firearms, `scopeMagnification` and
+/// `spec1xMagnification` are sentinel values (1.0). Iron-sights
+/// rendering path (`IronSightsPainter` per VFP Phase 21) does not
+/// consume these values; sentinels are present to satisfy the
+/// non-null contract for downstream consumers that do not branch on
+/// optic category.
+///
+/// VFP Phase 2 Group D §0.5 Level-3 trace note: the single
+/// construction funnel is [buildScopeViewInputs], whose only caller
+/// is `range_day_detail_screen.dart`'s Scope View open. That funnel
+/// takes the *legacy* `OpticRow` (drift `Optics` table), which has no
+/// v2.3 / iron-sights concept; when no `OpticRow` is present it
+/// already returns non-null magnification defaults (10.0), so the
+/// non-null contract is satisfied with no null-pointer risk today.
+/// The 1.0 sentinel above is the binding spec for the iron-sights
+/// construction path that VFP Phase 26 (tier-aware dispatch) wires —
+/// iron firearms route to `IronSightsPainter`, not this
+/// reticle-requiring view.
 class ScopeViewInputs {
   const ScopeViewInputs({
     required this.reticle,
