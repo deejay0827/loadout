@@ -90,6 +90,8 @@ import '../../data/reticle_library.dart';
 import '../../database/database.dart';
 import '../../services/ballistics/units.dart' as bu;
 import '../../services/hit_probability_service.dart';
+import '../../widgets/blurred_pro_teaser.dart';
+import '../../widgets/pro_gate.dart';
 import '../../widgets/range_day_safety.dart';
 import '../../widgets/scope_daytime_backdrop.dart';
 import 'widgets/target_plot.dart';
@@ -453,7 +455,21 @@ class _ScopeViewScreenState extends State<ScopeViewScreen>
           // mover animation re-paints every frame while it's running.
           // When the animation is stopped the controller's value is
           // `0.5` (centered) and the painter renders the static frame.
-          Center(
+          // VFP Phase 3 Group B (A2 / teaser-blur Option 2, D5
+          // Option β) — the scope eyepiece render is THE primary Pro
+          // payoff. Pro → verbatim crisp; free → Gaussian-blurred
+          // under a CTA. The overlay chrome (hit-prob / magnification
+          // badges, unit chip, tap-to-cycle-unit gesture) are sibling
+          // Stack children OUTSIDE this wrap and stay clear +
+          // interactive — so a free user feels the controls and sees
+          // the (blurred) FOV react in real time. The animated mover
+          // animates THIS blurred FOV for free users, which is why
+          // Gap 1 needs no separate gate (its switch/slider are live
+          // controls; the blur here is the enforcement).
+          BlurredProTeaser(
+            ctaText: 'Pro renders the live scope view',
+            onCommit: () => ensurePro(context),
+            child: Center(
             child: SizedBox(
               width: fovSide,
               height: fovSide,
@@ -507,6 +523,7 @@ class _ScopeViewScreenState extends State<ScopeViewScreen>
                 ),
               ),
             ),
+          ),
           ),
           // Tap the reticle to cycle subtension display unit.
           Positioned.fill(
@@ -726,21 +743,15 @@ class _ScopeViewScreenState extends State<ScopeViewScreen>
                     'Animated mover',
                     style: theme.textTheme.titleSmall,
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary
-                          .withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('Pro',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        )),
-                  ),
+                  // VFP Phase 3 Group B (D5, Gap 1 closure) — the
+                  // cosmetic 'Pro' chip was removed: it advertised a
+                  // gate that did not exist here (the audit's Gap 1).
+                  // Under D5 Option β the REAL gate is the teaser-blur
+                  // on the scope FOV that this mover animates — a free
+                  // user toggles the switch / drags the slider (both
+                  // stay live, intentionally ungated) and sees the
+                  // blurred motion react. The blur is the enforcement;
+                  // a redundant chip on a live control would mislead.
                   const Spacer(),
                   Switch(
                     value: _animateMover,
@@ -820,7 +831,16 @@ class _ScopeViewScreenState extends State<ScopeViewScreen>
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-      child: Card(
+      // VFP Phase 3 Group B (A2 / teaser-blur, D5 Option β) — the
+      // click / MOA / MIL / inches dial-in numbers are the Pro
+      // ballistic payoff of Scope View. Pro → clear; free → the whole
+      // adjustments card blurs under a CTA. (The magnification / range
+      // controls in _controlsCard stay live, so the free user can
+      // still drive inputs and watch the blurred answers update.)
+      child: BlurredProTeaser(
+        ctaText: 'Pro shows your dial-in adjustments',
+        onCommit: () => ensurePro(context),
+        child: Card(
         color: theme.colorScheme.surface,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -919,6 +939,7 @@ class _ScopeViewScreenState extends State<ScopeViewScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }

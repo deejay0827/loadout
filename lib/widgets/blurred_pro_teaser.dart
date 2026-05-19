@@ -276,17 +276,21 @@ class BlurredProTeaser extends StatelessWidget {
         // its own handlers.
         Positioned.fill(
           child: Center(
-            child: onCommit == null
-                ? IgnorePointer(
-                    child: Semantics(
-                      label: semanticLabel ?? ctaText,
-                      child: ctaPill,
-                    ),
-                  )
-                : Semantics(
-                    button: true,
-                    label: semanticLabel ?? ctaText,
-                    child: Material(
+            // One coherent semantics node for the whole CTA:
+            // `container` + `excludeSemantics` collapse the inner
+            // icon/label into a single screen-reader announcement
+            // ("Unlock with Pro", a button when tappable) instead of
+            // emitting the icon and text as competing nodes. This is
+            // an a11y requirement for an upsell affordance — and is
+            // what `find.bySemanticsLabel` keys on in the tests.
+            child: Semantics(
+              button: onCommit != null,
+              label: semanticLabel ?? ctaText,
+              container: true,
+              excludeSemantics: true,
+              child: onCommit == null
+                  ? IgnorePointer(child: ctaPill)
+                  : Material(
                       type: MaterialType.transparency,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(999),
@@ -294,7 +298,7 @@ class BlurredProTeaser extends StatelessWidget {
                         child: ctaPill,
                       ),
                     ),
-                  ),
+            ),
           ),
         ),
       ],

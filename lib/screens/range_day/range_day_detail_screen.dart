@@ -8244,7 +8244,20 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// firing solution + reticle + target. Surfaces a snackbar if a
   /// reticle hasn't been picked yet, since the visualizer needs one.
   Future<void> _openScopeView(TrajectorySample s) async {
-    if (!await ensurePro(context)) return;
+    // VFP Phase 3 Group B (operator decision A2 + teaser-blur
+    // Option 2; D5 §0.5 ruling = Option β). Scope View is NO LONGER
+    // hard-paywalled at entry. Free users open the screen and see it
+    // teaser-blurred: ScopeViewScreen wraps its scope-FOV render and
+    // the click-adjustment table in BlurredProTeaser, while the
+    // magnification / range controls stay live so the blurred view
+    // reacts in real time (the strongest conversion signal). The
+    // pre-A2 entry-level `ensurePro` early-return was a holdover from
+    // the hard-paywall posture and is removed per the ruling. There
+    // is no save/commit/apply action inside ScopeViewScreen to route
+    // through an ensurePro chokepoint — it is a live read-only
+    // calculator; the render-layer blur IS the gate (same principle
+    // as the tier-picker option-(b) resolution). The mounted check
+    // below is retained as harmless defensive code.
     if (!mounted) return;
     final messenger = ScaffoldMessenger.of(context);
     final reticle = _selectedReticle;
