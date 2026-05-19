@@ -92,6 +92,20 @@ When adding any new form, controller, or computed card, write down
 in the file header which inputs flow into ballistics and which
 don't. Anything in the first bucket follows the no-placeholder rule.
 
+### VFP A2 precedent — gating a previously-free surface (cross-ref)
+
+The "we'd lose customers" risk above is about *invented inputs*, not
+*paywalls*. VFP Phase 3 operator decision **A2** deliberately
+Pro-gates the previously-free Range Day visual-fidelity surface
+(target / reticle / preview / zoom + all three visual tiers). That
+regression risk was surfaced and is mitigated — not ignored — by the
+**teaser-blur Option 2** pattern: free users still see and feel the
+surface (controls live, the preview reacts in real time) but it is
+Gaussian-blurred under an "Unlock with Pro" CTA; they are never
+locked out. Operator-owned decision; the canonical mechanism +
+per-surface map + pre-ship validation gates live in
+`docs/PRO_GATING.md`. See also §0d (Plan Authority Hierarchy).
+
 ## 0a. ALWAYS USE TITLE CASE FOR LABELS AND HEADERS (firm rule)
 
 **Every user-visible label or header in this app uses Title Case.**
@@ -403,6 +417,33 @@ Before changing a label:
 The rule is about user-visible label CHURN on already-shipped
 content, not about data-driven changes or new content.
 
+## 0d. PLAN AUTHORITY HIERARCHY (firm rule)
+
+When executing a multi-phase plan the operator has designated the
+source of truth (currently
+`~/Downloads/VISUAL_FIDELITY_PROGRAM_PLAN_V6_11.md`, "V6.11"), and a
+conflict arises between that plan and this CLAUDE.md:
+
+- **The plan supersedes CLAUDE.md for any conflict encountered
+  during plan execution.** V6.11's operator-ratified decisions
+  (e.g. the A2 Pro-gating posture) override pre-existing CLAUDE.md
+  statements for the scope the plan governs.
+- **CLAUDE.md remains authoritative anywhere the plan is silent.**
+  General project conventions — privacy posture (§13), Title Case
+  (§0a), the no-placeholder rule (§0), target-label confirmation
+  (§0c), work style (§0b) — continue to apply wherever V6.11 does
+  not speak.
+- **Conflicts are surfaced, never silently resolved.** Per the §0.5
+  grep-verify discipline, a plan-vs-CLAUDE.md conflict is reported
+  to the operator and ruled before code lands; CLAUDE.md is then
+  realigned to the ruling. The reverse (CLAUDE.md silently
+  overriding the plan, or the plan silently overriding CLAUDE.md
+  without a surfaced ruling) never happens.
+
+This codifies the precedence the operator established across VFP
+Phase 1–3. It is scoped to operator-designated plan execution;
+outside that, CLAUDE.md is the unqualified authority.
+
 ## 1. What it is
 
 LoadOut is a local-first ammo reloading tracker for **iOS, Android, macOS,
@@ -612,6 +653,16 @@ Account recovery lives in two places:
   and re-seeds the standard process steps; the reference catalog is
   preserved) then signs the user out.
 
+**VFP exception (operator decision A2, see §0d).** The Range Day
+visual-fidelity surface — target / reticle / preview / zoom + all
+three visual tiers — IS Pro, but enforced via **teaser-blur**
+(`BlurredProTeaser`), not a hard lock: free users see it
+blurred-but-interactive, never excluded from the screen. This is
+the one sanctioned carve-out from "anonymous users get every core
+feature"; it does not change the rest of the free-core posture (the
+auth-gate prohibition still holds — this is a Pro gate, not an auth
+gate). Canonical detail: `docs/PRO_GATING.md`.
+
 Future shared-loads / community-library features will require auth but
 are intentionally **deferred** — too much surface for launch. Don't
 introduce auth gates outside of cloud backup.
@@ -664,6 +715,7 @@ pre-launch — no monthly tier exists or ever existed in production.
   | Load development | `lib/screens/load_development/*` |
   | Internal Ballistics Calculator (interior-ballistics pressure / MV predictor) | Resources directory tile + bottom-of-Ballistics-Calculator entry button; both routes through `ensurePro` and the screen wraps its body in `ProGate`. Service in `lib/services/ballistics/internal_ballistics.dart`; full description in § 24. |
   | Custom fields (unlimited) | recipe / firearm form custom-field affordances |
+  | VFP visual surface — Range Day target / reticle / preview / zoom + all 3 visual tiers (operator decision A2, §0d) | **teaser-blur Option 2** via `BlurredProTeaser` (`lib/widgets/blurred_pro_teaser.dart`) — free users see it blurred-but-interactive, NOT a lock tile. Per-surface map + pre-ship gates: `docs/PRO_GATING.md`. Distinct mechanism from the hard `ProGate`/`ensurePro` lock-tile used by every row above. |
 
 - **Linking RevenueCat to Firebase Auth:** the auth-state listener
   in `_AuthGate` calls `PurchasesService.setAppUserId(user.uid)` on
@@ -673,6 +725,33 @@ pre-launch — no monthly tier exists or ever existed in production.
 
 - **Setup steps for App Store Connect, Play Console, and the
   RevenueCat dashboard:** see `REVENUECAT_SETUP.md`.
+
+### Pro-gating UX pattern (two mechanisms — pick the right one)
+
+There are now TWO Pro-gating mechanisms; do not mix them up:
+
+- **`BlurredProTeaser` — teaser-blur Option 2 (canonical for VFP
+  visual surfaces).** Renders the Pro content live but
+  Gaussian-blurred under a CTA; controls stay interactive and the
+  blurred preview reacts in real time; commit/expand actions route
+  through `ensurePro`. Use for any VFP Range Day
+  target/reticle/preview/zoom surface (A2). Soft, exploratory,
+  conversion-oriented.
+- **`ProGate` / `ensurePro` — hard paywall (everything else).**
+  Replaces the feature with a lock tile (or blocks the action and
+  pushes the paywall). Use for non-VFP Pro features (the table
+  rows above).
+
+Legal/compliance UI (e.g. the §30 reticle interoperability caption)
+ALWAYS renders clear regardless of Pro state — it carries
+compliance value, it is not Pro content to tease. Gated-content
+CTAs render as a single coherent semantics node (`container` +
+`excludeSemantics`) so screen readers announce one phrase. The
+canonical mechanism reference, per-surface wiring map, scoping
+principle, test discipline, and pre-public-ship validation gates
+(device-perf + post-D11 widget matrix) live in
+`docs/PRO_GATING.md`; CTA copy is operator-owned and reviewed at
+launch-readiness (placeholders ship clearly marked until then).
 
 ## 5. Common commands
 
