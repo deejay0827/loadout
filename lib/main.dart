@@ -118,11 +118,12 @@ import 'data/reticle_seed_defaults.dart';
 import 'database/database.dart';
 import 'database/seed_loader.dart';
 import 'firebase_options.dart';
+import 'services/asset_updater.dart';
+import 'services/asset_updater_configs.dart';
 import 'services/crash_reporter.dart';
 import 'services/device_compatibility_service.dart';
 import 'services/hang_detector.dart';
 import 'services/purchases_service.dart';
-import 'services/seed_updater.dart';
 import 'widgets/animal_silhouettes.dart';
 import 'widgets/target_silhouettes.dart';
 
@@ -237,8 +238,11 @@ Future<void> main() async {
   // UI immediately on cold start, even on a slow network. Any updates
   // downloaded here are persisted to the documents directory and applied
   // by the next launch's SeedLoader.seedIfNeeded(). See
-  // `lib/services/seed_updater.dart` for the full flow.
-  unawaited(SeedUpdater(db).checkForUpdates());
+  // `lib/services/asset_updater.dart` for the full flow. (VFP Phase 4
+  // Group C — `SeedUpdater` was refactored into the generic
+  // `AssetUpdater`; `seedCatalogConfig` preserves the seed-catalog
+  // behaviour bit-for-bit. The old `db` arg was unused and dropped.)
+  unawaited(AssetUpdater(config: seedCatalogConfig).fetchAndApply());
 
   // Snapshot the device's OS version BEFORE runApp so the
   // DeviceCompatibilityService is provided with a fully-resolved

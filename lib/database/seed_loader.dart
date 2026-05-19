@@ -150,12 +150,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/recipe_template.dart';
 import '../models/target_center_point.dart';
-import '../services/seed_updater.dart' show seedNeedsReseedPrefix;
+import '../services/asset_updater_configs.dart' show seedNeedsReseedPrefix;
 import 'database.dart';
 import 'rack_slot.dart';
 
-/// SharedPreferences key prefix matching `SeedUpdater`'s
-/// `seed_needs_reseed_<key>` flags.
+/// SharedPreferences key prefix matching `AssetUpdater(seedCatalogConfig)`'s
+/// `seed_needs_reseed_<key>` flags (VFP Phase 4 Group C — the const
+/// relocated from the deleted `seed_updater.dart` with its VALUE
+/// preserved verbatim, so this is behaviourally inert).
 const _kReseedPrefix = seedNeedsReseedPrefix;
 
 /// Reads bundled / downloaded JSON files in `seed_data/` and populates the
