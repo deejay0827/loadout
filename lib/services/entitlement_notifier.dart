@@ -35,9 +35,12 @@
 //   - `dispose()` — cancels the stream subscription. Called by Flutter when
 //     the provider is torn down.
 //
-// `debugForceProActive` (compile-time constant) lets developers reach
-// Pro-gated UI in debug builds without going through a real sandbox purchase.
-// In release builds `kDebugMode` is a const-false, so the dead branch is
+// `devProOverride` (runtime, debug-only) lets developers flip between the
+// free and paid experience on demand from Settings → Diagnostics without
+// going through a real sandbox purchase. It defaults to `false` so **Free
+// is the default experience** — you only see Pro-gated UI after explicitly
+// flipping the Diagnostics switch. In release builds `kDebugMode` is a
+// const-false, so the dead branch is
 // stripped by the Dart compiler — the override has zero effect on shipped
 // binaries.
 //
@@ -71,10 +74,11 @@
 //    the SDK is never configured (so `customerInfoStream` would never emit).
 //    We have to check `_purchases.isConfigured` BEFORE subscribing to avoid
 //    listening on a dead stream.
-// 3. DEV OVERRIDE FAIL-SAFE. `debugForceProActive` is hardcoded to true
-//    during development. The pre-release checklist requires flipping this
-//    to false before any TestFlight or App Store build — see comment block
-//    above the constant.
+// 3. DEV OVERRIDE FAIL-SAFE. `_devProOverride` is a RUNTIME flag that
+//    defaults to `false` (Free). It is only consulted when `kDebugMode`
+//    is true, so no pre-release "remember to flip it back" chore exists:
+//    a release binary compiles the override branch out entirely. The
+//    Settings → Diagnostics toggle that drives it is itself debug-gated.
 // 4. NOTIFY EQUALS-CHECK. We only call `notifyListeners()` when the value
 //    actually flips. Re-emitting on every stream event would cause needless
 //    widget rebuilds.
@@ -129,22 +133,51 @@ class EntitlementNotifier extends ChangeNotifier {
     }
   }
 
-  /// **DEV ONLY:** when true (and running in debug mode), [isPro] always
-  /// returns `true` so Pro-gated UI is reachable without going through a
-  /// real sandbox purchase. Has no effect in release builds (kDebugMode is
-  /// const-false there, so the dead branch gets stripped).
-  ///
-  /// Flip back to `false` before cutting any TestFlight / App Store build.
-  static const bool debugForceProActive = true;
-
   final PurchasesService _purchases;
   StreamSubscription<CustomerInfo>? _sub;
 
   bool _isPro = false;
 
+  /// **DEV ONLY:** runtime simulation override, driven by the
+  /// Settings → Diagnostics "Simulate LoadOut Pro" switch.
+  ///
+  ///   * `false` (the default) → Free is the experience. This is why
+  ///     Free is the default on a fresh debug run: nobody has to
+  ///     remember to set anything.
+  ///   * `true` → Pro-gated UI becomes reachable without a real
+  ///     sandbox purchase.
+  ///
+  /// Only consulted when `kDebugMode` is true. In a release build
+  /// `kDebugMode` is a compile-time `false`, so the entire override
+  /// branch in [isPro] is dead code the Dart compiler strips — a
+  /// shipped binary's Pro state is governed solely by the real
+  /// RevenueCat entitlement, and this flag can never flip it.
+  bool _devProOverride = false;
+
+  /// Current value of the debug Pro-simulation override. Always
+  /// `false` (and irrelevant) in release builds. Read by the
+  /// Diagnostics screen to render the switch position.
+  bool get devProOverride => _devProOverride;
+
+  /// Flip the debug Pro-simulation override. No-op in release builds
+  /// (the Diagnostics screen that calls this is itself `kDebugMode`-
+  /// gated, and this method double-checks so a stray caller can't
+  /// mutate shipped behaviour). Notifies listeners only on an actual
+  /// change so Pro-gated widgets rebuild exactly once per flip.
+  void setDevProOverride(bool value) {
+    if (!kDebugMode) return;
+    if (_devProOverride == value) return;
+    _devProOverride = value;
+    notifyListeners();
+  }
+
   /// Whether the current user has the Pro entitlement active.
+  ///
+  /// In debug builds the [devProOverride] wins (so the Diagnostics
+  /// toggle has immediate effect); otherwise this reflects the real
+  /// RevenueCat entitlement state.
   bool get isPro {
-    if (debugForceProActive && kDebugMode) return true;
+    if (kDebugMode && _devProOverride) return true;
     return _isPro;
   }
 

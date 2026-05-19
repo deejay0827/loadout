@@ -61,6 +61,7 @@
 // - The five new submenu files in this directory each receive
 //   navigation from this directory.
 
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -72,6 +73,7 @@ import 'account_settings_screen.dart';
 import 'ai_settings_screen.dart';
 import 'app_preferences_screen.dart';
 import 'device_compatibility_screen.dart';
+import 'diagnostics_screen.dart';
 import 'help_support_screen.dart';
 import 'privacy_data_screen.dart';
 import 'watch_settings_screen.dart';
@@ -185,6 +187,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           subtitle:
               "What's gated by your OS version (${compat.profile.osDisplay}).",
           destinationBuilder: (_) => const DeviceCompatibilityScreen(),
+        ),
+      // Developer-only Diagnostics tile. `kDebugMode` is a compile-time
+      // `false` in release builds, so this tile (and its destination
+      // screen) are stripped entirely from anything shipped to the
+      // App Store / Play Store — production users never see it. Houses
+      // the "Simulate LoadOut Pro" free/paid toggle.
+      if (kDebugMode)
+        _SettingsTileSpec(
+          icon: Icons.bug_report_outlined,
+          title: 'Diagnostics',
+          subtitle:
+              'Developer-only. Simulate a free or paid account to test '
+              'Pro-gated features.',
+          destinationBuilder: (_) => const DiagnosticsScreen(),
         ),
     ];
   }

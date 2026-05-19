@@ -47,12 +47,13 @@
 //     configured (placeholder keys path), so `_purchases.isConfigured`
 //     returns false and the notifier short-circuits its constructor —
 //     `isPro` then reflects the fixed test override.
-//   * `EntitlementNotifier.debugForceProActive == true && kDebugMode ==
-//     true` makes `isPro` always return true in dev-mode test builds.
-//     Tests that depend on the "free user" path therefore use
-//     [FixedEntitlementNotifier] (a custom subclass exposed below) which
-//     bypasses the dev-override branch and returns whatever the test
-//     set.
+//   * `EntitlementNotifier._devProOverride` defaults to `false` (Free)
+//     but is a mutable runtime flag (Settings → Diagnostics). Tests
+//     must not depend on a mutable global, so both "free user" and
+//     "pro user" tests use [FixedEntitlementNotifier] (a custom
+//     subclass exposed below) which overrides `isPro` to return
+//     whatever the test set, ignoring the dev-override branch
+//     entirely.
 //   * `MaterialApp` needs to be the root for `Scaffold`, `Navigator`,
 //     `Theme`, etc., to all work. The harness wraps the supplied screen
 //     accordingly.
@@ -118,10 +119,11 @@ import 'package:loadout/services/visual_style_notifier.dart';
 import 'package:loadout/services/watch_bridge_service.dart';
 
 /// `EntitlementNotifier` subclass with deterministic `isPro`. The
-/// production class respects `debugForceProActive` (always-true in debug
-/// builds), which makes "free user" tests impossible without an
-/// override. This subclass returns whatever was set at construction
-/// time, ignoring the dev-override branch entirely.
+/// production class's `_devProOverride` is a mutable runtime flag
+/// (defaults to `false` / Free, flipped via Settings → Diagnostics in
+/// debug builds). Tests need a fixed, non-mutable value, so this
+/// subclass returns whatever was set at construction time, ignoring
+/// the dev-override branch entirely.
 class FixedEntitlementNotifier extends EntitlementNotifier {
   FixedEntitlementNotifier(super.purchases, {required bool isPro})
       : _isProOverride = isPro;
