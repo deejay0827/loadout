@@ -359,9 +359,9 @@ class LoadOutApp extends StatelessWidget {
         ChangeNotifierProvider<LocaleService>(
           create: (_) => LocaleService(),
         ),
-        // Phase 10 — global visual-style preference. Settings + Range
-        // Day surfaces watch this to switch between cartoon /
-        // polished / photo modes; the realistic painter consumes
+        // VFP Phase 3 — global visual-tier preference. Settings +
+        // Range Day surfaces watch this to switch between stylized /
+        // scenic / photographic tiers; the realistic painter consumes
         // the current value as a constructor parameter.
         ChangeNotifierProvider<VisualStyleNotifier>(
           create: (_) => VisualStyleNotifier(),

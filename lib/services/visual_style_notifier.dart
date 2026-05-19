@@ -11,7 +11,7 @@
 // Public surface:
 //   * `VisualStyleNotifier extends ChangeNotifier`.
 //   * `notifier.style` — current [VisualStyle]. Synchronous; defaults
-//     to `cartoon` until the SharedPrefs hydrate finishes (typically
+//     to `stylized` until the SharedPrefs hydrate finishes (typically
 //     before the first frame).
 //   * `notifier.isHydrated` — true once the SharedPrefs read settled.
 //     Consumers don't usually need this — the default is correct on
@@ -41,11 +41,11 @@
 // ============================================================================
 //   * SharedPrefs I/O is async; the notifier exposes a synchronous
 //     `style` getter so widget `build()` methods don't need to await.
-//     The pre-hydrate default is `cartoon` (matches the safe-fallback
+//     The pre-hydrate default is `stylized` (matches the safe-fallback
 //     value in `VisualStyle.fromPersistKey`), so a Range Day surface
-//     that builds before the hydrate completes simply shows cartoon
-//     mode — which is the correct default for a fresh install AND
-//     for an existing user whose persisted choice WAS cartoon. The
+//     that builds before the hydrate completes simply shows the
+//     stylized tier — which is the correct default for a fresh install
+//     AND the migration target for any legacy persisted choice. The
 //     visible flash window on first launch is microseconds.
 //   * `setStyle` notifies listeners SYNCHRONOUSLY (before the async
 //     persist completes) so the UI reflects the change immediately.
@@ -88,18 +88,18 @@ class VisualStyleNotifier extends ChangeNotifier {
     _hydrate();
   }
 
-  VisualStyle _style = VisualStyle.cartoon;
+  VisualStyle _style = VisualStyle.stylized;
   bool _hydrated = false;
 
-  /// Current style. Synchronous; defaults to [VisualStyle.cartoon]
+  /// Current style. Synchronous; defaults to [VisualStyle.stylized]
   /// until the SharedPrefs hydrate finishes. Safe to read from
   /// widget `build()` methods.
   VisualStyle get style => _style;
 
   /// True once the SharedPrefs read settled. The default is correct
-  /// pre-hydrate (cartoon matches both fresh-install AND the safe-
-  /// fallback for any unknown persisted value), so most consumers
-  /// don't need to wait.
+  /// pre-hydrate (stylized matches both fresh-install AND the safe-
+  /// fallback / legacy-migration target for any persisted value), so
+  /// most consumers don't need to wait.
   bool get isHydrated => _hydrated;
 
   Future<void> _hydrate() async {
@@ -109,10 +109,10 @@ class VisualStyleNotifier extends ChangeNotifier {
       _style = VisualStyle.fromPersistKey(raw);
     } catch (e) {
       // SharedPreferences failed to open — extremely rare. Stay on
-      // the cartoon default; the next setStyle call will retry the
+      // the stylized default; the next setStyle call will retry the
       // I/O.
       debugPrint('VisualStyleNotifier hydrate failed: $e');
-      _style = VisualStyle.cartoon;
+      _style = VisualStyle.stylized;
     }
     _hydrated = true;
     notifyListeners();
@@ -132,7 +132,7 @@ class VisualStyleNotifier extends ChangeNotifier {
       // Persist failed — in-memory state stays at the new value. The
       // user sees the new style this session; next cold start
       // re-hydrates from the last successfully-persisted value (or
-      // the cartoon default if none was ever persisted).
+      // the stylized default if none was ever persisted).
       debugPrint('VisualStyleNotifier persist failed: $e');
     }
   }

@@ -498,7 +498,7 @@ class TargetPlot extends StatelessWidget {
     this.rangeYards,
     this.lowLightMode = false,
     this.sizeFloorEnabled = true,
-    this.visualStyle = VisualStyle.cartoon,
+    this.visualStyle = VisualStyle.stylized,
   });
 
   /// Target geometry / color. In rack mode this is the active child's
@@ -638,15 +638,16 @@ class TargetPlot extends StatelessWidget {
   /// Has no effect outside realistic mode.
   final bool sizeFloorEnabled;
 
-  /// Phase 10 Group B.3 — pass-through for `_RealisticScenePainter`'s
-  /// `visualStyle`. Defaults to `VisualStyle.cartoon` so non-Range-
-  /// Day callers (preview thumbnails, dialog widgets) that don't
-  /// have a notifier on hand still compile. Range Day call sites
+  /// VFP Phase 3 — pass-through for `_RealisticScenePainter`'s
+  /// `visualStyle`. Defaults to `VisualStyle.stylized` (the
+  /// effects-baseline entry tier) so non-Range-Day callers (preview
+  /// thumbnails, dialog widgets) that don't have a notifier on hand
+  /// still compile and render the full scene. Range Day call sites
   /// pass `context.watch<VisualStyleNotifier>().style` so the
   /// painter sees the user's current choice and the scene
-  /// repaints when they flip modes via Settings or the AppBar
-  /// toggle. Group A introduced the field on the painter; Group C
-  /// + later light up the actual rendering branches.
+  /// repaints when they flip tiers via Settings or the AppBar
+  /// toggle. `scenic` / `photographic` currently alias to `stylized`
+  /// rendering (VFP Phase 6 / 23 light up their own painters).
   final VisualStyle visualStyle;
 
   @override
@@ -746,7 +747,7 @@ class TargetPlot extends StatelessWidget {
                     // Phase 10 Group F.4 — wrap the realistic-mode
                     // CustomPaint in a `ValueListenableBuilder<ui.Image?>`
                     // subscribed to the `_NoiseAssetLoader` singleton.
-                    // First polished paint sees `null` and skips the
+                    // First paint sees `null` and skips the
                     // grain pass (per spec: don't crash, don't block).
                     // When the async load completes, the notifier
                     // fires, this builder rebuilds, the painter is
@@ -763,13 +764,14 @@ class TargetPlot extends StatelessWidget {
                     // triggers the load.
                     Builder(
                       builder: (context) {
-                        // Only kick off the load when polished mode
-                        // is actually in use — cartoon-only users
-                        // skip the async work and never pay the
-                        // decode cost.
-                        if (visualStyle != VisualStyle.cartoon) {
-                          _NoiseAssetLoader.kickoff();
-                        }
+                        // VFP Phase 3 — the no-effects `cartoon` tier
+                        // was removed; every surviving tier (stylized,
+                        // and scenic / photographic which alias to it)
+                        // renders the film-grain pass, so the grain
+                        // texture is always needed. Unconditionally
+                        // kick off the once-per-process decode (the
+                        // loader early-returns on subsequent calls).
+                        _NoiseAssetLoader.kickoff();
                         return ValueListenableBuilder<ui.Image?>(
                           valueListenable:
                               _NoiseAssetLoader.imageNotifier,
@@ -1364,8 +1366,9 @@ class RealisticLayout {
 /// can't await), so the asset has to be decoded eagerly. We do it
 /// once per process; `[TargetPlot.build]` calls
 /// `_NoiseAssetLoader.kickoff()` the first time the realistic
-/// painter is constructed in polished/photo mode, which fires the
-/// async load and notifies the `imageNotifier` when the decoded
+/// painter is constructed (VFP Phase 3: every tier renders grain),
+/// which fires the async load and notifies the `imageNotifier`
+/// when the decoded
 /// `ui.Image` is ready. `TargetPlot`'s `ValueListenableBuilder`
 /// wrap on the realistic-mode CustomPaint subscribes to the
 /// notifier, so the painter is reconstructed (and the grain pass
@@ -1374,7 +1377,7 @@ class RealisticLayout {
 /// If the asset is missing or fails to decode the notifier stays
 /// at `null` forever and the painter's `_paintFilmGrain` no-ops
 /// (per spec: "If the noise asset isn't loaded yet on first
-/// polished paint, skip the grain pass — don't crash, don't
+/// paint, skip the grain pass — don't crash, don't
 /// block.").
 class _NoiseAssetLoader {
   _NoiseAssetLoader._(); // No instances — module-level singleton.
@@ -1384,9 +1387,9 @@ class _NoiseAssetLoader {
   static final ValueNotifier<ui.Image?> imageNotifier =
       ValueNotifier<ui.Image?>(null);
 
-  /// Guard so we only kick off ONE async load per process. A user
-  /// who never enters polished mode never triggers the load; once
-  /// in polished mode the load fires once and we're done.
+  /// Guard so we only kick off ONE async load per process. The
+  /// load fires the first time the realistic painter builds (VFP
+  /// Phase 3: every tier renders the grain pass) and is done.
   static bool _started = false;
 
   static void kickoff() {
@@ -1425,7 +1428,7 @@ class _RealisticScenePainter extends CustomPainter {
     required this.sceneInput,
     this.colorHexOverride,
     this.sizeFloorEnabled = true,
-    this.visualStyle = VisualStyle.cartoon,
+    this.visualStyle = VisualStyle.stylized,
     this.noiseImage,
     this.svgCacheGeneration = 0,
   });
@@ -1438,23 +1441,23 @@ class _RealisticScenePainter extends CustomPainter {
   /// rendering.
   final SceneInput sceneInput;
 
-  /// Phase 10 Group A — user-controlled visual style. `cartoon`
-  /// (default) renders the existing procedural scene unchanged.
-  /// `polished` and `photo` will light up atmospheric effects in
-  /// Group C and later (saveLayer scaffold, DOF blur, ground haze,
-  /// drop shadow, color grade, vignette, film grain). In Group A
-  /// the field exists but is unused — the paint pass is identical
-  /// for all three values until Group C lands.
+  /// VFP Phase 3 — user-controlled visual tier. `stylized` (default)
+  /// renders the procedural scene WITH the full atmospheric-effects
+  /// pass (saveLayer color grade, DOF blur, ground haze, drop shadow,
+  /// vignette, film grain) — the exact rendering that shipped
+  /// pre-Phase-3 as `polished`. The old no-effects `cartoon` tier was
+  /// removed; there is no longer a tier that skips effects.
   ///
-  /// Photo mode aliases to polished at the dispatch site (Phase 12 /
-  /// 13 will light up photo's own rendering); the enum preserves
-  /// the user's actual selection so future phases don't need a
-  /// migration.
+  /// `scenic` and `photographic` are real selectable tiers with no
+  /// renderer yet. They alias to `stylized` at the dispatch site
+  /// (`_effectiveStyle`); VFP Phase 6 lights up Scenic's own painter
+  /// and VFP Phase 23 lights up Photographic's. The enum preserves
+  /// the user's actual selection so those phases need no migration.
   final VisualStyle visualStyle;
 
   /// Phase 10 Group F.1 / F.4 — process-cached `ui.Image` decoded
   /// from `assets/noise/film_grain_256.png`, used as the source for
-  /// the polished-mode film-grain overlay. `null` until the
+  /// the film-grain overlay. `null` until the
   /// `_NoiseAssetLoader` async load completes; the grain pass
   /// no-ops on null (the scene renders without grain rather than
   /// crashing). Once the load resolves, the
@@ -1485,20 +1488,24 @@ class _RealisticScenePainter extends CustomPainter {
   /// cache.
   final int svgCacheGeneration;
 
-  /// Phase 10 Group C.1 / Group D — single source of truth for the
-  /// photo→polished alias. Every effect dispatch inside this painter
-  /// reads `_effectiveStyle`, not `visualStyle`, so the alias is
-  /// enforced in exactly one place. When Phase 12 / 13 light up
-  /// photo's own rendering, the `photo => polished` arm flips to
-  /// `photo => photo` and every downstream branch picks it up for
+  /// VFP Phase 3 — single source of truth for the tier-render alias.
+  /// Every effect dispatch inside this painter reads `_effectiveStyle`,
+  /// not `visualStyle`, so the alias is enforced in exactly one place.
+  /// `scenic` and `photographic` have no painter yet, so both alias
+  /// to `stylized` rendering (Stylized is the safety floor). When
+  /// VFP Phase 6 lights up Scenic, the `scenic => stylized` arm flips
+  /// to `scenic => scenic`; VFP Phase 23 does the same for
+  /// `photographic`. Every downstream branch picks the change up for
   /// free.
   ///
-  /// Returns `cartoon` when the user picked cartoon; otherwise
-  /// `polished` (covers both `polished` and `photo` until Phase 12).
+  /// Always returns `stylized` today (the old no-effects `cartoon`
+  /// tier was removed in VFP Phase 3, so the full effects pass always
+  /// runs — see the always-on gates in [paint] / [_paintBackdrop] /
+  /// [_paintTargetShadow]).
   VisualStyle get _effectiveStyle => switch (visualStyle) {
-        VisualStyle.cartoon => VisualStyle.cartoon,
-        VisualStyle.polished => VisualStyle.polished,
-        VisualStyle.photo => VisualStyle.polished,
+        VisualStyle.stylized => VisualStyle.stylized,
+        VisualStyle.scenic => VisualStyle.stylized,
+        VisualStyle.photographic => VisualStyle.stylized,
       };
 
   /// The focus target (the geometry that drives aim / shots / scope
@@ -1619,21 +1626,21 @@ class _RealisticScenePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (size.width <= 0 || size.height <= 0) return;
 
-    // Phase 10 Group C.1 — photo mode aliases to polished via the
-    // `_effectiveStyle` getter (single source of truth). Every
-    // downstream conditional in this painter reads the getter so
-    // the alias is enforced in exactly one place.
+    // VFP Phase 3 — `scenic` / `photographic` alias to `stylized`
+    // via the `_effectiveStyle` getter (single source of truth).
+    // Every downstream conditional in this painter reads the getter
+    // so the alias is enforced in exactly one place.
 
-    // Phase 10 Group C.2 / Group F.2 — saveLayer for polished +
-    // photo, opened with a `ColorFilter.matrix(_colorGradeMatrix)`
+    // Phase 10 Group C.2 / Group F.2 — saveLayer for the scene,
+    // opened with a `ColorFilter.matrix(_colorGradeMatrix)`
     // hanging off its Paint. Every scene draw (backdrop, Group D
     // blur layer, ground haze, mid-scene content, Group E drop
     // shadows, target / slots) is captured INSIDE this layer.
     // When the layer restores, the color filter applies on
     // composite — the entire scene picks up a subtle warm cast
     // (R × 1.05, B × 0.95) per Phase 10 §Effect-specifications
-    // "Color grade." Cartoon mode skips the saveLayer entirely;
-    // its paint pass is byte-identical to pre-Phase-10.
+    // "Color grade." VFP Phase 3 removed the no-effects `cartoon`
+    // tier, so this layer now opens for every tier unconditionally.
     //
     // Why hang ColorFilter on the saveLayer's Paint rather than
     // open a second intermediate layer just for the grade: this
@@ -1644,8 +1651,17 @@ class _RealisticScenePainter extends CustomPainter {
     // layer so they sit on top of the graded scene rather than
     // getting graded themselves — exactly the render-order the
     // spec calls for (color grade → vignette → grain).
-    final usePolishedLayer = _effectiveStyle != VisualStyle.cartoon;
-    if (usePolishedLayer) {
+    // VFP Phase 3 — the no-effects `cartoon` tier was removed, so the
+    // effects layer now opens for every surviving tier. Expressed
+    // against `_effectiveStyle` (always `stylized` today — scenic /
+    // photographic alias to it) rather than a bare `true` so the
+    // analyzer sees a real condition AND the saveLayer / restore pair
+    // below stays structurally balanced (an unbalanced pair corrupts
+    // the canvas stack at runtime, not at compile time). VFP Phase 6
+    // / 23 give scenic / photographic their own painters and this
+    // naturally becomes a real per-tier condition again.
+    final useEffectsLayer = _effectiveStyle == VisualStyle.stylized;
+    if (useEffectsLayer) {
       canvas.saveLayer(
         Offset.zero & size,
         Paint()..colorFilter = const ColorFilter.matrix(_colorGradeMatrix),
@@ -1666,7 +1682,7 @@ class _RealisticScenePainter extends CustomPainter {
         _paintRack(canvas, size, rack, activeSlotIndex);
     }
 
-    if (usePolishedLayer) {
+    if (useEffectsLayer) {
       // Phase 10 Group F.2 — restore the color-graded scene layer
       // first. After this call the canvas holds the (now graded)
       // scene; subsequent draws compose on top WITHOUT going
@@ -1677,15 +1693,15 @@ class _RealisticScenePainter extends CustomPainter {
       _paintVignette(canvas, size);
 
       // Phase 10 Group F.4 — film-grain noise tile overlay. No-ops
-      // if the noise asset hasn't decoded yet (first polished paint
-      // before the async load completes); subsequent paint after
+      // if the noise asset hasn't decoded yet (first paint before
+      // the async load completes); subsequent paint after
       // `_NoiseAssetLoader` fires its notifier picks it up.
       _paintFilmGrain(canvas, size);
     }
   }
 
-  /// Phase 10 Group F.2 — color-grade matrix applied to the polished
-  /// / photo scene layer on saveLayer restore. Spec §Effect-
+  /// Phase 10 Group F.2 — color-grade matrix applied to the scene
+  /// layer on saveLayer restore. Spec §Effect-
   /// specifications "Color grade", parameters used verbatim:
   ///
   ///   * Red   × 1.05 (subtle warm boost)
@@ -1694,7 +1710,7 @@ class _RealisticScenePainter extends CustomPainter {
   ///   * Alpha × 1.00 (unchanged)
   ///
   /// Net visual: the scene picks up a "daylight" warm cast vs the
-  /// cooler fluorescent look of the raw cartoon palette. Shadows
+  /// cooler fluorescent look of the raw ungraded palette. Shadows
   /// remain shadows (0 × 1.05 is still 0), so Group E's drop
   /// shadows aren't disturbed.
   ///
@@ -1762,7 +1778,7 @@ class _RealisticScenePainter extends CustomPainter {
   /// No-ops if [noiseImage] is null (asset hasn't decoded yet —
   /// `_NoiseAssetLoader` is still resolving the first
   /// `rootBundle.load` call). Per spec: "If the noise asset
-  /// isn't loaded yet on first polished paint, skip the grain
+  /// isn't loaded yet on first paint, skip the grain
   /// pass — don't crash, don't block. The next repaint will have
   /// it." The `shouldRepaint` override above compares
   /// `noiseImage` so the next frame after the load completes
@@ -1901,11 +1917,10 @@ class _RealisticScenePainter extends CustomPainter {
     //
     // Phase 10 Group D — the backdrop pass (sky + distant hills +
     // treeline + grass + tall grass + foreground tree) is funneled
-    // through [_paintBackdrop], which in polished/photo mode wraps
-    // the distant pair in a `saveLayer(blur σ=1.5)` and emits a
-    // ground-haze gradient band over the horizon afterward. Cartoon
-    // mode is byte-identical — the helper's polished guards are
-    // skipped.
+    // through [_paintBackdrop], which wraps the distant pair in a
+    // `saveLayer(blur σ=1.5)` and emits a ground-haze gradient band
+    // over the horizon afterward. VFP Phase 3 removed the no-effects
+    // `cartoon` tier, so these guards are always taken.
     _paintBackdrop(canvas, size, horizonY, inPerPx);
     if (!isGroundStanding) {
       _paintMound(canvas, w, horizonY, inPerPx);
@@ -1920,25 +1935,23 @@ class _RealisticScenePainter extends CustomPainter {
   /// Phase 10 Group D — shared backdrop pass for the single-target
   /// and rack scenes. Used to be six inline calls in each of
   /// [_paintSingle] / [_paintRack]; centralising the sequence here
-  /// keeps the polished-mode effects in one place and prevents the
+  /// keeps the atmospheric effects in one place and prevents the
   /// two paths from drifting.
   ///
   /// Paint order (top of scene → front of scene):
-  ///   1. Sky gradient — always cartoon, no blur (a blur on the
-  ///      sky would smudge the horizon line we anchor the ground
-  ///      haze to).
-  ///   2. Distant hills + treeline — cartoon in [VisualStyle.cartoon];
-  ///      wrapped in a `saveLayer(blur σ=1.5)` in polished/photo so
-  ///      the far field reads as atmospheric depth rather than
-  ///      crisp silhouettes.
-  ///   3. Grass + tall grass + foreground tree — always cartoon, no
-  ///      blur. These are the FOREGROUND backdrop helpers per the
+  ///   1. Sky gradient — never blurred (a blur on the sky would
+  ///      smudge the horizon line we anchor the ground haze to).
+  ///   2. Distant hills + treeline — wrapped in a
+  ///      `saveLayer(blur σ=1.5)` so the far field reads as
+  ///      atmospheric depth rather than crisp silhouettes.
+  ///   3. Grass + tall grass + foreground tree — never blurred.
+  ///      These are the FOREGROUND backdrop helpers per the
   ///      Phase 10 spec; they have to stay sharp so the DOF effect
   ///      reads as "near vs far," not "everything's blurred."
   ///   4. Ground haze — a horizontal gradient band painted over the
-  ///      horizon line in polished/photo only. White, alpha 0 at the
-  ///      top edge and alpha 0.18 at the bottom edge (spec §Effect-
-  ///      specifications ground haze), srcOver, anchored
+  ///      horizon line. White, alpha 0 at the top edge and alpha
+  ///      0.18 at the bottom edge (spec §Effect-specifications
+  ///      ground haze), srcOver, anchored
   ///      `horizon_y - 0.06 H` to `horizon_y + 0.01 H`. Visual goal:
   ///      atmospheric perspective; the horizon feels softened by
   ///      distance haze.
@@ -1956,16 +1969,22 @@ class _RealisticScenePainter extends CustomPainter {
   ) {
     final w = size.width;
     final h = size.height;
-    final polish = _effectiveStyle != VisualStyle.cartoon;
+    // VFP Phase 3 — always true today (the no-effects `cartoon` tier
+    // was removed; scenic / photographic alias to stylized). Kept as
+    // a real `_effectiveStyle` condition rather than a bare `true` so
+    // the blur saveLayer / restore pair stays structurally balanced
+    // and so it naturally becomes per-tier when VFP Phase 6 / 23 give
+    // scenic / photographic their own painters.
+    final useEffectsLayer = _effectiveStyle == VisualStyle.stylized;
 
     // 1. Sky — outside any blur layer so the horizon line is crisp.
     _paintSky(canvas, w, h, horizonY);
 
-    // 2. Distant backdrop — wrapped in a blur saveLayer in
-    //    polished/photo. The saveLayer is INSIDE the outer
-    //    polished-mode wrap (opened in [paint]) so Group F's color
-    //    grade still applies to the blurred output.
-    if (polish) {
+    // 2. Distant backdrop — wrapped in a blur saveLayer. The
+    //    saveLayer is INSIDE the outer effects wrap (opened in
+    //    [paint]) so Group F's color grade still applies to the
+    //    blurred output.
+    if (useEffectsLayer) {
       canvas.saveLayer(
         Offset.zero & size,
         Paint()..imageFilter = ImageFilter.blur(sigmaX: 1.5, sigmaY: 1.5),
@@ -1973,29 +1992,29 @@ class _RealisticScenePainter extends CustomPainter {
     }
     _paintDistantHills(canvas, w, horizonY);
     _paintTreeline(canvas, w, horizonY);
-    if (polish) {
+    if (useEffectsLayer) {
       canvas.restore();
     }
 
-    // 3. Foreground backdrop — sharp in every mode.
+    // 3. Foreground backdrop — always sharp (the DOF effect reads as
+    //    "near vs far," so the foreground must stay crisp).
     _paintGrass(canvas, w, h, horizonY);
     _paintTallGrass(canvas, w, h, horizonY, inPerPx);
     _paintForegroundTree(canvas, w, h, horizonY);
 
-    // 4. Ground haze — polished/photo only. Painted AFTER the
-    //    foreground backdrop so grass / tall grass / tree along
-    //    the horizon are washed by the gradient (consistent
-    //    atmospheric perspective). Painted BEFORE the mid-scene
-    //    content (mound, pole, target/slots, mount rig) so those
-    //    elements appear in front of the haze, anchored visually
-    //    to the foreground.
-    if (polish) {
+    // 4. Ground haze — painted AFTER the foreground backdrop so
+    //    grass / tall grass / tree along the horizon are washed by
+    //    the gradient (consistent atmospheric perspective). Painted
+    //    BEFORE the mid-scene content (mound, pole, target/slots,
+    //    mount rig) so those elements appear in front of the haze,
+    //    anchored visually to the foreground.
+    if (useEffectsLayer) {
       _paintGroundHaze(canvas, size, horizonY);
     }
   }
 
   /// Phase 10 Group D — horizontal white gradient band that softens
-  /// the horizon in polished/photo mode. Spec §Effect-specifications
+  /// the horizon. Spec §Effect-specifications
   /// ground haze, parameters used verbatim:
   ///
   ///   * Top edge:     horizon_y − canvas_h × 0.06
@@ -2479,7 +2498,7 @@ class _RealisticScenePainter extends CustomPainter {
   /// [_drawCategoryShape] below — same dispatch logic but with
   /// caller-supplied spec and paints.
   /// Phase 10 Group E — soft drop shadow drawn under the target /
-  /// each rack slot in polished + photo modes. Spec §Effect-
+  /// each rack slot. Spec §Effect-
   /// specifications "Soft drop shadow", parameters used verbatim:
   ///
   ///   * Offset: `Offset(0, 3)` — straight-down drop, no horizontal
@@ -2501,15 +2520,14 @@ class _RealisticScenePainter extends CustomPainter {
   ///     here, casting a soft shadow under it" at preview canvas
   ///     sizes.
   ///
-  /// Cartoon mode returns early — no shadow drawn, paint pass is
-  /// byte-identical to pre-Phase-10.
+  /// VFP Phase 3 — the no-effects `cartoon` tier was removed, so the
+  /// drop shadow now draws for every tier (no early-return guard).
   ///
   /// Visual goal: the target appears grounded — feet planted on the
   /// backdrop rather than floating. The blur σ=4.0 falloff reaches
   /// ~12 px (3σ) beyond the rect edges; at the default 234-px-tall
   /// preview that's ~5% of canvas height — visible but not heavy.
   void _paintTargetShadow(Canvas canvas, Rect rect, String category) {
-    if (_effectiveStyle == VisualStyle.cartoon) return;
     final shadowRect = rect.shift(const Offset(0, 3));
     final shadowPaint = Paint()
       ..color = Colors.black.withValues(alpha: 0.30)
@@ -2566,8 +2584,8 @@ class _RealisticScenePainter extends CustomPainter {
     Paint fillPaint,
     Paint outlinePaint,
   ) {
-    // Phase 10 Group E — soft drop shadow under the target / slot in
-    // polished + photo modes. Painted FIRST (before SVG resolution
+    // Phase 10 Group E — soft drop shadow under the target / slot.
+    // Painted FIRST (before SVG resolution
     // and before the procedural-shape switch) so the target's fill
     // and outline draw cleanly on top — the target appears grounded
     // rather than floating. Cartoon mode skips the helper entirely.
@@ -2716,14 +2734,16 @@ class _RealisticScenePainter extends CustomPainter {
             target.centerPoint.horizontalFromLeft ||
         old.colorHexOverride != colorHexOverride ||
         old.sizeFloorEnabled != sizeFloorEnabled ||
-        // Phase 10 Group A — repaint when the user toggles visual
-        // style (cartoon → polished → photo or back). In Group A
-        // the paint pass ignores this field (no effects yet); the
-        // comparison is in place so once Group C lights up the
-        // dispatch, a style change immediately repaints the scene.
+        // Phase 10 Group A / VFP Phase 3 — repaint when the user
+        // toggles visual tier (stylized → scenic → photographic or
+        // back). Today scenic / photographic alias to stylized
+        // rendering, so the painted output is identical across
+        // tiers; the comparison stays so that when VFP Phase 6 / 23
+        // light up the scenic / photographic painters, a tier change
+        // immediately repaints the scene.
         old.visualStyle != visualStyle ||
         // Phase 10 Group F.4 — repaint when the film-grain asset
-        // arrives from disk. First polished paint sees `null` and
+        // arrives from disk. First paint sees `null` and
         // skips the grain pass; the `_NoiseAssetLoader`'s
         // ValueNotifier fires on load completion, the
         // ValueListenableBuilder in TargetPlot rebuilds, and a
@@ -2808,9 +2828,9 @@ class _RealisticScenePainter extends CustomPainter {
 
     // ── 1. Common backdrop ───────────────────────────────────────
     // Phase 10 Group D — shared helper. Same sequence as the
-    // single-target path; in polished/photo it adds DOF blur on
-    // the distant pair + a ground-haze gradient over the horizon.
-    // Cartoon mode is byte-identical to pre-Phase-10.
+    // single-target path; it adds DOF blur on the distant pair +
+    // a ground-haze gradient over the horizon (VFP Phase 3: every
+    // tier renders these effects).
     _paintBackdrop(canvas, size, horizonY, inPerPx);
 
     // ── 2. Slot rects ────────────────────────────────────────────

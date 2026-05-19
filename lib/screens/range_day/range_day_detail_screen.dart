@@ -2451,9 +2451,9 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// trigger widgets differ (segmented vs. popup) for AppBar space
   /// reasons.
   IconData _visualStyleIcon(VisualStyle style) => switch (style) {
-        VisualStyle.cartoon => Icons.brush_outlined,
-        VisualStyle.polished => Icons.auto_awesome_outlined,
-        VisualStyle.photo => Icons.image_outlined,
+        VisualStyle.stylized => Icons.auto_awesome_outlined,
+        VisualStyle.scenic => Icons.landscape_outlined,
+        VisualStyle.photographic => Icons.photo_camera_outlined,
       };
 
   @override
@@ -2537,34 +2537,36 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 },
                 itemBuilder: (context) => const [
                   PopupMenuItem<VisualStyle>(
-                    value: VisualStyle.cartoon,
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.brush_outlined),
-                      title: Text('Cartoon'),
-                      subtitle: Text('Flat procedural scene'),
-                    ),
-                  ),
-                  PopupMenuItem<VisualStyle>(
-                    value: VisualStyle.polished,
+                    value: VisualStyle.stylized,
                     child: ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(Icons.auto_awesome_outlined),
-                      title: Text('Polished'),
-                      subtitle: Text('Atmospheric effects'),
+                      title: Text('Stylized'),
+                      subtitle: Text('Procedural scene with atmospheric '
+                          'effects'),
                     ),
                   ),
                   PopupMenuItem<VisualStyle>(
-                    value: VisualStyle.photo,
+                    value: VisualStyle.scenic,
                     child: ListTile(
                       dense: true,
                       contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.image_outlined),
-                      title: Text('Photo'),
-                      subtitle: Text(
-                          'Placeholder — currently renders as Polished'),
+                      leading: Icon(Icons.landscape_outlined),
+                      title: Text('Scenic'),
+                      subtitle: Text('Upcoming tier — currently renders '
+                          'as Stylized'),
+                    ),
+                  ),
+                  PopupMenuItem<VisualStyle>(
+                    value: VisualStyle.photographic,
+                    child: ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(Icons.photo_camera_outlined),
+                      title: Text('Photographic'),
+                      subtitle: Text('Upcoming tier — currently renders '
+                          'as Stylized'),
                     ),
                   ),
                 ],

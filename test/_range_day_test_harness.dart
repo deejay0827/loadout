@@ -281,9 +281,9 @@ Future<RangeDayHarness> pumpRangeDayScreen(
   addTearDown(units.dispose);
   final autoSave = AutoSaveService();
   addTearDown(autoSave.dispose);
-  // Phase 10 Group B — VisualStyleNotifier mirrors the LocaleService
-  // pattern: hydrates from SharedPreferences async, defaults to
-  // `VisualStyle.cartoon` pre-hydrate. Range Day's AppBar
+  // Phase 10 Group B / VFP Phase 3 — VisualStyleNotifier mirrors the
+  // LocaleService pattern: hydrates from SharedPreferences async,
+  // defaults to `VisualStyle.stylized` pre-hydrate. Range Day's AppBar
   // SegmentedButton, the picker preview TargetPlot, and the four
   // workspace TargetPlot call sites all `context.watch` this notifier.
   // Without it registered here, Consumer / context.watch lookups

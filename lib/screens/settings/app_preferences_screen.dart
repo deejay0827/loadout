@@ -73,12 +73,13 @@ class AppPreferencesScreen extends StatelessWidget {
           const _SectionHeader('Auto-save'),
           _AutoSaveFrequencyTile(service: autoSave),
           _UnsavedChangesPolicyTile(service: autoSave),
-          // Phase 10 Group B.1 — visual style picker. Three modes:
-          // cartoon (the existing rendering), polished (cartoon +
-          // atmospheric effects, lit up in Group C+), photo (placeholder
-          // for Phases 12 / 13's photo-realistic backdrops; aliases to
-          // polished pre-12). Persisted via VisualStyleNotifier; the
-          // Range Day AppBar shows a synced compact toggle (B.2).
+          // VFP Phase 3 — visual tier picker. Three tiers: stylized
+          // (procedural scene with the full atmospheric-effects pass —
+          // the entry tier, ex-`polished`), scenic (upcoming 2.5D
+          // photo backdrop, VFP Phase 6), photographic (upcoming full
+          // 3D, VFP Phase 23). Scenic / photographic render as stylized
+          // until their painters land. Persisted via VisualStyleNotifier;
+          // the Range Day AppBar shows a synced compact toggle.
           const _SectionHeader('Visual Style'),
           _VisualStyleTile(service: visualStyle),
           // Language picker.
@@ -490,9 +491,9 @@ class _SingleChoiceSheet<T> extends StatelessWidget {
   }
 }
 
-/// Phase 10 Group B.1 — visual style picker tile. Three-segment
-/// `SegmentedButton<VisualStyle>` with labels (Cartoon / Polished /
-/// Photo) plus helper text below explaining what each does.
+/// VFP Phase 3 — visual tier picker tile. Three-segment
+/// `SegmentedButton<VisualStyle>` with labels (Stylized / Scenic /
+/// Photographic) plus helper text below explaining what each does.
 ///
 /// Mirrors the layout pattern used by [_UnitsSection]'s master
 /// switch — segmented control inside a Padding-wrapped Column with
@@ -517,19 +518,19 @@ class _VisualStyleTile extends StatelessWidget {
           SegmentedButton<VisualStyle>(
             segments: const [
               ButtonSegment<VisualStyle>(
-                value: VisualStyle.cartoon,
-                label: Text('Cartoon'),
-                icon: Icon(Icons.brush_outlined),
-              ),
-              ButtonSegment<VisualStyle>(
-                value: VisualStyle.polished,
-                label: Text('Polished'),
+                value: VisualStyle.stylized,
+                label: Text('Stylized'),
                 icon: Icon(Icons.auto_awesome_outlined),
               ),
               ButtonSegment<VisualStyle>(
-                value: VisualStyle.photo,
-                label: Text('Photo'),
-                icon: Icon(Icons.image_outlined),
+                value: VisualStyle.scenic,
+                label: Text('Scenic'),
+                icon: Icon(Icons.landscape_outlined),
+              ),
+              ButtonSegment<VisualStyle>(
+                value: VisualStyle.photographic,
+                label: Text('Photographic'),
+                icon: Icon(Icons.photo_camera_outlined),
               ),
             ],
             selected: {service.style},
@@ -545,11 +546,12 @@ class _VisualStyleTile extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Cartoon is the default look. Polished adds atmospheric '
-            'effects (subtle DOF, ground haze, drop shadow, warm '
-            'color grade, vignette, film grain). Photo is a '
-            'placeholder for upcoming photo-realistic backdrops; '
-            'until those ship it renders the same as Polished.',
+            'Stylized is the default — the procedural scene with '
+            'atmospheric effects (subtle DOF, ground haze, drop '
+            'shadow, warm color grade, vignette, film grain). Scenic '
+            '(2.5D photo backdrop) and Photographic (full 3D) are '
+            'upcoming higher tiers; until they ship they render the '
+            'same as Stylized.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
