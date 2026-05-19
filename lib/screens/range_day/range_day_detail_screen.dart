@@ -95,6 +95,7 @@ import '../../models/visual_style.dart';
 import '../../services/scope_catalog_v2.dart';
 import '../../services/unit_service.dart';
 import '../../services/visual_style_notifier.dart';
+import '../../services/visual_tier_platform.dart';
 import '../../services/watch_bridge_service.dart';
 import '../../services/watch_payload_projection.dart';
 import '../../widgets/empty_state_card.dart';
@@ -2527,49 +2528,48 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
           // and repaints when the mode flips.
           Consumer<VisualStyleNotifier>(
             builder: (context, visualStyle, _) {
+              // VFP Phase 3 Group C — Scenic + Photographic are
+              // iOS/Android only (VFP §4.18). Clamp the trigger
+              // icon + initialValue + the no-op compare to the
+              // platform-allowed tier so a `photographic` preference
+              // synced from a phone doesn't show a selectable item
+              // / highlight that doesn't exist on web/macOS.
+              final allowed = scenicPhotographicSupported;
+              final effective = clampVisualTier(visualStyle.style,
+                  scenicPhotographic: allowed);
               return PopupMenuButton<VisualStyle>(
                 tooltip: 'Visual Style',
-                icon: Icon(_visualStyleIcon(visualStyle.style)),
-                initialValue: visualStyle.style,
+                icon: Icon(_visualStyleIcon(effective)),
+                initialValue: effective,
                 onSelected: (next) {
-                  if (next == visualStyle.style) return;
+                  if (next == effective) return;
                   // ignore: discarded_futures
                   visualStyle.setStyle(next);
                 },
-                itemBuilder: (context) => const [
-                  PopupMenuItem<VisualStyle>(
-                    value: VisualStyle.stylized,
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.auto_awesome_outlined),
-                      title: Text('Stylized'),
-                      subtitle: Text('Procedural scene with atmospheric '
-                          'effects'),
+                itemBuilder: (context) => [
+                  for (final v in visualTierSegmentValues(
+                      scenicPhotographic: allowed))
+                    PopupMenuItem<VisualStyle>(
+                      value: v,
+                      child: ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(_visualStyleIcon(v)),
+                        title: Text(switch (v) {
+                          VisualStyle.stylized => 'Stylized',
+                          VisualStyle.scenic => 'Scenic',
+                          VisualStyle.photographic => 'Photographic',
+                        }),
+                        subtitle: Text(switch (v) {
+                          VisualStyle.stylized =>
+                            'Procedural scene with atmospheric effects',
+                          VisualStyle.scenic ||
+                          VisualStyle.photographic =>
+                            'Upcoming tier — currently renders as '
+                                'Stylized',
+                        }),
+                      ),
                     ),
-                  ),
-                  PopupMenuItem<VisualStyle>(
-                    value: VisualStyle.scenic,
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.landscape_outlined),
-                      title: Text('Scenic'),
-                      subtitle: Text('Upcoming tier — currently renders '
-                          'as Stylized'),
-                    ),
-                  ),
-                  PopupMenuItem<VisualStyle>(
-                    value: VisualStyle.photographic,
-                    child: ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(Icons.photo_camera_outlined),
-                      title: Text('Photographic'),
-                      subtitle: Text('Upcoming tier — currently renders '
-                          'as Stylized'),
-                    ),
-                  ),
                 ],
               );
             },

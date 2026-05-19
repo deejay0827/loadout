@@ -39,6 +39,7 @@ import '../../services/beginner_mode_service.dart';
 import '../../services/locale_service.dart';
 import '../../services/unit_service.dart';
 import '../../services/visual_style_notifier.dart';
+import '../../services/visual_tier_platform.dart';
 import '../atmosphere/atmosphere_presets_screen.dart';
 
 class AppPreferencesScreen extends StatelessWidget {
@@ -491,9 +492,11 @@ class _SingleChoiceSheet<T> extends StatelessWidget {
   }
 }
 
-/// VFP Phase 3 — visual tier picker tile. Three-segment
-/// `SegmentedButton<VisualStyle>` with labels (Stylized / Scenic /
-/// Photographic) plus helper text below explaining what each does.
+/// VFP Phase 3 — visual tier picker tile. `SegmentedButton<VisualStyle>`
+/// with Stylized always available; Scenic + Photographic are
+/// iOS/Android only (hidden on web + macOS per VFP §4.18, with a
+/// "iOS and Android" availability note). The §3.6 per-tier helper
+/// sentence updates with the selected tier.
 ///
 /// Mirrors the layout pattern used by [_UnitsSection]'s master
 /// switch — segmented control inside a Padding-wrapped Column with
@@ -510,30 +513,32 @@ class _VisualStyleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // VFP Phase 3 Group C — Scenic + Photographic are iOS/Android
+    // only (VFP §4.18: web AND macOS get Stylized only). The
+    // predicate + clamp live in one place (visual_tier_platform.dart)
+    // so the rule can't drift. The clamp is LOAD-BEARING:
+    // SegmentedButton asserts that `selected` is one of its segment
+    // values, so a `photographic` preference synced from a phone must
+    // collapse to `stylized` here or the picker crashes on macOS.
+    final allowed = scenicPhotographicSupported;
+    final values = visualTierSegmentValues(scenicPhotographic: allowed);
+    final effective =
+        clampVisualTier(service.style, scenicPhotographic: allowed);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SegmentedButton<VisualStyle>(
-            segments: const [
-              ButtonSegment<VisualStyle>(
-                value: VisualStyle.stylized,
-                label: Text('Stylized'),
-                icon: Icon(Icons.auto_awesome_outlined),
-              ),
-              ButtonSegment<VisualStyle>(
-                value: VisualStyle.scenic,
-                label: Text('Scenic'),
-                icon: Icon(Icons.landscape_outlined),
-              ),
-              ButtonSegment<VisualStyle>(
-                value: VisualStyle.photographic,
-                label: Text('Photographic'),
-                icon: Icon(Icons.photo_camera_outlined),
-              ),
+            segments: [
+              for (final v in values)
+                ButtonSegment<VisualStyle>(
+                  value: v,
+                  label: Text(_tierLabel(v)),
+                  icon: Icon(_tierIcon(v)),
+                ),
             ],
-            selected: {service.style},
+            selected: {effective},
             showSelectedIcon: false,
             onSelectionChanged: (sel) {
               // Fire-and-forget persistence — notifier writes
@@ -545,19 +550,38 @@ class _VisualStyleTile extends StatelessWidget {
             },
           ),
           const SizedBox(height: 8),
+          // §3.6 per-tier helper for the (clamped) selected tier.
           Text(
-            'Stylized is the default — the procedural scene with '
-            'atmospheric effects (subtle DOF, ground haze, drop '
-            'shadow, warm color grade, vignette, film grain). Scenic '
-            '(2.5D photo backdrop) and Photographic (full 3D) are '
-            'upcoming higher tiers; until they ship they render the '
-            'same as Stylized.',
+            visualTierHelpText(effective),
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
+          if (!allowed) ...[
+            const SizedBox(height: 4),
+            // §3.6 web/macOS availability note.
+            Text(
+              kScenicPhotographicUnavailableNote,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+
+  static String _tierLabel(VisualStyle v) => switch (v) {
+        VisualStyle.stylized => 'Stylized',
+        VisualStyle.scenic => 'Scenic',
+        VisualStyle.photographic => 'Photographic',
+      };
+
+  static IconData _tierIcon(VisualStyle v) => switch (v) {
+        VisualStyle.stylized => Icons.auto_awesome_outlined,
+        VisualStyle.scenic => Icons.landscape_outlined,
+        VisualStyle.photographic => Icons.photo_camera_outlined,
+      };
 }
