@@ -103,6 +103,7 @@ import '../../widgets/range_day_safety.dart';
 import '../../services/weather_service.dart';
 import '../../utils/responsive.dart';
 import '../../widgets/atmosphere_preset_picker.dart';
+import '../../widgets/blurred_pro_teaser.dart';
 import '../../widgets/glossary_label.dart';
 import '../../widgets/pro_gate.dart';
 import '../../widgets/reticle_picker.dart';
@@ -3367,13 +3368,24 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
     //
     // No outer GestureDetector / InkWell wrapper anymore.
     final displayName = _activeTargetDisplayName ?? 'Target';
-    return SizedBox(
-      height: 234,
-      child: TargetPlot(
-        target: activeTargetSpec,
-        shots: const [],
-        onTapAt: (_, _) {},
-        onLongPressShot: (_) {},
+    // VFP Phase 3 Group B (A2 / teaser-blur Option 2) — the realistic
+    // target preview render is Pro. Pro → verbatim clear; free →
+    // Gaussian-blurred under a CTA. The empty-state placeholder above
+    // (no target picked) is intentionally NOT wrapped (nothing to
+    // tease — UI chrome). The single-tap rack-slot interaction still
+    // reaches TargetPlot through the IgnorePointer scrim (free
+    // "feel it"); the long-press "enlarge" is the discrete expand
+    // commit and gates inside _showTargetPreviewDialog.
+    return BlurredProTeaser(
+      ctaText: 'Pro renders the full target scene',
+      onCommit: () => ensurePro(context),
+      child: SizedBox(
+        height: 234,
+        child: TargetPlot(
+          target: activeTargetSpec,
+          shots: const [],
+          onTapAt: (_, _) {},
+          onLongPressShot: (_) {},
         // Single-tap → activate (rack mode).
         onActiveRackSlotChange: _setActiveRackSlot,
         // Long-press → enlarge dialog. Fires only when the long-
@@ -3395,6 +3407,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         // style diff and repaints. Settings and AppBar toggles
         // both flow through this single path.
         visualStyle: context.watch<VisualStyleNotifier>().style,
+        ),
       ),
     );
   }
@@ -3405,6 +3418,17 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
   /// button) to dismiss.
   Future<void> _showTargetPreviewDialog(
       TargetSpec spec, String displayName) async {
+    // VFP Phase 3 Group B (A2 / teaser-blur Option 2) — the
+    // long-press "enlarge" is the discrete EXPAND commit for the
+    // target preview surface; gate it like every other commit.
+    // ensurePro short-circuits true for Pro (dialog opens exactly
+    // as before, clear); a free user is sent to the paywall and
+    // the enlarge dialog (a Pro-only render path) never opens, so
+    // its inner TargetPlot needs no separate blur. context is used
+    // before this method's first await — clean re:
+    // use_build_context_synchronously.
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
     final mediaQuery = MediaQuery.of(context);
     final maxW = (mediaQuery.size.width * 0.92).clamp(280.0, 720.0);
     final imageH = (maxW * 1.0).clamp(280.0, 640.0);
@@ -3588,12 +3612,22 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
         ),
       );
     }
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: SizedBox(
-        height: 180,
-        child: Stack(
-          fit: StackFit.expand,
+    // VFP Phase 3 Group B (A2 / teaser-blur Option 2) — the inline
+    // scope-view render (backdrop + reticle) is Pro. Pro → verbatim
+    // clear; free → Gaussian-blurred under a CTA. The empty-state
+    // placeholder above (no target + no reticle) is intentionally
+    // NOT wrapped (UI chrome — nothing to tease). "Expand to full
+    // Scope View" is the SEPARATE _openScopeView button, already
+    // ensurePro-gated at its entry; this glance card just teases.
+    return BlurredProTeaser(
+      ctaText: 'Pro shows the live view',
+      onCommit: () => ensurePro(context),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: SizedBox(
+          height: 180,
+          child: Stack(
+            fit: StackFit.expand,
           children: [
             ScopeDaytimeBackdrop(
               target: activeTargetSpec == null
@@ -3635,6 +3669,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
               ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -8638,7 +8673,19 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                           },
                         ),
                         const SizedBox(height: 8),
-                        TargetPlot(
+                        // VFP Phase 3 Group B (A2 / teaser-blur) —
+                        // realistic scene render is Pro. Free →
+                        // blurred under a CTA; the IgnorePointer
+                        // scrim lets record-shot / aim-point /
+                        // rack-slot taps still reach TargetPlot
+                        // (free "feel it" — blurred dots register).
+                        // Shot logging stays free-functional; the
+                        // A2 gate is purely the render-layer blur.
+                        BlurredProTeaser(
+                          ctaText:
+                              'Pro renders the full target scene',
+                          onCommit: () => ensurePro(context),
+                          child: TargetPlot(
                           target: spec,
                           shots: _shots,
                           onTapAt: _recordShot,
@@ -8671,6 +8718,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                               .watch<VisualStyleNotifier>()
                               .style,
                         ),
+                        ),
                       ],
                     );
                   }
@@ -8683,7 +8731,10 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                       setState(() => _shots = shots);
                     });
                   }
-                  return TargetPlot(
+                  return BlurredProTeaser(
+                    ctaText: 'Pro renders the full target scene',
+                    onCommit: () => ensurePro(context),
+                    child: TargetPlot(
                     target: spec,
                     shots: shots,
                     onTapAt: _recordShot,
@@ -8710,11 +8761,15 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                     // single-path rationale.
                     visualStyle:
                         context.watch<VisualStyleNotifier>().style,
+                  ),
                   );
                 },
               )
             else
-              TargetPlot(
+              BlurredProTeaser(
+                ctaText: 'Pro renders the full target scene',
+                onCommit: () => ensurePro(context),
+                child: TargetPlot(
                 target: spec,
                 shots: _shots,
                 onTapAt: _recordShot,
@@ -8741,6 +8796,7 @@ class _RangeDayDetailScreenState extends State<RangeDayDetailScreen> {
                 // rationale.
                 visualStyle:
                     context.watch<VisualStyleNotifier>().style,
+              ),
               ),
             const SizedBox(height: 12),
             Row(

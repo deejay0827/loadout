@@ -19,57 +19,86 @@
 // );
 // ```
 //
-// Tap anywhere to dismiss. Single-purpose: pretty preview, no edit /
-// pick / save behavior. The picker invokes this from a dedicated
-// "Preview" trailing icon on each row to keep visual clutter out of
-// the dropdown list itself.
+// VFP Phase 3 Group B (operator decision A2 + teaser-blur Option 2):
+// this "sample reticle image" is a Pro-gated VFP surface. The modal
+// still OPENS for free users (exploration is free — they can launch
+// it and feel the product), but the FOV render itself is wrapped in
+// [BlurredProTeaser]: Pro users see the reticle crisp with no
+// overlay; free users see it Gaussian-blurred under a "See the full
+// reticle · Pro" CTA whose tap routes through `ensurePro` to the
+// `PaywallScreen`. Tap-anywhere-else still dismisses (escape stays
+// free — the teaser must never trap the user). The §30
+// interoperability caption is rendered OUTSIDE the blur and stays
+// fully legible for everyone — it is a legal disclaimer, never a
+// thing to tease. Render code is identical for free and Pro; only
+// the blur layer toggles.
 //
 // ============================================================================
 // WHY IT EXISTS IN THE ARCHITECTURE
 // ============================================================================
-// The picker dropdown shows tiny 40 px thumbnails — small enough to
-// scan but too small to evaluate a reticle's tree-style holdovers,
-// floating numbers, or hash spacing. The user needs a "show me this
-// at full size before I commit" gesture. Putting the full-size
-// preview behind a dedicated trailing icon (instead of expanding the
-// list-row thumbnail) keeps the row scannable AND lets users actually
-// inspect the reticle when they want to.
+// The picker dropdown shows tiny generic glyphs — too small to
+// evaluate a reticle's tree-style holdovers, floating numbers, or
+// hash spacing. The user needs a "show me this at full size" gesture.
+// A dedicated trailing icon launches this full-size render instead of
+// expanding the list-row glyph, keeping the row scannable.
 //
-// This is intentionally NOT the Pro `ScopeViewScreen` (which is a far
-// more complex Pro-gated tool — magnification slider, range slider,
-// click-count math, animated mover, hit-prob badge). The full-screen
-// preview is free, single-frame, no controls. It exists so the picker
-// flow doesn't need a Pro upsell to evaluate a reticle.
+// Under A2 the ENTIRE VFP visual surface — including this sample
+// reticle image — is Pro. Rather than a hard `ProGate` lock tile
+// (which would replace the render with a lock and kill the upsell's
+// strongest signal), this surface uses the canonical VFP teaser-blur:
+// free users still open it and see the reticle's shape and density
+// through the blur, which is the most direct "this is exactly what
+// you'd unlock" conversion cue. The fully-clear render is the Pro
+// payoff. See docs/PRO_GATING.md + CLAUDE.md §"Pro-gating UX pattern".
+//
+// (Historical note: pre-VFP-Phase-3 this preview was deliberately
+// FREE — "no Pro upsell to evaluate a reticle." The A2 decision
+// superseded that; this header was rewritten to match per the
+// authority-hierarchy rule. Do not re-introduce the free claim.)
 //
 // ============================================================================
 // WHY THIS IS HARDER THAN IT LOOKS
 // ============================================================================
+//   * The §30 interoperability caption MUST stay clear and legible
+//     even for free users — it is a load-bearing legal disclaimer.
+//     The [BlurredProTeaser] therefore wraps ONLY the circular FOV
+//     render, never the caption Column beneath it. Widening the blur
+//     to the caption would be an IP-posture regression.
+//   * Tap-to-dismiss must keep working through the teaser. The
+//     `BlurredProTeaser` scrim is `IgnorePointer`, so a tap on the
+//     blurred FOV falls through to the full-screen dismiss layer
+//     behind it (the modal closes); only the small centred CTA pill
+//     absorbs taps and routes to `ensurePro`. The user is never
+//     trapped behind the tease.
 //   * The reticle's color must contrast both the bright sky AND the
-//     darker grass / mound. Pure black wins against the sky but
-//     disappears in the mound's shadow; pure white wins against the
-//     grass but blows out against the haze. We use a high-contrast
-//     dark-with-thin-white-stroke compromise so the reticle reads on
-//     every part of the backdrop without any compositing tricks.
-//   * Center the FOV both vertically and horizontally regardless of
-//     SafeArea inset; the modal is shown via `showDialog` so the
-//     `Center` + `LayoutBuilder` pattern keeps it stable across
-//     keyboard / notch / dynamic-island geometry.
+//     darker grass / mound. We use a high-contrast dark-with-thin-
+//     white-stroke compromise so the reticle reads on every part of
+//     the backdrop without compositing tricks. (The blur is applied
+//     ON TOP of that composited render for free users.)
+//   * Center the FOV regardless of SafeArea inset; the modal is shown
+//     via `showDialog` so the `Center` + `LayoutBuilder` pattern keeps
+//     it stable across keyboard / notch / dynamic-island geometry.
 //
 // ============================================================================
 // WHO CONSUMES THIS FILE
 // ============================================================================
 // - `lib/widgets/reticle_picker.dart` — the picker's full-screen
 //   "Preview" trailing icon launches this via
-//   [showReticleFullScreenPreview].
+//   [showReticleFullScreenPreview]. Opening is free; the rendered
+//   content gates via the teaser-blur.
 //
 // ============================================================================
 // SIDE EFFECTS
 // ============================================================================
-// None. Pure UI. Pops itself when the user taps to dismiss.
+// - For a free user, tapping the CTA pill pushes the `PaywallScreen`
+//   (via `ensurePro` inside [BlurredProTeaser]'s onCommit). Otherwise
+//   pure UI; pops itself when the user taps to dismiss.
 
 import 'package:flutter/material.dart';
 
 import '../data/reticle_library.dart';
+import 'blurred_pro_teaser.dart';
+import 'pro_gate.dart';
 import 'reticle_renderer.dart';
 import 'scope_daytime_backdrop.dart';
 
@@ -156,46 +185,61 @@ class _ReticleFullScreenView extends StatelessWidget {
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        width: fovSide,
-                        height: fovSide,
-                        child: ClipOval(
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              ScopeDaytimeBackdrop(
-                                target: target,
-                                // Larger target than the default 16% so the
-                                // preview emphasizes "how the reticle sits on
-                                // a target" rather than the scenery.
-                                targetWidthFraction: 0.22,
-                              ),
-                              // Reticle rendered on top of the backdrop.
-                              // Use a dark line color (brand-safe black with
-                              // a thin highlight) so it reads on both sky
-                              // and grass.
-                              Center(
-                                child: ReticleRenderer(
-                                  reticle: reticle,
-                                  displayUnit:
-                                      reticle.nativeUnit == ReticleNativeUnit.moa
-                                          ? 'moa'
-                                          : 'mil',
-                                  size: Size(fovSide, fovSide),
-                                  showUnitOverlay: false,
-                                  color: const Color(0xff111111),
+                      // VFP Phase 3 Group B (A2 / teaser-blur Option 2).
+                      // Pro → verbatim crisp render. Free → the FOV is
+                      // Gaussian-blurred under a "See the full reticle"
+                      // CTA; the scrim is IgnorePointer so a tap on the
+                      // blurred FOV still falls through to the dismiss
+                      // layer behind, and only the centred pill routes
+                      // to ensurePro. The §30 caption is rendered BELOW,
+                      // OUTSIDE this teaser, so it stays fully legible
+                      // for free users (legal disclaimer — never blur).
+                      BlurredProTeaser(
+                        // Placeholder CTA copy; final string operator-
+                        // owned (docs/PRO_GATING.md candidate list).
+                        ctaText: 'See the full reticle · Pro',
+                        onCommit: () => ensurePro(context),
+                        child: SizedBox(
+                          width: fovSide,
+                          height: fovSide,
+                          child: ClipOval(
+                            child: Stack(
+                              fit: StackFit.expand,
+                              children: [
+                                ScopeDaytimeBackdrop(
+                                  target: target,
+                                  // Larger target than the default 16% so
+                                  // the preview emphasizes "how the reticle
+                                  // sits on a target" rather than scenery.
+                                  targetWidthFraction: 0.22,
                                 ),
-                              ),
-                              // Eyepiece ring + soft black bezel so the
-                              // backdrop doesn't bleed past the FOV edge.
-                              Positioned.fill(
-                                child: IgnorePointer(
-                                  child: CustomPaint(
-                                    painter: _EyepieceRingPainter(),
+                                // Reticle rendered on top of the backdrop.
+                                // Use a dark line color (brand-safe black
+                                // with a thin highlight) so it reads on
+                                // both sky and grass.
+                                Center(
+                                  child: ReticleRenderer(
+                                    reticle: reticle,
+                                    displayUnit: reticle.nativeUnit ==
+                                            ReticleNativeUnit.moa
+                                        ? 'moa'
+                                        : 'mil',
+                                    size: Size(fovSide, fovSide),
+                                    showUnitOverlay: false,
+                                    color: const Color(0xff111111),
                                   ),
                                 ),
-                              ),
-                            ],
+                                // Eyepiece ring + soft black bezel so the
+                                // backdrop doesn't bleed past the FOV edge.
+                                Positioned.fill(
+                                  child: IgnorePointer(
+                                    child: CustomPaint(
+                                      painter: _EyepieceRingPainter(),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

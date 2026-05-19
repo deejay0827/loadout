@@ -102,7 +102,9 @@ import 'package:provider/provider.dart';
 import '../data/reticle_tags.dart';
 import '../database/database.dart';
 import '../repositories/reticle_repository.dart';
+import 'blurred_pro_teaser.dart';
 import 'find_by_scope_sheet.dart';
+import 'pro_gate.dart';
 import 'reticle_full_screen_view.dart';
 import 'reticle_renderer.dart';
 import 'reticle_thumbnail.dart';
@@ -346,6 +348,26 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
     super.dispose();
   }
 
+  /// Commit chokepoint — VFP Phase 3 Group B (operator decision A2 /
+  /// teaser-blur Option 2). EVERY reticle-selection commit (a list-row
+  /// tap, the "None" clear, a Find-by-Scope match, the centre CTA
+  /// pill) routes through here so a free user is sent to the paywall
+  /// instead of mutating the firearm's reticle. `ensurePro`
+  /// short-circuits `true` for Pro users — the sheet then pops with
+  /// the selection exactly as it always did — and only returns `true`
+  /// for a free user who actually upgraded inside the paywall. The
+  /// render + commit code path is therefore identical for free and
+  /// Pro; only the gate toggles (the operator's explicit "no
+  /// two-path fork" requirement). Navigator is captured before the
+  /// await and `mounted` re-checked after, matching the existing
+  /// `_onFindByScope` idiom in this file.
+  Future<void> _commitSelection(_ReticleSelection selection) async {
+    final navigator = Navigator.of(context);
+    if (!await ensurePro(context)) return;
+    if (!mounted) return;
+    navigator.pop(selection);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -378,8 +400,8 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                     ),
                     if (widget.allowNone)
                       TextButton(
-                        onPressed: () => Navigator.of(context)
-                            .pop(const _ReticleSelection(cleared: true)),
+                        onPressed: () => _commitSelection(
+                            const _ReticleSelection(cleared: true)),
                         child: const Text('None'),
                       ),
                   ],
@@ -484,41 +506,60 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
                       grouped: grouped,
                       includeHeaders: showHeaders,
                     );
-                    return FutureBuilder<int?>(
-                      future: _defaultIdFuture ?? Future.value(null),
-                      builder: (context, defaultSnap) {
-                        final defaultId = defaultSnap.data;
-                        return ListView.builder(
-                          itemCount: items.length,
-                          itemBuilder: (context, i) {
-                            final entry = items[i];
-                            if (entry is _CategoryHeaderItem) {
-                              return _CategoryHeader(
-                                label: entry.category.label,
-                                count: entry.count,
+                    // VFP Phase 3 Group B (A2 / teaser-blur Option 2).
+                    // Free users see the FULL list — categories, count,
+                    // structure — but the reticle names/thumbnails are
+                    // Gaussian-blurred under an "Unlock" CTA. The list
+                    // stays live + scrollable (BlurredProTeaser's scrim
+                    // is IgnorePointer); only the centred pill and the
+                    // per-row commit gate. Pro users get the verbatim
+                    // child (no blur, no overlay) — identical render
+                    // path, just the gate toggles. Loading / error /
+                    // empty branches above are intentionally NOT wrapped
+                    // (nothing to tease — blurring a spinner is noise).
+                    return BlurredProTeaser(
+                      // Placeholder CTA copy; final string is operator-
+                      // owned (docs/PRO_GATING.md candidate list). The
+                      // count is live so the tease is concrete.
+                      ctaText: 'Unlock ${all.length} reticles · Pro',
+                      onCommit: () => ensurePro(context),
+                      child: FutureBuilder<int?>(
+                        future: _defaultIdFuture ?? Future.value(null),
+                        builder: (context, defaultSnap) {
+                          final defaultId = defaultSnap.data;
+                          return ListView.builder(
+                            itemCount: items.length,
+                            itemBuilder: (context, i) {
+                              final entry = items[i];
+                              if (entry is _CategoryHeaderItem) {
+                                return _CategoryHeader(
+                                  label: entry.category.label,
+                                  count: entry.count,
+                                );
+                              }
+                              final rowItem = entry as _ReticleRowItem;
+                              final row = rowItem.row;
+                              final selected = row.id == widget.selectedId;
+                              final isDefault = defaultId == row.id;
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _ReticleListRow(
+                                    row: row,
+                                    repo: widget.repo,
+                                    selected: selected,
+                                    isDefault: isDefault,
+                                    onPick: () => _commitSelection(
+                                        _ReticleSelection(row: row)),
+                                  ),
+                                  Divider(
+                                      height: 1, color: theme.dividerColor),
+                                ],
                               );
-                            }
-                            final rowItem = entry as _ReticleRowItem;
-                            final row = rowItem.row;
-                            final selected = row.id == widget.selectedId;
-                            final isDefault = defaultId == row.id;
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _ReticleListRow(
-                                  row: row,
-                                  repo: widget.repo,
-                                  selected: selected,
-                                  isDefault: isDefault,
-                                  onPick: () => Navigator.of(context)
-                                      .pop(_ReticleSelection(row: row)),
-                                ),
-                                Divider(height: 1, color: theme.dividerColor),
-                              ],
-                            );
-                          },
-                        );
-                      },
+                            },
+                          );
+                        },
+                      ),
                     );
                   },
                 ),
@@ -536,7 +577,6 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
   /// Soft-fails on missing recommendation (snackbar) — never throws.
   Future<void> _onFindByScope(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
     final entry = await showFindByScopeSheet(context);
     if (entry == null) return;
     if (!mounted) return;
@@ -579,7 +619,15 @@ class _ReticlePickerSheetState extends State<_ReticlePickerSheet> {
         ),
       );
     }
-    navigator.pop(_ReticleSelection(row: match));
+    // VFP Phase 3 Group B (A2 / teaser-blur) — a Find-by-Scope match
+    // is a reticle *commit*; route it through the shared commit
+    // chokepoint so it gates exactly like a list-row tap. Delegating
+    // (rather than inlining ensurePro here) keeps the context use
+    // inside _commitSelection — before that method's first await —
+    // which is clean w.r.t. use_build_context_synchronously after
+    // this method's own prior awaits.
+    if (!mounted) return;
+    await _commitSelection(_ReticleSelection(row: match));
   }
 
   /// Brand-agnostic "Popular reticles" chip row. Each chip filters the
